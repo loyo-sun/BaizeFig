@@ -4,6 +4,9 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Simplify vector": "简化路径",
+  "Simplify tolerance": "简化容差",
+  "Tolerance must be between 0.001 and 100": "容差应在 0.001 到 100 之间",
   "Image mode": "图片模式",
   "Fill image": "填充",
   "Fit image": "适应",

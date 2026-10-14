@@ -1,3 +1,4 @@
+import { simplifyNetwork } from "./vectorSimplify";
 import { RegionPaintEditor } from "./RegionPaintEditor";
 import React, { useEffect, useRef, useState } from "react";
 import type { Document, Node } from "./core";
@@ -45,7 +46,8 @@ export function VectorEditor({
     [mode, setMode] = useState<"free" | "aligned" | "mirrored">("free"),
     [connect, setConnect] = useState(false),
     [region, setRegion] = useState(0),
-    [paintPanel, setPaintPanel] = useState(false);
+    [paintPanel, setPaintPanel] = useState(false),
+    [simplifyTolerance, setSimplifyTolerance] = useState(0.5);
   const network = draft ?? editableNetwork(node),
     latest = useRef(network);
   latest.current = network;
@@ -561,6 +563,31 @@ export function VectorEditor({
             {t("Delete and heal")}
           </button>
           <button onClick={onClose}>{t("Done")}</button>
+          <label>
+            {t("Simplify tolerance")}
+            <input
+              aria-label={t("Simplify tolerance")}
+              type="number"
+              min={0.001}
+              max={100}
+              step={0.1}
+              value={simplifyTolerance}
+              onChange={(e) => setSimplifyTolerance(Number(e.target.value))}
+            />
+          </label>
+          <button
+            onClick={() =>
+              action(() => {
+                const next = simplifyNetwork(network, simplifyTolerance);
+                if (next.vertices.length !== network.vertices.length) {
+                  save(next);
+                  setPicked([]);
+                }
+              })
+            }
+          >
+            {t("Simplify vector")}
+          </button>
           <div className="vector-region-style">
             <span>{t("Region")}</span>
             <select
