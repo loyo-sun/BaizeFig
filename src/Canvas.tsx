@@ -1,3 +1,5 @@
+import { vectorVisualBounds } from "./vectorGeometry";
+import { networkGeometry, networkStroke } from "./vectorNetwork";
 import { Appearance, EffectDefinitions } from "./appearance";
 import { layoutText } from "./textLayout";
 import { inverse, multiply } from "./fidelity";
@@ -27,6 +29,9 @@ function BasicNodeShape({
     fill: outline ? "none" : n.fill,
     stroke: outline ? "#78909c" : n.stroke,
     strokeWidth: outline ? 1 : n.strokeWidth,
+    strokeMiterlimit: n.fidelity?.strokeMiterLimit ?? 4,
+    strokeDasharray: n.fidelity?.strokeDash?.join(" "),
+    strokeDashoffset: n.fidelity?.strokeDashOffset,
   };
   if (n.type === "text")
     return (
@@ -176,6 +181,122 @@ function ShapeContent({
           </tspan>
         ))}
       </text>
+    );
+  if (f?.network) {
+    const paths = networkGeometry(f.network);
+    return (
+      <g
+        transform={`scale(${f.size[0] ? n.width / f.size[0] : 1} ${f.size[1] ? n.height / f.size[1] : 1})`}
+      >
+        {paths.map((p, i) => (
+          <Appearance
+            key={i}
+            node={{
+              ...n,
+              id: `${n.id}-region-${i}`,
+              width: f.size[0],
+              height: f.size[1],
+              strokeWidth: 0,
+              stroke: "none",
+              fill: p.color ?? n.fill,
+              fidelity: {
+                size: f.size,
+                paths: [{ ...p, paints: undefined }],
+                paints: p.paints ?? (p.color ? undefined : f.paints),
+              },
+            }}
+            outline={outline}
+            render={(node, o) => <ShapeContent node={node} outline={o} />}
+          />
+        ))}
+        <defs>
+          {f.strokeAlign === "inside" && (
+            <clipPath id={`stroke-inside-${n.id}`}>
+              {paths.map((p, i) => (
+                <path key={i} d={p.d} clipRule={p.rule} />
+              ))}
+            </clipPath>
+          )}
+          {f.strokeAlign === "outside" && (
+            <mask
+              id={`stroke-outside-${n.id}`}
+              maskUnits="userSpaceOnUse"
+              x={-100000}
+              y={-100000}
+              width={200000}
+              height={200000}
+            >
+              <rect
+                x={-100000}
+                y={-100000}
+                width={200000}
+                height={200000}
+                fill="white"
+              />
+              {paths.map((p, i) => (
+                <path key={i} d={p.d} fillRule={p.rule} fill="black" />
+              ))}
+            </mask>
+          )}
+        </defs>
+        <path
+          d={networkStroke(f.network)}
+          fill="none"
+          stroke={outline ? "#78909c" : n.stroke}
+          strokeWidth={
+            outline
+              ? 1
+              : n.strokeWidth *
+                (paths.length && f.strokeAlign && f.strokeAlign !== "center"
+                  ? 2
+                  : 1)
+          }
+          strokeLinecap={f.strokeCap ?? "butt"}
+          strokeLinejoin={f.strokeJoin ?? "miter"}
+          strokeMiterlimit={f.strokeMiterLimit ?? 4}
+          strokeDasharray={f.strokeDash?.join(" ")}
+          strokeDashoffset={f.strokeDashOffset}
+          clipPath={
+            !outline && paths.length && f.strokeAlign === "inside"
+              ? `url(#stroke-inside-${n.id})`
+              : undefined
+          }
+          mask={
+            !outline && paths.length && f.strokeAlign === "outside"
+              ? `url(#stroke-outside-${n.id})`
+              : undefined
+          }
+        />
+      </g>
+    );
+  }
+  if (f?.paths?.some((p) => p.paints))
+    return (
+      <g
+        transform={`scale(${f.size[0] ? n.width / f.size[0] : 1} ${f.size[1] ? n.height / f.size[1] : 1})`}
+      >
+        {f.paths.map((p, i) => (
+          <Appearance
+            key={i}
+            node={{
+              ...n,
+              id: `${n.id}-path-${i}`,
+              width: f.size[0],
+              height: f.size[1],
+              fill: p.color ?? (p.strokeOutline ? n.stroke : n.fill),
+              stroke: p.strokeOutline ? "none" : n.stroke,
+              strokeWidth: p.strokeOutline ? 0 : n.strokeWidth,
+              fidelity: {
+                size: f.size,
+                paths: [{ ...p, strokeOutline: false, paints: undefined }],
+                paints: p.paints ?? (p.color ? undefined : f.paints),
+              },
+            }}
+            outline={outline}
+            render={(node, o) => <ShapeContent node={node} outline={o} />}
+          />
+        ))}
+      </g>
     );
   if (f?.paths?.length)
     return (
@@ -353,6 +474,8 @@ export function NodeShape({
   node: Node;
   outline?: boolean;
 }) {
+  if (node.fidelity?.network || node.fidelity?.paths?.some((p) => p.paints))
+    return <ShapeContent node={node} outline={outline} />;
   return (
     <Appearance
       node={node}
@@ -698,7 +821,26 @@ export async function svgString(
   const included = ids.length
     ? doc.nodes.filter((n) => ids.includes(n.id))
     : doc.nodes.filter((n) => n.pageId === pageId && !n.parentId && n.visible);
-  const b = bounds(doc, included);
+  let b = bounds(doc, included);
+  function expand(node: Node) {
+    const actual = vectorVisualBounds(doc, node);
+    if (actual) {
+      const x = Math.min(b.x, actual.x),
+        y = Math.min(b.y, actual.y);
+      b = {
+        x,
+        y,
+        width: Math.max(b.x + b.width, actual.x + actual.width) - x,
+        height: Math.max(b.y + b.height, actual.y + actual.height) - y,
+      };
+    }
+    if (node.type !== "frame" || node.fidelity?.clipsContent === false)
+      for (const child of doc.nodes.filter(
+        (n) => n.parentId === node.id && n.visible,
+      ))
+        expand(child);
+  }
+  included.forEach(expand);
   let exportDoc = doc;
   if (ids.length) {
     const selected = new Set(ids);

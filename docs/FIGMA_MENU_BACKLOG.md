@@ -6,7 +6,7 @@
 
 根据用户于 2026-10-14 提供的 11 张菜单截图，对照 BaizeFig v0.1（c7bee25）整理。原始截图不上传仓库。灰态表示参考截图的上下文禁用，不代表本产品是否实现；状态以代码与验证记录为准。Object 的两张滚动截图已合并去重。
 
-28 个工作包包含已有能力的菜单接入、部分能力补齐、缺失功能开发和待核对项，初始整理时均为待办；当前 #14、#16、#18 已开始并实现部分能力，其他范围按各条验收记录继续追踪。截图可见快捷键仅作为 Mac 参考，平台差异需要验证。
+28 个工作包包含已有能力的菜单接入、部分能力补齐、缺失功能开发和待核对项，初始整理时均为待办；当前 #14、#16、#18、#20 已开始并实现部分能力，其他范围按各条验收记录继续追踪。截图可见快捷键仅作为 Mac 参考，平台差异需要验证。
 
 ## BZ-MENU-01 · 主菜单体系与上下文状态
 
@@ -330,7 +330,7 @@ GitHub：[#16](https://github.com/loyo-sun/BaizeFig/issues/16)
 
 依赖：BZ-MENU-19
 
-本轮更新：四种保留源图层的布尔合成、图标及悬停提示已接入，PNG 导出验收通过；Flatten、Outline stroke 仍待完成。代码已同步 `ca51fee`，其余检查项保持开放。
+本轮更新：四种布尔、Flatten 独立路径、Outline stroke 真实轮廓及区域填充已验收，见 #38。未知 Boolean groups 子菜单等价性保留核对；不把未知范围标为完成。
 
 ## BZ-MENU-16 · Object：图层、填充描边与交互清理命令
 
@@ -401,11 +401,11 @@ GitHub：[#19](https://github.com/loyo-sun/BaizeFig/issues/19)
 
 GitHub：[#20](https://github.com/loyo-sun/BaizeFig/issues/20)
 
-状态：Todo（待办）
+状态：In Progress（进行中）
 
 来源：截图 08
 
-当前基线：当前 Pen/Pencil 仅为拖拽采样折线，无完整路径节点编辑。
+当前进展：节点、控制柄、区域模型以及选择/多选、拆分、连接、删除修复已接入，见 #38；工具入口仍可采样，独立节点模式支持点式连线。Simplify/Offset 和完整菜单等价性保持待办。
 
 - [ ] Join selection、Smooth join selection、Delete and heal selection。
 - [ ] Split vector、Simplify vector、Offset vector。

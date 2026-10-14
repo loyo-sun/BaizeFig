@@ -1,4 +1,5 @@
 import type { ImportedPaint, ImportedEffect } from "./appearance";
+import { validateNetwork, type VectorNetwork } from "./vectorNetwork";
 // Imported design data shared by the canvas, exports and native file round trips.
 export type Matrix = [number, number, number, number, number, number];
 export interface VectorPath {
@@ -6,6 +7,8 @@ export interface VectorPath {
   rule: "nonzero" | "evenodd";
   strokeOutline?: boolean;
   color?: string;
+  paints?: ImportedPaint[];
+  region?: number;
 }
 export interface Fidelity {
   booleanOperation?: "union" | "subtract" | "intersect" | "exclude";
@@ -18,6 +21,7 @@ export interface Fidelity {
   size: [number, number];
   linear?: [number, number, number, number];
   paths?: VectorPath[];
+  network?: VectorNetwork;
   image?: {
     mode: "fill" | "fit" | "crop" | "tile";
     transform: Matrix;
@@ -42,6 +46,10 @@ export interface Fidelity {
   };
   clipsContent?: boolean;
   corners?: [number, number, number, number];
+  strokeAlign?: "center" | "inside" | "outside";
+  strokeMiterLimit?: number;
+  strokeDash?: number[];
+  strokeDashOffset?: number;
   strokeCap?: "round" | "square" | "butt";
   strokeJoin?: "round" | "bevel" | "miter";
   sourceId?: string;
@@ -115,6 +123,7 @@ export function networkPaths(
   width: number,
   height: number,
   normalized: { x: number; y: number },
+  receive?: (network: VectorNetwork, styles: number[]) => void,
 ): VectorPath[] {
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let p = 0;
@@ -159,7 +168,20 @@ export function networkPaths(
   const sx = normalized.x ? width / normalized.x : 1,
     sy = normalized.y ? height / normalized.y : 1;
   const xy = (x: number, y: number) => `${x * sx} ${y * sy}`;
+  const network: VectorNetwork = {
+    vertices: vertices.map((v) => ({ x: v.x * sx, y: v.y * sy })),
+    segments: segments.map((s) => ({
+      a: s.a,
+      b: s.b,
+      ha: { x: s.ax * sx, y: s.ay * sy },
+      hb: { x: s.bx * sx, y: s.by * sy },
+    })),
+    regions: [],
+  };
+  const styles: number[] = [];
+  let trail: { segment: number; reverse: boolean }[] = [];
   const emit = (indices: number[], closed: boolean) => {
+    trail = [];
     let current = -1;
     let path = "";
     const remaining = new Set(indices);
@@ -182,6 +204,7 @@ export function networkPaths(
       }
       const s = segments[chosen];
       remaining.delete(chosen);
+      trail.push({ segment: chosen, reverse });
       const a = vertices[reverse ? s.b : s.a],
         b = vertices[reverse ? s.a : s.b];
       if (current < 0) path += `M${xy(a.x, a.y)} `;
@@ -199,13 +222,20 @@ export function networkPaths(
       loops = u();
     if (loops > ns) throw Error("Invalid vector network");
     let d = "";
+    const regionLoops: VectorNetwork["regions"][number]["loops"] = [];
     for (let j = 0; j < loops; j++) {
       const count = u();
       if (count > ns) throw Error("Invalid vector network");
       const ids = Array.from({ length: count }, u);
       d += emit(ids, true) + " ";
+      regionLoops.push([...trail]);
     }
     result.push({ d, rule: packed & 1 ? "nonzero" : "evenodd" });
+    network.regions.push({
+      loops: regionLoops,
+      rule: packed & 1 ? "nonzero" : "evenodd",
+    });
+    styles.push(packed >>> 1);
   }
   if (!nr && ns)
     result.push({
@@ -216,9 +246,35 @@ export function networkPaths(
       rule: "nonzero",
     });
   if (p !== bytes.length) throw Error("Invalid vector network");
+  validateNetwork(network);
+  receive?.(network, styles);
   return result;
 }
 export function validateFidelity(f: Fidelity) {
+  if (
+    (f.strokeAlign &&
+      !["center", "inside", "outside"].includes(f.strokeAlign)) ||
+    (f.strokeMiterLimit !== undefined &&
+      (!Number.isFinite(f.strokeMiterLimit) || f.strokeMiterLimit < 1)) ||
+    (f.strokeDashOffset !== undefined &&
+      !Number.isFinite(f.strokeDashOffset)) ||
+    (f.strokeDash &&
+      (!Array.isArray(f.strokeDash) ||
+        f.strokeDash.length > 100 ||
+        f.strokeDash.some((v) => !Number.isFinite(v) || v <= 0)))
+  )
+    throw Error("Invalid vector stroke");
+  if (f.network) {
+    validateNetwork(f.network);
+    for (const r of f.network.regions)
+      validateFidelity({
+        size: f.size,
+        paints: r.paints,
+        paths: r.color ? [{ d: "", rule: r.rule, color: r.color }] : undefined,
+      });
+  }
+  for (const p of f.paths ?? [])
+    if (p.paints) validateFidelity({ size: f.size, paints: p.paints });
   if (
     f.booleanOperation !== undefined &&
     !["union", "subtract", "intersect", "exclude"].includes(f.booleanOperation)
@@ -253,7 +309,7 @@ export function validateFidelity(f: Fidelity) {
         (p) =>
           typeof p.d !== "string" ||
           p.d.length > 2000000 ||
-          !/^[MLQCZmlqcz\d\s.,+eE-]*$/.test(p.d) ||
+          !/^[MLHVQCSTAZmlhvqcstaz\d\s.,+eE-]*$/.test(p.d) ||
           !["evenodd", "nonzero"].includes(p.rule) ||
           (p.color !== undefined &&
             !/^#[\da-f]{3,8}$/i.test(p.color) &&
@@ -317,6 +373,12 @@ export function validateFidelity(f: Fidelity) {
       f.paints.length > 100 ||
       f.paints.some(
         (p) =>
+          (p.space !== undefined && p.space !== "user") ||
+          (p.geometry !== undefined &&
+            (!finite(p.geometry.matrix, 6) ||
+              ![p.geometry.width, p.geometry.height].every(
+                (v) => Number.isFinite(v) && v > 0,
+              ))) ||
           !["solid", "linear", "radial", "image"].includes(p.type) ||
           !Number.isFinite(p.opacity) ||
           p.opacity < 0 ||

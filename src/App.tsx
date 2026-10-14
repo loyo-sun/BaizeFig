@@ -1,3 +1,5 @@
+import { VectorEditor } from "./VectorEditor";
+import { editableNetwork, convertToPaths } from "./vectorGeometry";
 import { BooleanIcon } from "./BooleanIcon";
 import { CanvasTextEditor, type TextEditSession } from "./CanvasTextEditor";
 import { combineShapes } from "./combine";
@@ -226,6 +228,7 @@ export default function App() {
   const [view, setView] = useState({ x: 100, y: 70, zoom: 0.75 }),
     [modal, setModal] = useState<Modal>(null),
     [tab, setTab] = useState<"design" | "prototype">("design");
+  const [editingVector, setEditingVector] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<TextEditSession | null>(null);
   const [toast, setToast] = useState(""),
     [saved, setSaved] = useState("Loading…"),
@@ -375,6 +378,41 @@ export default function App() {
     setDoc(history.current.redo(doc));
     setSelected([]);
   };
+  function editVector(node = first) {
+    if (!node || node.locked || ancestors(doc, node).some((p) => p.locked))
+      return;
+    try {
+      editableNetwork(node);
+      setEditingText(null);
+      setSelected([node.id]);
+      setEditingVector(node.id);
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
+  function vectorOperation(operation: "flatten" | "outline") {
+    try {
+      const result = convertToPaths(doc, selected, operation);
+      setEditingVector(null);
+      change(result.doc, result.selection);
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
+  useEffect(() => {
+    if (
+      !selected.includes(editingVector ?? "") ||
+      !doc.nodes.some(
+        (n) =>
+          n.id === editingVector &&
+          n.pageId === page &&
+          n.visible &&
+          !n.locked &&
+          !ancestors(doc, n).some((p) => p.locked || !p.visible),
+      )
+    )
+      setEditingVector(null);
+  }, [doc.id, doc.nodes, page, selected]);
   const patch = (patch: Partial<Node>) =>
     run({ type: "update", ids: selected, patch });
   const openFiles = async () => {
@@ -1145,6 +1183,13 @@ export default function App() {
       key: "⌥ ⌘ K",
       run: () => run({ type: "group", ids: selected, kind: "component" }),
     },
+    { name: "Edit vector", key: "Enter", run: () => editVector() },
+    { name: "Flatten", key: "⌥ ⇧ F", run: () => vectorOperation("flatten") },
+    {
+      name: "Outline stroke",
+      key: "⌥ ⌘ O",
+      run: () => vectorOperation("outline"),
+    },
     { name: "Add auto layout", key: "⇧ A", run: () => autoLayout() },
     { name: "Zoom to fit", key: "⇧ 1", run: () => fit() },
     { name: "Zoom to selection", key: "⇧ 2", run: () => fit(true) },
@@ -1161,6 +1206,22 @@ export default function App() {
         el.isContentEditable
       )
         return;
+      if (editingVector) return;
+      if (e.key === "Enter" && first && !modal && !present) {
+        e.preventDefault();
+        editVector();
+        return;
+      }
+      if (e.altKey && e.shiftKey && e.code === "KeyF") {
+        e.preventDefault();
+        vectorOperation("flatten");
+        return;
+      }
+      if (e.altKey && (e.metaKey || e.ctrlKey) && e.code === "KeyO") {
+        e.preventDefault();
+        vectorOperation("outline");
+        return;
+      }
       if (e.key === "Escape") {
         if (present) {
           setPresent(null);
@@ -1931,6 +1992,17 @@ export default function App() {
                   });
               } else if (n) {
                 setSelected([n.id]);
+                if (
+                  [
+                    "path",
+                    "rectangle",
+                    "ellipse",
+                    "polygon",
+                    "star",
+                    "line",
+                  ].includes(n.type)
+                )
+                  editVector(n);
               }
             }}
             style={{ background: doc.background }}
@@ -1983,9 +2055,10 @@ export default function App() {
                 onNode={pointerDown}
                 outline={outline}
                 editingTextId={
-                  editingText?.documentId === doc.id
+                  editingVector ??
+                  (editingText?.documentId === doc.id
                     ? editingText.id
-                    : undefined
+                    : undefined)
                 }
               />
               {editingText?.documentId === doc.id &&
@@ -2012,7 +2085,34 @@ export default function App() {
                     />
                   ) : null;
                 })()}
-              {selectionBox && (
+              {editingVector &&
+                (() => {
+                  const node = doc.nodes.find((n) => n.id === editingVector);
+                  return node ? (
+                    <VectorEditor
+                      key={`${doc.id}-${node.id}`}
+                      doc={doc}
+                      node={node}
+                      zoom={view.zoom}
+                      view={view}
+                      width={Math.min(
+                        730,
+                        (svg.current?.clientWidth ?? 762) - 32,
+                      )}
+                      panTool={tool === "hand"}
+                      onPan={(position) =>
+                        setView((v) => ({ ...v, ...position }))
+                      }
+                      onUndo={() => setDoc(history.current.undo(doc))}
+                      onRedo={() => setDoc(history.current.redo(doc))}
+                      onClose={() => setEditingVector(null)}
+                      onCommit={(patch) =>
+                        run({ type: "update", ids: [node.id], patch })
+                      }
+                    />
+                  ) : null;
+                })()}
+              {selectionBox && !editingVector && (
                 <g className="selection-overlay">
                   <rect
                     x={selectionBox.x}
@@ -2464,6 +2564,29 @@ export default function App() {
                         ))}
                       </div>
                     )}
+                    <div className="vector-actions">
+                      <button
+                        onClick={() => editVector()}
+                        disabled={
+                          ![
+                            "path",
+                            "rectangle",
+                            "ellipse",
+                            "line",
+                            "polygon",
+                            "star",
+                          ].includes(first.type)
+                        }
+                      >
+                        {t("Edit vector")}
+                      </button>
+                      <button onClick={() => vectorOperation("outline")}>
+                        {t("Outline stroke")}
+                      </button>
+                      <button onClick={() => vectorOperation("flatten")}>
+                        {t("Flatten")}
+                      </button>
+                    </div>
                     <div className="field-grid">
                       <NumberField
                         label="X"

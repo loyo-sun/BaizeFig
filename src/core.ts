@@ -466,7 +466,10 @@ export function execute(
           (writable(n) ||
             Object.keys(command.patch).every((k) => k === "locked"))
         ) {
+          if (command.patch.type && command.patch.type !== "path")
+            throw Error("Only vector path conversion is supported");
           const allowed = new Set([
+            "type",
             "layoutItem",
             "constraints",
             "textFlow",

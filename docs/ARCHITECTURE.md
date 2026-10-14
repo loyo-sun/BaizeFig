@@ -23,6 +23,8 @@ React + TypeScript + Vite，SVG 场景渲染，IndexedDB 持久化。没有中�
 - `layout.ts`：Flex/Wrap/Grid、Fill 分配与尺寸边界、基线和父级尺寸约束；相关几何变化向嵌套布局传播。
 - `textLayout.ts` / `textEditing.ts` / `CanvasTextEditor.tsx`：字体测量、字素换行、样式范围迁移与画布输入，处理组合输入和空行占位。
 - `appearance.tsx` / `combine.ts`：多重填充、线性/径向渐变、效果、蒙版与保留子图层的布尔合成。SVG 定义按场景隔离。
+- `vectorNetwork.ts` / `vectorGeometry.ts` / `strokeContours.ts`：共享节点、三次曲线、区域环与独立样式；De Casteljau 细分、删除修复、Paper.js 路径布尔、Clipper 偏移及真实轮廓。Flatten 将世界几何和填充空间转换到目标父级，导出纳入超界曲线。
+- `VectorEditor.tsx` / `RegionPaintEditor.tsx`：画布节点与控制柄、拖动草稿/单次事务、编辑模式历史、区域多层填充。
 - `typedVariables.ts`：数字/文本/布尔值、别名、逐节点模式继承和属性绑定；颜色变量及透明度继续由 `variables.ts` 管理。
 - `prototype.ts` / `PrototypePlayer.tsx`：触发器、多动作、跨页导航、覆盖层、返回与淡入预览；未支持动作保留兼容性提示。
 - `geometry.ts`：在世界/局部坐标间进行缩放计算，保持对角锚点。
@@ -65,7 +67,7 @@ MCP 使用官方 SDK stdio 传输。浏览器主动连接本机 WebSocket；服�
 
 ## 后续架构工作
 
-1. 建立完整仿射变换、路径/贝塞尔编辑与布尔运算内核。
+1. 在已有仿射变换、网络/贝塞尔编辑和路径布尔基础上完善 Simplify/Offset、退化几何与性能基准。
 2. 将快照历史改为可组合命令与增量事务，建立大型画布性能基准。
 3. 增加字体测量、多段样式、复杂布局、约束、组件实例与变量系统。
 4. 为格式导入器建立样本库和独立转换层，验证 `.fig` / `.sketch` 的真实还原能力。

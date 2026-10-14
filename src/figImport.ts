@@ -646,6 +646,22 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
         opacity: clamp(paint?.opacity ?? 1),
       };
     }
+    fidelity.strokeAlign =
+      r.strokeAlign === "INSIDE"
+        ? "inside"
+        : r.strokeAlign === "OUTSIDE"
+          ? "outside"
+          : "center";
+    if (Number.isFinite(r.strokeMiterLimit) && r.strokeMiterLimit >= 1)
+      fidelity.strokeMiterLimit = r.strokeMiterLimit;
+    if (
+      Array.isArray(r.dashPattern) &&
+      r.dashPattern.length &&
+      r.dashPattern.every(
+        (v: unknown) => typeof v === "number" && Number.isFinite(v) && v > 0,
+      )
+    )
+      fidelity.strokeDash = r.dashPattern;
     if (r.type === "VECTOR") {
       const blob = (i: number) =>
         message.blobs?.[i]?.bytes as Uint8Array | undefined;
@@ -766,85 +782,130 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       }
       if (spans.length) fidelity.text.spans = spans;
     }
-    if (
-      paints.length > 1 ||
-      paints.some((p) => p.type.startsWith("GRADIENT"))
-    ) {
-      fidelity.paints = paints.flatMap<ImportedPaint>((p) => {
-        if (p.type === "SOLID")
-          return [
-            {
-              type: "solid" as const,
-              color: color(p.color),
-              opacity: clamp(p.opacity ?? 1),
-            },
-          ];
-        if (p.type === "GRADIENT_LINEAR" || p.type === "GRADIENT_RADIAL") {
-          const t = p.transform ?? {};
-          return [
-            {
-              type:
-                p.type === "GRADIENT_LINEAR"
-                  ? ("linear" as const)
-                  : ("radial" as const),
-              opacity: clamp(p.opacity ?? 1),
-              transform: [
-                t.m00 ?? 1,
-                t.m10 ?? 0,
-                t.m01 ?? 0,
-                t.m11 ?? 1,
-                t.m02 ?? 0,
-                t.m12 ?? 0,
-              ] as [number, number, number, number, number, number],
-              stops: (p.stops ?? []).map((s: Raw) => ({
-                position: clamp(s.position),
-                color: color(s.color),
-              })),
-            },
-          ];
-        }
-        if (p.type === "IMAGE") {
-          const hash = Array.from(p.image?.hash ?? [], (v: any) =>
-              Number(v).toString(16).padStart(2, "0"),
-            ).join(""),
-            url = files["images/" + hash]
-              ? dataURL(files["images/" + hash])
-              : undefined,
-            t = p.transform ?? {};
-          if (url)
+    function convertPaints(source: Raw[]): ImportedPaint[] {
+      return source
+        .filter((p) => p.visible !== false)
+        .flatMap<ImportedPaint>((p) => {
+          if (p.type === "SOLID")
             return [
               {
-                type: "image" as const,
-                image: url,
+                type: "solid" as const,
+                color: color(p.color),
                 opacity: clamp(p.opacity ?? 1),
-                imageOptions: {
-                  mode:
-                    p.imageScaleMode === "FIT"
-                      ? ("fit" as const)
-                      : p.imageScaleMode === "TILE"
-                        ? ("tile" as const)
-                        : p.imageScaleMode === "STRETCH"
-                          ? ("crop" as const)
-                          : ("fill" as const),
-                  transform: [
-                    t.m00 ?? 1,
-                    t.m10 ?? 0,
-                    t.m01 ?? 0,
-                    t.m11 ?? 1,
-                    t.m02 ?? 0,
-                    t.m12 ?? 0,
-                  ] as [number, number, number, number, number, number],
-                  width: p.originalImageWidth || r.size.x || 1,
-                  height: p.originalImageHeight || r.size.y || 1,
-                  scale: p.scale > 0 ? p.scale : 1,
-                  opacity: 1,
-                },
               },
             ];
-        }
-        warnings.add("Some fill types are not supported.");
-        return [];
-      });
+          if (p.type === "GRADIENT_LINEAR" || p.type === "GRADIENT_RADIAL") {
+            const t = p.transform ?? {};
+            return [
+              {
+                type:
+                  p.type === "GRADIENT_LINEAR"
+                    ? ("linear" as const)
+                    : ("radial" as const),
+                opacity: clamp(p.opacity ?? 1),
+                transform: [
+                  t.m00 ?? 1,
+                  t.m10 ?? 0,
+                  t.m01 ?? 0,
+                  t.m11 ?? 1,
+                  t.m02 ?? 0,
+                  t.m12 ?? 0,
+                ] as [number, number, number, number, number, number],
+                stops: (p.stops ?? []).map((s: Raw) => ({
+                  position: clamp(s.position),
+                  color: color(s.color),
+                })),
+              },
+            ];
+          }
+          if (p.type === "IMAGE") {
+            const hash = Array.from(p.image?.hash ?? [], (v: any) =>
+                Number(v).toString(16).padStart(2, "0"),
+              ).join(""),
+              url = files["images/" + hash]
+                ? dataURL(files["images/" + hash])
+                : undefined,
+              t = p.transform ?? {};
+            if (url)
+              return [
+                {
+                  type: "image" as const,
+                  image: url,
+                  opacity: clamp(p.opacity ?? 1),
+                  imageOptions: {
+                    mode:
+                      p.imageScaleMode === "FIT"
+                        ? ("fit" as const)
+                        : p.imageScaleMode === "TILE"
+                          ? ("tile" as const)
+                          : p.imageScaleMode === "STRETCH"
+                            ? ("crop" as const)
+                            : ("fill" as const),
+                    transform: [
+                      t.m00 ?? 1,
+                      t.m10 ?? 0,
+                      t.m01 ?? 0,
+                      t.m11 ?? 1,
+                      t.m02 ?? 0,
+                      t.m12 ?? 0,
+                    ] as [number, number, number, number, number, number],
+                    width: p.originalImageWidth || r.size.x || 1,
+                    height: p.originalImageHeight || r.size.y || 1,
+                    scale: p.scale > 0 ? p.scale : 1,
+                    opacity: 1,
+                  },
+                },
+              ];
+          }
+          warnings.add("Some fill types are not supported.");
+          return [];
+        });
+    }
+    if (paints.length > 1 || paints.some((p) => p.type.startsWith("GRADIENT")))
+      fidelity.paints = convertPaints(paints);
+    for (const path of fidelity.paths ?? []) {
+      const entries = path.strokeOutline ? r.strokeGeometry : r.fillGeometry;
+      const index = (fidelity.paths ?? [])
+        .filter((p) => !!p.strokeOutline === !!path.strokeOutline)
+        .indexOf(path);
+      const override = r.vectorData?.styleOverrideTable?.find(
+        (o: Raw) => o.styleID === entries?.[index]?.styleID,
+      );
+      const source = path.strokeOutline
+        ? override?.strokePaints
+        : override?.fillPaints;
+      if (source) {
+        path.paints = convertPaints(source);
+        if (path.paints.length) delete path.color;
+        else path.color = "none";
+      }
+    }
+    if (r.type === "VECTOR" && r.vectorData?.vectorNetworkBlob !== undefined) {
+      try {
+        networkPaths(
+          message.blobs?.[r.vectorData.vectorNetworkBlob]?.bytes ??
+            new Uint8Array(),
+          r.size.x,
+          r.size.y,
+          r.vectorData.normalizedSize ?? r.size,
+          (network, styles) => {
+            network.regions.forEach((region, index) => {
+              const override = r.vectorData.styleOverrideTable?.find(
+                (o: Raw) => o.styleID === styles[index],
+              );
+              if (override?.fillPaints) {
+                region.paints = convertPaints(override.fillPaints);
+                if (!region.paints.length) region.color = "none";
+              }
+            });
+            fidelity.network = network;
+          },
+        );
+      } catch {
+        warnings.add(
+          "Some vector networks retain editable path contours instead of shared topology.",
+        );
+      }
     }
     const align = (value: string) =>
       value === "CENTER"

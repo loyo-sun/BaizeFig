@@ -219,6 +219,9 @@ it.skipIf(!sample)(
     ).toBeGreaterThan(100);
     expect(result.document.variables!.length).toBeGreaterThan(20);
     expect(
+      result.document.nodes.filter((n) => n.fidelity?.network).length,
+    ).toBeGreaterThan(0);
+    expect(
       result.document.nodes.filter((n) => n.variableId).length,
     ).toBeGreaterThan(100);
     expect(result.document.componentLibrary!.length).toBeGreaterThan(20);
@@ -258,6 +261,8 @@ it.skipIf(!sample)(
       JSON.stringify({
         ...result.report,
         paths: result.document.nodes.filter((n) => n.fidelity?.paths?.length)
+          .length,
+        networks: result.document.nodes.filter((n) => n.fidelity?.network)
           .length,
         textLayouts: result.document.nodes.filter((n) => n.fidelity?.text)
           .length,

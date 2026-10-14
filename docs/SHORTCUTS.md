@@ -37,3 +37,16 @@ Mac 的 ⌘ 对应 Windows/Linux 的 Ctrl，⌥ 对应 Alt。文本输入框优�
 | 取消拖动、关闭对话框或预览 | Esc |
 
 快捷键表记录 BaizeFig 的当前绑定，不声称已完整复现 Figma 所有平台和键盘布局。完整对齐需维护按平台的可执行交互回归样例。
+
+## 矢量编辑
+
+- 双击图形，或选中后 Enter：进入节点编辑；Enter / Esc /「完成」：退出。
+- Shift 点击节点或拖动空白区域：多选；Cmd/Ctrl+A：选中全部节点。
+- 空格拖动、抓手或中键：在节点模式中平移画布。
+- 拖动节点/控制柄：修改曲线；Alt 拖动控制柄：临时打破对齐/镜像。
+- 双击线段：按点击位置细分贝塞尔；曲线形状保持。
+- Delete / Backspace：删除节点；Shift+Delete / Shift+Backspace：「删除并修复」。
+- Cmd/Ctrl+J：「连接节点」；工具栏还提供尖角、平滑、断开节点、绘制连线与区域填充。
+- 方向键 / Shift+方向键：移动选中节点 1 / 10 个局部单位。
+- Cmd/Ctrl+Z、Cmd/Ctrl+Shift+Z：节点级撤销重做。
+- Alt+Shift+F：「拼合路径」；Alt+Cmd/Ctrl+O：「描边转轮廓」。右侧面板和 Actions 也提供入口。

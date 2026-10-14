@@ -2,6 +2,12 @@ import React from "react";
 import type { Node } from "./core";
 import { inverse } from "./fidelity";
 export interface ImportedPaint {
+  space?: "user";
+  geometry?: {
+    matrix: [number, number, number, number, number, number];
+    width: number;
+    height: number;
+  };
   type: "solid" | "linear" | "radial" | "image";
   color?: string;
   opacity: number;
@@ -71,6 +77,9 @@ export function Appearance({
               {paint.type === "linear" ? (
                 <linearGradient
                   id={id}
+                  gradientUnits={
+                    paint.space === "user" ? "userSpaceOnUse" : undefined
+                  }
                   x1="0"
                   y1="0.5"
                   x2="1"
@@ -88,6 +97,9 @@ export function Appearance({
               ) : paint.type === "radial" ? (
                 <radialGradient
                   id={id}
+                  gradientUnits={
+                    paint.space === "user" ? "userSpaceOnUse" : undefined
+                  }
                   cx="0.5"
                   cy="0.5"
                   r="0.5"
@@ -103,7 +115,46 @@ export function Appearance({
                 </radialGradient>
               ) : null}
             </defs>
-            {render(clone, false)}
+            {paint.type === "image" && node.fidelity?.paths?.length ? (
+              <>
+                <defs>
+                  <clipPath id={`${id}-image-clip`}>
+                    {node.fidelity.paths
+                      .filter((p) => !p.strokeOutline)
+                      .map((p, i) => (
+                        <path
+                          key={i}
+                          d={p.d}
+                          clipRule={p.rule}
+                          transform={`scale(${node.fidelity!.size[0] ? node.width / node.fidelity!.size[0] : 1} ${node.fidelity!.size[1] ? node.height / node.fidelity!.size[1] : 1})`}
+                        />
+                      ))}
+                  </clipPath>
+                </defs>
+                <g clipPath={`url(#${id}-image-clip)`}>
+                  <g
+                    transform={
+                      paint.geometry
+                        ? `matrix(${paint.geometry.matrix.join(" ")})`
+                        : undefined
+                    }
+                  >
+                    {render(
+                      {
+                        ...clone,
+                        type: "image",
+                        width: paint.geometry?.width ?? clone.width,
+                        height: paint.geometry?.height ?? clone.height,
+                        fidelity: { ...clone.fidelity, paths: undefined },
+                      },
+                      false,
+                    )}
+                  </g>
+                </g>
+              </>
+            ) : (
+              render(clone, false)
+            )}
           </g>
         );
       })}

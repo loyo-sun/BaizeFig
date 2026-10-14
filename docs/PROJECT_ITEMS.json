@@ -107,7 +107,7 @@
     {
       "key": "BZ-MENU-19",
       "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/20",
-      "intended_status": "Todo"
+      "intended_status": "In Progress"
     },
     {
       "key": "BZ-MENU-20",
@@ -187,6 +187,11 @@
     {
       "key": "BZ-CANVAS",
       "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/37",
+      "intended_status": "Done"
+    },
+    {
+      "key": "BZ-VECTOR",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/38",
       "intended_status": "Done"
     }
   ]

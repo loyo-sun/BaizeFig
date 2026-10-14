@@ -164,7 +164,15 @@ describe("compatibility geometry and rendering", () => {
       }),
     ];
     const svg = await svgString(d, p, ["v"]);
-    expect(svg).toContain('viewBox="70 210 10 20"');
+    const [x, y, w, h] = svg
+      .match(/viewBox="([^"]+)"/)![1]
+      .split(" ")
+      .map(Number);
+    // Include the transformed path and its miter stroke, rather than cropping the stroke to saved bounds.
+    expect(x).toBeLessThanOrEqual(70);
+    expect(y).toBeLessThanOrEqual(210);
+    expect(x + w).toBeGreaterThanOrEqual(80);
+    expect(y + h).toBeGreaterThanOrEqual(230);
     expect(svg).toContain("matrix(0 1 -1 0 80 210)");
     expect(svg).toContain("scale(2 1)");
     expect(svg).toContain('fill-rule="evenodd"');
