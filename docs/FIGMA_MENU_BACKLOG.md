@@ -405,7 +405,7 @@ GitHub：[#20](https://github.com/loyo-sun/BaizeFig/issues/20)
 
 来源：截图 08
 
-当前进展：节点、控制柄、区域模型以及选择/多选、拆分、连接、删除修复已接入，见 #38；工具入口仍可采样，独立节点模式支持点式连线。路径简化及容差输入已完成；Offset 和独立 Smooth join 保持待办。
+当前进展：节点、控制柄、区域模型以及选择/多选、拆分、连接、删除修复已接入，见 #38；工具入口仍可采样，独立节点模式支持点式连线。路径简化及容差输入已完成；Offset 的正负距离、连接样式、尺寸重基及空结果保护已完成；独立 Smooth join 保持待办。
 
 - [ ] Join selection、Smooth join selection、Delete and heal selection。
 - [ ] Split vector、Simplify vector、Offset vector。

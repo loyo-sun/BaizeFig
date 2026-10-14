@@ -4,6 +4,18 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Offset vector": "偏移路径",
+  "Offset distance": "偏移距离",
+  "Offset joins": "偏移连接",
+  "Miter joins": "尖角连接",
+  "Round joins": "圆角连接",
+  "Square joins": "方角连接",
+  "Invalid offset settings": "偏移参数无效",
+  "Outline branched open paths before offsetting":
+    "请先将带分支的开放路径描边转为轮廓，再进行偏移",
+  "Offset removes all geometry. Choose a smaller distance.":
+    "偏移后图形为空，请减小偏移距离。",
+
   "Simplify vector": "简化路径",
   "Simplify tolerance": "简化容差",
   "Tolerance must be between 0.001 and 100": "容差应在 0.001 到 100 之间",

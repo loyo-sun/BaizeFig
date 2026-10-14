@@ -1,3 +1,8 @@
+import {
+  offsetNetwork,
+  offsetNodePatch,
+  type OffsetJoin,
+} from "./vectorOffset";
 import { simplifyNetwork } from "./vectorSimplify";
 import { RegionPaintEditor } from "./RegionPaintEditor";
 import React, { useEffect, useRef, useState } from "react";
@@ -47,7 +52,10 @@ export function VectorEditor({
     [connect, setConnect] = useState(false),
     [region, setRegion] = useState(0),
     [paintPanel, setPaintPanel] = useState(false),
-    [simplifyTolerance, setSimplifyTolerance] = useState(0.5);
+    [operationError, setOperationError] = useState(""),
+    [simplifyTolerance, setSimplifyTolerance] = useState(0.5),
+    [offsetDistance, setOffsetDistance] = useState(8),
+    [offsetJoin, setOffsetJoin] = useState<OffsetJoin>("miter");
   const network = draft ?? editableNetwork(node),
     latest = useRef(network);
   latest.current = network;
@@ -82,9 +90,10 @@ export function VectorEditor({
   };
   const action = (fn: () => void) => {
     try {
+      setOperationError("");
       fn();
     } catch (error) {
-      window.alert(t((error as Error).message));
+      setOperationError(t((error as Error).message));
     }
   };
   const remove = (heal = false) => {
@@ -500,6 +509,11 @@ export function VectorEditor({
             transformOrigin: "top left",
           }}
         >
+          {operationError && (
+            <div className="vector-operation-error" role="alert">
+              {operationError}
+            </div>
+          )}
           <strong>{t("Edit vector")}</strong>
           <button
             onClick={() => handleStyle("corner")}
@@ -587,6 +601,46 @@ export function VectorEditor({
             }
           >
             {t("Simplify vector")}
+          </button>
+          <label>
+            {t("Offset distance")}
+            <input
+              aria-label={t("Offset distance")}
+              type="number"
+              min={-10000}
+              max={10000}
+              value={offsetDistance}
+              onChange={(e) => setOffsetDistance(Number(e.target.value))}
+            />
+          </label>
+          <select
+            aria-label={t("Offset joins")}
+            value={offsetJoin}
+            onChange={(e) => setOffsetJoin(e.target.value as OffsetJoin)}
+          >
+            <option value="miter">{t("Miter joins")}</option>
+            <option value="round">{t("Round joins")}</option>
+            <option value="square">{t("Square joins")}</option>
+          </select>
+          <button
+            disabled={offsetDistance === 0}
+            onClick={() =>
+              action(() => {
+                const next = offsetNetwork(network, offsetDistance, {
+                  join: offsetJoin,
+                });
+                if (!next.segments.length)
+                  throw Error(
+                    "Offset removes all geometry. Choose a smaller distance.",
+                  );
+                onCommit(offsetNodePatch(node, next));
+                setDraft(null);
+                setPicked([]);
+                setRegion(0);
+              })
+            }
+          >
+            {t("Offset vector")}
           </button>
           <div className="vector-region-style">
             <span>{t("Region")}</span>
