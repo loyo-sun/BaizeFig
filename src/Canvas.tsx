@@ -93,7 +93,7 @@ export function NodeShape({
         strokeLinejoin="round"
       />
     );
-  if (n.type === "image")
+  if (n.type === "image" || n.image)
     return (
       <>
         <rect width={n.width} height={n.height} fill="#eceff1" />

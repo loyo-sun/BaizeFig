@@ -1,3 +1,5 @@
+import { importFigFile } from "./figImportClient";
+import type { FigImportResult } from "./figImport";
 import {
   useState,
   useRef,
@@ -110,6 +112,7 @@ type Modal =
   | "assets"
   | "share"
   | "variables"
+  | "fig-report"
   | "settings"
   | null;
 const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
@@ -179,6 +182,14 @@ const clone = <T,>(value: T): T => structuredClone(value);
 export default function App() {
   const { language, setLanguage, persistenceError, t } = useI18n();
   const [doc, setDoc] = useState<Document>(() => demoDocument());
+  const [figReport, setFigReport] = useState<FigImportResult["report"] | null>(
+    null,
+  );
+  const [importBusy, setImportBusy] = useState(false);
+  const importInFlight = useRef(false);
+  const latestDocument = useRef(doc);
+  latestDocument.current = doc;
+  const figInput = useRef<HTMLInputElement>(null);
   const [ready, setReady] = useState(false);
   const [page, setPage] = useState(doc.pages[0].id),
     [selected, setSelected] = useState<string[]>([]),
@@ -739,7 +750,8 @@ export default function App() {
     else notify("Create a frame to start a prototype");
   }
   async function importFiles(files: FileList | File[] | null) {
-    if (!files?.length) return;
+    if (!files?.length || importInFlight.current) return;
+    importInFlight.current = true;
     let next = doc;
     const selection: string[] = [];
     try {
@@ -757,7 +769,53 @@ export default function App() {
           notify("Document imported");
           return;
         }
-        if (/\.(fig|sketch|pdf)$/i.test(file.name))
+        if (/\.fig$/i.test(file.name)) {
+          setImportBusy(true);
+          const imported = await importFigFile(file);
+          await save(latestDocument.current);
+          await save(imported.document);
+          history.current = new History();
+          setDoc(imported.document);
+          setPage(imported.document.pages[0].id);
+          setSelected([]);
+          setCollapsed(
+            new Set(
+              imported.document.nodes
+                .filter((n) => !n.parentId)
+                .map((n) => n.id),
+            ),
+          );
+          setFigReport(imported.report);
+          setModal("fig-report");
+          const roots = imported.document.nodes.filter(
+            (n) =>
+              !n.parentId &&
+              n.pageId === imported.document.pages[0].id &&
+              n.visible,
+          );
+          const b = bounds(imported.document, roots);
+          const rect = svg.current?.getBoundingClientRect();
+          if (rect) {
+            const zoom = Math.min(
+              1,
+              Math.max(
+                0.01,
+                Math.min(
+                  (rect.width - 100) / Math.max(b.width, 100),
+                  (rect.height - 100) / Math.max(b.height, 100),
+                ),
+              ),
+            );
+            setView({
+              zoom,
+              x: (rect.width - b.width * zoom) / 2 - b.x * zoom,
+              y: (rect.height - b.height * zoom) / 2 - b.y * zoom,
+            });
+          }
+          notify("Figma file imported");
+          return;
+        }
+        if (/\.(sketch|pdf)$/i.test(file.name))
           throw Error(
             `${file.name.split(".").pop()?.toUpperCase()} import is not implemented yet. Use .baizefig, JSON, SVG or images.`,
           );
@@ -817,6 +875,9 @@ export default function App() {
     } catch (e) {
       notify((e as Error).message);
     } finally {
+      importInFlight.current = false;
+      setImportBusy(false);
+      if (figInput.current) figInput.current.value = "";
       if (fileInput.current) fileInput.current.value = "";
     }
   }
@@ -966,6 +1027,7 @@ export default function App() {
   ];
   useEffect(() => {
     function down(e: KeyboardEvent) {
+      if (importInFlight.current) return;
       const el = e.target as HTMLElement;
       if (
         ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) ||
@@ -1450,27 +1512,29 @@ export default function App() {
   }
   const selectionBox = chosen.length ? bounds(doc, roots(doc, selected)) : null;
   const title =
-    modal === "settings"
-      ? "General settings"
-      : modal === "share"
-        ? "Share this design"
-        : modal === "variables"
-          ? "Local color variables"
-          : modal === "assets"
-            ? "Components & assets"
-            : modal === "files"
-              ? "Your local workspace"
-              : modal === "shortcuts"
-                ? "Keyboard shortcuts"
-                : modal === "commands"
-                  ? "Actions"
-                  : modal === "ai"
-                    ? "Create with Baize"
-                    : modal === "bridge"
-                      ? "Connect external AI"
-                      : first?.type === "text"
-                        ? "Edit text"
-                        : "Rename layer";
+    modal === "fig-report"
+      ? "Figma import result"
+      : modal === "settings"
+        ? "General settings"
+        : modal === "share"
+          ? "Share this design"
+          : modal === "variables"
+            ? "Local color variables"
+            : modal === "assets"
+              ? "Components & assets"
+              : modal === "files"
+                ? "Your local workspace"
+                : modal === "shortcuts"
+                  ? "Keyboard shortcuts"
+                  : modal === "commands"
+                    ? "Actions"
+                    : modal === "ai"
+                      ? "Create with Baize"
+                      : modal === "bridge"
+                        ? "Connect external AI"
+                        : first?.type === "text"
+                          ? "Edit text"
+                          : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -1479,6 +1543,13 @@ export default function App() {
         multiple
         hidden
         accept=".baizefig,.json,.fig,.sketch,.pdf,.svg,.png,.jpg,.jpeg,.webp,.gif"
+        onChange={(e) => void importFiles(e.target.files)}
+      />
+      <input
+        ref={figInput}
+        type="file"
+        hidden
+        accept=".fig"
         onChange={(e) => void importFiles(e.target.files)}
       />
       <div className="workspace">
@@ -1498,37 +1569,37 @@ export default function App() {
               </span>
               {t("File")}
             </button>
-            <button className="rail-item" onClick={() => setModal("ai")}>
-              <span>
-                <Sparkles size={19} />
-              </span>
-              {t("Agents")}
-            </button>
-            <button className="rail-item" onClick={() => setModal("assets")}>
-              <span>
-                <Plus size={19} />
-              </span>
-              {t("Assets")}
-            </button>
-            <button
-              className="rail-item"
-              onClick={() => {
-                setQuery("");
-                setModal("commands");
-              }}
-            >
-              <span>
-                <BriefcaseBusiness size={19} />
-              </span>
-              {t("Tools")}
-            </button>
-            <span className="rail-separator" />
-            <button className="rail-item" onClick={() => setModal("variables")}>
-              <span>
-                <Hexagon size={19} />
-              </span>
-              {t("Variables")}
-            </button>
+            {[
+              { label: "Agents", Icon: Sparkles },
+              { label: "Assets", Icon: Plus },
+              { label: "Tools", Icon: BriefcaseBusiness },
+              { label: "Variables", Icon: Hexagon },
+            ].map(({ label, Icon }) => (
+              <div
+                className="rail-research"
+                key={label}
+                title={t("Under research")}
+              >
+                <button
+                  className="rail-item"
+                  disabled
+                  aria-label={t(label)}
+                  aria-describedby={`research-${label}`}
+                >
+                  <span>
+                    <Icon size={19} />
+                  </span>
+                  {t(label)}
+                </button>
+                <span
+                  className="research-tooltip"
+                  id={`research-${label}`}
+                  role="tooltip"
+                >
+                  {t("Under research")}
+                </span>
+              </div>
+            ))}
             <div className="rail-bottom">
               <button
                 className="tiny"
@@ -2603,6 +2674,18 @@ export default function App() {
           </button>
         </div>
       )}
+      {importBusy && (
+        <div
+          className="modal-backdrop import-progress"
+          role="alert"
+          aria-busy="true"
+        >
+          <div className="modal">
+            <h2>{t("Importing Figma file…")}</h2>
+            <p>{t("Decoding layers and embedded images locally.")}</p>
+          </div>
+        </div>
+      )}
       {modal && (
         <div
           className="modal-backdrop"
@@ -2629,6 +2712,38 @@ export default function App() {
                 <X size={19} />
               </button>
             </div>
+            {modal === "fig-report" && figReport && (
+              <section className="fig-import-report">
+                <p>
+                  {t(
+                    "Imported {pages} pages, {layers} editable layers and {images} image fills.",
+                    {
+                      pages: figReport.pages,
+                      layers: figReport.layers,
+                      images: figReport.images,
+                    },
+                  )}
+                </p>
+                <p className="muted">
+                  {t(
+                    "This is a compatibility import, not a lossless Figma conversion. Keep the original .fig file.",
+                  )}
+                </p>
+                {figReport.warnings.length > 0 && (
+                  <>
+                    <h3>{t("Compatibility notes")}</h3>
+                    <ul>
+                      {figReport.warnings.map((w) => (
+                        <li key={w}>{t(w)}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+                <button className="primary" onClick={() => setModal(null)}>
+                  {t("Continue editing")}
+                </button>
+              </section>
+            )}
             {modal === "settings" && (
               <section className="general-settings">
                 <p className="muted">
@@ -2930,6 +3045,10 @@ export default function App() {
                   <button className="primary" onClick={newDoc}>
                     <FilePlus2 size={16} />
                     {t("New design file")}
+                  </button>
+                  <button onClick={() => figInput.current?.click()}>
+                    <Upload size={16} />
+                    {t("Import Figma (.fig)")}
                   </button>
                   <button onClick={() => fileInput.current?.click()}>
                     <Upload size={16} />

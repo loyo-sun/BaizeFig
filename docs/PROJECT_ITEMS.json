@@ -153,6 +153,26 @@
       "key": "BZ-MENU-28",
       "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/29",
       "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-I18N",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/31",
+      "intended_status": "Done"
+    },
+    {
+      "key": "BZ-UI-RESEARCH",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/32",
+      "intended_status": "Done"
+    },
+    {
+      "key": "BZ-FIG-01",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/33",
+      "intended_status": "Done"
+    },
+    {
+      "key": "BZ-FIG-02",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/34",
+      "intended_status": "Todo"
     }
   ]
 }

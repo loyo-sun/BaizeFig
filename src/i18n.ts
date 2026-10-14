@@ -4,6 +4,51 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Hidden internal pages were excluded.": "已排除文件中的隐藏内部页面。",
+  "Under research": "正在研究中",
+  "Import Figma (.fig)": "导入 Figma（.fig）",
+  "Figma import result": "Figma 导入结果",
+  "Imported {pages} pages, {layers} editable layers and {images} image fills.":
+    "已导入 {pages} 个页面、{layers} 个可编辑图层和 {images} 处图片填充。",
+  "This is a compatibility import, not a lossless Figma conversion. Keep the original .fig file.":
+    "当前为兼容性导入，尚不能无损还原全部 Figma 功能，请保留原始 .fig 文件。",
+  "Compatibility notes": "兼容性说明",
+  "Continue editing": "继续编辑",
+  "Importing Figma file…": "正在导入 Figma 文件…",
+  "Decoding layers and embedded images locally.":
+    "正在本地解码图层及内嵌图片。",
+  "Figma file imported": "Figma 文件已导入",
+  "Invalid or unsupported Figma file": "Figma 文件无效或格式暂不支持",
+  "Figma file exceeds import limits": "Figma 文件超过导入处理限制",
+  "No supported pages in Figma file": "Figma 文件中没有可导入的页面",
+  "Figma import timed out": "Figma 导入超时，请尝试较小的文件",
+  "Figma instances were imported as editable snapshots.":
+    "组件实例已转换为可编辑快照，不保留与主组件的联动。",
+  "Some unsupported layers were skipped.": "部分不支持的图层已跳过。",
+  "Vector networks are represented by bounds; vector paths are not restored.":
+    "矢量网络暂以边界矩形表示，尚未还原真实路径。",
+  "Polygon and star parameters may differ.":
+    "多边形和星形的形状参数可能与原文件不同。",
+  "Effects and non-normal blending are not restored.":
+    "尚未还原效果和特殊混合模式。",
+  "Multiple fills and gradients may be simplified.":
+    "多重填充和渐变可能被简化。",
+  "Some image resources are missing or unsupported.":
+    "部分图片资源缺失或格式不受支持。",
+  "Image fills use center crop; custom crop transforms are not restored.":
+    "图片填充采用居中裁切，尚未还原自定义裁切变换。",
+  "Rotated, reflected or scaled transforms may differ.":
+    "旋转、镜像或缩放变换可能与原文件不同。",
+  "Auto layout uses the saved positions; layout rules are not restored.":
+    "自动布局使用原文件保存的位置，尚未还原布局规则。",
+  "Prototype interactions are not restored.": "尚未还原原型交互。",
+  "Masks are not restored.": "尚未还原蒙版。",
+  "Text uses available fonts; mixed styles and exact line wrapping may differ.":
+    "文本使用本机可用字体，混合样式和精确换行可能存在差异。",
+  "Some component definitions are unavailable.":
+    "部分组件定义不可用，无法展开完整内容。",
+  "Variable bindings use saved values; variables and modes are not restored.":
+    "变量使用原文件保存的值，尚未还原变量绑定和模式。",
   "General settings": "通用设置",
   Language: "语言",
   "Interface language": "界面语言",

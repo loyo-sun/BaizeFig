@@ -65,9 +65,9 @@ describe("interface language preferences", () => {
     expect(
       translate(
         "zh-CN",
-        "FIG import is not implemented yet. Use .baizefig, JSON, SVG or images.",
+        "SKETCH import is not implemented yet. Use .baizefig, JSON, SVG or images.",
       ),
-    ).toContain("尚未支持 FIG 导入");
+    ).toContain("尚未支持 SKETCH 导入");
   });
   it("keeps identifiers, protocol values and user-authored strings intact", () => {
     for (const value of [

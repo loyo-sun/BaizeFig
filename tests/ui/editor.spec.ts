@@ -47,7 +47,7 @@ test("draw, edit, duplicate, undo, persist, export and recover a design", async 
   const dl = await dlPromise;
   expect(dl.suggestedFilename()).toMatch(/\.baizefig$/);
   const path = await dl.path();
-  await page.locator("input[type=file]").setInputFiles(path!);
+  await page.locator("input[type=file][multiple]").setInputFiles(path!);
   await expect(page.getByRole("status")).toContainText("Document imported");
   await expect(page.locator("[data-node-id]")).toHaveCount(2);
   await page.screenshot({
@@ -55,7 +55,7 @@ test("draw, edit, duplicate, undo, persist, export and recover a design", async 
     fullPage: true,
   });
 });
-test("text editing ignores drawing shortcuts and rejects unsupported Figma imports honestly", async ({
+test("text editing ignores drawing shortcuts and rejects unsupported Sketch imports honestly", async ({
   page,
 }) => {
   await page.goto("/");
@@ -72,10 +72,10 @@ test("text editing ignores drawing shortcuts and rejects unsupported Figma impor
   await expect(
     page.getByRole("button", { name: "Move", exact: true }),
   ).toHaveClass("active");
-  await page.locator("input[type=file]").setInputFiles({
-    name: "example.fig",
+  await page.locator("input[type=file][multiple]").setInputFiles({
+    name: "example.sketch",
     mimeType: "application/octet-stream",
-    buffer: Buffer.from("fig-file"),
+    buffer: Buffer.from("sketch-file"),
   });
   await expect(page.getByRole("status")).toContainText("not implemented");
 });
