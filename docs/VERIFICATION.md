@@ -1,3 +1,12 @@
+## 逐项交付：原型滚动到目标
+
+- 136 项测试（22 文件，含 REALJET）与生产构建通过。新增 8 项测试覆盖任意图层目标、双轴边界、嵌套裁剪、仿射坐标、覆盖层隔离、偏移、原生往返、复制/删除引用及输入校验。
+- 真实 REALJET 的 18 条原始 SCROLL_TO 交互均保留，组件实例展开后 24 处动作；导入保留 extraScrollOffset、SCROLL_ANIMATE 和 scrollDirection，并优先解析当前画板/组件实例的目标。
+- 原型面板可配置点击动作、滚动目标、X/Y 偏移、即时/动画、时长与溢出方向。预览为独立临时滚动状态，不写入设计坐标；支持嵌套裁剪、手动滚动、动画中断与导航后重置。
+- 浏览器实测目标 Y 700→20，动画滚回起点；将偏移 -20 改为 -40，刷新保留 -40，预览定位到 Y40。手动滚动被内容边界限制。
+- 自定义缓动暂使用标准曲线并在导入报告提示；固定/粘性图层、Smart Animate、组件状态和变量条件继续 #34，不据此宣称完整高级原型兼容。
+- 行为参照：[Figma Prototype actions](https://help.figma.com/hc/en-us/articles/360040035874-Prototype-actions)、[OverflowDirection](https://developers.figma.com/docs/plugins/api/OverflowDirection/)。
+
 # v0.1 开发验证记录
 
 日期：2026-10-14。产品：BaizeFig · 白泽，口号：通万物、识万象。

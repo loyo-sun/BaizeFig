@@ -15,6 +15,7 @@ import { Decompress } from "fzstd";
 import { ByteBuffer, decodeBinarySchema, type Schema } from "kiwi-schema";
 import {
   emptyDocument,
+  ancestors,
   makeNode,
   validateDocument,
   type Document,
@@ -1201,6 +1202,12 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
   }
   for (const node of doc.nodes) {
     const sourceNode = index.get(node.fidelity?.sourceId ?? "");
+    if (
+      ["NONE", "HORIZONTAL", "VERTICAL", "BOTH"].includes(
+        sourceNode?.scrollDirection,
+      )
+    )
+      node.prototypeScroll = sourceNode!.scrollDirection.toLowerCase();
     for (const interaction of sourceNode?.prototypeInteractions ?? []) {
       if (interaction.isDeleted) continue;
       const triggerMap: Record<string, PrototypeInteraction["trigger"]> = {
@@ -1227,11 +1234,61 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
           actions.push({ type: "close" });
           continue;
         }
-        const target = doc.nodes.find(
+        const targets = doc.nodes.filter(
           (n) =>
             n.fidelity?.sourceId === guid(action.transitionNodeID) &&
-            ["frame", "component", "instance"].includes(n.type),
+            (action.navigationType === "SCROLL_TO" ||
+              ["frame", "component", "instance"].includes(n.type)),
         );
+        const root = ancestors(doc, node).at(-1)?.id ?? node.id;
+        const target =
+          action.navigationType === "SCROLL_TO"
+            ? (targets.find(
+                (n) =>
+                  (ancestors(doc, n).at(-1)?.id ?? n.id) === root &&
+                  (!node.componentOwner ||
+                    n.componentOwner === node.componentOwner),
+              ) ??
+              targets.find(
+                (n) => (ancestors(doc, n).at(-1)?.id ?? n.id) === root,
+              ) ??
+              targets[0])
+            : targets[0];
+        if (
+          action.connectionType === "INTERNAL_NODE" &&
+          action.navigationType === "SCROLL_TO" &&
+          target &&
+          !action.transitionShouldSmartAnimate &&
+          (!action.transitionType ||
+            ["INSTANT_TRANSITION", "SCROLL_ANIMATE"].includes(
+              action.transitionType,
+            ))
+        ) {
+          if (
+            action.transitionType === "SCROLL_ANIMATE" &&
+            (action.easingType || action.easingVar || action.easingFunction)
+          )
+            warnings.add(
+              "Scroll animation uses a standard easing curve; custom easing is not restored.",
+            );
+          actions.push({
+            type: "scrollTo",
+            targetId: target.id,
+            offset: {
+              x: action.extraScrollOffset?.x ?? 0,
+              y: action.extraScrollOffset?.y ?? 0,
+            },
+            transition:
+              action.transitionType === "SCROLL_ANIMATE"
+                ? "animate"
+                : "instant",
+            durationMs: Math.max(
+              0,
+              Math.min(60000, (action.transitionDuration ?? 0.3) * 1000),
+            ),
+          });
+          continue;
+        }
         if (
           action.connectionType !== "INTERNAL_NODE" ||
           !target ||

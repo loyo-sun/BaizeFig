@@ -8,6 +8,7 @@ import { editTypedVariable, bindingTypes } from "./typedVariables";
 import { resizeInWorld } from "./geometry";
 import { inverse, transformPoint } from "./fidelity";
 import { PrototypePlayer } from "./PrototypePlayer";
+import type { PrototypeAction } from "./prototype";
 import {
   createComponentInstance,
   resetComponentInstance,
@@ -355,6 +356,19 @@ export default function App() {
   );
   const chosen = doc.nodes.filter((n) => selected.includes(n.id)),
     first = chosen[0];
+  const clickAction = first?.interactions?.find((i) => i.trigger === "click")
+    ?.actions[0];
+  const clickType = clickAction?.type === "scrollTo" ? "scrollTo" : "navigate";
+  function editClickAction(action: PrototypeAction | undefined) {
+    if (!first) return;
+    patch({
+      targetId: undefined,
+      interactions: [
+        ...(first.interactions ?? []).filter((i) => i.trigger !== "click"),
+        ...(action ? [{ trigger: "click" as const, actions: [action] }] : []),
+      ],
+    });
+  }
   const change = (next: Document, selection?: string[]) => {
     validateDocument(next);
     history.current.push(doc);
@@ -2432,23 +2446,169 @@ export default function App() {
                       {t("Interactions")}
                       <Plus size={14} />
                     </div>
-                    <p className="muted">{t("On click → Navigate to frame")}</p>
+                    <label>{t("On click action")}</label>
+                    <select
+                      aria-label={t("On click action")}
+                      value={clickType}
+                      onChange={(e) => {
+                        const targetId =
+                          clickAction && "targetId" in clickAction
+                            ? clickAction.targetId
+                            : first.targetId;
+                        if (targetId)
+                          editClickAction(
+                            e.target.value === "scrollTo"
+                              ? { type: "scrollTo", targetId }
+                              : {
+                                  type: "navigate",
+                                  targetId:
+                                    doc.nodes.find((n) => n.type === "frame")
+                                      ?.id ?? targetId,
+                                },
+                          );
+                        else if (e.target.value === "scrollTo") {
+                          const target = doc.nodes.find(
+                            (n) =>
+                              n.pageId === page &&
+                              n.id !== first.id &&
+                              n.parentId,
+                          );
+                          if (target)
+                            editClickAction({
+                              type: "scrollTo",
+                              targetId: target.id,
+                            });
+                        }
+                      }}
+                    >
+                      <option value="navigate">{t("Navigate to frame")}</option>
+                      <option value="scrollTo">{t("Scroll to target")}</option>
+                    </select>
                     <select
                       aria-label={t("Prototype destination")}
-                      value={first.targetId ?? ""}
+                      value={
+                        clickAction && "targetId" in clickAction
+                          ? clickAction.targetId
+                          : (first.targetId ?? "")
+                      }
                       onChange={(e) =>
-                        patch({ targetId: e.target.value || undefined })
+                        editClickAction(
+                          e.target.value
+                            ? { type: clickType, targetId: e.target.value }
+                            : undefined,
+                        )
                       }
                     >
                       <option value="">{t("None")}</option>
                       {doc.nodes
-                        .filter((n) => n.type === "frame" && n.pageId === page)
+                        .filter((n) =>
+                          clickType === "scrollTo"
+                            ? n.pageId === page && n.id !== first.id
+                            : n.type === "frame",
+                        )
                         .map((n) => (
                           <option key={n.id} value={n.id}>
                             {n.name}
                           </option>
                         ))}
                     </select>
+                    {clickAction?.type === "scrollTo" && (
+                      <>
+                        <label>{t("Scroll animation")}</label>
+                        <select
+                          aria-label={t("Scroll animation")}
+                          value={clickAction.transition ?? "instant"}
+                          onChange={(e) =>
+                            editClickAction({
+                              ...clickAction,
+                              transition: e.target.value as
+                                "instant" | "animate",
+                            })
+                          }
+                        >
+                          <option value="instant">{t("Instant")}</option>
+                          <option value="animate">{t("Animate")}</option>
+                        </select>
+                        {clickAction.transition === "animate" && (
+                          <label>
+                            {t("Scroll duration (ms)")}
+                            <input
+                              aria-label={t("Scroll duration (ms)")}
+                              type="number"
+                              min="0"
+                              max="60000"
+                              value={clickAction.durationMs ?? 300}
+                              onChange={(e) => {
+                                const value = e.target.valueAsNumber;
+                                if (
+                                  Number.isFinite(value) &&
+                                  value >= 0 &&
+                                  value <= 60000
+                                )
+                                  editClickAction({
+                                    ...clickAction,
+                                    durationMs: value,
+                                  });
+                              }}
+                            />
+                          </label>
+                        )}
+                        {(["x", "y"] as const).map((axis) => (
+                          <label key={axis}>
+                            {t("Scroll offset")} {axis.toUpperCase()}
+                            <input
+                              aria-label={`${t("Scroll offset")} ${axis.toUpperCase()}`}
+                              type="number"
+                              value={clickAction.offset?.[axis] ?? 0}
+                              onChange={(e) => {
+                                if (Number.isFinite(e.target.valueAsNumber))
+                                  editClickAction({
+                                    ...clickAction,
+                                    offset: {
+                                      x: clickAction.offset?.x ?? 0,
+                                      y: clickAction.offset?.y ?? 0,
+                                      [axis]: e.target.valueAsNumber,
+                                    },
+                                  });
+                              }}
+                            />
+                          </label>
+                        ))}
+                      </>
+                    )}
+                    {["frame", "component", "instance"].includes(
+                      first.type,
+                    ) && (
+                      <>
+                        <label>{t("Overflow scrolling")}</label>
+                        <select
+                          aria-label={t("Overflow scrolling")}
+                          value={first.prototypeScroll ?? "none"}
+                          onChange={(e) =>
+                            patch({
+                              prototypeScroll: e.target
+                                .value as Node["prototypeScroll"],
+                            })
+                          }
+                        >
+                          {["none", "horizontal", "vertical", "both"].map(
+                            (value) => (
+                              <option key={value} value={value}>
+                                {t(
+                                  value === "none"
+                                    ? "None"
+                                    : value === "horizontal"
+                                      ? "Horizontal"
+                                      : value === "vertical"
+                                        ? "Vertical"
+                                        : "Both directions",
+                                )}
+                              </option>
+                            ),
+                          )}
+                        </select>
+                      </>
+                    )}
                     <button className="primary full" onClick={presentStart}>
                       <Play size={14} />
                       {t("Present prototype")}
@@ -2457,7 +2617,7 @@ export default function App() {
                   <section>
                     <p className="muted">
                       {t(
-                        "This version supports click navigation. Advanced triggers, transitions and smart animation are tracked in the feature matrix.",
+                        "Preview supports navigation, overlays and scroll-to actions. Advanced conditions and smart animation are tracked in the feature matrix.",
                       )}
                     </p>
                   </section>

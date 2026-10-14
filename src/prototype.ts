@@ -1,5 +1,17 @@
 import type { Document } from "./core";
+import {
+  scrollToTarget,
+  type ScrollPositions,
+  type PrototypeViewports,
+} from "./prototypeScroll";
 export type PrototypeAction =
+  | {
+      type: "scrollTo";
+      targetId: string;
+      offset?: { x: number; y: number };
+      transition?: "instant" | "animate";
+      durationMs?: number;
+    }
   | {
       type: "navigate" | "overlay" | "swap";
       targetId: string;
@@ -17,20 +29,40 @@ export interface PrototypeState {
   frameId: string;
   overlays: string[];
   history: string[];
+  scrolls?: ScrollPositions;
+  scrollDurationMs?: number;
   transition?: { type: "instant" | "dissolve"; durationMs: number };
 }
 export function transitionPrototype(
   doc: Document,
   state: PrototypeState,
   actions: PrototypeAction[],
+  viewports: PrototypeViewports = {},
 ): PrototypeState {
   const next = structuredClone(state);
   for (const action of actions) {
+    if (action.type === "scrollTo") {
+      if (!doc.nodes.some((n) => n.id === action.targetId))
+        throw Error("Invalid prototype target");
+      next.scrolls = scrollToTarget(
+        doc,
+        next.overlays.at(-1) ?? next.frameId,
+        action.targetId,
+        next.scrolls,
+        viewports,
+        action.offset,
+      );
+      next.scrollDurationMs =
+        action.transition === "animate" ? (action.durationMs ?? 300) : 0;
+      continue;
+    }
     if (action.type === "back") {
       const previous = next.history.pop();
       if (previous) {
         next.frameId = previous;
         next.overlays = [];
+        next.scrolls = {};
+        next.scrollDurationMs = 0;
       }
       continue;
     }
@@ -57,6 +89,8 @@ export function transitionPrototype(
       if (action.type === "navigate") next.history.push(next.frameId);
       next.frameId = action.targetId;
       next.overlays = [];
+      next.scrolls = {};
+      next.scrollDurationMs = 0;
     }
   }
   return next;
@@ -81,27 +115,47 @@ export function validateInteractions(doc: Document): void {
         throw Error("Invalid prototype interaction");
       for (const a of i.actions) {
         if (
-          ["navigate", "overlay", "swap"].includes(a.type) &&
+          ["navigate", "overlay", "swap", "scrollTo"].includes(a.type) &&
           !("targetId" in a)
         )
           throw Error("Invalid prototype target");
-        if (!["navigate", "overlay", "swap", "back", "close"].includes(a.type))
+        if (
+          ![
+            "navigate",
+            "overlay",
+            "swap",
+            "scrollTo",
+            "back",
+            "close",
+          ].includes(a.type)
+        )
           throw Error("Invalid prototype interaction");
         if (
           "targetId" in a &&
           (!doc.nodes.some(
             (n) =>
               n.id === a.targetId &&
-              ["frame", "component", "instance"].includes(n.type),
+              (a.type === "scrollTo" ||
+                ["frame", "component", "instance"].includes(n.type)),
           ) ||
             (a.durationMs !== undefined &&
               (!Number.isFinite(a.durationMs) ||
                 a.durationMs < 0 ||
                 a.durationMs > 60000)) ||
             (a.transition !== undefined &&
-              !["instant", "dissolve"].includes(a.transition)))
+              !(
+                a.type === "scrollTo"
+                  ? ["instant", "animate"]
+                  : ["instant", "dissolve"]
+              ).includes(a.transition)))
         )
           throw Error("Invalid prototype target");
+        if (
+          a.type === "scrollTo" &&
+          a.offset &&
+          (!Number.isFinite(a.offset.x) || !Number.isFinite(a.offset.y))
+        )
+          throw Error("Invalid prototype scroll offset");
       }
     }
   }

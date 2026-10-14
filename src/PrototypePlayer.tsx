@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { type Document, ancestors } from "./core";
 import { Scene } from "./Canvas";
@@ -9,6 +9,12 @@ import {
   transitionPrototype,
 } from "./prototype";
 import { useI18n } from "./LanguageProvider";
+import {
+  clampScroll,
+  scrolledDocument,
+  type ScrollPositions,
+  type PrototypeViewports,
+} from "./prototypeScroll";
 export function PrototypePlayer({
   doc,
   initialId,
@@ -24,10 +30,85 @@ export function PrototypePlayer({
       overlays: [],
       history: [],
     });
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
+  useEffect(() => {
+    const resize = () =>
+      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+  function measureViewports(ids: string[]) {
+    const result: PrototypeViewports = {};
+    for (const id of ids) {
+      const n = doc.nodes.find((n) => n.id === id);
+      if (!n) continue;
+      const scale = Math.min(1, (windowSize.width - 80) / Math.max(1, n.width));
+      result[id] = {
+        width: n.width,
+        height: Math.min(
+          n.height,
+          Math.max(1, windowSize.height - 150) / Math.max(0.01, scale),
+        ),
+      };
+    }
+    return result;
+  }
+  const viewports = measureViewports([state.frameId, ...state.overlays]);
+  const [displayScrolls, setDisplayScrolls] = useState<ScrollPositions>({});
+  const displayRef = useRef(displayScrolls);
+  useEffect(() => {
+    const from = displayRef.current,
+      to = state.scrolls ?? {},
+      duration = state.scrollDurationMs ?? 0;
+    if (!duration) {
+      displayRef.current = to;
+      setDisplayScrolls(to);
+      return;
+    }
+    let request = 0,
+      start: number | undefined;
+    const tick = (time: number) => {
+      start ??= time;
+      const p = Math.min(1, (time - start) / duration),
+        ease = p * p * (3 - 2 * p),
+        positions: ScrollPositions = {};
+      for (const id of new Set([...Object.keys(from), ...Object.keys(to)])) {
+        const a = from[id] ?? { x: 0, y: 0 },
+          b = to[id] ?? { x: 0, y: 0 };
+        positions[id] = {
+          x: a.x + (b.x - a.x) * ease,
+          y: a.y + (b.y - a.y) * ease,
+        };
+      }
+      displayRef.current = positions;
+      setDisplayScrolls(positions);
+      if (p < 1) request = requestAnimationFrame(tick);
+    };
+    request = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(request);
+  }, [state.scrolls, state.scrollDurationMs]);
   const current = doc.nodes.find((n) => n.id === state.frameId),
     activeId = state.overlays.at(-1) ?? state.frameId;
   const apply = (actions: PrototypeAction[]) =>
-    setState((s) => transitionPrototype(doc, s, actions));
+    setState((s) =>
+      transitionPrototype(
+        doc,
+        s,
+        actions,
+        measureViewports([
+          s.frameId,
+          ...s.overlays,
+          ...actions.flatMap((a) =>
+            a.type === "navigate" || a.type === "overlay" || a.type === "swap"
+              ? [a.targetId]
+              : [],
+          ),
+        ]),
+      ),
+    );
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
     for (const node of doc.nodes) {
@@ -85,12 +166,19 @@ export function PrototypePlayer({
   function view(id: string) {
     const n = doc.nodes.find((n) => n.id === id);
     if (!n) return null;
+    const viewport = viewports[id],
+      scale = Math.min(1, (windowSize.width - 80) / Math.max(1, n.width));
+    const scrolled = scrolledDocument(doc, displayScrolls);
     return (
       <svg
         key={id}
         aria-label={t("Prototype preview")}
-        viewBox={`0 0 ${n.width} ${n.height}`}
+        data-prototype-root={id}
+        viewBox={`0 0 ${viewport.width} ${viewport.height}`}
         style={{
+          width: viewport.width * scale,
+          height: viewport.height * scale,
+          flex: "none",
           animation:
             state.transition?.type === "dissolve"
               ? `prototype-dissolve ${state.transition.durationMs}ms ease`
@@ -101,11 +189,47 @@ export function PrototypePlayer({
         onPointerOut={(e) => trigger(e, "leave")}
         onPointerDown={(e) => trigger(e, "press")}
         onPointerUp={(e) => trigger(e, "release")}
+        onWheel={(e) => {
+          e.stopPropagation();
+          const hit = (e.target as Element).closest("[data-node-id]"),
+            node = doc.nodes.find(
+              (a) => a.id === hit?.getAttribute("data-node-id"),
+            );
+          const candidates = node ? [node, ...ancestors(doc, node)] : [n];
+          const container = candidates.find(
+            (a) =>
+              a.id === id ||
+              (a.prototypeScroll && a.prototypeScroll !== "none"),
+          );
+          if (!container) return;
+          const factor =
+            (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? viewport.height : 1) /
+            scale;
+          setState((s) => {
+            const prior = displayRef.current[container.id] ?? { x: 0, y: 0 };
+            return {
+              ...s,
+              scrollDurationMs: 0,
+              scrolls: {
+                ...displayRef.current,
+                [container.id]: clampScroll(
+                  doc,
+                  container.id,
+                  {
+                    x: prior.x + e.deltaX * factor,
+                    y: prior.y + e.deltaY * factor,
+                  },
+                  viewports,
+                ),
+              },
+            };
+          });
+        }}
       >
         <Scene
           doc={{
-            ...doc,
-            nodes: doc.nodes.map((a) =>
+            ...scrolled,
+            nodes: scrolled.nodes.map((a) =>
               a.id === n.id
                 ? {
                     ...a,

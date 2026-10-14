@@ -294,6 +294,22 @@ export const zhCN: Record<string, string> = {
   Interactions: "交互",
   "On click → Navigate to frame": "点击 → 跳转至画板",
   "Prototype destination": "原型目标画板",
+  "On click action": "点击动作",
+  "Scroll animation uses a standard easing curve; custom easing is not restored.":
+    "滚动动画使用标准缓动曲线，尚未还原自定义缓动。",
+  "Navigate to frame": "跳转至画板",
+  "Scroll to target": "滚动到目标",
+  "Scroll animation": "滚动动画",
+  "Scroll duration (ms)": "滚动时长（毫秒）",
+  "Scroll offset": "滚动偏移",
+  "Overflow scrolling": "溢出滚动",
+  "Both directions": "双向",
+  Horizontal: "横向",
+  Vertical: "纵向",
+  Animate: "动画",
+  Instant: "即时",
+  "Preview supports navigation, overlays and scroll-to actions. Advanced conditions and smart animation are tracked in the feature matrix.":
+    "预览支持跳转、覆盖层和滚动到目标。高级条件与智能动画继续在功能清单中跟踪。",
   None: "无",
   "Present prototype": "演示原型",
   "This version supports click navigation. Advanced triggers, transitions and smart animation are tracked in the feature matrix.":

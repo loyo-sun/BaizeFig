@@ -112,6 +112,7 @@ export interface Node {
   variableModes?: Record<string, string>;
   bindings?: Partial<Record<BindingProperty, string>>;
   interactions?: PrototypeInteraction[];
+  prototypeScroll?: "none" | "horizontal" | "vertical" | "both";
   targetId?: string;
   variableId?: string;
 }
@@ -501,6 +502,7 @@ export function execute(
             "padding",
             "targetId",
             "interactions",
+            "prototypeScroll",
             "variableId",
             "variableModes",
             "bindings",
@@ -1251,6 +1253,11 @@ export function validateDocument(value: unknown): asserts value is Document {
       !["none", "horizontal", "vertical", "grid"].includes(n.layout)
     )
       throw Error("Invalid layout");
+    if (
+      n.prototypeScroll !== undefined &&
+      !["none", "horizontal", "vertical", "both"].includes(n.prototypeScroll)
+    )
+      throw Error("Invalid prototype scrolling");
     for (const value of [n.gap, n.padding])
       if (value !== undefined && (!Number.isFinite(value) || value < 0))
         throw Error("Invalid layout spacing");

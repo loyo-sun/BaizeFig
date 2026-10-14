@@ -14,9 +14,9 @@ message Font { string family = 1; string style = 2; }
 message Text { string characters = 1; }
 enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; }
 message Event { string interactionType = 1; }
-message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; }
+message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; Vector extraScrollOffset = 4; string transitionType = 5; float transitionDuration = 6; }
 message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; }
 message Message { Node[] nodeChanges = 1; }
 `);
 const g = (localID: number) => ({ sessionID: 0, localID });
@@ -75,6 +75,50 @@ function stream(message = { nodeChanges: nodes }) {
   return result;
 }
 describe("Figma import", () => {
+  it("imports scroll-to actions on non-frame layers, offsets, animation and container directions", () => {
+    const message = {
+      nodeChanges: nodes.map((n) =>
+        n.guid.localID === 2
+          ? { ...n, scrollDirection: "VERTICAL" }
+          : n.guid.localID === 3
+            ? {
+                ...n,
+                prototypeInteractions: [
+                  {
+                    event: { interactionType: "ON_CLICK" },
+                    actions: [
+                      {
+                        transitionNodeID: g(4),
+                        connectionType: "INTERNAL_NODE",
+                        navigationType: "SCROLL_TO",
+                        extraScrollOffset: { x: 12, y: -30 },
+                        transitionType: "SCROLL_ANIMATE",
+                        transitionDuration: 0.25,
+                      },
+                    ],
+                  },
+                ],
+              }
+            : n,
+      ),
+    };
+    const r = importFig(stream(message)),
+      d = r.document;
+    expect(d.nodes[0].prototypeScroll).toBe("vertical");
+    expect(
+      d.nodes.find((n) => n.name === "标题")!.interactions![0].actions[0],
+    ).toMatchObject({
+      type: "scrollTo",
+      targetId: d.nodes.find((n) => n.name === "Background")!.id,
+      offset: { x: 12, y: -30 },
+      transition: "animate",
+      durationMs: 250,
+    });
+    expect(r.report.warnings).not.toContain(
+      "Some advanced prototype actions or transitions could not be restored.",
+    );
+    validateDocument(d);
+  });
   it("decodes raw Kiwi and ZIP with real editable structure, text, sibling order and positions", () => {
     const raw = stream();
     const result = importFig(
@@ -225,6 +269,17 @@ it.skipIf(!sample)(
       result.document.nodes.filter((n) => n.variableId).length,
     ).toBeGreaterThan(100);
     expect(result.document.componentLibrary!.length).toBeGreaterThan(20);
+    expect(
+      new Set(
+        result.document.nodes
+          .filter((n) =>
+            n.interactions?.some((i) =>
+              i.actions.some((a) => a.type === "scrollTo"),
+            ),
+          )
+          .map((n) => n.fidelity?.sourceId),
+      ).size,
+    ).toBe(18);
     expect(result.report.warnings).not.toContain(
       "Some vector geometry could not be decoded and uses bounds.",
     );
