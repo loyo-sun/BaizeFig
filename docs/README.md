@@ -4,6 +4,8 @@
 
 - [架构与命令协议](ARCHITECTURE.md)
 - [Figma 功能对齐矩阵](FIGMA_PARITY.md)
+- [菜单截图差异待办（28 项）](FIGMA_MENU_BACKLOG.md)
+- [GitHub 开发总跟踪 #30](https://github.com/loyo-sun/BaizeFig/issues/30)
 - [快捷键](SHORTCUTS.md)
 - [开发与验证记录](VERIFICATION.md)
 

@@ -1,5 +1,7 @@
 # Figma Design 功能对齐矩阵
 
+用户后续提供的 11 张菜单截图已另行逐项整理为 [28 个菜单差异待办](FIGMA_MENU_BACKLOG.md)，对应 GitHub Issues #2–#29；总体进度见 [#30](https://github.com/loyo-sun/BaizeFig/issues/30)。该补录不代表功能已实现。
+
 目标：逐项达到工具功能、文件兼容、交互逻辑和快捷键的 1:1 对齐。下表是首轮基线，不声称穷尽 Figma 的全部版本、计划及产品差异。Design 为主要对标对象；FigJam、Slides、Sites、Make 等其他产品不自动计入当前实现。
 
 状态：**已有** = 有可执行实现；**部分** = 只覆盖列出的子集；**未实现** = 没有可用实现。已有不代表已完成逐项 Figma 等价性验收。

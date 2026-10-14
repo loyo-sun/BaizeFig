@@ -1,0 +1,158 @@
+{
+  "repository": "loyo-sun/BaizeFig",
+  "target": "https://github.com/loyo-sun/BaizeFig/projects",
+  "project_sync": "pending_authorization",
+  "recorded_on": "2026-10-14",
+  "items": [
+    {
+      "key": "BZ-PROGRESS-01",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/1",
+      "intended_status": "Done"
+    },
+    {
+      "key": "BZ-TRACKER",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/30",
+      "intended_status": "In Progress"
+    },
+    {
+      "key": "BZ-MENU-01",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/2",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-02",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/3",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-03",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/4",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-04",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/5",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-05",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/6",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-06",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/7",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-07",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/8",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-08",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/9",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-09",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/10",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-10",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/11",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-11",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/12",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-12",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/13",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-13",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/14",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-14",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/15",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-15",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/16",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-16",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/17",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-17",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/18",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-18",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/19",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-19",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/20",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-20",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/21",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-21",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/22",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-22",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/23",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-23",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/24",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-24",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/25",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-25",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/26",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-26",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/27",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-27",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/28",
+      "intended_status": "Todo"
+    },
+    {
+      "key": "BZ-MENU-28",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/29",
+      "intended_status": "Todo"
+    }
+  ]
+}
