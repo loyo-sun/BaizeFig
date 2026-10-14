@@ -612,4 +612,3 @@ GitHub：[#29](https://github.com/loyo-sun/BaizeFig/issues/29)
 - v0.1 本地编辑开发起点：Done；证据为 c7bee25、16 项单元测试、生产构建及浏览器/MCP 联调。
 - 完整 Figma 功能对齐：In Progress；未实现项仍在上述待办及 FIGMA_PARITY.md 中。
 - 本清单只记录这批截图差异，不能取代 .fig/.sketch 格式、P2P 等既有需求。
-
