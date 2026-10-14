@@ -295,6 +295,7 @@ export const zhCN: Record<string, string> = {
   "On click → Navigate to frame": "点击 → 跳转至画板",
   "Prototype destination": "原型目标画板",
   "On click action": "点击动作",
+  "Layer thumbnail {name}": "图层缩略图 {name}",
   "Click to add points · Drag for curves · Click first point to close · Enter / Esc to finish":
     "点击落点 · 拖拽绘制曲线 · 点击起点闭合 · Enter / Esc 完成",
   "Drag to draw freely · Release to finish · Space to pan":

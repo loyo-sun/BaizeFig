@@ -403,6 +403,25 @@ hr {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.layer-thumbnail {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  overflow: hidden;
+  pointer-events: none;
+  background: conic-gradient(#f1f1f1 25%, white 0 50%, #f1f1f1 0 75%, white 0) 0
+    0/8px 8px;
+}
+.layer-thumbnail > svg {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
 .layer-action {
   opacity: 0;
 }

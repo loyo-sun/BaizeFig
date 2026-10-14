@@ -1,3 +1,4 @@
+import { LayerThumbnail } from "./LayerThumbnail";
 import { splitVectorLayers } from "./vectorSplit";
 import { canvasCursor, prepareToolCursors } from "./toolCursor";
 import {
@@ -205,19 +206,6 @@ const shortcuts = [
   ["Help", "Shortcuts", "?"],
   ["Prototype", "Present", "Shift Space"],
 ];
-const icons: Partial<Record<Kind, typeof Square>> = {
-  frame: Frame,
-  rectangle: Square,
-  ellipse: Circle,
-  text: Type,
-  group: Layers,
-  component: Component,
-  instance: Component,
-  path: PenTool,
-  line: Minus,
-  star: Star,
-  polygon: Triangle,
-};
 const clone = <T,>(value: T): T => structuredClone(value);
 export default function App() {
   const { language, setLanguage, persistenceError, t } = useI18n();
@@ -1703,7 +1691,6 @@ export default function App() {
           )
         )
           return null;
-        const Icon = icons[n.type] ?? Square;
         const children = doc.nodes.some((c) => c.parentId === n.id);
         return (
           <div key={n.id}>
@@ -1747,14 +1734,7 @@ export default function App() {
                   <span className="spacer" />
                 )}
               </button>
-              <Icon
-                size={14}
-                className={
-                  n.type === "component" || n.type === "instance"
-                    ? "purple"
-                    : ""
-                }
-              />
+              <LayerThumbnail doc={doc} node={n} />
               <span className="layer-name">{n.name}</span>
               <button
                 className="tiny layer-action"
