@@ -1,10 +1,11 @@
 import { splitVectorLayers } from "./vectorSplit";
-import { canvasCursor } from "./toolCursor";
+import { canvasCursor, prepareToolCursors } from "./toolCursor";
 import {
   PathDrawingOverlay,
   type PathDrawingHandle,
 } from "./PathDrawingOverlay";
 import { drawnPath } from "./pathDrawing";
+import { nodeSelectionBounds } from "./pathBounds";
 import { VectorEditor } from "./VectorEditor";
 import { editableNetwork, convertToPaths } from "./vectorGeometry";
 import { BooleanIcon } from "./BooleanIcon";
@@ -282,6 +283,13 @@ export default function App() {
   const [spaceHeld, setSpaceHeld] = useState(false),
     [isPanning, setIsPanning] = useState(false);
   const effectiveTool = spaceHeld || isPanning ? "hand" : tool;
+  const [, refreshToolCursor] = useState(0);
+  useEffect(() => {
+    if (tool === "pen" || tool === "pencil")
+      void prepareToolCursors()
+        .then(() => refreshToolCursor((v) => v + 1))
+        .catch(() => {});
+  }, [tool]);
   const pathDrawing = useRef<PathDrawingHandle>(null);
   useEffect(() => {
     socket.current?.close();
@@ -2243,18 +2251,19 @@ export default function App() {
                     {chosen.length === 1 &&
                       !first.locked &&
                       ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((h) => {
-                        const handlePoint = transformPoint(
+                        const localBox = nodeSelectionBounds(first),
+                          handlePoint = transformPoint(
                             worldTransform(doc, first),
                             h.includes("e")
-                              ? first.width
+                              ? localBox.x + localBox.width
                               : h.includes("w")
-                                ? 0
-                                : first.width / 2,
+                                ? localBox.x
+                                : localBox.x + localBox.width / 2,
                             h.includes("s")
-                              ? first.height
+                              ? localBox.y + localBox.height
                               : h.includes("n")
-                                ? 0
-                                : first.height / 2,
+                                ? localBox.y
+                                : localBox.y + localBox.height / 2,
                           ),
                           x = handlePoint.x,
                           y = handlePoint.y;

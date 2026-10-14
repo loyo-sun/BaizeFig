@@ -456,6 +456,9 @@ hr {
   :is(g, path, rect, line, circle, ellipse, text, polygon, polyline) {
   cursor: inherit !important;
 }
+.tool-pen.cursor-override .design-canvas [data-pen-control] {
+  cursor: move !important;
+}
 .canvas-top-note {
   position: absolute;
   top: 20px;

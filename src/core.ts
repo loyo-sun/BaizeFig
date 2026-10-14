@@ -1,4 +1,5 @@
 import { validateInteractions, type PrototypeInteraction } from "./prototype";
+import { nodeSelectionBounds } from "./pathBounds";
 import {
   applyTypedBindings,
   bindingTypes,
@@ -299,11 +300,12 @@ export function bounds(doc: Document, nodes: Node[]) {
   if (!nodes.length) return { x: 0, y: 0, width: 1, height: 1 };
   const b = nodes.map((n) => {
     const m = worldTransform(doc, n),
+      box = nodeSelectionBounds(n),
       points = [
-        [0, 0],
-        [n.width, 0],
-        [0, n.height],
-        [n.width, n.height],
+        [box.x, box.y],
+        [box.x + box.width, box.y],
+        [box.x, box.y + box.height],
+        [box.x + box.width, box.y + box.height],
       ].map(([x, y]) => transformPoint(m, x, y));
     const x = Math.min(...points.map((p) => p.x)),
       y = Math.min(...points.map((p) => p.y));

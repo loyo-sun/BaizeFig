@@ -26,6 +26,12 @@ export const PathDrawingOverlay = forwardRef<
     closing = useRef(false),
     [revision, refresh] = useState(0),
     [hover, setHover] = useState<Vec | null>(null);
+  const anchorDrag = useRef<{
+    index: number;
+    kind: "anchor" | "incoming" | "outgoing";
+    start: Vec;
+    original: PenAnchor;
+  } | null>(null);
   const point = (e: { clientX: number; clientY: number }) => {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
       group.current!.getScreenCTM()!.inverse(),
@@ -42,6 +48,7 @@ export const PathDrawingOverlay = forwardRef<
     stroke.current = [];
     dragging.current = false;
     closing.current = false;
+    anchorDrag.current = null;
     setHover(null);
     paint();
     if (network.vertices.length >= 2) onFinish(network);
@@ -49,6 +56,7 @@ export const PathDrawingOverlay = forwardRef<
   useImperativeHandle(ref, () => ({ finish: () => finish() }));
   useEffect(() => {
     const blur = () => {
+      anchorDrag.current = null;
       dragging.current = false;
       closing.current = false;
       if (tool === "pencil") stroke.current = [];
@@ -110,7 +118,57 @@ export const PathDrawingOverlay = forwardRef<
     last = anchors.current.at(-1);
   void revision;
   return (
-    <g ref={group} data-path-drawing={tool}>
+    <g
+      ref={group}
+      data-path-drawing={tool}
+      onPointerMove={(e) => {
+        const d = anchorDrag.current;
+        if (!d) return;
+        e.stopPropagation();
+        const p = point(e),
+          a = anchors.current[d.index];
+        if (!a) return;
+        if (d.kind === "anchor") {
+          a.x = d.original.x + p.x - d.start.x;
+          a.y = d.original.y + p.y - d.start.y;
+        } else {
+          let x = p.x - a.x,
+            y = p.y - a.y;
+          if (e.shiftKey) {
+            const angle =
+                (Math.round(Math.atan2(y, x) / (Math.PI / 4)) * Math.PI) / 4,
+              length = Math.hypot(x, y);
+            x = Math.cos(angle) * length;
+            y = Math.sin(angle) * length;
+          }
+          a[d.kind] = { x, y };
+          if (!e.altKey)
+            a[d.kind === "incoming" ? "outgoing" : "incoming"] = {
+              x: -x,
+              y: -y,
+            };
+        }
+        paint();
+      }}
+      onPointerCancel={() => {
+        anchorDrag.current = null;
+      }}
+      onPointerUp={(e) => {
+        if (anchorDrag.current) {
+          const d = anchorDrag.current,
+            a = anchors.current[d.index],
+            close =
+              d.kind === "anchor" &&
+              d.index === 0 &&
+              anchors.current.length >= 3 &&
+              Math.hypot(a.x - d.original.x, a.y - d.original.y) < 1 / zoom;
+          anchorDrag.current = null;
+          e.stopPropagation();
+          if (close) finish(true);
+          else paint();
+        }
+      }}
+    >
       <rect
         x={-1000000}
         y={-1000000}
@@ -236,13 +294,55 @@ export const PathDrawingOverlay = forwardRef<
               stroke="#0d99ff"
               strokeWidth={1 / zoom}
             />
-            <circle
-              cx={a.x + a.outgoing.x}
-              cy={a.y + a.outgoing.y}
-              r={2 / zoom}
-              fill="#0d99ff"
-            />
+            {(["incoming", "outgoing"] as const).map(
+              (kind) =>
+                Math.hypot(a[kind].x, a[kind].y) > 0.01 && (
+                  <circle
+                    key={kind}
+                    aria-label={`Pen handle ${i + 1} ${kind}`}
+                    data-pen-control="handle"
+                    pointerEvents="all"
+                    cx={a.x + a[kind].x}
+                    cy={a.y + a[kind].y}
+                    r={4 / zoom}
+                    fill="white"
+                    stroke="#0d99ff"
+                    strokeWidth={1 / zoom}
+                    onPointerDown={(e) => {
+                      if (temporaryHand) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      anchorDrag.current = {
+                        index: i,
+                        kind,
+                        start: point(e),
+                        original: structuredClone(a),
+                      };
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    }}
+                  />
+                ),
+            )}
             <rect
+              aria-label={`Pen anchor ${i + 1}`}
+              data-pen-control="anchor"
+              pointerEvents="all"
+              onPointerDown={(e) => {
+                if (temporaryHand) return;
+                e.preventDefault();
+                e.stopPropagation();
+                anchorDrag.current = {
+                  index: i,
+                  kind: "anchor",
+                  start: point(e),
+                  original: structuredClone(a),
+                };
+                e.currentTarget.setPointerCapture(e.pointerId);
+              }}
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                finish();
+              }}
               x={a.x - 3 / zoom}
               y={a.y - 3 / zoom}
               width={6 / zoom}

@@ -1,6 +1,7 @@
 import { makeNode, worldTransform, type Document } from "./core";
 import { inverse, transformPoint } from "./fidelity";
 import type { VectorNetwork, Vec } from "./vectorNetwork";
+import { networkBounds } from "./pathBounds";
 export interface PenAnchor extends Vec {
   incoming: Vec;
   outgoing: Vec;
@@ -70,17 +71,10 @@ export function drawnPath(
         s[k] = { x: m[0] * v.x + m[2] * v.y, y: m[1] * v.x + m[3] * v.y };
       }
   }
-  const all = [
-    ...local.vertices,
-    ...local.segments.flatMap((s) => [
-      { x: local.vertices[s.a].x + s.ha.x, y: local.vertices[s.a].y + s.ha.y },
-      { x: local.vertices[s.b].x + s.hb.x, y: local.vertices[s.b].y + s.hb.y },
-    ]),
-  ];
-  const x = Math.min(...all.map((p) => p.x)),
-    y = Math.min(...all.map((p) => p.y)),
-    width = Math.max(1, Math.max(...all.map((p) => p.x)) - x),
-    height = Math.max(1, Math.max(...all.map((p) => p.y)) - y);
+  const box = networkBounds(local),
+    { x, y } = box,
+    width = Math.max(1, box.width),
+    height = Math.max(1, box.height);
   local.vertices = local.vertices.map((v) => ({ x: v.x - x, y: v.y - y }));
   return makeNode("path", pageId, {
     parentId,
