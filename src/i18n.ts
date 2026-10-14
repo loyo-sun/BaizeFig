@@ -49,6 +49,35 @@ export const zhCN: Record<string, string> = {
     "部分组件定义不可用，无法展开完整内容。",
   "Variable bindings use saved values; variables and modes are not restored.":
     "变量使用原文件保存的值，尚未还原变量绑定和模式。",
+  "Mode for {name}": "{name} 的模式",
+  "Cyclic variable alias": "变量别名存在循环引用",
+  "Missing variable alias": "变量别名引用缺失",
+  "Invalid variable mode": "变量模式无效",
+  "Invalid variable values": "变量模式值无效",
+  "Invalid imported layout": "导入布局数据无效",
+  "Invalid imported design data": "导入设计数据无效",
+  "Invalid vector geometry": "矢量几何数据无效",
+  "Invalid image transform": "图片变换无效",
+  "Invalid text layout": "文字排版数据无效",
+  "Color collections, modes and resolvable aliases are supported. Number, string and boolean variables are not yet available.":
+    "支持颜色变量集合、模式与可解析的别名；数字、字符串和布尔变量尚未支持。",
+  "Some vector geometry could not be decoded and uses bounds.":
+    "部分矢量几何无法解码，暂以边界表示。",
+  "Wrapping, baseline alignment and fill sizing need further layout support.":
+    "换行布局、基线对齐及填充尺寸等复杂布局仍需完善。",
+  "Saved text line positions are restored; fonts, mixed styles and reflow may differ.":
+    "已恢复保存的文字行位置；字体、混合样式及修改后的重排仍可能有差异。",
+  "Advanced prototype triggers, transitions and component state changes are not restored.":
+    "高级原型触发器、过渡和组件状态切换尚未恢复。",
+  "Some variable aliases or non-color variables could not be restored.":
+    "部分变量别名或非颜色变量未能恢复。",
+  "Color variable modes and resolvable aliases are restored; non-color variables remain unsupported.":
+    "已恢复颜色变量模式及可解析别名，非颜色变量尚未支持。",
+  "Hidden page component definitions are retained in the document library.":
+    "隐藏页面中的组件定义已保留在文档组件库中。",
+  "Component definitions and source links are retained; live instance synchronization is not yet supported.":
+    "已保留组件定义和来源关联；实例仍为快照，尚未支持主组件修改后自动联动。",
+  "Invalid component library": "组件库数据无效",
   "General settings": "通用设置",
   Language: "语言",
   "Interface language": "界面语言",

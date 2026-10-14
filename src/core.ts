@@ -1,3 +1,12 @@
+import { type VariableCollection, type ColorVariable } from "./variables";
+import {
+  type Fidelity,
+  type Matrix,
+  multiply,
+  inverse,
+  transformPoint,
+  validateFidelity,
+} from "./fidelity";
 export type Kind =
   | "frame"
   | "rectangle"
@@ -35,6 +44,15 @@ export interface Node {
   fontWeight: number;
   textAlign: "left" | "center" | "right";
   lineHeight: number;
+  fidelity?: Fidelity;
+  importedLayout?: {
+    padding: [number, number, number, number];
+    primary: "fixed" | "hug";
+    counter: "fixed" | "hug";
+    justify: "start" | "center" | "end" | "space-between";
+    align: "start" | "center" | "end";
+    absolute?: boolean;
+  };
   image?: string;
   points?: { x: number; y: number }[];
   layout?: "none" | "horizontal" | "vertical";
@@ -56,7 +74,9 @@ export interface Document {
   pages: Page[];
   nodes: Node[];
   background: string;
-  variables?: { id: string; name: string; value: string }[];
+  componentLibrary?: { sourceId: string; name: string; nodes: Node[] }[];
+  variableCollections?: VariableCollection[];
+  variables?: ColorVariable[];
 }
 export type Command =
   | { type: "create"; nodes: Node[] }
@@ -129,9 +149,25 @@ export function emptyDocument(): Document {
     background: "#f5f5f5",
   };
 }
-export function absolute(doc: Document, n: Node): { x: number; y: number } {
-  let x = n.x,
-    y = n.y,
+export function localTransform(n: Node): Matrix {
+  const r = (n.rotation * Math.PI) / 180,
+    c = Math.cos(r),
+    s = Math.sin(r),
+    cx = n.width / 2,
+    cy = n.height / 2;
+  const rotate: Matrix = [
+    c,
+    s,
+    -s,
+    c,
+    n.x + cx - c * cx + s * cy,
+    n.y + cy - s * cx - c * cy,
+  ];
+  const linear = n.fidelity?.linear;
+  return linear ? multiply(rotate, [...linear, 0, 0]) : rotate;
+}
+export function worldTransform(doc: Document, n: Node): Matrix {
+  let m = localTransform(n),
     p = n.parentId;
   const seen = new Set([n.id]);
   while (p) {
@@ -139,11 +175,31 @@ export function absolute(doc: Document, n: Node): { x: number; y: number } {
     seen.add(p);
     const parent = doc.nodes.find((a) => a.id === p);
     if (!parent) break;
-    x += parent.x;
-    y += parent.y;
+    m = multiply(localTransform(parent), m);
     p = parent.parentId;
   }
-  return { x, y };
+  return m;
+}
+export function absolute(doc: Document, n: Node): { x: number; y: number } {
+  return transformPoint(worldTransform(doc, n), 0, 0);
+}
+export function setWorldTransform(doc: Document, n: Node, world: Matrix) {
+  const parent = doc.nodes.find((a) => a.id === n.parentId),
+    m = parent ? multiply(inverse(worldTransform(doc, parent)), world) : world;
+  n.x = m[4];
+  n.y = m[5];
+  n.rotation = 0;
+  n.fidelity = {
+    ...n.fidelity,
+    size: n.fidelity?.size ?? [n.width, n.height],
+    linear: [m[0], m[1], m[2], m[3]],
+  };
+}
+export function localDelta(doc: Document, n: Node, dx: number, dy: number) {
+  const parent = doc.nodes.find((a) => a.id === n.parentId);
+  if (!parent) return { x: dx, y: dy };
+  const m = inverse(worldTransform(doc, parent));
+  return { x: m[0] * dx + m[2] * dy, y: m[1] * dx + m[3] * dy };
 }
 export function descendants(doc: Document, ids: string[]): string[] {
   const all = new Set(ids);
@@ -177,11 +233,23 @@ export function ancestors(doc: Document, n: Node): Node[] {
 }
 export function bounds(doc: Document, nodes: Node[]) {
   if (!nodes.length) return { x: 0, y: 0, width: 1, height: 1 };
-  const b = nodes.map((n) => ({
-    ...absolute(doc, n),
-    width: n.width,
-    height: n.height,
-  }));
+  const b = nodes.map((n) => {
+    const m = worldTransform(doc, n),
+      points = [
+        [0, 0],
+        [n.width, 0],
+        [0, n.height],
+        [n.width, n.height],
+      ].map(([x, y]) => transformPoint(m, x, y));
+    const x = Math.min(...points.map((p) => p.x)),
+      y = Math.min(...points.map((p) => p.y));
+    return {
+      x,
+      y,
+      width: Math.max(...points.map((p) => p.x)) - x,
+      height: Math.max(...points.map((p) => p.y)) - y,
+    };
+  });
   const x = Math.min(...b.map((n) => n.x)),
     y = Math.min(...b.map((n) => n.y));
   return {
@@ -191,9 +259,83 @@ export function bounds(doc: Document, nodes: Node[]) {
     height: Math.max(...b.map((n) => n.y + n.height)) - y,
   };
 }
-function relayout(doc: Document) {
+function relayout(doc: Document, affected: Set<string>) {
   for (const n of [...doc.nodes].reverse()) {
     if (!n.layout || n.layout === "none") continue;
+    if (n.importedLayout) {
+      if (!affected.has(n.id)) continue;
+      const horizontal = n.layout === "horizontal",
+        config = n.importedLayout,
+        [top, right, bottom, left] = config.padding;
+      const children = doc.nodes.filter(
+        (c) => c.parentId === n.id && c.visible && !c.importedLayout?.absolute,
+      );
+      const before = horizontal ? left : top,
+        after = horizontal ? right : bottom,
+        crossBefore = horizontal ? top : left,
+        crossAfter = horizontal ? bottom : right;
+      const total = children.reduce(
+          (sum, c) => sum + (horizontal ? c.width : c.height),
+          0,
+        ),
+        gap = n.gap ?? 0;
+      if (config.primary === "hug")
+        n[horizontal ? "width" : "height"] = Math.max(
+          1,
+          before + after + total + Math.max(0, children.length - 1) * gap,
+        );
+      if (config.counter === "hug")
+        n[horizontal ? "height" : "width"] = Math.max(
+          1,
+          crossBefore +
+            crossAfter +
+            Math.max(
+              0,
+              ...children.map((c) => (horizontal ? c.height : c.width)),
+            ),
+        );
+      const free =
+        (horizontal ? n.width : n.height) -
+        before -
+        after -
+        total -
+        Math.max(0, children.length - 1) * gap;
+      const actualGap =
+        config.justify === "space-between" && children.length > 1
+          ? gap + free / (children.length - 1)
+          : gap;
+      let pos =
+        before +
+        (config.justify === "center"
+          ? free / 2
+          : config.justify === "end"
+            ? free
+            : 0);
+      for (const child of children) {
+        const crossFree =
+          (horizontal ? n.height : n.width) -
+          crossBefore -
+          crossAfter -
+          (horizontal ? child.height : child.width);
+        const cross =
+          crossBefore +
+          (config.align === "center"
+            ? crossFree / 2
+            : config.align === "end"
+              ? crossFree
+              : 0);
+        if (horizontal) {
+          child.x = pos;
+          child.y = cross;
+        } else {
+          child.x = cross;
+          child.y = pos;
+        }
+        pos += (horizontal ? child.width : child.height) + actualGap;
+      }
+      continue;
+    }
+
     let pos = n.padding ?? 16;
     const children = doc.nodes.filter((a) => a.parentId === n.id && a.visible);
     for (const c of children) {
@@ -221,6 +363,31 @@ function relayout(doc: Document) {
     }
   }
 }
+export function reflowAfterPointerEdit(
+  original: Document,
+  updated: Document,
+): Document {
+  const doc = structuredClone(updated),
+    affected = new Set<string>();
+  for (const n of doc.nodes) {
+    const previous = original.nodes.find((a) => a.id === n.id);
+    if (!previous) continue;
+    if (
+      n.width !== previous.width ||
+      n.height !== previous.height ||
+      n.x !== previous.x ||
+      n.y !== previous.y
+    ) {
+      if (n.type === "text" && n.width !== previous.width && n.fidelity?.text)
+        delete n.fidelity.text;
+      affected.add(n.id);
+      for (const parent of ancestors(doc, n)) affected.add(parent.id);
+    }
+  }
+  relayout(doc, affected);
+  validateDocument(doc);
+  return doc;
+}
 export function execute(
   original: Document,
   command: Command,
@@ -242,6 +409,8 @@ export function execute(
             Object.keys(command.patch).every((k) => k === "locked"))
         ) {
           const allowed = new Set([
+            "fidelity",
+            "importedLayout",
             "name",
             "x",
             "y",
@@ -272,6 +441,21 @@ export function execute(
           const patch = Object.fromEntries(
             Object.entries(command.patch).filter(([key]) => allowed.has(key)),
           );
+          if (
+            n.fidelity?.text &&
+            [
+              "text",
+              "fontSize",
+              "fontFamily",
+              "fontWeight",
+              "lineHeight",
+              "textAlign",
+              "width",
+            ].some((key) => key in patch)
+          ) {
+            n.fidelity = structuredClone(n.fidelity);
+            delete n.fidelity.text;
+          }
           Object.assign(n, patch);
           if ("fill" in patch && !("variableId" in patch)) delete n.variableId;
         }
@@ -315,14 +499,15 @@ export function execute(
               ? "Frame"
               : "Group",
       });
-      for (const n of nodes) {
-        const p = absolute(original, n);
-        n.x = p.x - b.x;
-        n.y = p.y - b.y;
-        n.parentId = group.id;
-      }
       const index = Math.min(...nodes.map((n) => doc.nodes.indexOf(n)));
       doc.nodes.splice(index, 0, group);
+      setWorldTransform(doc, group, [1, 0, 0, 1, b.x, b.y]);
+      for (const n of nodes) {
+        const originalNode = original.nodes.find((a) => a.id === n.id)!;
+        const matrix = worldTransform(original, originalNode);
+        n.parentId = group.id;
+        setWorldTransform(doc, n, matrix);
+      }
       selection = [group.id];
       break;
     }
@@ -331,9 +516,9 @@ export function execute(
       for (const n of roots(doc, command.ids).filter(writable)) {
         if (!container(n)) continue;
         for (const c of doc.nodes.filter((c) => c.parentId === n.id)) {
+          const matrix = worldTransform(doc, c);
           c.parentId = n.parentId;
-          c.x += n.x;
-          c.y += n.y;
+          setWorldTransform(doc, c, matrix);
           selected.push(c.id);
         }
         doc.nodes = doc.nodes.filter((c) => c.id !== n.id);
@@ -436,29 +621,29 @@ export function execute(
       if (nodes.length < 2) break;
       const b = bounds(doc, nodes);
       for (const n of nodes) {
-        const p = absolute(doc, n);
-        const dx = p.x - n.x,
-          dy = p.y - n.y;
+        const box = bounds(doc, [n]),
+          m = worldTransform(doc, n);
         switch (command.axis) {
           case "left":
-            n.x = b.x - dx;
+            m[4] += b.x - box.x;
             break;
           case "center":
-            n.x = b.x + (b.width - n.width) / 2 - dx;
+            m[4] += b.x + b.width / 2 - box.x - box.width / 2;
             break;
           case "right":
-            n.x = b.x + b.width - n.width - dx;
+            m[4] += b.x + b.width - box.x - box.width;
             break;
           case "top":
-            n.y = b.y - dy;
+            m[5] += b.y - box.y;
             break;
           case "middle":
-            n.y = b.y + (b.height - n.height) / 2 - dy;
+            m[5] += b.y + b.height / 2 - box.y - box.height / 2;
             break;
           case "bottom":
-            n.y = b.y + b.height - n.height - dy;
+            m[5] += b.y + b.height - box.y - box.height;
             break;
         }
+        setWorldTransform(doc, n, m);
       }
       break;
     }
@@ -466,6 +651,13 @@ export function execute(
       const n = doc.nodes.find((n) => n.id === command.id);
       if (!n || !container(n) || !writable(n))
         throw Error("Select an unlocked frame or group");
+      if (n.importedLayout && command.padding !== undefined)
+        n.importedLayout.padding = [
+          command.padding,
+          command.padding,
+          command.padding,
+          command.padding,
+        ];
       Object.assign(n, {
         layout: command.direction,
         gap: command.gap ?? n.gap ?? 12,
@@ -480,7 +672,47 @@ export function execute(
       if (variable) n.fill = variable.value;
     }
   }
-  relayout(doc);
+  const affected = new Set<string>();
+  const geometry =
+    command.type !== "update" ||
+    Object.keys(command.patch).some((k) =>
+      [
+        "x",
+        "y",
+        "width",
+        "height",
+        "text",
+        "fontSize",
+        "fontFamily",
+        "fontWeight",
+        "lineHeight",
+        "layout",
+        "gap",
+        "padding",
+        "visible",
+        "importedLayout",
+      ].includes(k),
+    );
+  if (geometry) {
+    const ids =
+      command.type === "layout"
+        ? [command.id]
+        : command.type === "create"
+          ? command.nodes.map((n) => n.id)
+          : "ids" in command
+            ? command.ids
+            : [];
+    for (const id of ids) {
+      const node =
+        doc.nodes.find((n) => n.id === id) ??
+        original.nodes.find((n) => n.id === id);
+      if (node) {
+        affected.add(id);
+        for (const parent of ancestors(doc, node)) affected.add(parent.id);
+      }
+    }
+  }
+  relayout(doc, affected);
   validateDocument(doc);
   return { doc, selection };
 }
@@ -511,6 +743,67 @@ export function validateDocument(value: unknown): asserts value is Document {
       ))
   )
     throw Error("Invalid color variables");
+  if (
+    d.variableCollections &&
+    (!Array.isArray(d.variableCollections) ||
+      new Set(d.variableCollections.map((c) => c.id)).size !==
+        d.variableCollections.length ||
+      d.variableCollections.some(
+        (c) =>
+          typeof c.id !== "string" ||
+          typeof c.name !== "string" ||
+          !Array.isArray(c.modes) ||
+          !c.modes.length ||
+          c.modes.length > 100 ||
+          new Set(c.modes.map((m) => m.id)).size !== c.modes.length ||
+          c.modes.some(
+            (m) => typeof m.id !== "string" || typeof m.name !== "string",
+          ) ||
+          !c.modes.some((m) => m.id === c.activeMode),
+      ))
+  )
+    throw Error("Invalid variable mode");
+  for (const variable of d.variables ?? []) {
+    if (
+      variable.collectionId &&
+      !d.variableCollections?.some((c) => c.id === variable.collectionId)
+    )
+      throw Error("Invalid variable mode");
+    if (
+      variable.values &&
+      (!variable.values ||
+        typeof variable.values !== "object" ||
+        Array.isArray(variable.values) ||
+        Object.values(variable.values).some(
+          (v) =>
+            !v ||
+            typeof v !== "object" ||
+            ("color" in v
+              ? !/^#[\da-f]{6}$/i.test(v.color)
+              : !("alias" in v) ||
+                typeof v.alias !== "string" ||
+                !d.variables?.some((a) => a.id === v.alias)),
+        ))
+    )
+      throw Error("Invalid variable values");
+  }
+  if (d.componentLibrary) {
+    if (!Array.isArray(d.componentLibrary) || d.componentLibrary.length > 2000)
+      throw Error("Invalid component library");
+    for (const entry of d.componentLibrary) {
+      if (
+        typeof entry.sourceId !== "string" ||
+        typeof entry.name !== "string" ||
+        !Array.isArray(entry.nodes)
+      )
+        throw Error("Invalid component library");
+      validateDocument({
+        ...d,
+        componentLibrary: undefined,
+        nodes: entry.nodes,
+      });
+    }
+  }
   const pages = new Set(d.pages.map((p) => p.id));
   if (
     pages.size !== d.pages.length ||
@@ -544,6 +837,20 @@ export function validateDocument(value: unknown): asserts value is Document {
     ids.add(n.id);
     if (n.variableId && !d.variables?.some((v) => v.id === n.variableId))
       throw Error("Invalid color variable reference");
+    if (n.fidelity) validateFidelity(n.fidelity);
+    if (n.importedLayout) {
+      const l = n.importedLayout;
+      if (
+        !Array.isArray(l.padding) ||
+        l.padding.length !== 4 ||
+        l.padding.some((x) => !Number.isFinite(x) || x < 0) ||
+        !["fixed", "hug"].includes(l.primary) ||
+        !["fixed", "hug"].includes(l.counter) ||
+        !["start", "center", "end", "space-between"].includes(l.justify) ||
+        !["start", "center", "end"].includes(l.align)
+      )
+        throw Error("Invalid imported layout");
+    }
     for (const field of [
       "x",
       "y",

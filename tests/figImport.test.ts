@@ -13,7 +13,10 @@ message Parent { GUID guid = 1; string position = 2; }
 message Font { string family = 1; string style = 2; }
 message Text { string characters = 1; }
 enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; }
+message Event { string interactionType = 1; }
+message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; }
+message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; }
 message Message { Node[] nodeChanges = 1; }
 `);
 const g = (localID: number) => ({ sessionID: 0, localID });
@@ -98,6 +101,53 @@ describe("Figma import", () => {
     ).not.toThrow();
     expect(importFig(raw, "Raw.fig").document.name).toBe("Raw");
   });
+  it("restores same-page click navigation and reports advanced triggers without inventing interactions", () => {
+    const message = {
+      nodeChanges: [
+        ...nodes.map((n) =>
+          n.guid.localID === 3
+            ? {
+                ...n,
+                prototypeInteractions: [
+                  {
+                    event: { interactionType: "ON_CLICK" },
+                    actions: [
+                      {
+                        transitionNodeID: g(5),
+                        connectionType: "INTERNAL_NODE",
+                        navigationType: "NAVIGATE",
+                      },
+                    ],
+                  },
+                ],
+              }
+            : n,
+        ),
+        {
+          guid: g(5),
+          parentIndex: { guid: g(1), position: "z" },
+          type: "FRAME",
+          name: "Destination",
+          size: { x: 100, y: 100 },
+        },
+      ],
+    };
+    const result = importFig(stream(message));
+    const text = result.document.nodes.find((n) => n.name === "标题")!,
+      target = result.document.nodes.find((n) => n.name === "Destination")!;
+    expect(text.targetId).toBe(target.id);
+    const advanced = structuredClone(message);
+    advanced.nodeChanges.find(
+      (n) => n.guid.localID === 3,
+    )!.prototypeInteractions![0].event.interactionType = "ON_HOVER";
+    const skipped = importFig(stream(advanced));
+    expect(
+      skipped.document.nodes.find((n) => n.name === "标题")!.targetId,
+    ).toBeUndefined();
+    expect(
+      skipped.report.warnings.some((w) => w.includes("Advanced prototype")),
+    ).toBe(true);
+  });
   it("rejects malformed archives, truncation and a thumbnail-only file without claiming success", () => {
     for (const bytes of [
       new Uint8Array(),
@@ -151,7 +201,43 @@ it.skipIf(!sample)(
     expect(
       result.document.nodes.some((n) => n.text === "Get a Plant Proposal"),
     ).toBe(true);
+    expect(
+      result.document.nodes.filter(
+        (n) => n.type === "path" && n.fidelity?.paths?.length,
+      ).length,
+    ).toBeGreaterThan(0);
+    expect(
+      result.document.nodes.filter((n) => n.fidelity?.text?.lines.length)
+        .length,
+    ).toBeGreaterThan(100);
+    expect(
+      result.document.nodes.filter((n) => n.importedLayout).length,
+    ).toBeGreaterThan(100);
+    expect(result.document.variables!.length).toBeGreaterThan(20);
+    expect(
+      result.document.nodes.filter((n) => n.variableId).length,
+    ).toBeGreaterThan(100);
+    expect(result.document.componentLibrary!.length).toBeGreaterThan(20);
+    expect(result.report.warnings).not.toContain(
+      "Some vector geometry could not be decoded and uses bounds.",
+    );
     validateDocument(result.document);
-    console.log("REALJET import report", JSON.stringify(result.report));
+    validateDocument(JSON.parse(JSON.stringify(result.document)));
+    console.log(
+      "REALJET compatibility",
+      JSON.stringify({
+        ...result.report,
+        paths: result.document.nodes.filter((n) => n.fidelity?.paths?.length)
+          .length,
+        textLayouts: result.document.nodes.filter((n) => n.fidelity?.text)
+          .length,
+        layouts: result.document.nodes.filter(
+          (n) => n.layout && n.importedLayout,
+        ).length,
+        variables: result.document.variables?.length,
+        bindings: result.document.nodes.filter((n) => n.variableId).length,
+        componentDefinitions: result.document.componentLibrary?.length,
+      }),
+    );
   },
 );

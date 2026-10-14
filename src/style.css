@@ -1906,3 +1906,17 @@ html[lang="zh-CN"] .layer-title-input {
 .fig-import-report .primary {
   margin-top: 15px;
 }
+.variable-mode {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 10px 0;
+}
+.variable-mode select {
+  max-width: 50%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+}

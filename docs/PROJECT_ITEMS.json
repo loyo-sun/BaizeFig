@@ -172,7 +172,12 @@
     {
       "key": "BZ-FIG-02",
       "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/34",
-      "intended_status": "Todo"
+      "intended_status": "In Progress"
+    },
+    {
+      "key": "BZ-COMPAT-01",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/35",
+      "intended_status": "Done"
     }
   ]
 }

@@ -1,3 +1,5 @@
+import { resolveVariable } from "./variables";
+import { commandsPath, networkPaths, type Fidelity } from "./fidelity";
 import { Inflate, unzipSync } from "fflate";
 import { Decompress } from "fzstd";
 import { ByteBuffer, decodeBinarySchema, type Schema } from "kiwi-schema";
@@ -249,8 +251,87 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       ? "#f5f5f5"
       : color(meta.client_meta?.background_color);
   const warnings = new Set<string>();
+  const rawRef = (ref: Raw | undefined) =>
+    ref?.guid
+      ? index.get(guid(ref.guid))
+      : ref?.assetRef?.key
+        ? source.find((n) => n.key === ref.assetRef.key)
+        : undefined;
+  const variableId = (n: Raw) => "figvar:" + guid(n.guid);
+  doc.variableCollections = [];
+  doc.variables = [];
+  for (const variable of source.filter(
+    (n) => n.type === "VARIABLE" && n.variableResolvedType === "COLOR",
+  )) {
+    const entries: Raw[] = variable.variableDataValues?.entries ?? [];
+    const set = rawRef(variable.variableSetID),
+      collectionId =
+        "figset:" +
+        (set
+          ? guid(set.guid)
+          : (variable.variableSetID?.assetRef?.key ?? guid(variable.guid)));
+    if (!doc.variableCollections.some((c) => c.id === collectionId)) {
+      const modes = (
+        set?.variableSetModes ??
+        entries.map((e) => ({ id: e.modeID, name: "Mode " + guid(e.modeID) }))
+      ).map((m: Raw) => ({ id: guid(m.id), name: m.name }));
+      if (!modes.length) continue;
+      doc.variableCollections.push({
+        id: collectionId,
+        name: set?.name ?? "Imported colors",
+        modes,
+        activeMode: modes[0].id,
+      });
+    }
+    const values: Record<string, { color: string } | { alias: string }> = {};
+    for (const entry of entries) {
+      const value = entry.variableData?.value;
+      if (value?.colorValue)
+        values[guid(entry.modeID)] = {
+          color: color(value.colorValue).slice(0, 7),
+        };
+      else if (value?.alias) {
+        const alias = rawRef(value.alias);
+        if (alias) values[guid(entry.modeID)] = { alias: variableId(alias) };
+      }
+    }
+    if (Object.keys(values).length)
+      doc.variables.push({
+        id: variableId(variable),
+        name: variable.name ?? "Color",
+        value: "#000000",
+        collectionId,
+        values,
+      });
+  }
+  // Preserve unresolved references as a reported limitation rather than inventing a color.
+  for (const variable of doc.variables) {
+    for (const [mode, value] of Object.entries(variable.values ?? {}))
+      if (
+        "alias" in value &&
+        !doc.variables.some((v) => v.id === value.alias)
+      ) {
+        delete variable.values![mode];
+        warnings.add(
+          "Some variable aliases or non-color variables could not be restored.",
+        );
+      }
+  }
+  for (const variable of doc.variables) {
+    try {
+      variable.value = resolveVariable(doc, variable.id);
+    } catch {
+      delete variable.values;
+      warnings.add(
+        "Some variable aliases or non-color variables could not be restored.",
+      );
+    }
+  }
+
   if (source.some((n) => n.type === "CANVAS" && n.visible === false))
-    warnings.add("Hidden internal pages were excluded.");
+    warnings.add(
+      "Hidden page component definitions are retained in the document library.",
+    );
   let images = 0,
     instances = 0;
   const imageCache = new Map<string, string | undefined>();
@@ -265,7 +346,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     LINE: "line",
     STAR: "star",
     REGULAR_POLYGON: "polygon",
-    VECTOR: "rectangle",
+    VECTOR: "path",
     BOOLEAN_OPERATION: "group",
     SECTION: "frame",
   };
@@ -295,17 +376,16 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     let r = { ...base, ...raw };
     if (raw.type === "INSTANCE") {
       instances++;
-      warnings.add("Figma instances were imported as editable snapshots.");
+      warnings.add(
+        "Component definitions and source links are retained; live instance synchronization is not yet supported.",
+      );
     }
     let kind: Kind | undefined = r.type === "TEXT" ? "text" : mapping[r.type];
     if (!kind) {
       warnings.add("Some unsupported layers were skipped.");
       return;
     }
-    if (r.type === "VECTOR")
-      warnings.add(
-        "Vector networks are represented by bounds; vector paths are not restored.",
-      );
+
     if (r.type === "REGULAR_POLYGON" || r.type === "STAR")
       warnings.add("Polygon and star parameters may differ.");
     if (
@@ -341,27 +421,27 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
         if (!["frame", "group", "component"].includes(kind)) kind = "image";
         images++;
       } else warnings.add("Some image resources are missing or unsupported.");
-      warnings.add(
-        "Image fills use center crop; custom crop transforms are not restored.",
-      );
     }
     const stroke: Raw | undefined = (r.strokePaints ?? []).find(
       (p: Raw) => p.visible !== false && p.type === "SOLID",
     );
     const transform = r.transform ?? {};
+    const supportedLayout =
+      ["HORIZONTAL", "VERTICAL"].includes(r.stackMode) &&
+      r.stackWrap !== "WRAP" &&
+      ["MIN", "CENTER", "MAX", "SPACE_BETWEEN", undefined].includes(
+        r.stackPrimaryAlignItems,
+      ) &&
+      r.stackCounterAlignItems !== "BASELINE";
     if (
-      Math.abs(transform.m01 ?? 0) > 0.00001 ||
-      Math.abs(transform.m10 ?? 0) > 0.00001 ||
-      (transform.m00 ?? 1) !== 1 ||
-      (transform.m11 ?? 1) !== 1
+      (r.stackMode && r.stackMode !== "NONE" && !supportedLayout) ||
+      r.stackChildPrimaryGrow ||
+      r.stackWrap === "WRAP"
     )
-      warnings.add("Rotated, reflected or scaled transforms may differ.");
-    if (r.stackMode && r.stackMode !== "NONE")
       warnings.add(
-        "Auto layout uses the saved positions; layout rules are not restored.",
+        "Wrapping, baseline alignment and fill sizing need further layout support.",
       );
-    if (r.prototypeInteractions?.length)
-      warnings.add("Prototype interactions are not restored.");
+
     if (r.isMask) warnings.add("Masks are not restored.");
     const size = r.fontSize ?? 16;
     let text = r.textData?.characters ?? "";
@@ -375,15 +455,246 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       )
         text = assignment.value.textValue.characters;
     }
+    const fidelity: Fidelity = {
+      size: [r.size.x ?? 0, r.size.y ?? 0],
+      linear: [
+        transform.m00 ?? 1,
+        transform.m10 ?? 0,
+        transform.m01 ?? 0,
+        transform.m11 ?? 1,
+      ],
+      sourceId: key,
+    };
+    if (base) fidelity.componentSourceId = guid(base.guid);
+    fidelity.clipsContent = r.frameMaskDisabled !== true;
+    fidelity.corners = [
+      r.rectangleTopLeftCornerRadius ?? r.cornerRadius ?? 0,
+      r.rectangleTopRightCornerRadius ?? r.cornerRadius ?? 0,
+      r.rectangleBottomRightCornerRadius ?? r.cornerRadius ?? 0,
+      r.rectangleBottomLeftCornerRadius ?? r.cornerRadius ?? 0,
+    ];
+    fidelity.strokeCap =
+      r.strokeCap === "ROUND"
+        ? "round"
+        : r.strokeCap === "SQUARE"
+          ? "square"
+          : "butt";
+    fidelity.strokeJoin =
+      r.strokeJoin === "ROUND"
+        ? "round"
+        : r.strokeJoin === "BEVEL"
+          ? "bevel"
+          : "miter";
+    if (image) {
+      const t = paint?.transform ?? {};
+      fidelity.image = {
+        mode:
+          paint?.imageScaleMode === "FIT"
+            ? "fit"
+            : paint?.imageScaleMode === "TILE"
+              ? "tile"
+              : paint?.imageScaleMode === "STRETCH"
+                ? "crop"
+                : "fill",
+        transform: [
+          t.m00 ?? 1,
+          t.m10 ?? 0,
+          t.m01 ?? 0,
+          t.m11 ?? 1,
+          t.m02 ?? 0,
+          t.m12 ?? 0,
+        ],
+        width: paint?.originalImageWidth || r.size.x || 1,
+        height: paint?.originalImageHeight || r.size.y || 1,
+        scale: paint?.scale > 0 ? paint.scale : 1,
+        opacity: clamp(paint?.opacity ?? 1),
+      };
+    }
+    if (r.type === "VECTOR") {
+      const blob = (i: number) =>
+        message.blobs?.[i]?.bytes as Uint8Array | undefined;
+      try {
+        const paths = [];
+        for (const [entries, strokeOutline] of [
+          [r.fillGeometry ?? [], false],
+          [r.strokeGeometry ?? [], true],
+        ] as const) {
+          for (const entry of entries) {
+            const data = blob(entry.commandsBlob);
+            if (!data) throw Error();
+            const d = commandsPath(data);
+            if (!d) continue;
+            const override = r.vectorData?.styleOverrideTable?.find(
+              (o: Raw) => o.styleID === entry.styleID,
+            );
+            const paints = strokeOutline
+              ? override?.strokePaints
+              : override?.fillPaints;
+            const p = paints?.find((p: Raw) => p.visible !== false);
+            paths.push({
+              d,
+              rule:
+                entry.windingRule === "ODD"
+                  ? ("evenodd" as const)
+                  : ("nonzero" as const),
+              strokeOutline,
+              ...(paints
+                ? {
+                    color:
+                      p?.type === "SOLID"
+                        ? color(p.color, p.opacity ?? 1)
+                        : "none",
+                  }
+                : {}),
+            });
+          }
+        }
+        fidelity.paths = paths.length
+          ? paths
+          : networkPaths(
+              blob(r.vectorData?.vectorNetworkBlob) ?? new Uint8Array(),
+              r.size.x,
+              r.size.y,
+              r.vectorData?.normalizedSize ?? r.size,
+            );
+        if (!fidelity.paths.length) throw Error();
+      } catch {
+        kind = "rectangle";
+        warnings.add(
+          "Some vector geometry could not be decoded and uses bounds.",
+        );
+      }
+    }
+    if (kind === "text") {
+      const lines = r.derivedTextData?.baselines ?? r.textData?.baselines;
+      if (
+        lines?.length &&
+        lines.every(
+          (l: Raw) =>
+            Number.isInteger(l.firstCharacter) &&
+            Number.isInteger(l.endCharacter) &&
+            l.endCharacter <= text.length,
+        )
+      )
+        fidelity.text = {
+          characters: text,
+          lines: lines.map((l: Raw) => ({
+            start: l.firstCharacter,
+            end: l.endCharacter,
+            x: l.position.x,
+            y: l.position.y,
+          })),
+          letterSpacing:
+            r.letterSpacing?.units === "PERCENT"
+              ? ((r.letterSpacing.value ?? 0) * size) / 100
+              : (r.letterSpacing?.value ?? 0),
+        };
+    }
+    if (fidelity.text) {
+      const ids: number[] = r.textData?.characterStyleIDs ?? [],
+        table: Raw[] = r.textData?.styleOverrideTable ?? [];
+      const spans: NonNullable<NonNullable<Fidelity["text"]>["spans"]> = [];
+      for (let start = 0; start < Math.min(ids.length, text.length);) {
+        let end = start + 1;
+        while (
+          end < Math.min(ids.length, text.length) &&
+          ids[end] === ids[start]
+        )
+          end++;
+        const style = table.find((t) => t.styleID === ids[start]);
+        if (style) {
+          const solid = style.fillPaints?.find(
+            (p: Raw) => p.visible !== false && p.type === "SOLID",
+          );
+          spans.push({
+            start,
+            end,
+            ...(solid ? { fill: color(solid.color, solid.opacity ?? 1) } : {}),
+            ...(style.fontName?.family
+              ? { fontFamily: style.fontName.family }
+              : {}),
+            ...(style.fontSize ? { fontSize: style.fontSize } : {}),
+            ...(style.fontName?.style
+              ? {
+                  italic: /italic/i.test(style.fontName.style),
+                  fontWeight: /bold/i.test(style.fontName.style)
+                    ? 700
+                    : /medium/i.test(style.fontName.style)
+                      ? 500
+                      : 400,
+                }
+              : {}),
+          });
+        }
+        start = end;
+      }
+      if (spans.length) fidelity.text.spans = spans;
+    }
+    const align = (value: string) =>
+      value === "CENTER"
+        ? ("center" as const)
+        : value === "MAX"
+          ? ("end" as const)
+          : ("start" as const);
+    const layoutConfig = supportedLayout
+      ? {
+          padding: [
+            r.stackVerticalPadding ?? 0,
+            r.stackPaddingRight ?? r.stackHorizontalPadding ?? 0,
+            r.stackPaddingBottom ?? r.stackVerticalPadding ?? 0,
+            r.stackHorizontalPadding ?? 0,
+          ] as [number, number, number, number],
+          primary:
+            !r.stackPrimarySizing || r.stackPrimarySizing === "FIXED"
+              ? ("fixed" as const)
+              : ("hug" as const),
+          counter:
+            !r.stackCounterSizing || r.stackCounterSizing === "FIXED"
+              ? ("fixed" as const)
+              : ("hug" as const),
+          justify:
+            r.stackPrimaryAlignItems === "SPACE_BETWEEN"
+              ? ("space-between" as const)
+              : align(r.stackPrimaryAlignItems),
+          align: align(r.stackCounterAlignItems),
+          absolute: r.stackPositioning === "ABSOLUTE",
+        }
+      : undefined;
+    const fillVariable = rawRef(paint?.colorVar?.value?.alias);
+    const boundVariable =
+      fillVariable &&
+      doc.variables?.find((v) => v.id === variableId(fillVariable));
     const node = makeNode(kind, pageId, {
       parentId,
+      fidelity,
+      ...(boundVariable ? { variableId: boundVariable.id } : {}),
+      ...(layoutConfig
+        ? {
+            layout: r.stackMode === "HORIZONTAL" ? "horizontal" : "vertical",
+            gap: Math.max(0, r.stackSpacing ?? 0),
+            padding: r.stackHorizontalPadding ?? 0,
+            importedLayout: layoutConfig,
+          }
+        : r.stackPositioning === "ABSOLUTE"
+          ? {
+              importedLayout: {
+                padding: [0, 0, 0, 0],
+                primary: "fixed",
+                counter: "fixed",
+                justify: "start",
+                align: "start",
+                absolute: true,
+              },
+            }
+          : {}),
       name: r.name ?? r.type,
       x: transform.m02 ?? 0,
       y: transform.m12 ?? 0,
       width: Math.max(0, r.size.x ?? 0),
       height: Math.max(0, r.size.y ?? 0),
-      fill:
-        paint?.type === "SOLID"
+      fill: boundVariable
+        ? boundVariable.value
+        : paint?.type === "SOLID"
           ? color(paint.color, paint.opacity ?? 1)
           : "none",
       stroke: color(stroke?.color, stroke?.opacity ?? 1),
@@ -418,7 +729,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     });
     if (kind === "text")
       warnings.add(
-        "Text uses available fonts; mixed styles and exact line wrapping may differ.",
+        "Saved text line positions are restored; fonts, mixed styles and reflow may differ.",
       );
     doc.nodes.push(node);
     const ownChildren = children.get(key) ?? [];
@@ -460,10 +771,59 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     for (const root of children.get(guid(page.guid)) ?? [])
       add(root, pageId, null, new Set());
   }
+  for (const node of doc.nodes) {
+    const sourceNode = index.get(node.fidelity?.sourceId ?? "");
+    for (const interaction of sourceNode?.prototypeInteractions ?? []) {
+      if (interaction.isDeleted) continue;
+      const action = interaction.actions?.[0];
+      const target = doc.nodes.find(
+        (n) =>
+          n.fidelity?.sourceId === guid(action?.transitionNodeID) &&
+          n.pageId === node.pageId &&
+          n.type === "frame",
+      );
+      if (
+        interaction.event?.interactionType === "ON_CLICK" &&
+        interaction.actions?.length === 1 &&
+        action?.connectionType === "INTERNAL_NODE" &&
+        action.navigationType !== "SWAP_STATE" &&
+        target
+      )
+        node.targetId = target.id;
+      else
+        warnings.add(
+          "Advanced prototype triggers, transitions and component state changes are not restored.",
+        );
+    }
+  }
+  if (doc.pages.length) {
+    const originalImages = images,
+      originalInstances = instances;
+    doc.componentLibrary = [];
+    for (const definition of source.filter(
+      (n) => n.type === "SYMBOL" && n.size,
+    )) {
+      const start = doc.nodes.length;
+      add(definition, doc.pages[0].id, null, new Set());
+      const nodes = doc.nodes.splice(start);
+      if (nodes.length)
+        doc.componentLibrary.push({
+          sourceId: guid(definition.guid),
+          name: definition.name ?? "Component",
+          nodes,
+        });
+    }
+    images = originalImages;
+    instances = originalInstances;
+  }
   if (!doc.pages.length) throw Error("No supported pages in Figma file");
-  if (source.some((n) => n.type === "VARIABLE" || n.type === "VARIABLE_SET"))
+  if (
+    source.some(
+      (n) => n.type === "VARIABLE" && n.variableResolvedType !== "COLOR",
+    )
+  )
     warnings.add(
-      "Variable bindings use saved values; variables and modes are not restored.",
+      "Color variable modes and resolvable aliases are restored; non-color variables remain unsupported.",
     );
   validateDocument(doc);
   return {

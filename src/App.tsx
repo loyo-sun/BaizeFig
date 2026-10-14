@@ -1,3 +1,9 @@
+import { localDelta, worldTransform, reflowAfterPointerEdit } from "./core";
+import {
+  setVariableMode,
+  editVariableColor,
+  removeVariable,
+} from "./variables";
 import { importFigFile } from "./figImportClient";
 import type { FigImportResult } from "./figImport";
 import {
@@ -520,14 +526,18 @@ export default function App() {
           if (!source) {
             const last = (d as typeof d & { last?: { x: number; y: number } })
               .last ?? { x: 0, y: 0 };
-            return { ...n, x: n.x + dx - last.x, y: n.y + dy - last.y };
+            const delta = localDelta(prev, n, dx - last.x, dy - last.y);
+            return { ...n, x: n.x + delta.x, y: n.y + delta.y };
           }
-          let x = initial.x + dx,
-            y = initial.y + dy;
-          if (e.shiftKey) {
-            if (Math.abs(dx) > Math.abs(dy)) y = initial.y;
-            else x = initial.x;
-          }
+          const delta = localDelta(
+            prev,
+            n,
+            e.shiftKey && Math.abs(dy) > Math.abs(dx) ? 0 : dx,
+            e.shiftKey && Math.abs(dx) > Math.abs(dy) ? 0 : dy,
+          );
+          let x = initial.x + delta.x,
+            y = initial.y + delta.y;
+
           return { ...n, x: Math.round(x), y: Math.round(y) };
         }),
       }));
@@ -657,6 +667,15 @@ export default function App() {
       };
       setTool("move");
     }
+    if (d.type === "move" || d.type === "resize") {
+      try {
+        next = reflowAfterPointerEdit(d.before, next);
+      } catch (error) {
+        notify((error as Error).message);
+        setDoc(d.before);
+        return;
+      }
+    }
     if (JSON.stringify(next) !== JSON.stringify(d.before)) {
       history.current.push(d.before);
       setDoc(next);
@@ -680,7 +699,26 @@ export default function App() {
       .filter((n) => all.includes(n.id))
       .map((n) =>
         nodes.includes(n)
-          ? { ...clone(n), ...absolute(doc, n), parentId: null }
+          ? (() => {
+              const m = worldTransform(doc, n);
+              return {
+                ...clone(n),
+                x: m[4],
+                y: m[5],
+                rotation: 0,
+                fidelity: {
+                  ...clone(n.fidelity),
+                  size: n.fidelity?.size ?? [n.width, n.height],
+                  linear: [m[0], m[1], m[2], m[3]] as [
+                    number,
+                    number,
+                    number,
+                    number,
+                  ],
+                },
+                parentId: null,
+              };
+            })()
           : clone(n),
       );
     clipboard.current = { nodes: data };
@@ -1868,6 +1906,9 @@ export default function App() {
                   {chosen.length === 1 &&
                     !first.locked &&
                     !first.rotation &&
+                    worldTransform(doc, first)
+                      .slice(0, 4)
+                      .every((v, i) => Math.abs(v - [1, 0, 0, 1][i]) < 1e-8) &&
                     ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((h) => {
                       const x =
                           selectionBox.x +
@@ -2835,6 +2876,32 @@ export default function App() {
                     "Local color variables. Bind a fill to reuse the same color across this document.",
                   )}
                 </p>
+                {(doc.variableCollections ?? []).map((collection) => (
+                  <label className="variable-mode" key={collection.id}>
+                    {collection.name}
+                    <select
+                      aria-label={t("Mode for {name}", {
+                        name: collection.name,
+                      })}
+                      value={collection.activeMode}
+                      onChange={(e) => {
+                        try {
+                          change(
+                            setVariableMode(doc, collection.id, e.target.value),
+                          );
+                        } catch (error) {
+                          notify((error as Error).message);
+                        }
+                      }}
+                    >
+                      {collection.modes.map((mode) => (
+                        <option key={mode.id} value={mode.id}>
+                          {mode.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
                 <div className="variables-list">
                   {(doc.variables ?? []).map((v) => (
                     <div className="variable-row" key={v.id}>
@@ -2842,21 +2909,15 @@ export default function App() {
                         type="color"
                         aria-label={t("Color {name}", { name: v.name })}
                         value={v.value}
-                        onChange={(e) =>
-                          change({
-                            ...doc,
-                            variables: doc.variables?.map((a) =>
-                              a.id === v.id
-                                ? { ...a, value: e.target.value }
-                                : a,
-                            ),
-                            nodes: doc.nodes.map((n) =>
-                              n.variableId === v.id
-                                ? { ...n, fill: e.target.value }
-                                : n,
-                            ),
-                          })
-                        }
+                        onChange={(e) => {
+                          try {
+                            change(
+                              editVariableColor(doc, v.id, e.target.value),
+                            );
+                          } catch (error) {
+                            notify((error as Error).message);
+                          }
+                        }}
                       />
                       <input
                         aria-label={t("Name {name}", { name: v.name })}
@@ -2894,19 +2955,13 @@ export default function App() {
                         aria-label={t("Delete variable {name}", {
                           name: v.name,
                         })}
-                        onClick={() =>
-                          change({
-                            ...doc,
-                            variables: doc.variables?.filter(
-                              (a) => a.id !== v.id,
-                            ),
-                            nodes: doc.nodes.map((n) =>
-                              n.variableId === v.id
-                                ? { ...n, variableId: undefined }
-                                : n,
-                            ),
-                          })
-                        }
+                        onClick={() => {
+                          try {
+                            change(removeVariable(doc, v.id));
+                          } catch (error) {
+                            notify((error as Error).message);
+                          }
+                        }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -2936,7 +2991,7 @@ export default function App() {
                 </button>
                 <p className="notice">
                   {t(
-                    "Single collection, single mode. Number, string, boolean variables, aliases and modes are not yet available.",
+                    "Color collections, modes and resolvable aliases are supported. Number, string and boolean variables are not yet available.",
                   )}
                 </p>
               </>
@@ -3307,7 +3362,12 @@ export default function App() {
                   const node = doc.nodes.find(
                     (a) => a.id === el?.getAttribute("data-node-id"),
                   );
-                  if (node?.targetId) setPresent(node.targetId);
+                  const linked = node?.targetId
+                    ? node
+                    : node
+                      ? ancestors(doc, node).find((a) => a.targetId)
+                      : undefined;
+                  if (linked?.targetId) setPresent(linked.targetId);
                 }}
               >
                 <Scene
@@ -3327,7 +3387,6 @@ export default function App() {
         })()}
       {toast && (
         <div className="toast" role="status">
-          <Check size={15} />
           {t(toast)}
         </div>
       )}
