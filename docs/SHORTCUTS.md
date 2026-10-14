@@ -8,6 +8,9 @@ Mac 的 ⌘ 对应 Windows/Linux 的 Ctrl，⌥ 对应 Alt。文本输入框优�
 | Rectangle / Ellipse / Line | R / O / L |
 | Pen（折线基础）/ Pencil | P / Shift P |
 | Text / Hand | T / H |
+| 进入画布文字编辑 | 双击文字；新建文字后自动进入 |
+| 提交 / 取消文字编辑 | ⌘/Ctrl + Enter / Esc；点击外部提交 |
+| 文字选择、复制、输入、删除 | 编辑时交由原生文本光标处理 |
 | 临时平移 | 按住 Space 拖动，或鼠标中键拖动 |
 | 撤销 / 重做 | ⌘ Z / ⌘ Shift Z；也支持 Ctrl Y |
 | 复制 / 剪切 / 粘贴 | ⌘ C / ⌘ X / ⌘ V |

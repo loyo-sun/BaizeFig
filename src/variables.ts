@@ -1,3 +1,9 @@
+import {
+  inheritedModes,
+  applyTypedBindings,
+  reflowVariableGeometry,
+} from "./typedVariables";
+import type { Node } from "./core";
 import type { Document } from "./core";
 export interface VariableCollection {
   id: string;
@@ -16,6 +22,7 @@ export function resolveVariable(
   doc: Document,
   id: string,
   seen = new Set<string>(),
+  node?: Node,
 ): string {
   if (seen.has(id) || seen.size > 100) throw Error("Cyclic variable alias");
   seen.add(id);
@@ -25,11 +32,14 @@ export function resolveVariable(
     (c) => c.id === v.collectionId,
   );
   const entry =
-    v.values?.[collection?.activeMode ?? ""] ??
-    Object.values(v.values ?? {})[0];
+    v.values?.[
+      (node ? inheritedModes(doc, node)[collection?.id ?? ""] : undefined) ??
+        collection?.activeMode ??
+        ""
+    ] ?? Object.values(v.values ?? {})[0];
   if (!entry) return v.value;
   return "alias" in entry
-    ? resolveVariable(doc, entry.alias, seen)
+    ? resolveVariable(doc, entry.alias, seen, node)
     : entry.color;
 }
 const designNodes = (doc: Document) => [
@@ -49,13 +59,20 @@ export function setVariableMode(
   for (const variable of doc.variables ?? [])
     variable.value = resolveVariable(doc, variable.id);
   for (const node of designNodes(doc))
-    if (node.variableId) node.fill = resolveVariable(doc, node.variableId);
+    if (node.variableId)
+      node.fill = resolveVariable(doc, node.variableId, new Set(), node);
+  const previous = structuredClone(doc);
+  applyTypedBindings(doc);
+  reflowVariableGeometry(previous, doc);
   return doc;
 }
 function refresh(doc: Document): Document {
   for (const v of doc.variables ?? []) v.value = resolveVariable(doc, v.id);
   for (const n of designNodes(doc))
-    if (n.variableId) n.fill = resolveVariable(doc, n.variableId);
+    if (n.variableId) n.fill = resolveVariable(doc, n.variableId, new Set(), n);
+  const previous = structuredClone(doc);
+  applyTypedBindings(doc);
+  reflowVariableGeometry(previous, doc);
   return doc;
 }
 export function editVariableColor(
@@ -63,7 +80,8 @@ export function editVariableColor(
   id: string,
   color: string,
 ): Document {
-  if (!/^#[\da-f]{6}$/i.test(color)) throw Error("Invalid color variable");
+  if (!/^#[\da-f]{6}([\da-f]{2})?$/i.test(color))
+    throw Error("Invalid color variable");
   const doc = structuredClone(original),
     v = doc.variables?.find((v) => v.id === id);
   if (!v) throw Error("Missing variable alias");

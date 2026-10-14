@@ -1,3 +1,5 @@
+import { Appearance, EffectDefinitions } from "./appearance";
+import { layoutText } from "./textLayout";
 import { inverse, multiply } from "./fidelity";
 import React from "react";
 import {
@@ -82,12 +84,26 @@ function BasicNodeShape({
       <line x1="0" y1="0" x2={n.width} y2={n.height} {...shared} fill="none" />
     );
   if (n.type === "star")
-    return <polygon {...shared} points={starPoints(n.width, n.height)} />;
+    return (
+      <polygon
+        {...shared}
+        points={starPoints(
+          n.width,
+          n.height,
+          n.fidelity?.pointCount ?? 5,
+          n.fidelity?.innerRatio ?? 0.44,
+        )}
+      />
+    );
   if (n.type === "polygon")
     return (
       <polygon
         {...shared}
-        points={`${n.width / 2},0 ${n.width},${n.height} 0,${n.height}`}
+        points={Array.from({ length: n.fidelity?.pointCount ?? 3 }, (_, i) => {
+          const a =
+            (i * 2 * Math.PI) / (n.fidelity?.pointCount ?? 3) - Math.PI / 2;
+          return `${n.width / 2 + (Math.cos(a) * n.width) / 2},${n.height / 2 + (Math.sin(a) * n.height) / 2}`;
+        }).join(" ")}
       />
     );
   if (n.type === "path")
@@ -118,14 +134,31 @@ function BasicNodeShape({
     ) : null;
   return <rect {...shared} width={n.width} height={n.height} rx={n.radius} />;
 }
-export function NodeShape({
+function ShapeContent({
   node: n,
   outline = false,
 }: {
   node: Node;
   outline?: boolean;
 }) {
-  const f = n.fidelity;
+  const dynamic =
+    n.type === "text" &&
+    n.textFlow &&
+    (!n.fidelity?.text || n.fidelity.text.characters !== n.text)
+      ? layoutText(n)
+      : undefined;
+  const f = dynamic
+    ? {
+        ...n.fidelity,
+        size: n.fidelity?.size ?? [n.width, n.height],
+        text: {
+          characters: n.text,
+          lines: dynamic.lines,
+          letterSpacing: n.textFlow?.letterSpacing ?? 0,
+          spans: n.textFlow?.runs,
+        },
+      }
+    : n.fidelity;
   if (n.type === "text" && f?.text && f.text.characters === n.text)
     return (
       <text
@@ -139,7 +172,7 @@ export function NodeShape({
       >
         {f.text.lines.map((line, i) => (
           <tspan key={i} x={line.x} y={line.y}>
-            {textSpans(n, line.start, line.end)}
+            {textSpans(n, line.start, line.end, f.text?.spans)}
           </tspan>
         ))}
       </text>
@@ -266,18 +299,22 @@ export function NodeShape({
     );
   return <BasicNodeShape node={n} outline={outline} />;
 }
-function textSpans(n: Node, start: number, end: number) {
-  const spans = n.fidelity?.text?.spans ?? [],
-    cuts = [
-      ...new Set([
-        start,
-        end,
-        ...spans.flatMap((s) => [
-          Math.max(start, Math.min(end, s.start)),
-          Math.max(start, Math.min(end, s.end)),
-        ]),
+function textSpans(
+  n: Node,
+  start: number,
+  end: number,
+  spans = n.fidelity?.text?.spans ?? [],
+) {
+  const cuts = [
+    ...new Set([
+      start,
+      end,
+      ...spans.flatMap((s) => [
+        Math.max(start, Math.min(end, s.start)),
+        Math.max(start, Math.min(end, s.end)),
       ]),
-    ].sort((a, b) => a - b);
+    ]),
+  ].sort((a, b) => a - b);
   return cuts.slice(0, -1).map((a, i) => {
     const b = cuts[i + 1],
       style = spans.find((s) => s.start <= a && s.end >= b);
@@ -309,28 +346,59 @@ export function roundedRect(
   [tl, tr, br, bl] = [tl, tr, br, bl].map((v) => v * scale);
   return `M${tl} 0 H${w - tr} Q${w} 0 ${w} ${tr} V${h - br} Q${w} ${h} ${w - br} ${h} H${bl} Q0 ${h} 0 ${h - bl} V${tl} Q0 0 ${tl} 0 Z`;
 }
+export function NodeShape({
+  node,
+  outline = false,
+}: {
+  node: Node;
+  outline?: boolean;
+}) {
+  return (
+    <Appearance
+      node={node}
+      outline={outline}
+      render={(n, o) => <ShapeContent node={n} outline={o} />}
+    />
+  );
+}
 export function Scene({
   doc,
   pageId,
   onNode,
   outline = false,
   rootId,
+  editingTextId,
 }: {
   doc: Document;
   pageId: string;
   onNode?: (e: React.PointerEvent, id: string) => void;
   outline?: boolean;
   rootId?: string;
+  editingTextId?: string;
 }) {
+  const prefix = React.useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const renderId = (n: Node) => `${prefix}-${n.id}`;
   function draw(n: Node): React.ReactNode {
     if (!n.visible) return null;
     return (
       <g
         key={n.id}
+        id={`scene-${renderId(n)}`}
         data-node-id={n.id}
         data-node-name={n.name}
         transform={`matrix(${localTransform(n).join(" ")})`}
-        opacity={n.opacity}
+        opacity={n.id === editingTextId ? 0 : n.opacity}
+        filter={
+          n.fidelity?.effects?.some(
+            (e) => e.visible && e.type !== "background-blur",
+          )
+            ? `url(#effect-${renderId(n)})`
+            : undefined
+        }
+        style={{
+          mixBlendMode: n.fidelity
+            ?.blendMode as React.CSSProperties["mixBlendMode"],
+        }}
         onPointerDown={onNode ? (e) => onNode(e, n.id) : undefined}
       >
         {onNode && (
@@ -342,10 +410,15 @@ export function Scene({
             pointerEvents="all"
           />
         )}
-        <NodeShape node={n} outline={outline} />
+        <EffectDefinitions node={{ ...n, id: renderId(n) }} />
+        {n.fidelity?.booleanOperation && !outline ? (
+          drawBoolean(n)
+        ) : (
+          <NodeShape node={{ ...n, id: renderId(n) }} outline={outline} />
+        )}
         {n.type === "frame" && n.fidelity?.clipsContent !== false && (
           <defs>
-            <clipPath id={`clip-${n.id}`}>
+            <clipPath id={`clip-${renderId(n)}`}>
               {n.fidelity?.corners ? (
                 <path d={roundedRect(n.width, n.height, n.fidelity.corners)} />
               ) : (
@@ -357,21 +430,264 @@ export function Scene({
         <g
           clipPath={
             n.type === "frame" && n.fidelity?.clipsContent !== false
-              ? `url(#clip-${n.id})`
+              ? `url(#clip-${renderId(n)})`
               : undefined
           }
         >
-          {doc.nodes
-            .filter((c) => c.parentId === n.id && c.pageId === pageId)
-            .map(draw)}
+          {(!n.fidelity?.booleanOperation || outline) &&
+            drawSiblings(
+              doc.nodes.filter(
+                (c) => c.parentId === n.id && c.pageId === pageId,
+              ),
+            )}
         </g>
       </g>
+    );
+  }
+  function drawBoolean(n: Node): React.ReactNode {
+    const children = doc.nodes.filter(
+        (c) => c.parentId === n.id && c.pageId === pageId && c.visible,
+      ),
+      mode = n.fidelity!.booleanOperation,
+      base = `boolean-${renderId(n)}`,
+      white = `${base}-white`,
+      black = `${base}-black`;
+    if (!children.length) return null;
+    const paint = (
+      <NodeShape
+        node={{
+          ...n,
+          id: `${base}-paint`,
+          type: "rectangle",
+          fidelity: { ...n.fidelity!, booleanOperation: undefined },
+        }}
+      />
+    );
+    const use = (id: string, color = white, mask?: string) => (
+      <use
+        href={`#${id}`}
+        filter={`url(#${color})`}
+        mask={mask ? `url(#${mask})` : undefined}
+      />
+    );
+    const area = (fill: string) => (
+      <rect
+        x={-100000}
+        y={-100000}
+        width={200000}
+        height={200000}
+        fill={fill}
+      />
+    );
+    let result: React.ReactNode = paint;
+    if (mode === "intersect") {
+      for (const child of children)
+        result = <g mask={`url(#${base}-${child.id})`}>{result}</g>;
+    } else result = <g mask={`url(#${base}-result)`}>{paint}</g>;
+    return (
+      <>
+        <defs>
+          {children.map(draw)}
+          <filter id={white}>
+            <feFlood floodColor="#fff" />
+            <feComposite in2="SourceAlpha" operator="in" />
+          </filter>
+          <filter id={black}>
+            <feFlood floodColor="#000" />
+            <feComposite in2="SourceAlpha" operator="in" />
+          </filter>
+          {mode === "intersect" ? (
+            children.map((child) => (
+              <mask
+                key={child.id}
+                id={`${base}-${child.id}`}
+                maskUnits="userSpaceOnUse"
+                x={-100000}
+                y={-100000}
+                width={200000}
+                height={200000}
+              >
+                {use(`scene-${renderId(child)}`)}
+              </mask>
+            ))
+          ) : mode === "exclude" ? (
+            <>
+              <g id={`${base}-step-0`}>
+                {use(`scene-${renderId(children[0])}`)}
+              </g>
+              {children.slice(1).map((child, index) => {
+                const previous = `${base}-step-${index}`,
+                  current = `scene-${renderId(child)}`,
+                  notPrevious = `${base}-not-prev-${index}`,
+                  notCurrent = `${base}-not-current-${index}`;
+                return (
+                  <React.Fragment key={child.id}>
+                    <mask
+                      id={notPrevious}
+                      maskUnits="userSpaceOnUse"
+                      x={-100000}
+                      y={-100000}
+                      width={200000}
+                      height={200000}
+                    >
+                      {area("#fff")}
+                      {use(previous, black)}
+                    </mask>
+                    <mask
+                      id={notCurrent}
+                      maskUnits="userSpaceOnUse"
+                      x={-100000}
+                      y={-100000}
+                      width={200000}
+                      height={200000}
+                    >
+                      {area("#fff")}
+                      {use(current, black)}
+                    </mask>
+                    <g id={`${base}-step-${index + 1}`}>
+                      {use(previous, white, notCurrent)}
+                      {use(current, white, notPrevious)}
+                    </g>
+                  </React.Fragment>
+                );
+              })}
+              <mask
+                id={`${base}-result`}
+                maskUnits="userSpaceOnUse"
+                x={-100000}
+                y={-100000}
+                width={200000}
+                height={200000}
+              >
+                {use(`${base}-step-${children.length - 1}`)}
+              </mask>
+            </>
+          ) : (
+            <mask
+              id={`${base}-result`}
+              maskUnits="userSpaceOnUse"
+              x={-100000}
+              y={-100000}
+              width={200000}
+              height={200000}
+            >
+              {children.map((child, i) => (
+                <React.Fragment key={child.id}>
+                  {use(
+                    `scene-${renderId(child)}`,
+                    mode === "subtract" && i > 0 ? black : white,
+                  )}
+                </React.Fragment>
+              ))}
+            </mask>
+          )}
+        </defs>
+        {result}
+      </>
     );
   }
   const nodes = rootId
     ? doc.nodes.filter((n) => n.id === rootId)
     : doc.nodes.filter((n) => n.pageId === pageId && !n.parentId);
-  return <>{nodes.map(draw)}</>;
+  function drawSiblings(siblings: Node[]): React.ReactNode[] {
+    const output: React.ReactNode[] = [];
+    for (let i = 0; i < siblings.length; i++) {
+      const n = siblings[i];
+      const blur = n.fidelity?.effects?.find(
+        (e) => e.visible && e.type === "background-blur",
+      );
+      if (blur && !outline && n.visible) {
+        const clip = `backdrop-clip-${renderId(n)}`,
+          filter = `backdrop-filter-${renderId(n)}`,
+          parent = doc.nodes.find((p) => p.id === n.parentId);
+        output.push(
+          <g key={filter} pointerEvents="none">
+            <defs>
+              <clipPath id={clip}>
+                <g transform={`matrix(${localTransform(n).join(" ")})`}>
+                  <NodeShape
+                    node={{
+                      ...n,
+                      id: clip,
+                      fill: "#fff",
+                      opacity: 1,
+                      image: undefined,
+                      stroke: "none",
+                      strokeWidth: 0,
+                      fidelity: {
+                        ...n.fidelity!,
+                        paints: undefined,
+                        effects: undefined,
+                        image: undefined,
+                      },
+                    }}
+                  />
+                </g>
+              </clipPath>
+              <filter
+                id={filter}
+                x="-100%"
+                y="-100%"
+                width="300%"
+                height="300%"
+              >
+                <feGaussianBlur stdDeviation={blur.radius / 2} />
+              </filter>
+            </defs>
+            <g clipPath={`url(#${clip})`}>
+              <g filter={`url(#${filter})`}>
+                {parent ? (
+                  <NodeShape node={{ ...parent, id: `${filter}-parent` }} />
+                ) : (
+                  <rect
+                    x={-100000}
+                    y={-100000}
+                    width={200000}
+                    height={200000}
+                    fill={doc.background}
+                  />
+                )}{" "}
+                {siblings
+                  .slice(0, i)
+                  .filter((p) => p.visible && !p.fidelity?.mask)
+                  .map((p) => (
+                    <use key={p.id} href={`#scene-${renderId(p)}`} />
+                  ))}
+              </g>
+            </g>
+          </g>,
+        );
+      }
+      if (!n.fidelity?.mask) {
+        output.push(draw(n));
+        continue;
+      }
+      if (!n.visible) continue;
+      const following: Node[] = [];
+      while (i + 1 < siblings.length && !siblings[i + 1].fidelity?.mask)
+        following.push(siblings[++i]);
+      output.push(
+        <g key={`masked-${n.id}`}>
+          <defs>
+            <mask
+              id={`mask-${renderId(n)}`}
+              maskUnits="userSpaceOnUse"
+              x="-100000"
+              y="-100000"
+              width="200000"
+              height="200000"
+              style={{ maskType: n.fidelity.mask }}
+            >
+              {draw(n)}
+            </mask>
+          </defs>
+          <g mask={`url(#mask-${renderId(n)})`}>{following.map(draw)}</g>
+        </g>,
+      );
+    }
+    return output;
+  }
+  return <>{drawSiblings(nodes)}</>;
 }
 export async function svgString(
   doc: Document,

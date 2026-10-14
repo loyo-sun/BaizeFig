@@ -1,3 +1,13 @@
+import { type PrototypeAction, type PrototypeInteraction } from "./prototype";
+import {
+  applyTypedBindings,
+  resolveTypedVariable,
+  type TypedVariable,
+  type BindingProperty,
+  bindingTypes,
+} from "./typedVariables";
+import type { ImportedPaint } from "./appearance";
+import { linkImportedComponents } from "./components";
 import { resolveVariable } from "./variables";
 import { commandsPath, networkPaths, type Fidelity } from "./fidelity";
 import { Inflate, unzipSync } from "fflate";
@@ -260,8 +270,11 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
   const variableId = (n: Raw) => "figvar:" + guid(n.guid);
   doc.variableCollections = [];
   doc.variables = [];
+  doc.typedVariables = [];
   for (const variable of source.filter(
-    (n) => n.type === "VARIABLE" && n.variableResolvedType === "COLOR",
+    (n) =>
+      n.type === "VARIABLE" &&
+      ["COLOR", "FLOAT", "STRING", "BOOLEAN"].includes(n.variableResolvedType),
   )) {
     const entries: Raw[] = variable.variableDataValues?.entries ?? [];
     const set = rawRef(variable.variableSetID),
@@ -283,12 +296,44 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
         activeMode: modes[0].id,
       });
     }
+    if (variable.variableResolvedType !== "COLOR") {
+      const type =
+        variable.variableResolvedType === "FLOAT"
+          ? "number"
+          : variable.variableResolvedType === "BOOLEAN"
+            ? "boolean"
+            : "string";
+      const values: NonNullable<TypedVariable["values"]> = {};
+      for (const entry of entries) {
+        const value = entry.variableData?.value,
+          alias = rawRef(value?.alias),
+          scalar =
+            type === "number"
+              ? value?.floatValue
+              : type === "boolean"
+                ? value?.boolValue
+                : value?.textValue;
+        if (alias) values[guid(entry.modeID)] = { alias: variableId(alias) };
+        else if (typeof scalar === type)
+          values[guid(entry.modeID)] = { value: scalar };
+      }
+      if (Object.keys(values).length)
+        doc.typedVariables.push({
+          id: variableId(variable),
+          name: variable.name ?? "Variable",
+          type,
+          collectionId,
+          value: type === "number" ? 0 : type === "boolean" ? false : "",
+          values,
+        });
+      continue;
+    }
     const values: Record<string, { color: string } | { alias: string }> = {};
     for (const entry of entries) {
       const value = entry.variableData?.value;
       if (value?.colorValue)
         values[guid(entry.modeID)] = {
-          color: color(value.colorValue).slice(0, 7),
+          color: color(value.colorValue),
         };
       else if (value?.alias) {
         const alias = rawRef(value.alias);
@@ -303,6 +348,26 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
         collectionId,
         values,
       });
+  }
+  for (const variable of doc.typedVariables) {
+    for (const [mode, entry] of Object.entries(variable.values ?? {}))
+      if (
+        "alias" in entry &&
+        !doc.typedVariables.some(
+          (v) => v.id === entry.alias && v.type === variable.type,
+        )
+      ) {
+        delete variable.values![mode];
+        warnings.add("Some variable aliases could not be resolved.");
+      }
+  }
+  for (const variable of doc.typedVariables) {
+    try {
+      variable.value = resolveTypedVariable(doc, variable.id);
+    } catch {
+      delete variable.values;
+      warnings.add("Some variable aliases could not be resolved.");
+    }
   }
   // Preserve unresolved references as a reported limitation rather than inventing a color.
   for (const variable of doc.variables) {
@@ -350,6 +415,27 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     BOOLEAN_OPERATION: "group",
     SECTION: "frame",
   };
+  function parseTracks(
+    positions: Raw | undefined,
+    sizing: Raw | undefined,
+  ): import("./layout").Track[] {
+    return [...(positions?.entries ?? [])]
+      .sort((a, b) => (a.position < b.position ? -1 : 1))
+      .map((entry: Raw) => {
+        const size =
+          sizing?.entries?.find((e: Raw) => guid(e.id) === guid(entry.id))
+            ?.trackSize?.maxSizing ?? {};
+        return {
+          kind:
+            size.type === "FIXED"
+              ? "fixed"
+              : size.type === "HUG"
+                ? "hug"
+                : "fr",
+          value: Math.max(0, size.value ?? 1),
+        };
+      });
+  }
   function add(
     raw: Raw,
     pageId: string,
@@ -377,7 +463,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     if (raw.type === "INSTANCE") {
       instances++;
       warnings.add(
-        "Component definitions and source links are retained; live instance synchronization is not yet supported.",
+        "Component instances preserve saved overrides and can synchronize with the main component.",
       );
     }
     let kind: Kind | undefined = r.type === "TEXT" ? "text" : mapping[r.type];
@@ -386,23 +472,9 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       return;
     }
 
-    if (r.type === "REGULAR_POLYGON" || r.type === "STAR")
-      warnings.add("Polygon and star parameters may differ.");
-    if (
-      r.effects?.length ||
-      (r.blendMode &&
-        r.blendMode !== "NORMAL" &&
-        r.blendMode !== "PASS_THROUGH")
-    )
-      warnings.add("Effects and non-normal blending are not restored.");
     const paints: Raw[] = (r.fillPaints ?? []).filter(
       (p: Raw) => p.visible !== false,
     );
-    if (
-      paints.length > 1 ||
-      paints.some((p) => !["SOLID", "IMAGE"].includes(p.type))
-    )
-      warnings.add("Multiple fills and gradients may be simplified.");
     const paint = paints[0];
     let image: string | undefined;
     if (paint?.type === "IMAGE") {
@@ -426,23 +498,9 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       (p: Raw) => p.visible !== false && p.type === "SOLID",
     );
     const transform = r.transform ?? {};
-    const supportedLayout =
-      ["HORIZONTAL", "VERTICAL"].includes(r.stackMode) &&
-      r.stackWrap !== "WRAP" &&
-      ["MIN", "CENTER", "MAX", "SPACE_BETWEEN", undefined].includes(
-        r.stackPrimaryAlignItems,
-      ) &&
-      r.stackCounterAlignItems !== "BASELINE";
-    if (
-      (r.stackMode && r.stackMode !== "NONE" && !supportedLayout) ||
-      r.stackChildPrimaryGrow ||
-      r.stackWrap === "WRAP"
-    )
-      warnings.add(
-        "Wrapping, baseline alignment and fill sizing need further layout support.",
-      );
-
-    if (r.isMask) warnings.add("Masks are not restored.");
+    const supportedLayout = ["HORIZONTAL", "VERTICAL", "GRID"].includes(
+      r.stackMode,
+    );
     const size = r.fontSize ?? 16;
     let text = r.textData?.characters ?? "";
     for (const ref of r.componentPropRefs ?? []) {
@@ -473,6 +531,84 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       r.rectangleBottomRightCornerRadius ?? r.cornerRadius ?? 0,
       r.rectangleBottomLeftCornerRadius ?? r.cornerRadius ?? 0,
     ];
+    const blend =
+      r.blendMode && r.blendMode !== "PASS_THROUGH"
+        ? r.blendMode.toLowerCase().replace(/_/g, "-")
+        : "normal";
+    if (
+      [
+        "normal",
+        "multiply",
+        "screen",
+        "overlay",
+        "darken",
+        "lighten",
+        "color-dodge",
+        "color-burn",
+        "hard-light",
+        "soft-light",
+        "difference",
+        "exclusion",
+        "hue",
+        "saturation",
+        "color",
+        "luminosity",
+      ].includes(blend)
+    )
+      fidelity.blendMode = blend;
+    else warnings.add("Some blend modes are not supported.");
+    if (r.type === "REGULAR_POLYGON" || r.type === "STAR") {
+      fidelity.pointCount = Math.max(
+        3,
+        Math.min(1000, r.count ?? (r.type === "STAR" ? 5 : 3)),
+      );
+      if (r.type === "STAR")
+        fidelity.innerRatio = Math.max(
+          0,
+          Math.min(1, r.starInnerScale ?? 0.44),
+        );
+    }
+    if (r.type === "BOOLEAN_OPERATION")
+      fidelity.booleanOperation =
+        r.booleanOperation === "SUBTRACT"
+          ? "subtract"
+          : r.booleanOperation === "INTERSECT"
+            ? "intersect"
+            : r.booleanOperation === "EXCLUDE"
+              ? "exclude"
+              : "union";
+    if (r.isMask)
+      fidelity.mask = r.maskType === "LUMINANCE" ? "luminance" : "alpha";
+    if (r.effects?.length)
+      fidelity.effects = r.effects
+        .filter((e: Raw) => e.visible !== false)
+        .flatMap((e: Raw) => {
+          const type =
+            e.type === "DROP_SHADOW"
+              ? "drop-shadow"
+              : e.type === "INNER_SHADOW"
+                ? "inner-shadow"
+                : e.type === "LAYER_BLUR"
+                  ? "blur"
+                  : e.type === "BACKGROUND_BLUR"
+                    ? "background-blur"
+                    : undefined;
+          if (!type) {
+            warnings.add("Some effect types are not supported.");
+            return [];
+          }
+          return [
+            {
+              type,
+              color: color(e.color ?? { r: 0, g: 0, b: 0, a: 1 }),
+              radius: Math.max(0, e.radius ?? 0),
+              spread: e.spread ?? 0,
+              x: e.offset?.x ?? 0,
+              y: e.offset?.y ?? 0,
+              visible: e.visible !== false,
+            },
+          ];
+        });
     fidelity.strokeCap =
       r.strokeCap === "ROUND"
         ? "round"
@@ -630,6 +766,86 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       }
       if (spans.length) fidelity.text.spans = spans;
     }
+    if (
+      paints.length > 1 ||
+      paints.some((p) => p.type.startsWith("GRADIENT"))
+    ) {
+      fidelity.paints = paints.flatMap<ImportedPaint>((p) => {
+        if (p.type === "SOLID")
+          return [
+            {
+              type: "solid" as const,
+              color: color(p.color),
+              opacity: clamp(p.opacity ?? 1),
+            },
+          ];
+        if (p.type === "GRADIENT_LINEAR" || p.type === "GRADIENT_RADIAL") {
+          const t = p.transform ?? {};
+          return [
+            {
+              type:
+                p.type === "GRADIENT_LINEAR"
+                  ? ("linear" as const)
+                  : ("radial" as const),
+              opacity: clamp(p.opacity ?? 1),
+              transform: [
+                t.m00 ?? 1,
+                t.m10 ?? 0,
+                t.m01 ?? 0,
+                t.m11 ?? 1,
+                t.m02 ?? 0,
+                t.m12 ?? 0,
+              ] as [number, number, number, number, number, number],
+              stops: (p.stops ?? []).map((s: Raw) => ({
+                position: clamp(s.position),
+                color: color(s.color),
+              })),
+            },
+          ];
+        }
+        if (p.type === "IMAGE") {
+          const hash = Array.from(p.image?.hash ?? [], (v: any) =>
+              Number(v).toString(16).padStart(2, "0"),
+            ).join(""),
+            url = files["images/" + hash]
+              ? dataURL(files["images/" + hash])
+              : undefined,
+            t = p.transform ?? {};
+          if (url)
+            return [
+              {
+                type: "image" as const,
+                image: url,
+                opacity: clamp(p.opacity ?? 1),
+                imageOptions: {
+                  mode:
+                    p.imageScaleMode === "FIT"
+                      ? ("fit" as const)
+                      : p.imageScaleMode === "TILE"
+                        ? ("tile" as const)
+                        : p.imageScaleMode === "STRETCH"
+                          ? ("crop" as const)
+                          : ("fill" as const),
+                  transform: [
+                    t.m00 ?? 1,
+                    t.m10 ?? 0,
+                    t.m01 ?? 0,
+                    t.m11 ?? 1,
+                    t.m02 ?? 0,
+                    t.m12 ?? 0,
+                  ] as [number, number, number, number, number, number],
+                  width: p.originalImageWidth || r.size.x || 1,
+                  height: p.originalImageHeight || r.size.y || 1,
+                  scale: p.scale > 0 ? p.scale : 1,
+                  opacity: 1,
+                },
+              },
+            ];
+        }
+        warnings.add("Some fill types are not supported.");
+        return [];
+      });
+    }
     const align = (value: string) =>
       value === "CENTER"
         ? ("center" as const)
@@ -655,11 +871,51 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
           justify:
             r.stackPrimaryAlignItems === "SPACE_BETWEEN"
               ? ("space-between" as const)
-              : align(r.stackPrimaryAlignItems),
-          align: align(r.stackCounterAlignItems),
+              : r.stackPrimaryAlignItems === "SPACE_AROUND"
+                ? ("space-around" as const)
+                : ["SPACE_EVENLY", "SPACE_EVENLY_CSS"].includes(
+                      r.stackPrimaryAlignItems,
+                    )
+                  ? ("space-evenly" as const)
+                  : align(r.stackPrimaryAlignItems),
+          align:
+            r.stackCounterAlignItems === "BASELINE"
+              ? ("baseline" as const)
+              : align(r.stackCounterAlignItems),
+          wrap: r.stackWrap === "WRAP",
+          counterGap: Math.max(0, r.stackCounterSpacing ?? 0),
+          ...(r.stackMode === "GRID"
+            ? {
+                grid: {
+                  columns: parseTracks(r.gridColumns, r.gridColumnsSizing),
+                  rows: parseTracks(r.gridRows, r.gridRowsSizing),
+                  columnGap: Math.max(0, r.gridColumnGap ?? 0),
+                  rowGap: Math.max(0, r.gridRowGap ?? 0),
+                },
+              }
+            : {}),
           absolute: r.stackPositioning === "ABSOLUTE",
         }
       : undefined;
+    const parentRaw = index.get(guid(raw.parentIndex?.guid));
+    const columnEntries = [...(parentRaw?.gridColumns?.entries ?? [])].sort(
+        (a, b) => (a.position < b.position ? -1 : 1),
+      ),
+      rowEntries = [...(parentRaw?.gridRows?.entries ?? [])].sort((a, b) =>
+        a.position < b.position ? -1 : 1,
+      );
+    const min = r.minSize ?? {},
+      max = r.maxSize ?? {};
+    const constraint = (value: string) =>
+      value === "MAX" || value === "FIXED_MAX"
+        ? ("max" as const)
+        : value === "CENTER"
+          ? ("center" as const)
+          : value === "STRETCH"
+            ? ("stretch" as const)
+            : value === "SCALE"
+              ? ("scale" as const)
+              : ("min" as const);
     const fillVariable = rawRef(paint?.colorVar?.value?.alias);
     const boundVariable =
       fillVariable &&
@@ -667,10 +923,121 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     const node = makeNode(kind, pageId, {
       parentId,
       fidelity,
+      variableModes: Object.fromEntries(
+        (r.variableModeBySetMap?.entries ?? []).flatMap((entry: Raw) => {
+          const set = rawRef(entry.variableSetID),
+            setId =
+              "figset:" +
+              (set ? guid(set.guid) : entry.variableSetID?.assetRef?.key),
+            mode = guid(entry.variableModeID);
+          return doc.variableCollections?.some(
+            (c) => c.id === setId && c.modes.some((m) => m.id === mode),
+          )
+            ? [[setId, mode]]
+            : [];
+        }),
+      ),
+      bindings: Object.fromEntries(
+        (r.variableConsumptionMap?.entries ?? []).flatMap((entry: Raw) => {
+          const fields: Record<string, BindingProperty> = {
+            WIDTH: "width",
+            HEIGHT: "height",
+            X_POSITION: "x",
+            Y_POSITION: "y",
+            ROTATION: "rotation",
+            OPACITY: "opacity",
+            CORNER_RADIUS: "radius",
+            STROKE_WEIGHT: "strokeWidth",
+            FONT_SIZE: "fontSize",
+            FONT_FAMILY: "fontFamily",
+            TEXT_DATA: "text",
+            VISIBLE: "visible",
+            STACK_SPACING: "gap",
+          };
+          const field = fields[entry.variableField],
+            alias = rawRef(entry.variableData?.value?.alias),
+            v =
+              alias &&
+              doc.typedVariables?.find((v) => v.id === variableId(alias));
+          if (field && v && v.type === bindingTypes[field])
+            return [[field, v.id]];
+          warnings.add(
+            "Some variable property bindings could not be restored.",
+          );
+          return [];
+        }),
+      ),
+      constraints: {
+        horizontal: constraint(r.horizontalConstraint),
+        vertical: constraint(r.verticalConstraint),
+      },
+      layoutItem: {
+        grow: Math.max(0, r.stackChildPrimaryGrow ?? 0),
+        align:
+          r.stackChildAlignSelf === "STRETCH"
+            ? "stretch"
+            : r.stackChildAlignSelf === "BASELINE"
+              ? "baseline"
+              : r.stackChildAlignSelf && r.stackChildAlignSelf !== "AUTO"
+                ? align(r.stackChildAlignSelf)
+                : undefined,
+        absolute: r.stackPositioning === "ABSOLUTE",
+        ...(Number.isFinite(min.x) ? { minWidth: Math.max(0, min.x) } : {}),
+        ...(Number.isFinite(min.y) ? { minHeight: Math.max(0, min.y) } : {}),
+        ...(Number.isFinite(max.x) ? { maxWidth: Math.max(0, max.x) } : {}),
+        ...(Number.isFinite(max.y) ? { maxHeight: Math.max(0, max.y) } : {}),
+        ...(r.gridColumnAnchor
+          ? {
+              column: Math.max(
+                0,
+                columnEntries.findIndex(
+                  (e) => guid(e.id) === guid(r.gridColumnAnchor),
+                ),
+              ),
+            }
+          : {}),
+        ...(r.gridRowAnchor
+          ? {
+              row: Math.max(
+                0,
+                rowEntries.findIndex(
+                  (e) => guid(e.id) === guid(r.gridRowAnchor),
+                ),
+              ),
+            }
+          : {}),
+        columnSpan: r.gridColumnSpan ?? 1,
+        rowSpan: r.gridRowSpan ?? 1,
+      },
+      ...(kind === "text"
+        ? {
+            textFlow: {
+              autoResize:
+                r.textAutoResize === "WIDTH_AND_HEIGHT"
+                  ? "both"
+                  : r.textAutoResize === "HEIGHT"
+                    ? "height"
+                    : "fixed",
+              verticalAlign:
+                r.textAlignVertical === "CENTER"
+                  ? "center"
+                  : r.textAlignVertical === "BOTTOM"
+                    ? "bottom"
+                    : "top",
+              letterSpacing: fidelity.text?.letterSpacing ?? 0,
+              runs: fidelity.text?.spans,
+            },
+          }
+        : {}),
       ...(boundVariable ? { variableId: boundVariable.id } : {}),
       ...(layoutConfig
         ? {
-            layout: r.stackMode === "HORIZONTAL" ? "horizontal" : "vertical",
+            layout:
+              r.stackMode === "GRID"
+                ? "grid"
+                : r.stackMode === "HORIZONTAL"
+                  ? "horizontal"
+                  : "vertical",
             gap: Math.max(0, r.stackSpacing ?? 0),
             padding: r.stackHorizontalPadding ?? 0,
             importedLayout: layoutConfig,
@@ -775,24 +1142,93 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     const sourceNode = index.get(node.fidelity?.sourceId ?? "");
     for (const interaction of sourceNode?.prototypeInteractions ?? []) {
       if (interaction.isDeleted) continue;
-      const action = interaction.actions?.[0];
-      const target = doc.nodes.find(
-        (n) =>
-          n.fidelity?.sourceId === guid(action?.transitionNodeID) &&
-          n.pageId === node.pageId &&
-          n.type === "frame",
-      );
-      if (
-        interaction.event?.interactionType === "ON_CLICK" &&
-        interaction.actions?.length === 1 &&
-        action?.connectionType === "INTERNAL_NODE" &&
-        action.navigationType !== "SWAP_STATE" &&
-        target
-      )
-        node.targetId = target.id;
-      else
+      const triggerMap: Record<string, PrototypeInteraction["trigger"]> = {
+        ON_CLICK: "click",
+        ON_HOVER: "hover",
+        MOUSE_IN: "hover",
+        MOUSE_ENTER: "hover",
+        MOUSE_OUT: "leave",
+        MOUSE_LEAVE: "leave",
+        MOUSE_DOWN: "press",
+        ON_PRESS: "press",
+        MOUSE_UP: "release",
+        AFTER_TIMEOUT: "delay",
+      };
+      const trigger = triggerMap[interaction.event?.interactionType],
+        actions: PrototypeAction[] = [];
+      let supported = !!trigger;
+      for (const action of interaction.actions ?? []) {
+        if (action.connectionType === "BACK") {
+          actions.push({ type: "back" });
+          continue;
+        }
+        if (action.connectionType === "CLOSE") {
+          actions.push({ type: "close" });
+          continue;
+        }
+        const target = doc.nodes.find(
+          (n) =>
+            n.fidelity?.sourceId === guid(action.transitionNodeID) &&
+            ["frame", "component", "instance"].includes(n.type),
+        );
+        if (
+          action.connectionType !== "INTERNAL_NODE" ||
+          !target ||
+          !["NAVIGATE", "OVERLAY", "SWAP"].includes(
+            action.navigationType ?? "NAVIGATE",
+          ) ||
+          action.transitionShouldSmartAnimate ||
+          (action.transitionType &&
+            !["INSTANT_TRANSITION", "DISSOLVE", "FADE"].includes(
+              action.transitionType,
+            ))
+        ) {
+          supported = false;
+          break;
+        }
+        actions.push({
+          type:
+            action.navigationType === "OVERLAY"
+              ? "overlay"
+              : action.navigationType === "SWAP"
+                ? "swap"
+                : "navigate",
+          targetId: target.id,
+          transition: ["DISSOLVE", "FADE"].includes(action.transitionType)
+            ? "dissolve"
+            : "instant",
+          durationMs: Math.max(
+            0,
+            Math.min(60000, (action.transitionDuration ?? 0.3) * 1000),
+          ),
+        });
+      }
+      if (supported && actions.length) {
+        node.interactions ??= [];
+        node.interactions.push({
+          trigger,
+          actions,
+          ...(trigger === "delay"
+            ? {
+                delayMs: Math.max(
+                  0,
+                  Math.min(
+                    86400000,
+                    (interaction.event?.transitionTimeout ?? 0) * 1000,
+                  ),
+                ),
+              }
+            : {}),
+        });
+        if (
+          trigger === "click" &&
+          actions.length === 1 &&
+          actions[0].type === "navigate"
+        )
+          node.targetId = actions[0].targetId;
+      } else
         warnings.add(
-          "Advanced prototype triggers, transitions and component state changes are not restored.",
+          "Some advanced prototype actions or transitions could not be restored.",
         );
     }
   }
@@ -819,12 +1255,19 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
   if (!doc.pages.length) throw Error("No supported pages in Figma file");
   if (
     source.some(
-      (n) => n.type === "VARIABLE" && n.variableResolvedType !== "COLOR",
+      (n) =>
+        n.type === "VARIABLE" &&
+        !["COLOR", "FLOAT", "STRING", "BOOLEAN"].includes(
+          n.variableResolvedType,
+        ),
     )
   )
-    warnings.add(
-      "Color variable modes and resolvable aliases are restored; non-color variables remain unsupported.",
-    );
+    warnings.add("Some advanced variable types are not supported.");
+  linkImportedComponents(doc);
+  applyTypedBindings(doc);
+  for (const node of doc.nodes)
+    if (node.variableId)
+      node.fill = resolveVariable(doc, node.variableId, new Set(), node);
   validateDocument(doc);
   return {
     document: doc,

@@ -1,3 +1,4 @@
+import type { ImportedPaint, ImportedEffect } from "./appearance";
 // Imported design data shared by the canvas, exports and native file round trips.
 export type Matrix = [number, number, number, number, number, number];
 export interface VectorPath {
@@ -7,6 +8,13 @@ export interface VectorPath {
   color?: string;
 }
 export interface Fidelity {
+  booleanOperation?: "union" | "subtract" | "intersect" | "exclude";
+  pointCount?: number;
+  innerRatio?: number;
+  paints?: ImportedPaint[];
+  effects?: ImportedEffect[];
+  blendMode?: string;
+  mask?: "alpha" | "luminance";
   size: [number, number];
   linear?: [number, number, number, number];
   paths?: VectorPath[];
@@ -211,6 +219,20 @@ export function networkPaths(
   return result;
 }
 export function validateFidelity(f: Fidelity) {
+  if (
+    f.booleanOperation !== undefined &&
+    !["union", "subtract", "intersect", "exclude"].includes(f.booleanOperation)
+  )
+    throw Error("Invalid boolean operation");
+  if (
+    (f.pointCount !== undefined &&
+      (!Number.isInteger(f.pointCount) ||
+        f.pointCount < 3 ||
+        f.pointCount > 1000)) ||
+    (f.innerRatio !== undefined &&
+      (!Number.isFinite(f.innerRatio) || f.innerRatio < 0 || f.innerRatio > 1))
+  )
+    throw Error("Invalid polygon parameters");
   const finite = (a: unknown, n: number) =>
     Array.isArray(a) &&
     a.length === n &&
@@ -289,6 +311,78 @@ export function validateFidelity(f: Fidelity) {
       ))
   )
     throw Error("Invalid text layout");
+  if (
+    f.paints &&
+    (!Array.isArray(f.paints) ||
+      f.paints.length > 100 ||
+      f.paints.some(
+        (p) =>
+          !["solid", "linear", "radial", "image"].includes(p.type) ||
+          !Number.isFinite(p.opacity) ||
+          p.opacity < 0 ||
+          p.opacity > 1 ||
+          (p.color !== undefined && !/^#[\da-f]{3,8}$/i.test(p.color)) ||
+          (p.stops &&
+            (!Array.isArray(p.stops) ||
+              p.stops.length > 1000 ||
+              p.stops.some(
+                (s) =>
+                  !Number.isFinite(s.position) ||
+                  s.position < 0 ||
+                  s.position > 1 ||
+                  !/^#[\da-f]{3,8}$/i.test(s.color),
+              ))) ||
+          (p.transform && !finite(p.transform, 6)) ||
+          (p.image !== undefined &&
+            !/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(
+              p.image,
+            )),
+      ))
+  )
+    throw Error("Invalid imported paints");
+  for (const paint of f.paints ?? [])
+    if (paint.imageOptions)
+      validateFidelity({ size: f.size, image: paint.imageOptions });
+  if (
+    f.effects &&
+    (!Array.isArray(f.effects) ||
+      f.effects.length > 100 ||
+      f.effects.some(
+        (e) =>
+          !["drop-shadow", "inner-shadow", "blur", "background-blur"].includes(
+            e.type,
+          ) ||
+          !/^#[\da-f]{3,8}$/i.test(e.color) ||
+          ![e.radius, e.spread, e.x, e.y].every(Number.isFinite) ||
+          e.radius < 0 ||
+          typeof e.visible !== "boolean",
+      ))
+  )
+    throw Error("Invalid imported effects");
+  if (f.mask !== undefined && !["alpha", "luminance"].includes(f.mask))
+    throw Error("Invalid mask");
+  if (
+    f.blendMode !== undefined &&
+    ![
+      "normal",
+      "multiply",
+      "screen",
+      "overlay",
+      "darken",
+      "lighten",
+      "color-dodge",
+      "color-burn",
+      "hard-light",
+      "soft-light",
+      "difference",
+      "exclusion",
+      "hue",
+      "saturation",
+      "color",
+      "luminosity",
+    ].includes(f.blendMode)
+  )
+    throw Error("Invalid blend mode");
   if (f.clipsContent !== undefined && typeof f.clipsContent !== "boolean")
     throw Error("Invalid imported design data");
   if (

@@ -102,6 +102,7 @@ describe("interface language preferences", () => {
       "Y",
       "%",
       "↻",
+      "·",
       "⌜",
       "BaizeFig",
       "BAIZEFIG / 白泽",

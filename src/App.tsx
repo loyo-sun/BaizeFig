@@ -1,3 +1,17 @@
+import { BooleanIcon } from "./BooleanIcon";
+import { CanvasTextEditor, type TextEditSession } from "./CanvasTextEditor";
+import { combineShapes } from "./combine";
+import { editTypedVariable, bindingTypes } from "./typedVariables";
+import { resizeInWorld } from "./geometry";
+import { inverse, transformPoint } from "./fidelity";
+import { PrototypePlayer } from "./PrototypePlayer";
+import {
+  createComponentInstance,
+  resetComponentInstance,
+  detachComponentInstance,
+  editLibraryComponent,
+  swapComponentInstance,
+} from "./components";
 import { localDelta, worldTransform, reflowAfterPointerEdit } from "./core";
 import {
   setVariableMode,
@@ -91,7 +105,16 @@ import {
   validateDocument,
 } from "./core";
 import { Scene, svgString, raster } from "./Canvas";
-import { save, loadLast, listDocuments, download } from "./storage";
+import {
+  save,
+  loadLast,
+  listDocuments,
+  download,
+  trashDocument,
+  restoreDocument,
+  listTrash,
+  type TrashRecord,
+} from "./storage";
 import { generate, type AIConfig } from "./ai";
 import { useI18n } from "./LanguageProvider";
 import type { Language } from "./i18n";
@@ -203,6 +226,7 @@ export default function App() {
   const [view, setView] = useState({ x: 100, y: 70, zoom: 0.75 }),
     [modal, setModal] = useState<Modal>(null),
     [tab, setTab] = useState<"design" | "prototype">("design");
+  const [editingText, setEditingText] = useState<TextEditSession | null>(null);
   const [toast, setToast] = useState(""),
     [saved, setSaved] = useState("Loading…"),
     [collapsed, setCollapsed] = useState<Set<string>>(new Set()),
@@ -212,6 +236,9 @@ export default function App() {
   const [zoomMenu, setZoomMenu] = useState(false),
     [layerFilter, setLayerFilter] = useState(""),
     [showLayerSearch, setShowLayerSearch] = useState(false);
+  const [trashedFiles, setTrashedFiles] = useState<TrashRecord[]>([]);
+  const [fileBusy, setFileBusy] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]),
     [query, setQuery] = useState(""),
     [textValue, setTextValue] = useState(""),
@@ -248,6 +275,7 @@ export default function App() {
       new Set(doc.nodes.filter((n) => container(n)).map((n) => n.id)),
     );
   }, [doc.id]);
+  const lastPointerHit = useRef<string | undefined>(undefined);
   const drag = useRef<{
     type: "move" | "resize" | "draw" | "pan" | "marquee";
     start: { x: number; y: number };
@@ -259,6 +287,9 @@ export default function App() {
     view: { x: number; y: number; zoom: number };
     shift?: boolean;
   } | null>(null);
+  useEffect(() => {
+    setEditingText(null);
+  }, [doc.id, page]);
   const [marquee, setMarquee] = useState<{
     x: number;
     y: number;
@@ -300,7 +331,9 @@ export default function App() {
     const t = setTimeout(
       () =>
         save(doc)
-          .then(() => setSaved("Saved locally"))
+          .then((written) =>
+            setSaved(written ? "Saved locally" : "File is in trash"),
+          )
           .catch(() => {
             setSaved("Save failed");
             notify("Local storage unavailable. Export a .baizefig backup.");
@@ -345,9 +378,57 @@ export default function App() {
   const patch = (patch: Partial<Node>) =>
     run({ type: "update", ids: selected, patch });
   const openFiles = async () => {
+    await save(doc);
     setDocuments(await listDocuments());
+    setTrashedFiles(await listTrash());
+    setShowTrash(false);
     setModal("files");
   };
+  async function deleteLocalFile(target: Document) {
+    if (fileBusy) return;
+    setFileBusy(true);
+    try {
+      if (target.id === doc.id) await save(doc);
+      await trashDocument(target.id);
+      const remaining = await listDocuments();
+      if (target.id === doc.id) {
+        const next = remaining[0] ?? emptyDocument();
+        if (!remaining.length) {
+          next.name = t("Untitled");
+          next.pages[0].name = t("Page {number}", { number: 1 });
+          await save(next);
+          remaining.push(next);
+        }
+        history.current = new History();
+        setDoc(next);
+        setPage(next.pages[0].id);
+        setSelected([]);
+        setCollapsed(new Set());
+        setView({ x: 100, y: 80, zoom: 1 });
+      }
+      setDocuments(remaining);
+      setTrashedFiles(await listTrash());
+      notify("File moved to trash");
+    } catch (error) {
+      notify((error as Error).message);
+    } finally {
+      setFileBusy(false);
+    }
+  }
+  async function restoreLocalFile(id: string) {
+    if (fileBusy) return;
+    setFileBusy(true);
+    try {
+      await restoreDocument(id);
+      setDocuments(await listDocuments());
+      setTrashedFiles(await listTrash());
+      notify("File restored");
+    } catch (error) {
+      notify((error as Error).message);
+    } finally {
+      setFileBusy(false);
+    }
+  }
   const localExport = () => {
     download(JSON.stringify(doc, null, 2), `${doc.name}.baizefig`);
     notify("Local copy exported");
@@ -390,17 +471,27 @@ export default function App() {
         n.visible &&
         !n.locked &&
         (() => {
-          const a = absolute(doc, n);
-          return (
-            p.x >= a.x &&
-            p.x <= a.x + n.width &&
-            p.y >= a.y &&
-            p.y <= a.y + n.height
-          );
+          try {
+            const local = transformPoint(
+              inverse(worldTransform(doc, n)),
+              p.x,
+              p.y,
+            );
+            return (
+              local.x >= 0 &&
+              local.x <= n.width &&
+              local.y >= 0 &&
+              local.y <= n.height
+            );
+          } catch {
+            return false;
+          }
         })(),
     );
   }
   function pointerDown(e: RPointer, id?: string, handle?: string) {
+    if (editingText) return;
+    lastPointerHit.current = id;
     if (e.button === 2) return;
     if (e.button !== 0 && e.button !== 1) return;
     setContext(null);
@@ -425,10 +516,12 @@ export default function App() {
     if (tool !== "move") {
       const kind: Kind = tool === "pen" || tool === "pencil" ? "path" : tool;
       const parent = kind === "frame" ? undefined : parentFor(p);
-      const origin = parent ? absolute(doc, parent) : { x: 0, y: 0 };
+      const origin = parent
+        ? transformPoint(inverse(worldTransform(doc, parent)), p.x, p.y)
+        : p;
       const n = makeNode(kind, page, {
-        x: p.x - origin.x,
-        y: p.y - origin.y,
+        x: origin.x,
+        y: origin.y,
         parentId: parent?.id ?? null,
         width: tool === "text" ? 240 : 0,
         height: tool === "text" ? 36 : 0,
@@ -453,8 +546,11 @@ export default function App() {
       if (!e.metaKey && !e.ctrlKey) {
         const parents = ancestors(doc, n);
         const selectedParent = parents.find((p) => selected.includes(p.id));
-        if (selectedParent) n = selectedParent;
-        else if (!selected.includes(n.id)) {
+        if (selectedParent) {
+          const chain = [n, ...parents],
+            index = chain.findIndex((p) => p.id === selectedParent.id);
+          n = chain[Math.max(0, index - 1)];
+        } else if (!selected.includes(n.id)) {
           const group = parents.find((p) =>
             ["group", "component", "instance"].includes(p.type),
           );
@@ -548,32 +644,15 @@ export default function App() {
       return;
     }
     if (d.type === "resize") {
-      const n = d.before.nodes.find((n) => n.id === d.nodeId)!;
-      let x = n.x,
-        y = n.y,
-        w = n.width,
-        h = n.height;
-      const handle = d.handle!;
-      if (handle.includes("e")) w = Math.max(1, n.width + dx);
-      if (handle.includes("s")) h = Math.max(1, n.height + dy);
-      if (handle.includes("w")) {
-        w = Math.max(1, n.width - dx);
-        x = n.x + n.width - w;
+      try {
+        setDoc(
+          resizeInWorld(d.before, d.nodeId!, d.handle!, dx, dy, e.shiftKey),
+        );
+      } catch (error) {
+        setDoc(d.before);
+        drag.current = null;
+        notify((error as Error).message);
       }
-      if (handle.includes("n")) {
-        h = Math.max(1, n.height - dy);
-        y = n.y + n.height - h;
-      }
-      if (e.shiftKey) {
-        const ratio = n.width / Math.max(1, n.height);
-        h = w / ratio;
-      }
-      setDoc((prev) => ({
-        ...prev,
-        nodes: prev.nodes.map((a) =>
-          a.id === n.id ? { ...a, x, y, width: w, height: h } : a,
-        ),
-      }));
       return;
     }
     if (d.type === "draw") {
@@ -584,12 +663,15 @@ export default function App() {
           const parent = n.parentId
             ? prev.nodes.find((a) => a.id === n.parentId)
             : undefined;
-          const o = parent ? absolute(prev, parent) : { x: 0, y: 0 };
+          const m = parent
+            ? inverse(worldTransform(d.before, parent))
+            : undefined;
+          const start = m ? transformPoint(m, d.start.x, d.start.y) : d.start,
+            end = m ? transformPoint(m, p.x, p.y) : p,
+            localDx = end.x - start.x,
+            localDy = end.y - start.y;
           if (n.type === "path") {
-            const pts = [
-              ...(n.points ?? []),
-              { x: p.x - d.start.x, y: p.y - d.start.y },
-            ];
+            const pts = [...(n.points ?? []), { x: localDx, y: localDy }];
             return {
               ...n,
               points: pts,
@@ -601,8 +683,8 @@ export default function App() {
                 Math.min(0, ...pts.map((a) => a.y)),
             };
           }
-          let w = Math.abs(dx),
-            h = Math.abs(dy);
+          let w = Math.abs(localDx),
+            h = Math.abs(localDy);
           if (e.shiftKey) {
             const side = Math.max(w, h);
             w = side;
@@ -610,8 +692,8 @@ export default function App() {
           }
           return {
             ...n,
-            x: (dx < 0 ? d.start.x - w : d.start.x) - o.x,
-            y: (dy < 0 ? d.start.y - h : d.start.y) - o.y,
+            x: localDx < 0 ? start.x - w : start.x,
+            y: localDy < 0 ? start.y - h : start.y,
             width: Math.max(1, w),
             height: Math.max(1, h),
           };
@@ -630,12 +712,12 @@ export default function App() {
             (n) => n.pageId === page && !n.parentId && n.visible && !n.locked,
           )
           .filter((n) => {
-            const p = absolute(doc, n);
+            const p = bounds(doc, [n]);
             return (
               p.x >= marquee.x &&
               p.y >= marquee.y &&
-              p.x + n.width <= marquee.x + marquee.width &&
-              p.y + n.height <= marquee.y + marquee.height
+              p.x + p.width <= marquee.x + marquee.width &&
+              p.y + p.height <= marquee.y + marquee.height
             );
           });
         setSelected([...new Set([...d.ids, ...hits.map((n) => n.id)])]);
@@ -680,6 +762,11 @@ export default function App() {
       history.current.push(d.before);
       setDoc(next);
     }
+    if (
+      d.type === "draw" &&
+      next.nodes.find((n) => n.id === d.nodeId)?.type === "text"
+    )
+      setEditingText({ id: d.nodeId!, documentId: next.id, selectAll: true });
   }
   function cancelDrag() {
     const d = drag.current;
@@ -799,11 +886,13 @@ export default function App() {
         if (/\.(baizefig|json)$/i.test(file.name)) {
           const parsed = JSON.parse(await file.text());
           validateDocument(parsed);
+          parsed.id = id();
           await save(doc);
           history.current = new History();
           setDoc(parsed);
           setPage(parsed.pages[0].id);
           setSelected([]);
+          setModal(null);
           notify("Document imported");
           return;
         }
@@ -981,22 +1070,22 @@ export default function App() {
     });
   }
   function createInstance(n: Node) {
-    const result = execute(doc, { type: "duplicate", ids: [n.id], offset: 40 });
-    const selectedId = result.selection![0];
-    const next = {
-      ...result.doc,
-      nodes: result.doc.nodes.map((a) =>
-        a.id === selectedId
-          ? {
-              ...a,
-              type: "instance" as const,
-              componentId: n.id,
-              name: t("{name} instance", { name: n.name }),
-            }
-          : a,
-      ),
-    };
-    change(next, [selectedId]);
+    try {
+      const next = createComponentInstance(doc, n.id, page, n.x + 40, n.y + 40);
+      change(next.doc, [next.id]);
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
+  function openMainComponent() {
+    if (!first?.componentId) return;
+    try {
+      const result = editLibraryComponent(doc, first.componentId);
+      change(result.doc, [result.id]);
+      setPage(result.doc.nodes.find((n) => n.id === result.id)!.pageId);
+    } catch (error) {
+      notify((error as Error).message);
+    }
   }
   const actions = [
     { name: "General settings", key: "", run: () => setModal("settings") },
@@ -1570,9 +1659,7 @@ export default function App() {
                       ? "Create with Baize"
                       : modal === "bridge"
                         ? "Connect external AI"
-                        : first?.type === "text"
-                          ? "Edit text"
-                          : "Rename layer";
+                        : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -1828,15 +1915,20 @@ export default function App() {
               setContext({ x: e.clientX, y: e.clientY });
             }}
             onDoubleClick={(e) => {
+              e.preventDefault();
               const el = (e.target as Element).closest("[data-node-id]");
-              if (!el) return;
-              const n = doc.nodes.find(
-                (n) => n.id === el.getAttribute("data-node-id"),
-              );
+              const hitId =
+                el?.getAttribute("data-node-id") ?? lastPointerHit.current;
+              if (!hitId) return;
+              const n = doc.nodes.find((n) => n.id === hitId);
               if (n?.type === "text") {
                 setSelected([n.id]);
-                setTextValue(n.text);
-                setModal("text");
+                if (!n.locked && !ancestors(doc, n).some((p) => p.locked))
+                  setEditingText({
+                    id: n.id,
+                    documentId: doc.id,
+                    caret: { x: e.clientX, y: e.clientY },
+                  });
               } else if (n) {
                 setSelected([n.id]);
               }
@@ -1890,7 +1982,36 @@ export default function App() {
                 pageId={page}
                 onNode={pointerDown}
                 outline={outline}
+                editingTextId={
+                  editingText?.documentId === doc.id
+                    ? editingText.id
+                    : undefined
+                }
               />
+              {editingText?.documentId === doc.id &&
+                (() => {
+                  const node = doc.nodes.find(
+                    (n) => n.id === editingText.id && n.pageId === page,
+                  );
+                  return node ? (
+                    <CanvasTextEditor
+                      key={`${doc.id}-${node.id}`}
+                      doc={doc}
+                      node={node}
+                      session={editingText}
+                      onCancel={() => setEditingText(null)}
+                      onCommit={(text) => {
+                        setEditingText(null);
+                        if (text !== node.text)
+                          run({
+                            type: "update",
+                            ids: [node.id],
+                            patch: { text },
+                          });
+                      }}
+                    />
+                  ) : null;
+                })()}
               {selectionBox && (
                 <g className="selection-overlay">
                   <rect
@@ -1905,25 +2026,22 @@ export default function App() {
                   />
                   {chosen.length === 1 &&
                     !first.locked &&
-                    !first.rotation &&
-                    worldTransform(doc, first)
-                      .slice(0, 4)
-                      .every((v, i) => Math.abs(v - [1, 0, 0, 1][i]) < 1e-8) &&
                     ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((h) => {
-                      const x =
-                          selectionBox.x +
-                          (h.includes("e")
-                            ? selectionBox.width
+                      const handlePoint = transformPoint(
+                          worldTransform(doc, first),
+                          h.includes("e")
+                            ? first.width
                             : h.includes("w")
                               ? 0
-                              : selectionBox.width / 2),
-                        y =
-                          selectionBox.y +
-                          (h.includes("s")
-                            ? selectionBox.height
+                              : first.width / 2,
+                          h.includes("s")
+                            ? first.height
                             : h.includes("n")
                               ? 0
-                              : selectionBox.height / 2);
+                              : first.height / 2,
+                        ),
+                        x = handlePoint.x,
+                        y = handlePoint.y;
                       return (
                         <rect
                           key={h}
@@ -2301,6 +2419,51 @@ export default function App() {
                         </button>
                       ))}
                     </div>
+                    {selected.length > 1 && (
+                      <div className="combine-controls">
+                        {(
+                          [
+                            "union",
+                            "subtract",
+                            "intersect",
+                            "exclude",
+                            "mask",
+                          ] as const
+                        ).map((mode) => (
+                          <button
+                            key={mode}
+                            title={t(
+                              {
+                                union: "Union",
+                                subtract: "Subtract",
+                                intersect: "Intersect",
+                                exclude: "Exclude",
+                                mask: "Use as mask",
+                              }[mode],
+                            )}
+                            aria-label={t(
+                              {
+                                union: "Union",
+                                subtract: "Subtract",
+                                intersect: "Intersect",
+                                exclude: "Exclude",
+                                mask: "Use as mask",
+                              }[mode],
+                            )}
+                            onClick={() => {
+                              try {
+                                const next = combineShapes(doc, selected, mode);
+                                change(next.doc, [next.id]);
+                              } catch (error) {
+                                notify((error as Error).message);
+                              }
+                            }}
+                          >
+                            <BooleanIcon operation={mode} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
                     <div className="field-grid">
                       <NumberField
                         label="X"
@@ -2353,31 +2516,33 @@ export default function App() {
                         </button>
                       </div>
                       <div className="segmented">
-                        {(["none", "horizontal", "vertical"] as const).map(
-                          (d) => (
-                            <button
-                              key={d}
-                              className={
-                                (first.layout ?? "none") === d ? "active" : ""
-                              }
-                              onClick={() =>
-                                run({
-                                  type: "layout",
-                                  id: first.id,
-                                  direction: d,
-                                })
-                              }
-                            >
-                              {t(
-                                d === "none"
-                                  ? "Free"
-                                  : d === "horizontal"
-                                    ? "→ Horizontal"
-                                    : "↓ Vertical",
-                              )}
-                            </button>
-                          ),
-                        )}
+                        {(
+                          ["none", "horizontal", "vertical", "grid"] as const
+                        ).map((d) => (
+                          <button
+                            key={d}
+                            className={
+                              (first.layout ?? "none") === d ? "active" : ""
+                            }
+                            onClick={() =>
+                              run({
+                                type: "layout",
+                                id: first.id,
+                                direction: d,
+                              })
+                            }
+                          >
+                            {t(
+                              d === "none"
+                                ? "Free"
+                                : d === "horizontal"
+                                  ? "→ Horizontal"
+                                  : d === "vertical"
+                                    ? "↓ Vertical"
+                                    : "Grid",
+                            )}
+                          </button>
+                        ))}
                       </div>
                       {first.layout && first.layout !== "none" && (
                         <div className="field-grid">
@@ -2459,16 +2624,9 @@ export default function App() {
                           ))}
                         </select>
                       </div>
-                      <textarea
-                        className="text-content"
-                        aria-label={t("Text content")}
-                        key={first.id + first.text}
-                        defaultValue={first.text}
-                        onBlur={(e) => {
-                          if (e.target.value !== first.text)
-                            patch({ text: e.target.value });
-                        }}
-                      />
+                      <p className="muted">
+                        {t("Double-click text on the canvas to edit content.")}
+                      </p>
                     </section>
                   )}
                   <section>
@@ -2589,11 +2747,72 @@ export default function App() {
                       </button>
                     )}
                     {first.type === "instance" && (
-                      <p className="muted">
-                        {t(
-                          "Instance is a snapshot copy in v0.1. Live overrides are planned.",
-                        )}
-                      </p>
+                      <>
+                        <p className="muted">
+                          {t(
+                            "Instances follow their main component while preserving local overrides.",
+                          )}
+                        </p>
+                        <button onClick={openMainComponent}>
+                          {t("Edit main component")}
+                        </button>
+                        <label>
+                          {t("Swap component")}
+                          <select
+                            aria-label={t("Swap component")}
+                            value={first.componentId ?? ""}
+                            onChange={(e) => {
+                              try {
+                                change(
+                                  swapComponentInstance(
+                                    doc,
+                                    first.id,
+                                    e.target.value,
+                                  ),
+                                  [first.id],
+                                );
+                              } catch (error) {
+                                notify((error as Error).message);
+                              }
+                            }}
+                          >
+                            {(doc.componentLibrary ?? []).map((c) => (
+                              <option key={c.sourceId} value={c.sourceId}>
+                                {c.name}
+                              </option>
+                            ))}
+                            {doc.nodes
+                              .filter((n) => n.type === "component")
+                              .map((c) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.name}
+                                </option>
+                              ))}
+                          </select>
+                        </label>
+                        <button
+                          onClick={() => {
+                            try {
+                              change(resetComponentInstance(doc, first.id), [
+                                first.id,
+                              ]);
+                            } catch (error) {
+                              notify((error as Error).message);
+                            }
+                          }}
+                        >
+                          {t("Reset instance overrides")}
+                        </button>
+                        <button
+                          onClick={() =>
+                            change(detachComponentInstance(doc, first.id), [
+                              first.id,
+                            ])
+                          }
+                        >
+                          {t("Detach instance")}
+                        </button>
+                      </>
                     )}
                   </section>
                 </>
@@ -2902,6 +3121,112 @@ export default function App() {
                     </select>
                   </label>
                 ))}
+                {(doc.typedVariables ?? []).map((v) => (
+                  <div className="variable-row" key={v.id}>
+                    <span>{v.name}</span>
+                    <input
+                      aria-label={t("Value for {name}", { name: v.name })}
+                      key={`${v.id}-${v.value}`}
+                      type={
+                        v.type === "number"
+                          ? "number"
+                          : v.type === "boolean"
+                            ? "checkbox"
+                            : "text"
+                      }
+                      defaultValue={
+                        v.type !== "boolean" ? String(v.value) : undefined
+                      }
+                      defaultChecked={
+                        v.type === "boolean" ? Boolean(v.value) : undefined
+                      }
+                      onChange={(e) => {
+                        if (v.type === "boolean") {
+                          try {
+                            change(
+                              editTypedVariable(doc, v.id, e.target.checked),
+                            );
+                          } catch (error) {
+                            notify((error as Error).message);
+                          }
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (v.type !== "boolean") {
+                          try {
+                            change(
+                              editTypedVariable(
+                                doc,
+                                v.id,
+                                v.type === "number"
+                                  ? Number(e.target.value)
+                                  : e.target.value,
+                              ),
+                            );
+                          } catch (error) {
+                            notify((error as Error).message);
+                          }
+                        }
+                      }}
+                    />
+                    <select
+                      aria-label={t("Bind variable {name}", { name: v.name })}
+                      value=""
+                      disabled={!selected.length}
+                      onChange={(e) => {
+                        let next = doc;
+                        for (const node of chosen)
+                          next = execute(next, {
+                            type: "update",
+                            ids: [node.id],
+                            patch: {
+                              bindings: {
+                                ...node.bindings,
+                                [e.target.value]: v.id,
+                              },
+                            },
+                          }).doc;
+                        change(next);
+                      }}
+                    >
+                      <option value="">{t("Bind property")}</option>
+                      {Object.entries(bindingTypes)
+                        .filter(([, type]) => type === v.type)
+                        .map(([key]) => (
+                          <option key={key} value={key}>
+                            {t(key)}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                ))}
+                {first &&
+                  (doc.variableCollections ?? []).map((c) => (
+                    <label className="variable-mode" key={`node-${c.id}`}>
+                      <span>
+                        {t("Layer mode")} · {c.name}
+                      </span>
+                      <select
+                        aria-label={t("Layer mode for {name}", {
+                          name: c.name,
+                        })}
+                        value={first.variableModes?.[c.id] ?? ""}
+                        onChange={(e) => {
+                          const modes = { ...first.variableModes };
+                          if (e.target.value) modes[c.id] = e.target.value;
+                          else delete modes[c.id];
+                          patch({ variableModes: modes });
+                        }}
+                      >
+                        <option value="">{t("Inherit")}</option>
+                        {c.modes.map((m) => (
+                          <option key={m.id} value={m.id}>
+                            {m.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ))}
                 <div className="variables-list">
                   {(doc.variables ?? []).map((v) => (
                     <div className="variable-row" key={v.id}>
@@ -2991,7 +3316,7 @@ export default function App() {
                 </button>
                 <p className="notice">
                   {t(
-                    "Color collections, modes and resolvable aliases are supported. Number, string and boolean variables are not yet available.",
+                    "Color, number, string and boolean variables retain modes and resolvable aliases.",
                   )}
                 </p>
               </>
@@ -3000,7 +3325,7 @@ export default function App() {
               <>
                 <p className="muted">
                   {t(
-                    "Components in this file. Instances are snapshot copies in v0.1.",
+                    "Instances follow their main component while preserving local overrides.",
                   )}
                 </p>
                 <div className="asset-list">
@@ -3110,45 +3435,87 @@ export default function App() {
                     {t("Import")}
                   </button>
                 </div>
+                <div className="file-list-tabs">
+                  <button
+                    className={!showTrash ? "active" : ""}
+                    onClick={() => setShowTrash(false)}
+                  >
+                    {t("Files")}
+                  </button>
+                  <button
+                    className={showTrash ? "active" : ""}
+                    onClick={() => setShowTrash(true)}
+                  >
+                    {t("Trash")} {`(${trashedFiles.length})`}
+                  </button>
+                </div>
+                {showTrash && (
+                  <p className="muted">
+                    {t(
+                      "Deleted files stay in this browser trash and can be restored. Original files on your computer are unchanged.",
+                    )}
+                  </p>
+                )}
                 <div className="file-grid">
-                  {documents.map((d) => (
-                    <button
-                      className="file-card"
-                      key={d.id}
-                      onClick={() => {
-                        void save(doc).then(() => {
-                          setDoc(d);
-                          setPage(d.pages[0].id);
-                          setSelected([]);
-                          history.current = new History();
-                          setModal(null);
-                        });
-                      }}
-                    >
-                      <div className="file-preview">
-                        <svg viewBox="0 0 1200 850">
-                          <Scene doc={d} pageId={d.pages[0].id} />
-                        </svg>
-                      </div>
-                      <strong>{d.name}</strong>
-                      <span>
-                        {t("{pages} page · {layers} layers", {
-                          pages: d.pages.length,
-                          layers: d.nodes.length,
-                        })}
-                      </span>
-                    </button>
+                  {(showTrash
+                    ? trashedFiles.map((record) => record.document)
+                    : documents
+                  ).map((d) => (
+                    <article className="file-card-shell" key={d.id}>
+                      <button
+                        className="file-card"
+                        disabled={fileBusy || showTrash}
+                        onClick={() => {
+                          void save(doc).then(() => {
+                            setDoc(d);
+                            setPage(d.pages[0].id);
+                            setSelected([]);
+                            history.current = new History();
+                            setModal(null);
+                          });
+                        }}
+                      >
+                        <div className="file-preview" aria-hidden="true">
+                          <svg viewBox="0 0 1200 850">
+                            <Scene doc={d} pageId={d.pages[0].id} />
+                          </svg>
+                        </div>
+                        <strong>{d.name}</strong>
+                        <span>
+                          {t("{pages} page · {layers} layers", {
+                            pages: d.pages.length,
+                            layers: d.nodes.length,
+                          })}
+                        </span>
+                      </button>
+                      <button
+                        className="file-card-action"
+                        disabled={fileBusy}
+                        aria-label={t(
+                          showTrash ? "Restore {name}" : "Delete file {name}",
+                          { name: d.name },
+                        )}
+                        onClick={() =>
+                          void (showTrash
+                            ? restoreLocalFile(d.id)
+                            : deleteLocalFile(d))
+                        }
+                      >
+                        {showTrash ? t("Restore") : <Trash2 size={16} />}
+                      </button>
+                    </article>
                   ))}
                 </div>
+                {showTrash && !trashedFiles.length && (
+                  <p className="muted">{t("Trash is empty")}</p>
+                )}
               </>
             )}
             {modal === "text" && (
               <>
                 <textarea
                   autoFocus
-                  aria-label={t(
-                    first?.type === "text" ? "Edit text" : "Rename layer",
-                  )}
+                  aria-label={t("Rename layer")}
                   className="edit-text"
                   value={textValue}
                   onChange={(e) => setTextValue(e.target.value)}
@@ -3156,11 +3523,7 @@ export default function App() {
                 <button
                   className="primary"
                   onClick={() => {
-                    patch(
-                      first?.type === "text"
-                        ? { text: textValue }
-                        : { name: textValue },
-                    );
+                    patch({ name: textValue });
                     setModal(null);
                   }}
                 >
@@ -3339,52 +3702,13 @@ export default function App() {
           </div>
         </div>
       )}
-      {present &&
-        (() => {
-          const n = doc.nodes.find((n) => n.id === present);
-          if (!n) return null;
-          return (
-            <div className="presentation">
-              <div className="presentation-bar">
-                <span>
-                  BaizeFig <span>/ {n.name}</span>
-                </span>
-                <button onClick={() => setPresent(null)}>
-                  <X size={18} />
-                  {t("Close preview")}
-                </button>
-              </div>
-              <svg
-                aria-label={t("Prototype preview")}
-                viewBox={`0 0 ${n.width} ${n.height}`}
-                onClick={(e) => {
-                  const el = (e.target as Element).closest("[data-node-id]");
-                  const node = doc.nodes.find(
-                    (a) => a.id === el?.getAttribute("data-node-id"),
-                  );
-                  const linked = node?.targetId
-                    ? node
-                    : node
-                      ? ancestors(doc, node).find((a) => a.targetId)
-                      : undefined;
-                  if (linked?.targetId) setPresent(linked.targetId);
-                }}
-              >
-                <Scene
-                  doc={{
-                    ...doc,
-                    nodes: doc.nodes.map((a) =>
-                      a.id === n.id ? { ...a, x: 0, y: 0 } : a,
-                    ),
-                  }}
-                  pageId={page}
-                  rootId={n.id}
-                />
-              </svg>
-              <p>{t("Click linked elements to navigate · Esc to close")}</p>
-            </div>
-          );
-        })()}
+      {present && (
+        <PrototypePlayer
+          doc={doc}
+          initialId={present}
+          onClose={() => setPresent(null)}
+        />
+      )}
       {toast && (
         <div className="toast" role="status">
           {t(toast)}

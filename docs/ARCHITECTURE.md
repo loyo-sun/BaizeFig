@@ -17,13 +17,23 @@ React + TypeScript + Vite，SVG 场景渲染，IndexedDB 持久化。没有中�
 
 源文件：`src/core.ts` 负责文档与命令；`src/Canvas.tsx` 负责场景与导出；`src/storage.ts` 负责存储；`src/ai.ts` 负责模型；`src/App.tsx` 负责编辑器交互；`bridge/server.mjs` 负责本地 MCP 与浏览器转接。
 
+## 新增的兼容与交互模块
+
+- `components.ts`：保留导入定义、实例展开、稳定路径、覆盖、重置、交换、分离及主组件变更传播。结构编辑要求先分离实例，避免修改被静默丢弃。
+- `layout.ts`：Flex/Wrap/Grid、Fill 分配与尺寸边界、基线和父级尺寸约束；相关几何变化向嵌套布局传播。
+- `textLayout.ts` / `textEditing.ts` / `CanvasTextEditor.tsx`：字体测量、字素换行、样式范围迁移与画布输入，处理组合输入和空行占位。
+- `appearance.tsx` / `combine.ts`：多重填充、线性/径向渐变、效果、蒙版与保留子图层的布尔合成。SVG 定义按场景隔离。
+- `typedVariables.ts`：数字/文本/布尔值、别名、逐节点模式继承和属性绑定；颜色变量及透明度继续由 `variables.ts` 管理。
+- `prototype.ts` / `PrototypePlayer.tsx`：触发器、多动作、跨页导航、覆盖层、返回与淡入预览；未支持动作保留兼容性提示。
+- `geometry.ts`：在世界/局部坐标间进行缩放计算，保持对角锚点。
+
 ## 数据模型
 
 顶层：`format: "baizefig"`、`version: 1`、`id`、`name`、`pages`、`nodes`、`background`。
 
 节点使用稳定 ID，`pageId` 标识页面，`parentId` 构成层级树。位置为父节点局部坐标。节点包含类型、尺寸、旋转、填充、描边、文字与素材等字段。Frame 的子节点按画板边界裁剪。只有 frame/group/component/instance 可以做父节点。
 
-场景与导出共用渲染器。选择框与交互几何当前仅正确处理未旋转的层级坐标；旋转对象可以通过属性输入渲染，但嵌套旋转的边界、命中和变换尚未达到 Figma 语义。
+场景与导出共用渲染器。世界仿射矩阵用于包围盒、选区导出、分组、对齐、绘图和单对象缩放；旋转、斜切和镜像缩放保留对角锚点。完整 Scale/重父级与退化几何仍需扩展。画布内文字编辑使用跟随世界矩阵的 HTML 编辑层，提交后通过统一命令引擎重排并形成撤销事务；编辑层不会进入导出文件。
 
 ## 命令
 
@@ -45,7 +55,7 @@ React + TypeScript + Vite，SVG 场景渲染，IndexedDB 持久化。没有中�
 
 ## 本地存储与恢复
 
-IndexedDB 数据库 `baizefig` 包含 documents 和 settings。保存采用 400ms 防抖，界面显示结果。浏览器存储不是永久备份，清理站点数据会删除设计；导出 `.baizefig` 文件才能在外部独立保存。当前没有文件系统实时写入和灾难恢复版本库，也尚无离线应用壳缓存或 PWA。
+IndexedDB 数据库 `baizefig` 已升级为版本 2，包含 documents、settings 和 trash。删除与最后打开文档更新在同一事务完成；保存会检查回收站，阻止过期自动保存恢复已删除文档。回收站恢复不影响电脑中的原始文件。保存采用 400ms 防抖，界面显示结果。浏览器存储不是永久备份，清理站点数据会删除设计；导出 `.baizefig` 文件才能在外部独立保存。当前没有文件系统实时写入和灾难恢复版本库，也尚无离线应用壳缓存或 PWA。
 
 ## AI / MCP 安全边界
 

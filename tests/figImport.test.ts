@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { zipSync, deflateSync, strToU8 } from "fflate";
 import { parseSchema, encodeBinarySchema, compileSchema } from "kiwi-schema";
 import { importFig, decodeFigMessage } from "../src/figImport";
-import { validateDocument } from "../src/core";
+import { validateDocument, execute } from "../src/core";
 
 const schema = parseSchema(`
 struct GUID { uint sessionID; uint localID; }
@@ -101,7 +101,7 @@ describe("Figma import", () => {
     ).not.toThrow();
     expect(importFig(raw, "Raw.fig").document.name).toBe("Raw");
   });
-  it("restores same-page click navigation and reports advanced triggers without inventing interactions", () => {
+  it("restores same-page click navigation and reports hover triggers without inventing unsupported interactions", () => {
     const message = {
       nodeChanges: [
         ...nodes.map((n) =>
@@ -142,11 +142,15 @@ describe("Figma import", () => {
     )!.prototypeInteractions![0].event.interactionType = "ON_HOVER";
     const skipped = importFig(stream(advanced));
     expect(
+      skipped.document.nodes.find((n) => n.name === "标题")!.interactions?.[0]
+        .trigger,
+    ).toBe("hover");
+    expect(
       skipped.document.nodes.find((n) => n.name === "标题")!.targetId,
     ).toBeUndefined();
     expect(
-      skipped.report.warnings.some((w) => w.includes("Advanced prototype")),
-    ).toBe(true);
+      skipped.report.warnings.some((w) => w.includes("advanced prototype")),
+    ).toBe(false);
   });
   it("rejects malformed archives, truncation and a thumbnail-only file without claiming success", () => {
     for (const bytes of [
@@ -223,6 +227,32 @@ it.skipIf(!sample)(
     );
     validateDocument(result.document);
     validateDocument(JSON.parse(JSON.stringify(result.document)));
+    const before = result.document.nodes.map((n) => ({
+      id: n.id,
+      x: n.x,
+      y: n.y,
+      width: n.width,
+      height: n.height,
+      text: n.text,
+      fill: n.fill,
+    }));
+    const untouched = execute(result.document, {
+      type: "update",
+      ids: [result.document.nodes[0].id],
+      patch: { name: "Renamed only" },
+    }).doc;
+    expect(
+      untouched.nodes.map((n) => ({
+        id: n.id,
+        x: n.x,
+        y: n.y,
+        width: n.width,
+        height: n.height,
+        text: n.text,
+        fill: n.fill,
+      })),
+    ).toEqual(before);
+
     console.log(
       "REALJET compatibility",
       JSON.stringify({

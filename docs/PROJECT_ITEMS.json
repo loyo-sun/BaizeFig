@@ -1,7 +1,7 @@
 {
   "repository": "loyo-sun/BaizeFig",
-  "target": "https://github.com/loyo-sun/BaizeFig/projects",
-  "project_sync": "pending_authorization",
+  "target": "https://github.com/loyo-sun/BaizeFig/issues",
+  "project_sync": "issues_only",
   "recorded_on": "2026-10-14",
   "items": [
     {
@@ -177,6 +177,16 @@
     {
       "key": "BZ-COMPAT-01",
       "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/35",
+      "intended_status": "Done"
+    },
+    {
+      "key": "BZ-FILES",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/36",
+      "intended_status": "Done"
+    },
+    {
+      "key": "BZ-CANVAS",
+      "issue_url": "https://github.com/loyo-sun/BaizeFig/issues/37",
       "intended_status": "Done"
     }
   ]

@@ -2,6 +2,7 @@
 
 白泽 · **通万物、识万象。**
 
+- [开发与接入指南](DEVELOPMENT.md)
 - [架构与命令协议](ARCHITECTURE.md)
 - [Figma 功能对齐矩阵](FIGMA_PARITY.md)
 - [菜单截图差异待办（28 项）](FIGMA_MENU_BACKLOG.md)

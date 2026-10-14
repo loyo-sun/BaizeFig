@@ -194,7 +194,7 @@ describe("compatibility geometry and rendering", () => {
     d.nodes = [n];
     let svg = await svgString(d, p);
     expect(svg).toContain("matrix(200 0 0 160 -50 -40)");
-    expect(svg).toContain("image-clip-image");
+    expect(svg).toMatch(/id="image-clip-[^"]+-image"/);
     expect(svg).toContain('opacity="0.5"');
     n.fidelity!.image!.mode = "fit";
     svg = await svgString(d, p);
@@ -239,12 +239,12 @@ describe("compatibility geometry and rendering", () => {
       ids: ["text"],
       patch: { text: "New" },
     }).doc;
-    expect(edited.nodes[0].fidelity?.text).toBeUndefined();
+    expect(edited.nodes[0].fidelity?.text?.characters).toBe("New");
     expect(await svgString(edited, p)).toContain("New");
     expect(
       execute(d, { type: "update", ids: ["text"], patch: { width: 300 } }).doc
         .nodes[0].fidelity?.text,
-    ).toBeUndefined();
+    ).toBeDefined();
   });
   it("rejects malicious/invalid serialized fidelity data and preserves valid JSON round trips", () => {
     const d = emptyDocument(),

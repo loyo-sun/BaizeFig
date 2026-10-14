@@ -1,3 +1,24 @@
+import { validateInteractions, type PrototypeInteraction } from "./prototype";
+import {
+  applyTypedBindings,
+  bindingTypes,
+  validateTypedVariables,
+  type TypedVariable,
+  type BindingProperty,
+} from "./typedVariables";
+import { resolveVariable } from "./variables";
+import {
+  layoutContainer,
+  applyConstraints,
+  type LayoutItem,
+  type Track,
+} from "./layout";
+import { reflowText, remapTextRuns, type TextRun } from "./textLayout";
+import {
+  recordOverrides,
+  synchronizeInstances,
+  updateLibraryFromMain,
+} from "./components";
 import { type VariableCollection, type ColorVariable } from "./variables";
 import {
   type Fidelity,
@@ -38,6 +59,12 @@ export interface Node {
   opacity: number;
   visible: boolean;
   locked: boolean;
+  textFlow?: {
+    autoResize: "fixed" | "height" | "both";
+    verticalAlign: "top" | "center" | "bottom";
+    letterSpacing: number;
+    runs?: TextRun[];
+  };
   text: string;
   fontSize: number;
   fontFamily: string;
@@ -45,20 +72,46 @@ export interface Node {
   textAlign: "left" | "center" | "right";
   lineHeight: number;
   fidelity?: Fidelity;
+  layoutItem?: LayoutItem;
+  constraints?: {
+    horizontal: "min" | "center" | "max" | "stretch" | "scale";
+    vertical: "min" | "center" | "max" | "stretch" | "scale";
+  };
   importedLayout?: {
     padding: [number, number, number, number];
     primary: "fixed" | "hug";
     counter: "fixed" | "hug";
-    justify: "start" | "center" | "end" | "space-between";
-    align: "start" | "center" | "end";
+    justify:
+      | "start"
+      | "center"
+      | "end"
+      | "space-between"
+      | "space-around"
+      | "space-evenly";
+    align: "start" | "center" | "end" | "baseline" | "stretch";
+    wrap?: boolean;
+    counterGap?: number;
+    grid?: {
+      columns: Track[];
+      rows: Track[];
+      columnGap: number;
+      rowGap: number;
+    };
     absolute?: boolean;
   };
   image?: string;
   points?: { x: number; y: number }[];
-  layout?: "none" | "horizontal" | "vertical";
+  layout?: "none" | "horizontal" | "vertical" | "grid";
   gap?: number;
   padding?: number;
   componentId?: string;
+  componentOwner?: string;
+  componentPath?: string;
+  componentOverrides?: Record<string, Partial<Node>>;
+  componentClears?: Record<string, string[]>;
+  variableModes?: Record<string, string>;
+  bindings?: Partial<Record<BindingProperty, string>>;
+  interactions?: PrototypeInteraction[];
   targetId?: string;
   variableId?: string;
 }
@@ -77,6 +130,7 @@ export interface Document {
   componentLibrary?: { sourceId: string; name: string; nodes: Node[] }[];
   variableCollections?: VariableCollection[];
   variables?: ColorVariable[];
+  typedVariables?: TypedVariable[];
 }
 export type Command =
   | { type: "create"; nodes: Node[] }
@@ -98,7 +152,7 @@ export type Command =
   | {
       type: "layout";
       id: string;
-      direction: "none" | "horizontal" | "vertical";
+      direction: "none" | "horizontal" | "vertical" | "grid";
       gap?: number;
       padding?: number;
     };
@@ -129,6 +183,15 @@ export function makeNode(
     opacity: 1,
     visible: true,
     locked: false,
+    ...(type === "text"
+      ? {
+          textFlow: {
+            autoResize: "height" as const,
+            verticalAlign: "top" as const,
+            letterSpacing: 0,
+          },
+        }
+      : {}),
     text: "Text",
     fontSize: 24,
     fontFamily: "Inter, Arial, sans-serif",
@@ -259,108 +322,58 @@ export function bounds(doc: Document, nodes: Node[]) {
     height: Math.max(...b.map((n) => n.y + n.height)) - y,
   };
 }
-function relayout(doc: Document, affected: Set<string>) {
-  for (const n of [...doc.nodes].reverse()) {
-    if (!n.layout || n.layout === "none") continue;
-    if (n.importedLayout) {
-      if (!affected.has(n.id)) continue;
-      const horizontal = n.layout === "horizontal",
-        config = n.importedLayout,
-        [top, right, bottom, left] = config.padding;
-      const children = doc.nodes.filter(
-        (c) => c.parentId === n.id && c.visible && !c.importedLayout?.absolute,
-      );
-      const before = horizontal ? left : top,
-        after = horizontal ? right : bottom,
-        crossBefore = horizontal ? top : left,
-        crossAfter = horizontal ? bottom : right;
-      const total = children.reduce(
-          (sum, c) => sum + (horizontal ? c.width : c.height),
-          0,
-        ),
-        gap = n.gap ?? 0;
-      if (config.primary === "hug")
-        n[horizontal ? "width" : "height"] = Math.max(
-          1,
-          before + after + total + Math.max(0, children.length - 1) * gap,
-        );
-      if (config.counter === "hug")
-        n[horizontal ? "height" : "width"] = Math.max(
-          1,
-          crossBefore +
-            crossAfter +
-            Math.max(
-              0,
-              ...children.map((c) => (horizontal ? c.height : c.width)),
-            ),
-        );
-      const free =
-        (horizontal ? n.width : n.height) -
-        before -
-        after -
-        total -
-        Math.max(0, children.length - 1) * gap;
-      const actualGap =
-        config.justify === "space-between" && children.length > 1
-          ? gap + free / (children.length - 1)
-          : gap;
-      let pos =
-        before +
-        (config.justify === "center"
-          ? free / 2
-          : config.justify === "end"
-            ? free
-            : 0);
-      for (const child of children) {
-        const crossFree =
-          (horizontal ? n.height : n.width) -
-          crossBefore -
-          crossAfter -
-          (horizontal ? child.height : child.width);
-        const cross =
-          crossBefore +
-          (config.align === "center"
-            ? crossFree / 2
-            : config.align === "end"
-              ? crossFree
-              : 0);
-        if (horizontal) {
-          child.x = pos;
-          child.y = cross;
-        } else {
-          child.x = cross;
-          child.y = pos;
-        }
-        pos += (horizontal ? child.width : child.height) + actualGap;
+export function relayout(doc: Document, affected: Set<string>) {
+  for (let pass = 0; pass < Math.min(128, doc.nodes.length + 2); pass++) {
+    let changed = false;
+    for (const n of [...doc.nodes].reverse()) {
+      if (!n.layout || n.layout === "none") continue;
+      if (n.importedLayout) {
+        if (!affected.has(n.id)) continue;
+        const family = [n, ...doc.nodes.filter((c) => c.parentId === n.id)],
+          before = family.map((c) => [c.x, c.y, c.width, c.height]);
+        layoutContainer(n, family.slice(1));
+        family.forEach((c, i) => {
+          if (
+            [c.x, c.y, c.width, c.height].some(
+              (v, k) => Math.abs(v - before[i][k]) > 1e-6,
+            )
+          ) {
+            changed = true;
+            affected.add(c.id);
+          }
+        });
+        continue;
       }
-      continue;
-    }
 
-    let pos = n.padding ?? 16;
-    const children = doc.nodes.filter((a) => a.parentId === n.id && a.visible);
-    for (const c of children) {
-      if (n.layout === "horizontal") {
-        c.x = pos;
-        c.y = n.padding ?? 16;
-        pos += c.width + (n.gap ?? 12);
-      } else {
-        c.x = n.padding ?? 16;
-        c.y = pos;
-        pos += c.height + (n.gap ?? 12);
+      let pos = n.padding ?? 16;
+      const children = doc.nodes.filter(
+        (a) => a.parentId === n.id && a.visible,
+      );
+      for (const c of children) {
+        if (n.layout === "horizontal") {
+          c.x = pos;
+          c.y = n.padding ?? 16;
+          pos += c.width + (n.gap ?? 12);
+        } else {
+          c.x = n.padding ?? 16;
+          c.y = pos;
+          pos += c.height + (n.gap ?? 12);
+        }
+      }
+      if (children.length) {
+        const end = pos - (n.gap ?? 12) + (n.padding ?? 16);
+        if (n.layout === "horizontal") {
+          n.width = Math.max(1, end);
+          n.height =
+            Math.max(...children.map((c) => c.height)) + 2 * (n.padding ?? 16);
+        } else {
+          n.height = Math.max(1, end);
+          n.width =
+            Math.max(...children.map((c) => c.width)) + 2 * (n.padding ?? 16);
+        }
       }
     }
-    if (children.length) {
-      const end = pos - (n.gap ?? 12) + (n.padding ?? 16);
-      if (n.layout === "horizontal") {
-        n.width = Math.max(1, end);
-        n.height =
-          Math.max(...children.map((c) => c.height)) + 2 * (n.padding ?? 16);
-      } else {
-        n.height = Math.max(1, end);
-        n.width =
-          Math.max(...children.map((c) => c.width)) + 2 * (n.padding ?? 16);
-      }
-    }
+    if (!changed) break;
   }
 }
 export function reflowAfterPointerEdit(
@@ -378,13 +391,34 @@ export function reflowAfterPointerEdit(
       n.x !== previous.x ||
       n.y !== previous.y
     ) {
-      if (n.type === "text" && n.width !== previous.width && n.fidelity?.text)
-        delete n.fidelity.text;
+      if (n.type === "text" && n.width !== previous.width) {
+        if (n.fidelity) delete n.fidelity.text;
+        reflowText(n);
+      }
       affected.add(n.id);
       for (const parent of ancestors(doc, n)) affected.add(parent.id);
     }
   }
+  for (const n of doc.nodes) {
+    const prev = original.nodes.find((a) => a.id === n.id);
+    if (prev) {
+      const patch: Partial<Node> = {};
+      for (const key of ["x", "y", "width", "height", "rotation"] as const)
+        if (n[key] !== prev[key]) patch[key] = n[key];
+      if (
+        JSON.stringify(n.fidelity?.linear) !==
+          JSON.stringify(prev.fidelity?.linear) &&
+        n.fidelity
+      )
+        patch.fidelity = { size: n.fidelity.size, linear: n.fidelity.linear };
+      if (Object.keys(patch).length) recordOverrides(doc, [n.id], patch);
+    }
+  }
+  updateLibraryFromMain(doc, [...affected]);
+  synchronizeInstances(doc);
+  applyConstraints(original, doc);
   relayout(doc, affected);
+  updateLibraryFromMain(doc, [...affected]);
   validateDocument(doc);
   return doc;
 }
@@ -396,6 +430,30 @@ export function execute(
   let selection: string[] | undefined;
   const writable = (n: Node) =>
     !n.locked && !ancestors(doc, n).some((p) => p.locked);
+  if (
+    ["create", "delete", "group", "ungroup", "duplicate", "order"].includes(
+      command.type,
+    )
+  ) {
+    const ids =
+      command.type === "create"
+        ? command.nodes
+            .map((n) => n.parentId)
+            .filter((id): id is string => !!id)
+        : "ids" in command
+          ? command.ids
+          : [];
+    if (
+      doc.nodes.some(
+        (n) =>
+          ids.includes(n.id) &&
+          n.componentOwner &&
+          (command.type === "create" ||
+            (n.componentOwner !== n.id && !ids.includes(n.componentOwner))),
+      )
+    )
+      throw Error("Detach instance before changing its layer structure");
+  }
   switch (command.type) {
     case "create":
       doc.nodes.push(...structuredClone(command.nodes));
@@ -409,6 +467,9 @@ export function execute(
             Object.keys(command.patch).every((k) => k === "locked"))
         ) {
           const allowed = new Set([
+            "layoutItem",
+            "constraints",
+            "textFlow",
             "fidelity",
             "importedLayout",
             "name",
@@ -436,7 +497,10 @@ export function execute(
             "gap",
             "padding",
             "targetId",
+            "interactions",
             "variableId",
+            "variableModes",
+            "bindings",
           ]);
           const patch = Object.fromEntries(
             Object.entries(command.patch).filter(([key]) => allowed.has(key)),
@@ -456,8 +520,43 @@ export function execute(
             n.fidelity = structuredClone(n.fidelity);
             delete n.fidelity.text;
           }
+          if (n.textFlow?.runs) {
+            if (typeof patch.text === "string")
+              n.textFlow.runs = remapTextRuns(
+                n.text,
+                patch.text,
+                n.textFlow.runs,
+              );
+            for (const run of n.textFlow.runs)
+              for (const field of [
+                "fontSize",
+                "fontFamily",
+                "fontWeight",
+                "fill",
+              ] as const)
+                if (field in patch) delete run[field];
+          }
+          if (n.bindings && !("bindings" in patch))
+            for (const key of Object.keys(bindingTypes))
+              if (key in patch) delete n.bindings[key as BindingProperty];
           Object.assign(n, patch);
-          if ("fill" in patch && !("variableId" in patch)) delete n.variableId;
+          if (
+            [
+              "text",
+              "fontSize",
+              "fontFamily",
+              "fontWeight",
+              "lineHeight",
+              "textAlign",
+              "width",
+              "textFlow",
+            ].some((k) => k in patch)
+          )
+            reflowText(n);
+          if ("fill" in patch && !("variableId" in patch)) {
+            delete n.variableId;
+            if (n.fidelity?.paints) delete n.fidelity.paints;
+          }
         }
       break;
     case "delete": {
@@ -469,9 +568,37 @@ export function execute(
             .map((n) => n.id),
         ),
       );
+      for (const instance of doc.nodes.filter(
+        (n) =>
+          n.type === "instance" &&
+          n.componentId &&
+          set.has(n.componentId) &&
+          !set.has(n.id),
+      )) {
+        for (const member of doc.nodes.filter(
+          (n) => n.componentOwner === instance.id,
+        )) {
+          delete member.componentOwner;
+          delete member.componentPath;
+          delete member.componentOverrides;
+          delete member.componentClears;
+        }
+        instance.type = "group";
+        delete instance.componentId;
+      }
       doc.nodes = doc.nodes.filter((n) => !set.has(n.id));
-      for (const n of doc.nodes)
+      for (const n of doc.nodes) {
         if (n.targetId && set.has(n.targetId)) delete n.targetId;
+        if (n.interactions)
+          n.interactions = n.interactions
+            .map((i) => ({
+              ...i,
+              actions: i.actions.filter(
+                (a) => !("targetId" in a) || !set.has(a.targetId),
+              ),
+            }))
+            .filter((i) => i.actions.length);
+      }
       selection = [];
       break;
     }
@@ -546,10 +673,29 @@ export function execute(
             n.y +
             (selected.some((r) => r.id === n.id) ? (command.offset ?? 20) : 0),
           name: n.name + " copy",
+          componentOwner: n.componentOwner
+            ? (map.get(n.componentOwner) ?? n.componentOwner)
+            : undefined,
+          componentId: n.componentId
+            ? (map.get(n.componentId) ?? n.componentId)
+            : undefined,
           targetId: n.targetId
             ? (map.get(n.targetId) ?? n.targetId)
             : undefined,
         }));
+      for (const clone of clones) {
+        if (clone.targetId)
+          clone.targetId = map.get(clone.targetId) ?? clone.targetId;
+        if (clone.interactions)
+          clone.interactions = clone.interactions.map((i) => ({
+            ...i,
+            actions: i.actions.map((a) =>
+              "targetId" in a
+                ? { ...a, targetId: map.get(a.targetId) ?? a.targetId }
+                : a,
+            ),
+          }));
+      }
       doc.nodes.push(...clones);
       selection = selected.map((n) => map.get(n.id)!);
       break;
@@ -658,6 +804,23 @@ export function execute(
           command.padding,
           command.padding,
         ];
+      if (command.direction === "grid" && !n.importedLayout)
+        n.importedLayout = {
+          padding: [16, 16, 16, 16],
+          primary: "fixed",
+          counter: "hug",
+          justify: "start",
+          align: "stretch",
+          grid: {
+            columns: [
+              { kind: "fr", value: 1 },
+              { kind: "fr", value: 1 },
+            ],
+            rows: [],
+            columnGap: command.gap ?? 12,
+            rowGap: command.gap ?? 12,
+          },
+        };
       Object.assign(n, {
         layout: command.direction,
         gap: command.gap ?? n.gap ?? 12,
@@ -666,13 +829,56 @@ export function execute(
       break;
     }
   }
+  if (command.type === "update") {
+    recordOverrides(doc, command.ids, command.patch);
+    for (const node of doc.nodes.filter(
+      (n) => command.ids.includes(n.id) && n.bindings,
+    ))
+      recordOverrides(doc, [node.id], { bindings: node.bindings });
+    if (
+      ["text", "fontSize", "fontFamily", "fontWeight", "fill"].some(
+        (k) => k in command.patch,
+      )
+    )
+      for (const n of doc.nodes.filter(
+        (n) => command.ids.includes(n.id) && n.textFlow,
+      ))
+        recordOverrides(doc, [n.id], { textFlow: n.textFlow });
+  }
+  const modified = [
+    ...(command.type === "create"
+      ? command.nodes.map((n) => n.id)
+      : command.type === "layout"
+        ? [command.id]
+        : "ids" in command
+          ? command.ids
+          : []),
+  ];
+  for (const changed of original.nodes.filter((n) => modified.includes(n.id)))
+    for (const parent of ancestors(original, changed))
+      if (!modified.includes(parent.id)) modified.push(parent.id);
+  updateLibraryFromMain(doc, modified);
+  synchronizeInstances(doc);
   for (const n of doc.nodes) {
     if (n.variableId) {
       const variable = doc.variables?.find((v) => v.id === n.variableId);
-      if (variable) n.fill = variable.value;
+      if (variable) n.fill = resolveVariable(doc, n.variableId, new Set(), n);
     }
   }
+  applyTypedBindings(doc);
   const affected = new Set<string>();
+  for (const node of doc.nodes) {
+    const old = original.nodes.find((n) => n.id === node.id);
+    if (
+      old &&
+      ["width", "height", "x", "y", "text", "visible"].some(
+        (k) => (old as any)[k] !== (node as any)[k],
+      )
+    ) {
+      affected.add(node.id);
+      ancestors(doc, node).forEach((n) => affected.add(n.id));
+    }
+  }
   const geometry =
     command.type !== "update" ||
     Object.keys(command.patch).some((k) =>
@@ -712,7 +918,9 @@ export function execute(
       }
     }
   }
+  applyConstraints(original, doc);
   relayout(doc, affected);
+  updateLibraryFromMain(doc, [...affected, ...modified]);
   validateDocument(doc);
   return { doc, selection };
 }
@@ -739,7 +947,7 @@ export function validateDocument(value: unknown): asserts value is Document {
         (v) =>
           typeof v.id !== "string" ||
           typeof v.name !== "string" ||
-          !/^#[\da-f]{6}$/i.test(v.value),
+          !/^#[\da-f]{6}([\da-f]{2})?$/i.test(v.value),
       ))
   )
     throw Error("Invalid color variables");
@@ -779,7 +987,7 @@ export function validateDocument(value: unknown): asserts value is Document {
             !v ||
             typeof v !== "object" ||
             ("color" in v
-              ? !/^#[\da-f]{6}$/i.test(v.color)
+              ? !/^#[\da-f]{6}([\da-f]{2})?$/i.test(v.color)
               : !("alias" in v) ||
                 typeof v.alias !== "string" ||
                 !d.variables?.some((a) => a.id === v.alias)),
@@ -804,6 +1012,8 @@ export function validateDocument(value: unknown): asserts value is Document {
       });
     }
   }
+  validateTypedVariables(d);
+  validateInteractions(d);
   const pages = new Set(d.pages.map((p) => p.id));
   if (
     pages.size !== d.pages.length ||
@@ -838,16 +1048,162 @@ export function validateDocument(value: unknown): asserts value is Document {
     if (n.variableId && !d.variables?.some((v) => v.id === n.variableId))
       throw Error("Invalid color variable reference");
     if (n.fidelity) validateFidelity(n.fidelity);
+    if (n.textFlow) {
+      const f = n.textFlow;
+      if (
+        !["fixed", "height", "both"].includes(f.autoResize) ||
+        !["top", "center", "bottom"].includes(f.verticalAlign) ||
+        !Number.isFinite(f.letterSpacing) ||
+        (f.runs &&
+          (!Array.isArray(f.runs) ||
+            f.runs.some(
+              (r) =>
+                !Number.isInteger(r.start) ||
+                !Number.isInteger(r.end) ||
+                r.start < 0 ||
+                r.end < r.start ||
+                r.end > n.text.length ||
+                (r.fontSize !== undefined &&
+                  (!Number.isFinite(r.fontSize) || r.fontSize <= 0)) ||
+                (r.fontWeight !== undefined &&
+                  !Number.isFinite(r.fontWeight)) ||
+                (r.fill !== undefined && !/^#[\da-f]{3,8}$/i.test(r.fill)),
+            )))
+      )
+        throw Error("Invalid text layout");
+    }
+
+    if (
+      (n.componentOwner !== undefined &&
+        typeof n.componentOwner !== "string") ||
+      (n.componentPath !== undefined && typeof n.componentPath !== "string") ||
+      (n.componentId !== undefined && typeof n.componentId !== "string")
+    )
+      throw Error("Invalid component instance");
+    if (n.componentOverrides) {
+      if (
+        typeof n.componentOverrides !== "object" ||
+        Array.isArray(n.componentOverrides) ||
+        Object.keys(n.componentOverrides).length > 50000
+      )
+        throw Error("Invalid component instance");
+      for (const patch of Object.values(n.componentOverrides)) {
+        if (
+          !patch ||
+          typeof patch !== "object" ||
+          [
+            "id",
+            "parentId",
+            "pageId",
+            "componentOverrides",
+            "componentOwner",
+            "componentPath",
+          ].some((key) => key in patch)
+        )
+          throw Error("Invalid component instance");
+      }
+    }
+    if (
+      n.componentClears &&
+      (!n.componentClears ||
+        typeof n.componentClears !== "object" ||
+        Array.isArray(n.componentClears) ||
+        Object.values(n.componentClears).some(
+          (fields) =>
+            !Array.isArray(fields) ||
+            fields.some(
+              (field) => !["variableId", "fidelity.paints"].includes(field),
+            ),
+        ))
+    )
+      throw Error("Invalid component instance");
+
+    if (
+      n.constraints &&
+      (!["min", "center", "max", "stretch", "scale"].includes(
+        n.constraints.horizontal,
+      ) ||
+        !["min", "center", "max", "stretch", "scale"].includes(
+          n.constraints.vertical,
+        ))
+    )
+      throw Error("Invalid imported layout");
+    if (n.layoutItem) {
+      const item = n.layoutItem;
+      if (
+        (item.absolute !== undefined && typeof item.absolute !== "boolean") ||
+        ["row", "column", "rowSpan", "columnSpan"].some((key) => {
+          const value = item[key as keyof LayoutItem];
+          return (
+            value !== undefined &&
+            (typeof value !== "number" ||
+              !Number.isInteger(value) ||
+              value > 10000 ||
+              value < (key.endsWith("Span") ? 1 : 0))
+          );
+        }) ||
+        (item.minWidth !== undefined &&
+          item.maxWidth !== undefined &&
+          item.minWidth > item.maxWidth) ||
+        (item.minHeight !== undefined &&
+          item.maxHeight !== undefined &&
+          item.minHeight > item.maxHeight)
+      )
+        throw Error("Invalid imported layout");
+      if (
+        Object.entries(item).some(
+          ([k, v]) =>
+            !["align", "absolute"].includes(k) &&
+            v !== undefined &&
+            (!Number.isFinite(v) || typeof v !== "number" || v < 0),
+        ) ||
+        (item.align &&
+          !["start", "center", "end", "stretch", "baseline"].includes(
+            item.align,
+          ))
+      )
+        throw Error("Invalid imported layout");
+    }
     if (n.importedLayout) {
       const l = n.importedLayout;
+      if (
+        (l.wrap !== undefined && typeof l.wrap !== "boolean") ||
+        (l.counterGap !== undefined &&
+          (!Number.isFinite(l.counterGap) || l.counterGap < 0))
+      )
+        throw Error("Invalid imported layout");
+      if (
+        l.grid &&
+        (!Array.isArray(l.grid.columns) ||
+          !Array.isArray(l.grid.rows) ||
+          l.grid.columns.length > 1000 ||
+          l.grid.rows.length > 1000 ||
+          [...l.grid.columns, ...l.grid.rows].some(
+            (t) =>
+              !["fixed", "fr", "hug"].includes(t.kind) ||
+              !Number.isFinite(t.value) ||
+              t.value < 0,
+          ) ||
+          ![l.grid.columnGap, l.grid.rowGap].every(
+            (v) => Number.isFinite(v) && v >= 0,
+          ))
+      )
+        throw Error("Invalid imported layout");
       if (
         !Array.isArray(l.padding) ||
         l.padding.length !== 4 ||
         l.padding.some((x) => !Number.isFinite(x) || x < 0) ||
         !["fixed", "hug"].includes(l.primary) ||
         !["fixed", "hug"].includes(l.counter) ||
-        !["start", "center", "end", "space-between"].includes(l.justify) ||
-        !["start", "center", "end"].includes(l.align)
+        ![
+          "start",
+          "center",
+          "end",
+          "space-between",
+          "space-around",
+          "space-evenly",
+        ].includes(l.justify) ||
+        !["start", "center", "end", "baseline", "stretch"].includes(l.align)
       )
         throw Error("Invalid imported layout");
     }
@@ -887,7 +1243,10 @@ export function validateDocument(value: unknown): asserts value is Document {
       !/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(n.image)
     )
       throw Error("Invalid image data");
-    if (n.layout && !["none", "horizontal", "vertical"].includes(n.layout))
+    if (
+      n.layout &&
+      !["none", "horizontal", "vertical", "grid"].includes(n.layout)
+    )
       throw Error("Invalid layout");
     for (const value of [n.gap, n.padding])
       if (value !== undefined && (!Number.isFinite(value) || value < 0))

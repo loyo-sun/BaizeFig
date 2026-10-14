@@ -4,6 +4,53 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Edit text on canvas": "画布内编辑文字",
+  "Double-click text on the canvas to edit content.":
+    "双击画布中的文字即可编辑内容。",
+  Union: "合并",
+  Subtract: "减去",
+  Intersect: "相交",
+  Exclude: "排除",
+  "Use as mask": "用作蒙版",
+  "Select at least two layers": "请至少选择两个图层",
+  "Detach instance before changing its layer structure":
+    "请先分离实例，再修改其图层结构。",
+  "Value for {name}": "{name} 的值",
+  "Bind variable {name}": "绑定变量 {name}",
+  "Bind property": "绑定属性",
+  "Layer mode": "图层模式",
+  "Layer mode for {name}": "{name} 的图层模式",
+  Inherit: "继承",
+  width: "宽度",
+  height: "高度",
+  x: "X",
+  y: "Y",
+  rotation: "旋转",
+  opacity: "不透明度",
+  radius: "圆角",
+  strokeWidth: "描边宽度",
+  fontSize: "字号",
+  fontFamily: "字体",
+  text: "文本",
+  visible: "可见性",
+  gap: "间距",
+
+  "Some advanced prototype actions or transitions could not be restored.":
+    "部分高级原型动作或过渡尚未还原。",
+  "Color, number, string and boolean variables retain modes and resolvable aliases.":
+    "颜色、数字、文本和布尔变量会保留模式及可解析别名。",
+  "Some advanced variable types are not supported.":
+    "部分高级变量类型暂不支持。",
+  "Some variable aliases could not be resolved.":
+    "部分变量别名无法解析，已保留原始值。",
+  "Some variable property bindings could not be restored.":
+    "部分变量属性绑定尚未还原。",
+  "Some fill types are not supported.": "部分填充类型暂不支持。",
+  "Swap component": "交换组件",
+  Grid: "网格",
+  "Some blend modes are not supported.":
+    "部分混合模式暂不支持，已保留其余可用内容。",
+  "Some effect types are not supported.": "部分效果类型暂不支持。",
   "Hidden internal pages were excluded.": "已排除文件中的隐藏内部页面。",
   "Under research": "正在研究中",
   "Import Figma (.fig)": "导入 Figma（.fig）",
@@ -78,6 +125,28 @@ export const zhCN: Record<string, string> = {
   "Component definitions and source links are retained; live instance synchronization is not yet supported.":
     "已保留组件定义和来源关联；实例仍为快照，尚未支持主组件修改后自动联动。",
   "Invalid component library": "组件库数据无效",
+  Files: "文件",
+  Trash: "回收站",
+  Restore: "恢复",
+  "File moved to trash": "文件已移至回收站",
+  "File restored": "文件已恢复",
+  "File is in trash": "文件已在回收站",
+  "Restore {name}": "恢复 {name}",
+  "Delete file {name}": "删除文件 {name}",
+  "Trash is empty": "回收站为空",
+  "Deleted files stay in this browser trash and can be restored. Original files on your computer are unchanged.":
+    "删除的文件保留在当前浏览器回收站，可随时恢复。电脑上的原始文件不会被删除。",
+  "Instances follow their main component while preserving local overrides.":
+    "实例会跟随主组件更新，并保留局部覆盖。",
+  "Edit main component": "编辑主组件",
+  "Reset instance overrides": "重置实例覆盖",
+  "Detach instance": "分离实例",
+  "Missing main component": "主组件不可用",
+  "Select a component instance": "请选择组件实例",
+  "Cyclic component reference": "组件存在循环引用",
+  "Invalid component instance": "组件实例数据无效",
+  "Component instances preserve saved overrides and can synchronize with the main component.":
+    "组件实例保留已保存的覆盖，并可与主组件联动更新。",
   "General settings": "通用设置",
   Language: "语言",
   "Interface language": "界面语言",
