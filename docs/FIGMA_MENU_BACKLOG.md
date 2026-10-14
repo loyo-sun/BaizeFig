@@ -2,11 +2,11 @@
 
 总跟踪：[#30](https://github.com/loyo-sun/BaizeFig/issues/30)。已交付基线：[#1](https://github.com/loyo-sun/BaizeFig/issues/1)（已完成）。
 
-Projects 接入尚待授权：现有凭据没有 project/read:project 权限；以下 Todo 是待办状态，尚未写入 GitHub Project 的 Status 字段。
+按用户最新要求，直接维护 GitHub Issues 的状态与验收记录，不再等待 Projects 授权。
 
 根据用户于 2026-10-14 提供的 11 张菜单截图，对照 BaizeFig v0.1（c7bee25）整理。原始截图不上传仓库。灰态表示参考截图的上下文禁用，不代表本产品是否实现；状态以代码与验证记录为准。Object 的两张滚动截图已合并去重。
 
-28 个工作包包含已有能力的菜单接入、部分能力补齐、缺失功能开发和待核对项，均为待办，不代表已经开始实现。截图可见快捷键仅作为 Mac 参考，平台差异需要验证。
+28 个工作包包含已有能力的菜单接入、部分能力补齐、缺失功能开发和待核对项，初始整理时均为待办；当前 #14、#16、#18 已开始并实现部分能力，其他范围按各条验收记录继续追踪。截图可见快捷键仅作为 Mac 参考，平台差异需要验证。
 
 ## BZ-MENU-01 · 主菜单体系与上下文状态
 
@@ -269,7 +269,7 @@ GitHub：[#13](https://github.com/loyo-sun/BaizeFig/issues/13)
 
 GitHub：[#14](https://github.com/loyo-sun/BaizeFig/issues/14)
 
-状态：Todo（待办）
+状态：In Progress（进行中）
 
 来源：截图 04–05
 
@@ -285,6 +285,8 @@ GitHub：[#14](https://github.com/loyo-sun/BaizeFig/issues/14)
 - 未展开子菜单先标待核对，不能把快照复制当作完整实例。
 
 依赖：BZ-MENU-01
+
+本轮更新：主组件联动、覆盖/重置/分离/交换、Fill/Wrap/Grid 与约束已接入；Slots、完整变体属性和菜单等价性仍待完成。代码已同步 `ca51fee`，其余检查项保持开放。
 
 ## BZ-MENU-14 · Object：层级排列、翻转与旋转
 
@@ -311,7 +313,7 @@ GitHub：[#15](https://github.com/loyo-sun/BaizeFig/issues/15)
 
 GitHub：[#16](https://github.com/loyo-sun/BaizeFig/issues/16)
 
-状态：Todo（待办）
+状态：In Progress（进行中）
 
 来源：截图 05
 
@@ -327,6 +329,8 @@ GitHub：[#16](https://github.com/loyo-sun/BaizeFig/issues/16)
 - 所有转换可撤销，并可保存、重载及导出还原。
 
 依赖：BZ-MENU-19
+
+本轮更新：四种保留源图层的布尔合成、图标及悬停提示已接入，PNG 导出验收通过；Flatten、Outline stroke 仍待完成。代码已同步 `ca51fee`，其余检查项保持开放。
 
 ## BZ-MENU-16 · Object：图层、填充描边与交互清理命令
 
@@ -353,7 +357,7 @@ GitHub：[#17](https://github.com/loyo-sun/BaizeFig/issues/17)
 
 GitHub：[#18](https://github.com/loyo-sun/BaizeFig/issues/18)
 
-状态：Todo（待办）
+状态：In Progress（进行中）
 
 来源：截图 06
 
@@ -369,6 +373,8 @@ GitHub：[#18](https://github.com/loyo-sun/BaizeFig/issues/18)
 - 渲染、序列化、重载与导出保留样式及链接。
 
 依赖：BZ-MENU-01
+
+本轮更新：画布内光标、选区、输入/删除、多行、撤销和基础混排保留已接入，见 #37；范围级样式命令、链接、列表仍待完成。代码已同步 `ca51fee`，其余检查项保持开放。
 
 ## BZ-MENU-18 · Text：对齐、调整、大小写、方向与拼写检查
 
