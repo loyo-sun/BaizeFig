@@ -524,7 +524,7 @@ export function Scene({
         }}
         onPointerDown={onNode ? (e) => onNode(e, n.id) : undefined}
       >
-        {onNode && (
+        {onNode && n.type === "text" && (
           <rect
             width={n.width}
             height={n.height}

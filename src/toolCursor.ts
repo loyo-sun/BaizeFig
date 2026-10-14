@@ -15,8 +15,8 @@ function drawingCursor(path: string, hotspot: [number, number]) {
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${hotspot[0]} ${hotspot[1]}, crosshair`;
 }
 const pen = drawingCursor(
-  "M2 25 L5 11 L16 3 L25 12 L17 23 Z M2 25 L11 16 M16 3 L25 12 M10 14 A2 2 0 1 0 14 14 A2 2 0 1 0 10 14",
-  [2, 25],
+  "M2 2 L16 5 L25 16 L16 25 L5 17 Z M2 2 L12 12 M25 16 L16 25 M12 10 A2 2 0 1 0 16 10 A2 2 0 1 0 12 10",
+  [2, 2],
 );
 const pencil = drawingCursor(
   "M2 25 L4 17 L19 2 Q21 0 23 2 L26 5 Q28 7 26 9 L11 24 Z M4 17 L11 24 M17 4 L24 11 M2 25 L6 24",

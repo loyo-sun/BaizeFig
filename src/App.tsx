@@ -1,5 +1,10 @@
 import { splitVectorLayers } from "./vectorSplit";
 import { canvasCursor } from "./toolCursor";
+import {
+  PathDrawingOverlay,
+  type PathDrawingHandle,
+} from "./PathDrawingOverlay";
+import { drawnPath } from "./pathDrawing";
 import { VectorEditor } from "./VectorEditor";
 import { editableNetwork, convertToPaths } from "./vectorGeometry";
 import { BooleanIcon } from "./BooleanIcon";
@@ -277,6 +282,7 @@ export default function App() {
   const [spaceHeld, setSpaceHeld] = useState(false),
     [isPanning, setIsPanning] = useState(false);
   const effectiveTool = spaceHeld || isPanning ? "hand" : tool;
+  const pathDrawing = useRef<PathDrawingHandle>(null);
   useEffect(() => {
     socket.current?.close();
     setBridgeWrite(false);
@@ -600,12 +606,31 @@ export default function App() {
       setIsPanning(true);
       return;
     }
+    if (tool === "pen" || tool === "pencil") return;
     if (handle && id && tool === "move") {
       drag.current = { ...base, type: "resize", ids: [id], nodeId: id, handle };
       return;
     }
+    if (id && tool === "move" && !handle && !e.metaKey && !e.ctrlKey) {
+      const node = doc.nodes.find((n) => n.id === id);
+      if (node?.type === "frame") {
+        const local = transformPoint(
+            inverse(worldTransform(doc, node)),
+            p.x,
+            p.y,
+          ),
+          edge = 5 / view.zoom;
+        if (
+          local.x > edge &&
+          local.y > edge &&
+          local.x < node.width - edge &&
+          local.y < node.height - edge
+        )
+          id = undefined;
+      }
+    }
     if (tool !== "move") {
-      const kind: Kind = tool === "pen" || tool === "pencil" ? "path" : tool;
+      const kind: Kind = tool;
       const parent = kind === "frame" ? undefined : parentFor(p);
       const origin = parent
         ? transformPoint(inverse(worldTransform(doc, parent)), p.x, p.y)
@@ -617,14 +642,13 @@ export default function App() {
         width: tool === "text" ? 240 : 0,
         height: tool === "text" ? 36 : 0,
         fill:
-          kind === "path" || kind === "line"
+          kind === "line"
             ? "none"
             : kind === "frame"
               ? "#ffffff"
               : kind === "text"
                 ? "#202a24"
                 : "#c5c8d0",
-        ...(kind === "path" ? { points: [{ x: 0, y: 0 }] } : {}),
       });
       setDoc({ ...doc, nodes: [...doc.nodes, n] });
       setSelected([n.id]);
@@ -1485,7 +1509,10 @@ export default function App() {
         t: "text",
         h: "hand",
       };
-      if (mapping[k] && !mod) setTool(mapping[k]);
+      if (mapping[k] && !mod) {
+        pathDrawing.current?.finish();
+        setTool(mapping[k]);
+      }
     }
     const up = (e: KeyboardEvent) => {
       if (e.key === " ") {
@@ -2125,6 +2152,21 @@ export default function App() {
                     : undefined)
                 }
               />
+              {(tool === "pen" || tool === "pencil") && !editingVector && (
+                <PathDrawingOverlay
+                  key={`${doc.id}-${page}-${tool}`}
+                  ref={pathDrawing}
+                  tool={tool}
+                  zoom={view.zoom}
+                  temporaryHand={spaceHeld || isPanning}
+                  onFinish={(network) => {
+                    const first = network.vertices[0],
+                      parent = parentFor(first),
+                      node = drawnPath(doc, page, network, parent?.id ?? null);
+                    change({ ...doc, nodes: [...doc.nodes, node] }, [node.id]);
+                  }}
+                />
+              )}
               {editingText?.documentId === doc.id &&
                 (() => {
                   const node = doc.nodes.find(
@@ -2182,76 +2224,88 @@ export default function App() {
                     />
                   ) : null;
                 })()}
-              {selectionBox && !editingVector && (
-                <g className="selection-overlay">
-                  <rect
-                    x={selectionBox.x}
-                    y={selectionBox.y}
-                    width={selectionBox.width}
-                    height={selectionBox.height}
-                    fill="none"
-                    stroke={first?.type === "component" ? "#9b65ef" : "#2487ff"}
-                    strokeWidth={1 / view.zoom}
-                    pointerEvents="none"
-                  />
-                  {chosen.length === 1 &&
-                    !first.locked &&
-                    ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((h) => {
-                      const handlePoint = transformPoint(
-                          worldTransform(doc, first),
-                          h.includes("e")
-                            ? first.width
-                            : h.includes("w")
-                              ? 0
-                              : first.width / 2,
-                          h.includes("s")
-                            ? first.height
-                            : h.includes("n")
-                              ? 0
-                              : first.height / 2,
-                        ),
-                        x = handlePoint.x,
-                        y = handlePoint.y;
-                      return (
-                        <rect
-                          key={h}
-                          aria-label={t("Resize {direction}", { direction: h })}
-                          x={x - 3.5 / view.zoom}
-                          y={y - 3.5 / view.zoom}
-                          width={7 / view.zoom}
-                          height={7 / view.zoom}
-                          fill="#fff"
-                          stroke="#2487ff"
-                          strokeWidth={1 / view.zoom}
-                          style={{ cursor: `${h}-resize` }}
-                          onPointerDown={(e) => pointerDown(e, first.id, h)}
-                        />
-                      );
-                    })}
-                  <g pointerEvents="none">
+              {selectionBox &&
+                !editingVector &&
+                (tool === "move" || tool === "hand") && (
+                  <g className="selection-overlay">
                     <rect
-                      x={
-                        selectionBox.x + selectionBox.width / 2 - 40 / view.zoom
+                      x={selectionBox.x}
+                      y={selectionBox.y}
+                      width={selectionBox.width}
+                      height={selectionBox.height}
+                      fill="none"
+                      stroke={
+                        first?.type === "component" ? "#9b65ef" : "#2487ff"
                       }
-                      y={selectionBox.y + selectionBox.height + 10 / view.zoom}
-                      width={80 / view.zoom}
-                      height={20 / view.zoom}
-                      rx={4 / view.zoom}
-                      fill="#2487ff"
+                      strokeWidth={1 / view.zoom}
+                      pointerEvents="none"
                     />
-                    <text
-                      x={selectionBox.x + selectionBox.width / 2}
-                      y={selectionBox.y + selectionBox.height + 24 / view.zoom}
-                      fontSize={10 / view.zoom}
-                      textAnchor="middle"
-                      fill="white"
-                    >
-                      {Math.round(selectionBox.width)} ×{" "}
-                      {Math.round(selectionBox.height)}
-                    </text>
+                    {chosen.length === 1 &&
+                      !first.locked &&
+                      ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((h) => {
+                        const handlePoint = transformPoint(
+                            worldTransform(doc, first),
+                            h.includes("e")
+                              ? first.width
+                              : h.includes("w")
+                                ? 0
+                                : first.width / 2,
+                            h.includes("s")
+                              ? first.height
+                              : h.includes("n")
+                                ? 0
+                                : first.height / 2,
+                          ),
+                          x = handlePoint.x,
+                          y = handlePoint.y;
+                        return (
+                          <rect
+                            key={h}
+                            aria-label={t("Resize {direction}", {
+                              direction: h,
+                            })}
+                            x={x - 3.5 / view.zoom}
+                            y={y - 3.5 / view.zoom}
+                            width={7 / view.zoom}
+                            height={7 / view.zoom}
+                            fill="#fff"
+                            stroke="#2487ff"
+                            strokeWidth={1 / view.zoom}
+                            style={{ cursor: `${h}-resize` }}
+                            onPointerDown={(e) => pointerDown(e, first.id, h)}
+                          />
+                        );
+                      })}
+                    <g pointerEvents="none">
+                      <rect
+                        x={
+                          selectionBox.x +
+                          selectionBox.width / 2 -
+                          40 / view.zoom
+                        }
+                        y={
+                          selectionBox.y + selectionBox.height + 10 / view.zoom
+                        }
+                        width={80 / view.zoom}
+                        height={20 / view.zoom}
+                        rx={4 / view.zoom}
+                        fill="#2487ff"
+                      />
+                      <text
+                        x={selectionBox.x + selectionBox.width / 2}
+                        y={
+                          selectionBox.y + selectionBox.height + 24 / view.zoom
+                        }
+                        fontSize={10 / view.zoom}
+                        textAnchor="middle"
+                        fill="white"
+                      >
+                        {Math.round(selectionBox.width)} ×{" "}
+                        {Math.round(selectionBox.height)}
+                      </text>
+                    </g>
                   </g>
-                </g>
-              )}
+                )}
               {marquee && (
                 <rect
                   {...marquee}
@@ -2309,7 +2363,12 @@ export default function App() {
                 aria-pressed={effectiveTool === item.id}
                 aria-label={t(item.label)}
                 title={`${t(item.label)}${item.key ? " · " + item.key : ""}`}
-                onClick={() => setTool(item.id)}
+                onClick={() => {
+                  pathDrawing.current?.finish();
+                  if (item.id !== "move" && item.id !== "hand")
+                    setEditingVector(null);
+                  setTool(item.id);
+                }}
               >
                 <item.icon size={18} />
               </button>
@@ -2342,9 +2401,17 @@ export default function App() {
           <div className="canvas-bottom-note">
             {tool === "move"
               ? t("V to select · Space to pan · ⌘ / Ctrl + scroll to zoom")
-              : t("{tool} · Click and drag to draw · Shift to constrain", {
-                  tool: t(tools.find((item) => item.id === tool)?.label ?? ""),
-                })}
+              : tool === "pen"
+                ? t(
+                    "Click to add points · Drag for curves · Click first point to close · Enter / Esc to finish",
+                  )
+                : tool === "pencil"
+                  ? t("Drag to draw freely · Release to finish · Space to pan")
+                  : t("{tool} · Click and drag to draw · Shift to constrain", {
+                      tool: t(
+                        tools.find((item) => item.id === tool)?.label ?? "",
+                      ),
+                    })}
           </div>
         </main>
         {!hiddenUI && (
