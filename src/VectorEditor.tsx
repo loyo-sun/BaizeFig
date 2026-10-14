@@ -34,6 +34,8 @@ export function VectorEditor({
   onPan,
   onSplit,
   panTool,
+  onTemporaryHandChange,
+  onPanningChange,
 }: {
   doc: Document;
   node: Node;
@@ -47,6 +49,8 @@ export function VectorEditor({
   onPan: (position: { x: number; y: number }) => void;
   panTool: boolean;
   onSplit: () => void;
+  onTemporaryHandChange: (held: boolean) => void;
+  onPanningChange: (active: boolean) => void;
 }) {
   const { t } = useI18n(),
     [picked, setPicked] = useState<number[]>([]),
@@ -110,13 +114,30 @@ export function VectorEditor({
     setDraft(null);
   }, [node.id]);
   useEffect(() => {
+    const blur = () => {
+      panKey.current = false;
+      drag.current = null;
+      setDraft(null);
+      onTemporaryHandChange(false);
+      onPanningChange(false);
+    };
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("blur", blur);
+      onTemporaryHandChange(false);
+      onPanningChange(false);
+    };
+  }, [node.id]);
+  useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest("input,select,textarea") || target.isContentEditable)
         return;
       const k = e.key.toLowerCase();
       if (k === " ") {
+        if (e.shiftKey) return;
         panKey.current = true;
+        onTemporaryHandChange(true);
         e.preventDefault();
         e.stopImmediatePropagation();
         return;
@@ -126,6 +147,7 @@ export function VectorEditor({
         e.stopImmediatePropagation();
         if (drag.current) {
           drag.current = null;
+          onPanningChange(false);
           setDraft(null);
         } else onClose();
         return;
@@ -185,7 +207,10 @@ export function VectorEditor({
       }
     };
     const up = (e: KeyboardEvent) => {
-      if (e.key === " ") panKey.current = false;
+      if (e.key === " ") {
+        panKey.current = false;
+        onTemporaryHandChange(false);
+      }
     };
     window.addEventListener("keyup", up, true);
     window.addEventListener("keydown", key, true);
@@ -204,6 +229,7 @@ export function VectorEditor({
       vertices: [],
       pan: { screen: { x: e.clientX, y: e.clientY }, view: { ...view } },
     };
+    onPanningChange(true);
     e.currentTarget.setPointerCapture(e.pointerId);
     return true;
   }
@@ -305,6 +331,7 @@ export function VectorEditor({
     setDraft(next);
   };
   const end = (e: React.PointerEvent) => {
+    onPanningChange(false);
     const d = drag.current;
     if (!d) return;
     e.stopPropagation();
@@ -361,6 +388,7 @@ export function VectorEditor({
         onPointerCancel={(e) => {
           e.stopPropagation();
           drag.current = null;
+          onPanningChange(false);
           setDraft(null);
         }}
         onDoubleClick={(e) => e.stopPropagation()}
@@ -418,7 +446,9 @@ export function VectorEditor({
             strokeWidth={1 / zoom}
             pointerEvents="stroke"
             style={{ cursor: "crosshair" }}
-            onPointerDown={(e) => e.stopPropagation()}
+            onPointerDown={(e) => {
+              if (!startPan(e)) e.stopPropagation();
+            }}
             onDoubleClick={(e) => {
               e.stopPropagation();
               const p = point(e),

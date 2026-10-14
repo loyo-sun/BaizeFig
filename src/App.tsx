@@ -1,4 +1,5 @@
 import { splitVectorLayers } from "./vectorSplit";
+import { canvasCursor } from "./toolCursor";
 import { VectorEditor } from "./VectorEditor";
 import { editableNetwork, convertToPaths } from "./vectorGeometry";
 import { BooleanIcon } from "./BooleanIcon";
@@ -273,6 +274,9 @@ export default function App() {
     space = useRef(false),
     socket = useRef<WebSocket | null>(null),
     abort = useRef<AbortController | null>(null);
+  const [spaceHeld, setSpaceHeld] = useState(false),
+    [isPanning, setIsPanning] = useState(false);
+  const effectiveTool = spaceHeld || isPanning ? "hand" : tool;
   useEffect(() => {
     socket.current?.close();
     setBridgeWrite(false);
@@ -593,9 +597,10 @@ export default function App() {
     };
     if (tool === "hand" || space.current || e.button === 1) {
       drag.current = { ...base, type: "pan" };
+      setIsPanning(true);
       return;
     }
-    if (handle && id) {
+    if (handle && id && tool === "move") {
       drag.current = { ...base, type: "resize", ids: [id], nodeId: id, handle };
       return;
     }
@@ -788,6 +793,7 @@ export default function App() {
     }
   }
   function pointerUp() {
+    setIsPanning(false);
     const d = drag.current;
     if (!d) return;
     drag.current = null;
@@ -855,6 +861,7 @@ export default function App() {
       setEditingText({ id: d.nodeId!, documentId: next.id, selectAll: true });
   }
   function cancelDrag() {
+    setIsPanning(false);
     const d = drag.current;
     if (d) {
       setDoc(d.before);
@@ -1291,6 +1298,7 @@ export default function App() {
         k = e.key.toLowerCase();
       if (k === " " && !e.shiftKey) {
         space.current = true;
+        setSpaceHeld(true);
         e.preventDefault();
         return;
       }
@@ -1480,10 +1488,14 @@ export default function App() {
       if (mapping[k] && !mod) setTool(mapping[k]);
     }
     const up = (e: KeyboardEvent) => {
-      if (e.key === " ") space.current = false;
+      if (e.key === " ") {
+        space.current = false;
+        setSpaceHeld(false);
+      }
     };
     const blur = () => {
       space.current = false;
+      setSpaceHeld(false);
       cancelDrag();
     };
     window.addEventListener("keydown", down);
@@ -2001,7 +2013,7 @@ export default function App() {
           </aside>
         )}
         <main
-          className={`canvas-wrap tool-${tool}`}
+          className={`canvas-wrap tool-${effectiveTool}${effectiveTool !== "move" ? " cursor-override" : ""}`}
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
@@ -2054,7 +2066,10 @@ export default function App() {
                   editVector(n);
               }
             }}
-            style={{ background: doc.background }}
+            style={{
+              background: doc.background,
+              cursor: canvasCursor(tool, spaceHeld, isPanning),
+            }}
           >
             <defs>
               <pattern
@@ -2149,6 +2164,11 @@ export default function App() {
                         (svg.current?.clientWidth ?? 762) - 32,
                       )}
                       panTool={tool === "hand"}
+                      onTemporaryHandChange={(held) => {
+                        space.current = held;
+                        setSpaceHeld(held);
+                      }}
+                      onPanningChange={setIsPanning}
                       onPan={(position) =>
                         setView((v) => ({ ...v, ...position }))
                       }
@@ -2285,7 +2305,8 @@ export default function App() {
             {tools.map((item) => (
               <button
                 key={item.id}
-                className={tool === item.id ? "active" : ""}
+                className={effectiveTool === item.id ? "active" : ""}
+                aria-pressed={effectiveTool === item.id}
                 aria-label={t(item.label)}
                 title={`${t(item.label)}${item.key ? " · " + item.key : ""}`}
                 onClick={() => setTool(item.id)}
