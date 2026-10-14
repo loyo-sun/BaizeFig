@@ -13,6 +13,7 @@ import { multiply } from "./fidelity";
 import { editableNetwork, networkPatch } from "./vectorGeometry";
 import {
   joinVertices,
+  smoothJoinVertices,
   removeVertices,
   segmentPath,
   splitSegment,
@@ -145,7 +146,15 @@ export function VectorEditor({
         e.preventDefault();
         e.stopImmediatePropagation();
         if (picked.length === 2)
-          action(() => save(joinVertices(network, picked[0], picked[1])));
+          action(() =>
+            save(
+              (e.shiftKey ? smoothJoinVertices : joinVertices)(
+                network,
+                picked[0],
+                picked[1],
+              ),
+            ),
+          );
         return;
       }
       if (e.key.startsWith("Arrow")) {
@@ -543,6 +552,16 @@ export function VectorEditor({
             }
           >
             {t("Join nodes")}
+          </button>
+          <button
+            disabled={picked.length !== 2}
+            onClick={() =>
+              action(() =>
+                save(smoothJoinVertices(network, picked[0], picked[1])),
+              )
+            }
+          >
+            {t("Smooth join selection")}
           </button>
           <button onClick={() => setConnect(!connect)} aria-pressed={connect}>
             {t("Draw connections")}

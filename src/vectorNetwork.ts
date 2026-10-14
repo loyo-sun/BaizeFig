@@ -280,3 +280,59 @@ export function joinVertices(
     });
   return n;
 }
+export function smoothJoinVertices(
+  original: VectorNetwork,
+  a: number,
+  b: number,
+): VectorNetwork {
+  validateNetwork(original);
+  const incident = (v: number) =>
+      original.segments.filter((s) => s.a === v || s.b === v),
+    left = incident(a),
+    right = incident(b);
+  if (
+    a === b ||
+    !original.vertices[a] ||
+    !original.vertices[b] ||
+    left.length > 1 ||
+    right.length > 1 ||
+    left.some((s) => s.a === s.b) ||
+    right.some((s) => s.a === s.b)
+  )
+    throw Error("Select two open endpoints for smooth joining");
+  const A = original.vertices[a],
+    B = original.vertices[b],
+    distance = Math.hypot(B.x - A.x, B.y - A.y);
+  if (distance < 1e-8)
+    throw Error("Move overlapping endpoints apart before smooth joining");
+  function tangent(
+    v: number,
+    s: VectorNetwork["segments"][number] | undefined,
+    fallback: Vec,
+  ): Vec {
+    if (!s) return fallback;
+    const h = s.a === v ? s.ha : s.hb,
+      other = original.vertices[s.a === v ? s.b : s.a],
+      p = original.vertices[v];
+    return Math.hypot(h.x, h.y) > 1e-9
+      ? { x: -h.x, y: -h.y }
+      : { x: p.x - other.x, y: p.y - other.y };
+  }
+  const n = joinVertices(original, a, b),
+    edge = n.segments[n.segments.length - 1],
+    ta = tangent(a, left[0], { x: B.x - A.x, y: B.y - A.y }),
+    tb = tangent(b, right[0], { x: A.x - B.x, y: A.y - B.y });
+  const handle = (t: Vec) => {
+    const length = Math.hypot(t.x, t.y);
+    if (length < 1e-9)
+      throw Error("Cannot infer a tangent from zero-length segments");
+    return {
+      x: ((t.x / length) * distance) / 3,
+      y: ((t.y / length) * distance) / 3,
+    };
+  };
+  edge.ha = handle(ta);
+  edge.hb = handle(tb);
+  validateNetwork(n);
+  return n;
+}

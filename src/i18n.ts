@@ -4,6 +4,14 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Smooth join selection": "平滑连接",
+  "Select two open endpoints for smooth joining":
+    "请选择两个开放端点进行平滑连接",
+  "Move overlapping endpoints apart before smooth joining":
+    "请先移开重合端点，再进行平滑连接",
+  "Cannot infer a tangent from zero-length segments":
+    "零长度线段无法推导平滑切线",
+
   "Offset vector": "偏移路径",
   "Offset distance": "偏移距离",
   "Offset joins": "偏移连接",

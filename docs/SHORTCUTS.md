@@ -46,7 +46,9 @@ Mac 的 ⌘ 对应 Windows/Linux 的 Ctrl，⌥ 对应 Alt。文本输入框优�
 - 拖动节点/控制柄：修改曲线；Alt 拖动控制柄：临时打破对齐/镜像。
 - 双击线段：按点击位置细分贝塞尔；曲线形状保持。
 - Delete / Backspace：删除节点；Shift+Delete / Shift+Backspace：「删除并修复」。
-- Cmd/Ctrl+J：「连接节点」；工具栏还提供尖角、平滑、断开节点、绘制连线与区域填充。
+- Cmd/Ctrl+J：「连接节点」；Cmd/Ctrl+Shift+J：「平滑连接」（两个开放端点）。
+- 「简化路径」可设容差；「偏移路径」可设正负距离及连接样式。
+- 工具栏还提供尖角、平滑、断开节点、绘制连线与区域填充。
 - 方向键 / Shift+方向键：移动选中节点 1 / 10 个局部单位。
 - Cmd/Ctrl+Z、Cmd/Ctrl+Shift+Z：节点级撤销重做。
 - Alt+Shift+F：「拼合路径」；Alt+Cmd/Ctrl+O：「描边转轮廓」。右侧面板和 Actions 也提供入口。
