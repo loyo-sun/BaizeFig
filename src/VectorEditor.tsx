@@ -32,6 +32,7 @@ export function VectorEditor({
   onUndo,
   onRedo,
   onPan,
+  onSplit,
   panTool,
 }: {
   doc: Document;
@@ -45,6 +46,7 @@ export function VectorEditor({
   onRedo: () => void;
   onPan: (position: { x: number; y: number }) => void;
   panTool: boolean;
+  onSplit: () => void;
 }) {
   const { t } = useI18n(),
     [picked, setPicked] = useState<number[]>([]),
@@ -595,6 +597,7 @@ export function VectorEditor({
           <button disabled={!picked.length} onClick={() => remove(true)}>
             {t("Delete and heal")}
           </button>
+          <button onClick={onSplit}>{t("Split vector into layers")}</button>
           <button onClick={onClose}>{t("Done")}</button>
           <label>
             {t("Simplify tolerance")}

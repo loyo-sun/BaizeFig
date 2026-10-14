@@ -342,7 +342,7 @@ function silhouette(doc: Document, n: Node, to: Matrix): paper.PathItem {
   }
   return result;
 }
-function bakePaints(
+export function bakePaints(
   paints: ImportedPaint[] | undefined,
   d: string,
   m: Matrix,

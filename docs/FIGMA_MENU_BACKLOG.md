@@ -401,15 +401,15 @@ GitHub：[#19](https://github.com/loyo-sun/BaizeFig/issues/19)
 
 GitHub：[#20](https://github.com/loyo-sun/BaizeFig/issues/20)
 
-状态：In Progress（进行中）
+状态：Done（已完成）
 
 来源：截图 08
 
-当前进展：节点、控制柄、区域模型以及选择/多选、拆分、连接、删除修复已接入，见 #38；工具入口仍可采样，独立节点模式支持点式连线。路径简化及容差输入已完成；Offset 的正负距离、连接样式、尺寸重基及空结果保护已完成；独立 Smooth join 及 Cmd/Ctrl+Shift+J 已完成。Split vector 的图层拆分语义继续核对。
+当前进展：节点、控制柄、区域模型以及选择/多选、拆分、连接、删除修复已接入，见 #38；工具入口仍可采样，独立节点模式支持点式连线。路径简化及容差输入已完成；Offset 的正负距离、连接样式、尺寸重基及空结果保护已完成；独立 Smooth join 及 Cmd/Ctrl+Shift+J 已完成。Split vector 的图层拆分已完成，保留孔洞及整体合成；根菜单由 #2、跨版本/全部退化几何由 #34 继续跟踪。
 
 - [x] Join selection、Smooth join selection、Delete and heal selection。
-- [ ] Split vector、Simplify vector、Offset vector。
-- [ ] 建立节点/控制柄/曲线/闭合路径模型，以及节点选择和容差设置。
+- [x] Split vector、Simplify vector、Offset vector。
+- [x] 建立节点/控制柄/曲线/闭合路径模型，以及节点选择和容差设置。
 
 验收：
 

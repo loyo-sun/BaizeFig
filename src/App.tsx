@@ -1,3 +1,4 @@
+import { splitVectorLayers } from "./vectorSplit";
 import { VectorEditor } from "./VectorEditor";
 import { editableNetwork, convertToPaths } from "./vectorGeometry";
 import { BooleanIcon } from "./BooleanIcon";
@@ -386,6 +387,17 @@ export default function App() {
       setEditingText(null);
       setSelected([node.id]);
       setEditingVector(node.id);
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
+  function splitVectorSelection() {
+    try {
+      const result = splitVectorLayers(doc, selected);
+      if (JSON.stringify(result.doc) !== JSON.stringify(doc)) {
+        setEditingVector(null);
+        change(result.doc, result.selection);
+      }
     } catch (error) {
       notify((error as Error).message);
     }
@@ -1190,6 +1202,7 @@ export default function App() {
       key: "⌥ ⌘ O",
       run: () => vectorOperation("outline"),
     },
+    { name: "Split vector into layers", key: "", run: splitVectorSelection },
     { name: "Add auto layout", key: "⇧ A", run: () => autoLayout() },
     { name: "Zoom to fit", key: "⇧ 1", run: () => fit() },
     { name: "Zoom to selection", key: "⇧ 2", run: () => fit(true) },
@@ -2103,6 +2116,7 @@ export default function App() {
                       onPan={(position) =>
                         setView((v) => ({ ...v, ...position }))
                       }
+                      onSplit={splitVectorSelection}
                       onUndo={() => setDoc(history.current.undo(doc))}
                       onRedo={() => setDoc(history.current.redo(doc))}
                       onClose={() => setEditingVector(null)}
@@ -2565,6 +2579,9 @@ export default function App() {
                       </div>
                     )}
                     <div className="vector-actions">
+                      <button onClick={splitVectorSelection}>
+                        {t("Split vector into layers")}
+                      </button>
                       <button
                         onClick={() => editVector()}
                         disabled={

@@ -4,6 +4,8 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Split vector into layers": "拆分矢量图层",
+  "Select at least one vector layer": "请至少选择一个矢量图层",
   "Smooth join selection": "平滑连接",
   "Select two open endpoints for smooth joining":
     "请选择两个开放端点进行平滑连接",
