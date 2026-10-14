@@ -1200,156 +1200,6 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     for (const root of children.get(guid(page.guid)) ?? [])
       add(root, pageId, null, new Set());
   }
-  for (const node of doc.nodes) {
-    const sourceNode = index.get(node.fidelity?.sourceId ?? "");
-    if (
-      ["NONE", "HORIZONTAL", "VERTICAL", "BOTH"].includes(
-        sourceNode?.scrollDirection,
-      )
-    )
-      node.prototypeScroll = sourceNode!.scrollDirection.toLowerCase();
-    for (const interaction of sourceNode?.prototypeInteractions ?? []) {
-      if (interaction.isDeleted) continue;
-      const triggerMap: Record<string, PrototypeInteraction["trigger"]> = {
-        ON_CLICK: "click",
-        ON_HOVER: "hover",
-        MOUSE_IN: "hover",
-        MOUSE_ENTER: "hover",
-        MOUSE_OUT: "leave",
-        MOUSE_LEAVE: "leave",
-        MOUSE_DOWN: "press",
-        ON_PRESS: "press",
-        MOUSE_UP: "release",
-        AFTER_TIMEOUT: "delay",
-      };
-      const trigger = triggerMap[interaction.event?.interactionType],
-        actions: PrototypeAction[] = [];
-      let supported = !!trigger;
-      for (const action of interaction.actions ?? []) {
-        if (action.connectionType === "BACK") {
-          actions.push({ type: "back" });
-          continue;
-        }
-        if (action.connectionType === "CLOSE") {
-          actions.push({ type: "close" });
-          continue;
-        }
-        const targets = doc.nodes.filter(
-          (n) =>
-            n.fidelity?.sourceId === guid(action.transitionNodeID) &&
-            (action.navigationType === "SCROLL_TO" ||
-              ["frame", "component", "instance"].includes(n.type)),
-        );
-        const root = ancestors(doc, node).at(-1)?.id ?? node.id;
-        const target =
-          action.navigationType === "SCROLL_TO"
-            ? (targets.find(
-                (n) =>
-                  (ancestors(doc, n).at(-1)?.id ?? n.id) === root &&
-                  (!node.componentOwner ||
-                    n.componentOwner === node.componentOwner),
-              ) ??
-              targets.find(
-                (n) => (ancestors(doc, n).at(-1)?.id ?? n.id) === root,
-              ) ??
-              targets[0])
-            : targets[0];
-        if (
-          action.connectionType === "INTERNAL_NODE" &&
-          action.navigationType === "SCROLL_TO" &&
-          target &&
-          !action.transitionShouldSmartAnimate &&
-          (!action.transitionType ||
-            ["INSTANT_TRANSITION", "SCROLL_ANIMATE"].includes(
-              action.transitionType,
-            ))
-        ) {
-          if (
-            action.transitionType === "SCROLL_ANIMATE" &&
-            (action.easingType || action.easingVar || action.easingFunction)
-          )
-            warnings.add(
-              "Scroll animation uses a standard easing curve; custom easing is not restored.",
-            );
-          actions.push({
-            type: "scrollTo",
-            targetId: target.id,
-            offset: {
-              x: action.extraScrollOffset?.x ?? 0,
-              y: action.extraScrollOffset?.y ?? 0,
-            },
-            transition:
-              action.transitionType === "SCROLL_ANIMATE"
-                ? "animate"
-                : "instant",
-            durationMs: Math.max(
-              0,
-              Math.min(60000, (action.transitionDuration ?? 0.3) * 1000),
-            ),
-          });
-          continue;
-        }
-        if (
-          action.connectionType !== "INTERNAL_NODE" ||
-          !target ||
-          !["NAVIGATE", "OVERLAY", "SWAP"].includes(
-            action.navigationType ?? "NAVIGATE",
-          ) ||
-          action.transitionShouldSmartAnimate ||
-          (action.transitionType &&
-            !["INSTANT_TRANSITION", "DISSOLVE", "FADE"].includes(
-              action.transitionType,
-            ))
-        ) {
-          supported = false;
-          break;
-        }
-        actions.push({
-          type:
-            action.navigationType === "OVERLAY"
-              ? "overlay"
-              : action.navigationType === "SWAP"
-                ? "swap"
-                : "navigate",
-          targetId: target.id,
-          transition: ["DISSOLVE", "FADE"].includes(action.transitionType)
-            ? "dissolve"
-            : "instant",
-          durationMs: Math.max(
-            0,
-            Math.min(60000, (action.transitionDuration ?? 0.3) * 1000),
-          ),
-        });
-      }
-      if (supported && actions.length) {
-        node.interactions ??= [];
-        node.interactions.push({
-          trigger,
-          actions,
-          ...(trigger === "delay"
-            ? {
-                delayMs: Math.max(
-                  0,
-                  Math.min(
-                    86400000,
-                    (interaction.event?.transitionTimeout ?? 0) * 1000,
-                  ),
-                ),
-              }
-            : {}),
-        });
-        if (
-          trigger === "click" &&
-          actions.length === 1 &&
-          actions[0].type === "navigate"
-        )
-          node.targetId = actions[0].targetId;
-      } else
-        warnings.add(
-          "Some advanced prototype actions or transitions could not be restored.",
-        );
-    }
-  }
   if (doc.pages.length) {
     const originalImages = images,
       originalInstances = instances;
@@ -1370,6 +1220,182 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     images = originalImages;
     instances = originalInstances;
   }
+  for (const pool of [
+    doc.nodes,
+    ...(doc.componentLibrary ?? []).map((c) => c.nodes),
+  ])
+    for (const node of pool) {
+      const sourceNode = index.get(node.fidelity?.sourceId ?? "");
+      const prototypeSource = sourceNode?.prototypeInteractions
+        ? sourceNode
+        : (index.get(node.fidelity?.componentSourceId ?? "") ?? sourceNode);
+      if (
+        ["NONE", "HORIZONTAL", "VERTICAL", "BOTH"].includes(
+          sourceNode?.scrollDirection,
+        )
+      )
+        node.prototypeScroll = sourceNode!.scrollDirection.toLowerCase();
+      for (const interaction of prototypeSource?.prototypeInteractions ?? []) {
+        if (interaction.isDeleted) continue;
+        const triggerMap: Record<string, PrototypeInteraction["trigger"]> = {
+          ON_CLICK: "click",
+          ON_HOVER: "hover",
+          MOUSE_IN: "hover",
+          MOUSE_ENTER: "hover",
+          MOUSE_OUT: "leave",
+          MOUSE_LEAVE: "leave",
+          MOUSE_DOWN: "press",
+          ON_PRESS: "press",
+          MOUSE_UP: "release",
+          AFTER_TIMEOUT: "delay",
+        };
+        const trigger = triggerMap[interaction.event?.interactionType],
+          actions: PrototypeAction[] = [];
+        let supported = !!trigger;
+        for (const action of interaction.actions ?? []) {
+          if (
+            action.connectionType === "INTERNAL_NODE" &&
+            action.navigationType === "SWAP_STATE" &&
+            index.get(guid(action.transitionNodeID))?.type === "SYMBOL" &&
+            !action.transitionShouldSmartAnimate &&
+            (!action.transitionType ||
+              action.transitionType === "INSTANT_TRANSITION")
+          ) {
+            actions.push({
+              type: "changeTo",
+              componentId: guid(action.transitionNodeID),
+            });
+            continue;
+          }
+          if (pool !== doc.nodes) {
+            supported = false;
+            break;
+          }
+
+          if (action.connectionType === "BACK") {
+            actions.push({ type: "back" });
+            continue;
+          }
+          if (action.connectionType === "CLOSE") {
+            actions.push({ type: "close" });
+            continue;
+          }
+          const targets = doc.nodes.filter(
+            (n) =>
+              n.fidelity?.sourceId === guid(action.transitionNodeID) &&
+              (action.navigationType === "SCROLL_TO" ||
+                ["frame", "component", "instance"].includes(n.type)),
+          );
+          const root = ancestors(doc, node).at(-1)?.id ?? node.id;
+          const target =
+            action.navigationType === "SCROLL_TO"
+              ? (targets.find(
+                  (n) =>
+                    (ancestors(doc, n).at(-1)?.id ?? n.id) === root &&
+                    (!node.componentOwner ||
+                      n.componentOwner === node.componentOwner),
+                ) ??
+                targets.find(
+                  (n) => (ancestors(doc, n).at(-1)?.id ?? n.id) === root,
+                ) ??
+                targets[0])
+              : targets[0];
+          if (
+            action.connectionType === "INTERNAL_NODE" &&
+            action.navigationType === "SCROLL_TO" &&
+            target &&
+            !action.transitionShouldSmartAnimate &&
+            (!action.transitionType ||
+              ["INSTANT_TRANSITION", "SCROLL_ANIMATE"].includes(
+                action.transitionType,
+              ))
+          ) {
+            if (
+              action.transitionType === "SCROLL_ANIMATE" &&
+              (action.easingType || action.easingVar || action.easingFunction)
+            )
+              warnings.add(
+                "Scroll animation uses a standard easing curve; custom easing is not restored.",
+              );
+            actions.push({
+              type: "scrollTo",
+              targetId: target.id,
+              offset: {
+                x: action.extraScrollOffset?.x ?? 0,
+                y: action.extraScrollOffset?.y ?? 0,
+              },
+              transition:
+                action.transitionType === "SCROLL_ANIMATE"
+                  ? "animate"
+                  : "instant",
+              durationMs: Math.max(
+                0,
+                Math.min(60000, (action.transitionDuration ?? 0.3) * 1000),
+              ),
+            });
+            continue;
+          }
+          if (
+            action.connectionType !== "INTERNAL_NODE" ||
+            !target ||
+            !["NAVIGATE", "OVERLAY", "SWAP"].includes(
+              action.navigationType ?? "NAVIGATE",
+            ) ||
+            action.transitionShouldSmartAnimate ||
+            (action.transitionType &&
+              !["INSTANT_TRANSITION", "DISSOLVE", "FADE"].includes(
+                action.transitionType,
+              ))
+          ) {
+            supported = false;
+            break;
+          }
+          actions.push({
+            type:
+              action.navigationType === "OVERLAY"
+                ? "overlay"
+                : action.navigationType === "SWAP"
+                  ? "swap"
+                  : "navigate",
+            targetId: target.id,
+            transition: ["DISSOLVE", "FADE"].includes(action.transitionType)
+              ? "dissolve"
+              : "instant",
+            durationMs: Math.max(
+              0,
+              Math.min(60000, (action.transitionDuration ?? 0.3) * 1000),
+            ),
+          });
+        }
+        if (supported && actions.length) {
+          node.interactions ??= [];
+          node.interactions.push({
+            trigger,
+            actions,
+            ...(trigger === "delay"
+              ? {
+                  delayMs: Math.max(
+                    0,
+                    Math.min(
+                      86400000,
+                      (interaction.event?.transitionTimeout ?? 0) * 1000,
+                    ),
+                  ),
+                }
+              : {}),
+          });
+          if (
+            trigger === "click" &&
+            actions.length === 1 &&
+            actions[0].type === "navigate"
+          )
+            node.targetId = actions[0].targetId;
+        } else
+          warnings.add(
+            "Some advanced prototype actions or transitions could not be restored.",
+          );
+      }
+    }
   if (!doc.pages.length) throw Error("No supported pages in Figma file");
   if (
     source.some(

@@ -8,7 +8,7 @@ import { editTypedVariable, bindingTypes } from "./typedVariables";
 import { resizeInWorld } from "./geometry";
 import { inverse, transformPoint } from "./fidelity";
 import { PrototypePlayer } from "./PrototypePlayer";
-import type { PrototypeAction } from "./prototype";
+import type { PrototypeAction, PrototypeInteraction } from "./prototype";
 import {
   createComponentInstance,
   resetComponentInstance,
@@ -356,16 +356,38 @@ export default function App() {
   );
   const chosen = doc.nodes.filter((n) => selected.includes(n.id)),
     first = chosen[0];
-  const clickAction = first?.interactions?.find((i) => i.trigger === "click")
-    ?.actions[0];
-  const clickType = clickAction?.type === "scrollTo" ? "scrollTo" : "navigate";
+  const [prototypeTrigger, setPrototypeTrigger] =
+    useState<PrototypeInteraction["trigger"]>("click");
+  const currentInteraction = first?.interactions?.find(
+    (i) => i.trigger === prototypeTrigger,
+  );
+  const clickAction = currentInteraction?.actions[0];
+  const clickType =
+    clickAction?.type === "changeTo"
+      ? "changeTo"
+      : clickAction?.type === "scrollTo"
+        ? "scrollTo"
+        : "navigate";
   function editClickAction(action: PrototypeAction | undefined) {
     if (!first) return;
     patch({
       targetId: undefined,
       interactions: [
-        ...(first.interactions ?? []).filter((i) => i.trigger !== "click"),
-        ...(action ? [{ trigger: "click" as const, actions: [action] }] : []),
+        ...(first.interactions ?? []).filter(
+          (i) => i.trigger !== prototypeTrigger,
+        ),
+        ...(action
+          ? [
+              {
+                ...currentInteraction,
+                trigger: prototypeTrigger,
+                ...(prototypeTrigger === "delay"
+                  ? { delayMs: currentInteraction?.delayMs ?? 300 }
+                  : {}),
+                actions: [action],
+              },
+            ]
+          : []),
       ],
     });
   }
@@ -2446,11 +2468,47 @@ export default function App() {
                       {t("Interactions")}
                       <Plus size={14} />
                     </div>
-                    <label>{t("On click action")}</label>
+                    <label>{t("Interaction trigger")}</label>
                     <select
-                      aria-label={t("On click action")}
+                      aria-label={t("Interaction trigger")}
+                      value={prototypeTrigger}
+                      onChange={(e) =>
+                        setPrototypeTrigger(
+                          e.target.value as PrototypeInteraction["trigger"],
+                        )
+                      }
+                    >
+                      {(
+                        [
+                          "click",
+                          "hover",
+                          "leave",
+                          "press",
+                          "release",
+                          "delay",
+                        ] as const
+                      ).map((value) => (
+                        <option key={value} value={value}>
+                          {t(`Trigger ${value}`)}
+                        </option>
+                      ))}
+                    </select>
+                    <label>{t("Interaction action")}</label>
+                    <select
+                      aria-label={t("Interaction action")}
                       value={clickType}
                       onChange={(e) => {
+                        if (e.target.value === "changeTo") {
+                          const reference =
+                            doc.componentLibrary?.[0]?.sourceId ??
+                            doc.nodes.find((n) => n.type === "component")?.id;
+                          if (reference)
+                            editClickAction({
+                              type: "changeTo",
+                              componentId: reference,
+                            });
+                          return;
+                        }
                         const targetId =
                           clickAction && "targetId" in clickAction
                             ? clickAction.targetId
@@ -2483,35 +2541,69 @@ export default function App() {
                     >
                       <option value="navigate">{t("Navigate to frame")}</option>
                       <option value="scrollTo">{t("Scroll to target")}</option>
+                      <option value="changeTo">
+                        {t("Change component state")}
+                      </option>
                     </select>
-                    <select
-                      aria-label={t("Prototype destination")}
-                      value={
-                        clickAction && "targetId" in clickAction
-                          ? clickAction.targetId
-                          : (first.targetId ?? "")
-                      }
-                      onChange={(e) =>
-                        editClickAction(
-                          e.target.value
-                            ? { type: clickType, targetId: e.target.value }
-                            : undefined,
-                        )
-                      }
-                    >
-                      <option value="">{t("None")}</option>
-                      {doc.nodes
-                        .filter((n) =>
-                          clickType === "scrollTo"
-                            ? n.pageId === page && n.id !== first.id
-                            : n.type === "frame",
-                        )
-                        .map((n) => (
-                          <option key={n.id} value={n.id}>
-                            {n.name}
+                    {clickType === "changeTo" &&
+                    clickAction?.type === "changeTo" ? (
+                      <select
+                        aria-label={t("Component state")}
+                        value={clickAction.componentId}
+                        onChange={(e) =>
+                          editClickAction({
+                            type: "changeTo",
+                            componentId: e.target.value,
+                          })
+                        }
+                      >
+                        {[
+                          ...(doc.componentLibrary ?? []).map((c) => ({
+                            id: c.sourceId,
+                            name: c.name,
+                          })),
+                          ...doc.nodes
+                            .filter((n) => n.type === "component")
+                            .map((n) => ({ id: n.id, name: n.name })),
+                        ].map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
                           </option>
                         ))}
-                    </select>
+                      </select>
+                    ) : (
+                      <select
+                        aria-label={t("Prototype destination")}
+                        value={
+                          clickAction && "targetId" in clickAction
+                            ? clickAction.targetId
+                            : (first.targetId ?? "")
+                        }
+                        onChange={(e) =>
+                          editClickAction(
+                            e.target.value
+                              ? {
+                                  type: clickType as "navigate" | "scrollTo",
+                                  targetId: e.target.value,
+                                }
+                              : undefined,
+                          )
+                        }
+                      >
+                        <option value="">{t("None")}</option>
+                        {doc.nodes
+                          .filter((n) =>
+                            clickType === "scrollTo"
+                              ? n.pageId === page && n.id !== first.id
+                              : n.type === "frame",
+                          )
+                          .map((n) => (
+                            <option key={n.id} value={n.id}>
+                              {n.name}
+                            </option>
+                          ))}
+                      </select>
+                    )}
                     {clickAction?.type === "scrollTo" && (
                       <>
                         <label>{t("Scroll animation")}</label>

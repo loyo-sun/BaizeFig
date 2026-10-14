@@ -16,7 +16,7 @@ import {
   type PrototypeViewports,
 } from "./prototypeScroll";
 export function PrototypePlayer({
-  doc,
+  doc: originalDoc,
   initialId,
   onClose,
 }: {
@@ -30,6 +30,8 @@ export function PrototypePlayer({
       overlays: [],
       history: [],
     });
+  const doc = state.runtime ?? originalDoc;
+  const hoverOrigins = useRef(new Map<string, string>());
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
@@ -92,10 +94,10 @@ export function PrototypePlayer({
   }, [state.scrolls, state.scrollDurationMs]);
   const current = doc.nodes.find((n) => n.id === state.frameId),
     activeId = state.overlays.at(-1) ?? state.frameId;
-  const apply = (actions: PrototypeAction[]) =>
+  const apply = (actions: PrototypeAction[], sourceId?: string) =>
     setState((s) =>
       transitionPrototype(
-        doc,
+        originalDoc,
         s,
         actions,
         measureViewports([
@@ -107,6 +109,7 @@ export function PrototypePlayer({
               : [],
           ),
         ]),
+        sourceId,
       ),
     );
   useEffect(() => {
@@ -121,7 +124,9 @@ export function PrototypePlayer({
         continue;
       for (const i of node.interactions ?? [])
         if (i.trigger === "delay")
-          timers.push(setTimeout(() => apply(i.actions), i.delayMs ?? 0));
+          timers.push(
+            setTimeout(() => apply(i.actions, node.id), i.delayMs ?? 0),
+          );
     }
     return () => timers.forEach(clearTimeout);
   }, [doc, activeId]);
@@ -133,6 +138,21 @@ export function PrototypePlayer({
       node = doc.nodes.find(
         (n) => n.id === target?.getAttribute("data-node-id"),
       );
+    if (type === "leave") {
+      const relatedId =
+          event.relatedTarget instanceof Element
+            ? event.relatedTarget
+                .closest("[data-node-id]")
+                ?.getAttribute("data-node-id")
+            : undefined,
+        related = doc.nodes.find((n) => n.id === relatedId),
+        relatedChain = related ? [related, ...ancestors(doc, related)] : [];
+      for (const [id, componentId] of hoverOrigins.current) {
+        if (relatedChain.some((n) => n.id === id)) continue;
+        hoverOrigins.current.delete(id);
+        apply([{ type: "changeTo", componentId }], id);
+      }
+    }
     if (!node) return;
     const candidates = [node, ...ancestors(doc, node)];
     for (const n of candidates) {
@@ -153,11 +173,23 @@ export function PrototypePlayer({
       }
       const interactions = n.interactions?.filter((i) => i.trigger === type);
       if (interactions?.length) {
-        for (const i of interactions) apply(i.actions);
+        for (const i of interactions) {
+          if (
+            type === "hover" &&
+            i.actions.some((a) => a.type === "changeTo")
+          ) {
+            const instance = [n, ...ancestors(doc, n)].find(
+              (a) => a.type === "instance" && a.componentId,
+            );
+            if (instance && !hoverOrigins.current.has(instance.id))
+              hoverOrigins.current.set(instance.id, instance.componentId!);
+          }
+          apply(i.actions, n.id);
+        }
         return;
       }
       if (type === "click" && n.targetId) {
-        apply([{ type: "navigate", targetId: n.targetId }]);
+        apply([{ type: "navigate", targetId: n.targetId }], n.id);
         return;
       }
     }

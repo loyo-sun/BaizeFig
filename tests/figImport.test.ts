@@ -3,7 +3,8 @@ import { readFileSync } from "node:fs";
 import { zipSync, deflateSync, strToU8 } from "fflate";
 import { parseSchema, encodeBinarySchema, compileSchema } from "kiwi-schema";
 import { importFig, decodeFigMessage } from "../src/figImport";
-import { validateDocument, execute } from "../src/core";
+import { validateDocument, execute, ancestors } from "../src/core";
+import { transitionPrototype } from "../src/prototype";
 
 const schema = parseSchema(`
 struct GUID { uint sessionID; uint localID; }
@@ -12,11 +13,12 @@ struct Transform { float m00; float m01; float m02; float m10; float m11; float 
 message Parent { GUID guid = 1; string position = 2; }
 message Font { string family = 1; string style = 2; }
 message Text { string characters = 1; }
-enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; }
+enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; }
+message SymbolData { GUID symbolID = 1; }
 message Event { string interactionType = 1; }
 message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; Vector extraScrollOffset = 4; string transitionType = 5; float transitionDuration = 6; }
 message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; }
 message Message { Node[] nodeChanges = 1; }
 `);
 const g = (localID: number) => ({ sessionID: 0, localID });
@@ -75,6 +77,70 @@ function stream(message = { nodeChanges: nodes }) {
   return result;
 }
 describe("Figma import", () => {
+  it("retains hidden component state definitions and inherits interactive state actions on instances", () => {
+    const message = {
+      nodeChanges: [
+        ...nodes,
+        {
+          guid: g(10),
+          parentIndex: { guid: g(0), position: "z" },
+          type: "CANVAS",
+          visible: false,
+        },
+        {
+          guid: g(11),
+          parentIndex: { guid: g(10), position: "a" },
+          type: "SYMBOL",
+          name: "Variant A",
+          size: { x: 100, y: 50 },
+          prototypeInteractions: [
+            {
+              event: { interactionType: "ON_HOVER" },
+              actions: [
+                {
+                  transitionNodeID: g(12),
+                  connectionType: "INTERNAL_NODE",
+                  navigationType: "SWAP_STATE",
+                  transitionType: "INSTANT_TRANSITION",
+                },
+              ],
+            },
+          ],
+        },
+        {
+          guid: g(12),
+          parentIndex: { guid: g(10), position: "b" },
+          type: "SYMBOL",
+          name: "Variant B",
+          size: { x: 100, y: 50 },
+        },
+        {
+          guid: g(13),
+          parentIndex: { guid: g(2), position: "z" },
+          type: "INSTANCE",
+          name: "Interactive",
+          size: { x: 100, y: 50 },
+          symbolData: { symbolID: g(11) },
+        },
+      ],
+    };
+    const r = importFig(stream(message)),
+      d = r.document,
+      instance = d.nodes.find((n) => n.name === "Interactive")!,
+      alternate = d.componentLibrary!.find((c) => c.name === "Variant B")!;
+    expect(instance.interactions![0]).toMatchObject({
+      trigger: "hover",
+      actions: [{ type: "changeTo", componentId: alternate.sourceId }],
+    });
+    expect(
+      d.componentLibrary!.find((c) => c.name === "Variant A")!.nodes[0]
+        .interactions,
+    ).toEqual(instance.interactions);
+    expect(r.report.warnings).not.toContain(
+      "Some advanced prototype actions or transitions could not be restored.",
+    );
+    validateDocument(JSON.parse(JSON.stringify(d)));
+  });
   it("imports scroll-to actions on non-frame layers, offsets, animation and container directions", () => {
     const message = {
       nodeChanges: nodes.map((n) =>
@@ -269,6 +335,48 @@ it.skipIf(!sample)(
       result.document.nodes.filter((n) => n.variableId).length,
     ).toBeGreaterThan(100);
     expect(result.document.componentLibrary!.length).toBeGreaterThan(20);
+    for (const node of result.document.nodes)
+      for (const interaction of node.interactions ?? []) {
+        const actions = interaction.actions.filter(
+          (a) => a.type === "changeTo",
+        );
+        if (!actions.length) continue;
+        const instance = [node, ...ancestors(result.document, node)].find(
+          (n) => n.type === "instance" && n.componentId,
+        )!;
+        expect(instance).toBeDefined();
+        const frameId = ancestors(result.document, node).at(-1)!.id;
+        const state = transitionPrototype(
+          result.document,
+          { frameId, overlays: [], history: [] },
+          actions,
+          {},
+          node.id,
+        );
+        expect(
+          state.runtime!.nodes.find((n) => n.id === instance.id)!.componentId,
+        ).toBe(actions.at(-1)!.componentId);
+        validateDocument(state.runtime!);
+      }
+    expect(
+      new Set(
+        result.document.componentLibrary!.flatMap((c) =>
+          c.nodes
+            .filter((n) =>
+              n.interactions?.some((i) =>
+                i.actions.some((a) => a.type === "changeTo"),
+              ),
+            )
+            .map((n) => n.fidelity?.sourceId),
+        ),
+      ).size,
+    ).toBe(10);
+    expect(
+      result.document.nodes
+        .flatMap((n) => n.interactions ?? [])
+        .flatMap((i) => i.actions)
+        .filter((a) => a.type === "changeTo").length,
+    ).toBeGreaterThan(0);
     expect(
       new Set(
         result.document.nodes

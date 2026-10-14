@@ -403,6 +403,75 @@ export function swapComponentInstance(
   synchronizeInstances(doc);
   return doc;
 }
+// Prototype-only replacement: keep other instances and the editor document untouched.
+// Rebuild just the chosen subtree, including when it is nested inside another instance.
+export function changePrototypeComponent(
+  original: Document,
+  id: string,
+  reference: string,
+): Document {
+  const doc = structuredClone(original),
+    root = doc.nodes.find((n) => n.id === id && n.type === "instance");
+  if (!root || !definition(doc, reference))
+    throw Error("Missing main component");
+  const subtree = paths(doc.nodes, root),
+    ids = new Set([...subtree.values()].map((n) => n.id)),
+    index = doc.nodes.indexOf(root);
+  const previousDefinition =
+      root.componentId && definition(doc, root.componentId),
+    nextDefinition = definition(doc, reference)!;
+  function namedPaths(nodes: Node[], base: Node) {
+    const result = new Map<string, string>(),
+      lookup = paths(nodes, base);
+    const pathForId = new Map([...lookup].map(([path, n]) => [n.id, path]));
+    function walk(n: Node, namePath: string) {
+      result.set(namePath, pathForId.get(n.id)!);
+      const counts = new Map<string, number>();
+      for (const c of children(nodes, n.id)) {
+        const k = `${c.type}:${c.name}`,
+          i = counts.get(k) ?? 0;
+        counts.set(k, i + 1);
+        walk(c, `${namePath}/${encodeURIComponent(k)}#${i}`);
+      }
+    }
+    walk(base, "");
+    return result;
+  }
+  const previous = [...subtree.values()];
+  if (previousDefinition) {
+    const from = namedPaths(previousDefinition.nodes, previousDefinition.root),
+      to = namedPaths(nextDefinition.nodes, nextDefinition.root);
+    for (const [name, oldPath] of from) {
+      const newPath = to.get(name);
+      if (newPath === undefined || newPath === oldPath) continue;
+      if (root.componentOverrides?.[oldPath]) {
+        root.componentOverrides[newPath] = structuredClone(
+          root.componentOverrides[oldPath],
+        );
+      }
+      if (root.componentClears?.[oldPath]) {
+        root.componentClears[newPath] = structuredClone(
+          root.componentClears[oldPath],
+        );
+      }
+      const member =
+        previous.find(
+          (n) => n.componentOwner === root.id && n.componentPath === oldPath,
+        ) ?? subtree.get(oldPath);
+      if (member)
+        previous.push({
+          ...member,
+          componentOwner: root.id,
+          componentPath: newPath,
+        });
+    }
+  }
+  root.componentId = reference;
+  const replacement = expanded(doc, root, previous);
+  doc.nodes = doc.nodes.filter((n) => !ids.has(n.id));
+  doc.nodes.splice(index, 0, ...replacement);
+  return doc;
+}
 export function detachComponentInstance(
   original: Document,
   id: string,

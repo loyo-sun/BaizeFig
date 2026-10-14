@@ -598,8 +598,10 @@ export function execute(
           n.interactions = n.interactions
             .map((i) => ({
               ...i,
-              actions: i.actions.filter(
-                (a) => !("targetId" in a) || !set.has(a.targetId),
+              actions: i.actions.filter((a) =>
+                a.type === "changeTo"
+                  ? !set.has(a.componentId)
+                  : !("targetId" in a) || !set.has(a.targetId),
               ),
             }))
             .filter((i) => i.actions.length);
@@ -697,7 +699,12 @@ export function execute(
             actions: i.actions.map((a) =>
               "targetId" in a
                 ? { ...a, targetId: map.get(a.targetId) ?? a.targetId }
-                : a,
+                : a.type === "changeTo"
+                  ? {
+                      ...a,
+                      componentId: map.get(a.componentId) ?? a.componentId,
+                    }
+                  : a,
             ),
           }));
       }

@@ -1,10 +1,12 @@
-import type { Document } from "./core";
+import { ancestors, type Document } from "./core";
+import { changePrototypeComponent } from "./components";
 import {
   scrollToTarget,
   type ScrollPositions,
   type PrototypeViewports,
 } from "./prototypeScroll";
 export type PrototypeAction =
+  | { type: "changeTo"; componentId: string }
   | {
       type: "scrollTo";
       targetId: string;
@@ -31,16 +33,31 @@ export interface PrototypeState {
   history: string[];
   scrolls?: ScrollPositions;
   scrollDurationMs?: number;
+  runtime?: Document;
   transition?: { type: "instant" | "dissolve"; durationMs: number };
 }
 export function transitionPrototype(
-  doc: Document,
+  original: Document,
   state: PrototypeState,
   actions: PrototypeAction[],
   viewports: PrototypeViewports = {},
+  sourceId?: string,
 ): PrototypeState {
   const next = structuredClone(state);
+  let doc = next.runtime ?? original;
   for (const action of actions) {
+    if (action.type === "changeTo") {
+      const source = doc.nodes.find((n) => n.id === sourceId),
+        instance =
+          source &&
+          [source, ...ancestors(doc, source)].find(
+            (n) => n.type === "instance" && n.componentId,
+          );
+      if (!instance) continue;
+      doc = changePrototypeComponent(doc, instance.id, action.componentId);
+      next.runtime = doc;
+      continue;
+    }
     if (action.type === "scrollTo") {
       if (!doc.nodes.some((n) => n.id === action.targetId))
         throw Error("Invalid prototype target");
@@ -125,11 +142,19 @@ export function validateInteractions(doc: Document): void {
             "overlay",
             "swap",
             "scrollTo",
+            "changeTo",
             "back",
             "close",
           ].includes(a.type)
         )
           throw Error("Invalid prototype interaction");
+        if (
+          a.type === "changeTo" &&
+          (typeof a.componentId !== "string" ||
+            !a.componentId ||
+            a.componentId.length > 1000)
+        )
+          throw Error("Invalid prototype component");
         if (
           "targetId" in a &&
           (!doc.nodes.some(
