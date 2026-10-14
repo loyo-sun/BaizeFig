@@ -1824,3 +1824,43 @@ input[type="checkbox"] {
     display: none;
   }
 }
+
+.general-settings .setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 0;
+  border-top: 1px solid var(--line);
+  margin-top: 22px;
+}
+.general-settings .setting-row > label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+}
+.general-settings select {
+  width: 200px;
+  flex-shrink: 0;
+}
+.general-settings .notice {
+  margin-top: 0;
+}
+.settings-error {
+  color: #b42318;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.settings-done {
+  margin-top: 12px;
+  min-width: 90px;
+}
+html[lang="zh-CN"] .rail-item {
+  font-size: 10px;
+}
+html[lang="zh-CN"] .file-subtitle {
+  gap: 5px;
+}
+html[lang="zh-CN"] .layer-title-input {
+  font-family: inherit;
+}

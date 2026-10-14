@@ -1,4 +1,10 @@
 import { test, expect } from "@playwright/test";
+
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("baizefig.ui.language", "en"),
+  );
+});
 test("draw, edit, duplicate, undo, persist, export and recover a design", async ({
   page,
 }) => {

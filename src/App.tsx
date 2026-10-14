@@ -85,6 +85,8 @@ import {
 import { Scene, svgString, raster } from "./Canvas";
 import { save, loadLast, listDocuments, download } from "./storage";
 import { generate, type AIConfig } from "./ai";
+import { useI18n } from "./LanguageProvider";
+import type { Language } from "./i18n";
 
 type Tool =
   | "move"
@@ -108,6 +110,7 @@ type Modal =
   | "assets"
   | "share"
   | "variables"
+  | "settings"
   | null;
 const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "move", label: "Move", key: "V", icon: MousePointer2 },
@@ -174,6 +177,7 @@ const icons: Partial<Record<Kind, typeof Square>> = {
 };
 const clone = <T,>(value: T): T => structuredClone(value);
 export default function App() {
+  const { language, setLanguage, persistenceError, t } = useI18n();
   const [doc, setDoc] = useState<Document>(() => demoDocument());
   const [ready, setReady] = useState(false);
   const [page, setPage] = useState(doc.pages[0].id),
@@ -842,7 +846,10 @@ export default function App() {
     }
   }
   function addPage() {
-    const p = { id: id(), name: `Page ${doc.pages.length + 1}` };
+    const p = {
+      id: id(),
+      name: t("Page {number}", { number: doc.pages.length + 1 }),
+    };
     change({ ...doc, pages: [...doc.pages, p] }, []);
     setPage(p.id);
   }
@@ -864,6 +871,8 @@ export default function App() {
   function newDoc() {
     void save(doc).then(() => {
       const next = emptyDocument();
+      next.name = t("Untitled");
+      next.pages[0].name = t("Page {number}", { number: 1 });
       history.current = new History();
       setDoc(next);
       setPage(next.pages[0].id);
@@ -883,7 +892,7 @@ export default function App() {
               ...a,
               type: "instance" as const,
               componentId: n.id,
-              name: n.name + " instance",
+              name: t("{name} instance", { name: n.name }),
             }
           : a,
       ),
@@ -891,6 +900,7 @@ export default function App() {
     change(next, [selectedId]);
   }
   const actions = [
+    { name: "General settings", key: "", run: () => setModal("settings") },
     ...[
       { name: "Desktop frame · 1440 × 900", width: 1440, height: 900 },
       { name: "iPhone frame · 393 × 852", width: 393, height: 852 },
@@ -1371,7 +1381,7 @@ export default function App() {
             >
               <button
                 className="tiny"
-                aria-label={`Toggle ${n.name}`}
+                aria-label={t("Toggle {name}", { name: n.name })}
                 onClick={(e) => {
                   e.stopPropagation();
                   setCollapsed((old) => {
@@ -1402,7 +1412,9 @@ export default function App() {
               <span className="layer-name">{n.name}</span>
               <button
                 className="tiny layer-action"
-                aria-label={`${n.visible ? "Hide" : "Show"} ${n.name}`}
+                aria-label={t(n.visible ? "Hide {name}" : "Show {name}", {
+                  name: n.name,
+                })}
                 onClick={(e) => {
                   e.stopPropagation();
                   run({
@@ -1416,7 +1428,9 @@ export default function App() {
               </button>
               <button
                 className="tiny layer-action"
-                aria-label={`${n.locked ? "Unlock" : "Lock"} ${n.name}`}
+                aria-label={t(n.locked ? "Unlock {name}" : "Lock {name}", {
+                  name: n.name,
+                })}
                 onClick={(e) => {
                   e.stopPropagation();
                   run({
@@ -1436,25 +1450,27 @@ export default function App() {
   }
   const selectionBox = chosen.length ? bounds(doc, roots(doc, selected)) : null;
   const title =
-    modal === "share"
-      ? "Share this design"
-      : modal === "variables"
-        ? "Local color variables"
-        : modal === "assets"
-          ? "Components & assets"
-          : modal === "files"
-            ? "Your local workspace"
-            : modal === "shortcuts"
-              ? "Keyboard shortcuts"
-              : modal === "commands"
-                ? "Actions"
-                : modal === "ai"
-                  ? "Create with Baize"
-                  : modal === "bridge"
-                    ? "Connect external AI"
-                    : first?.type === "text"
-                      ? "Edit text"
-                      : "Rename layer";
+    modal === "settings"
+      ? "General settings"
+      : modal === "share"
+        ? "Share this design"
+        : modal === "variables"
+          ? "Local color variables"
+          : modal === "assets"
+            ? "Components & assets"
+            : modal === "files"
+              ? "Your local workspace"
+              : modal === "shortcuts"
+                ? "Keyboard shortcuts"
+                : modal === "commands"
+                  ? "Actions"
+                  : modal === "ai"
+                    ? "Create with Baize"
+                    : modal === "bridge"
+                      ? "Connect external AI"
+                      : first?.type === "text"
+                        ? "Edit text"
+                        : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -1467,10 +1483,10 @@ export default function App() {
       />
       <div className="workspace">
         {!hiddenUI && (
-          <nav className="app-rail" aria-label="Workspace tools">
+          <nav className="app-rail" aria-label={t("Workspace tools")}>
             <button
               className="rail-logo"
-              aria-label="BaizeFig local files"
+              aria-label={t("BaizeFig local files")}
               onClick={() => void openFiles()}
             >
               <img src="/baize.svg" alt="BaizeFig" />
@@ -1480,19 +1496,19 @@ export default function App() {
               <span>
                 <File size={19} />
               </span>
-              File
+              {t("File")}
             </button>
             <button className="rail-item" onClick={() => setModal("ai")}>
               <span>
                 <Sparkles size={19} />
               </span>
-              Agents
+              {t("Agents")}
             </button>
             <button className="rail-item" onClick={() => setModal("assets")}>
               <span>
                 <Plus size={19} />
               </span>
-              Assets
+              {t("Assets")}
             </button>
             <button
               className="rail-item"
@@ -1504,23 +1520,21 @@ export default function App() {
               <span>
                 <BriefcaseBusiness size={19} />
               </span>
-              Tools
+              {t("Tools")}
             </button>
             <span className="rail-separator" />
             <button className="rail-item" onClick={() => setModal("variables")}>
               <span>
                 <Hexagon size={19} />
               </span>
-              Variables
+              {t("Variables")}
             </button>
             <div className="rail-bottom">
               <button
                 className="tiny"
-                aria-label="Editor settings and actions"
-                onClick={() => {
-                  setQuery("");
-                  setModal("commands");
-                }}
+                aria-label={t("General settings")}
+                title={t("General settings")}
+                onClick={() => setModal("settings")}
               >
                 <Settings2 size={17} />
               </button>
@@ -1533,41 +1547,45 @@ export default function App() {
               <div className="file-title-row">
                 <input
                   className="document-title"
-                  aria-label="Document name"
+                  aria-label={t("Document name")}
                   value={doc.name}
                   onChange={(e) => setDoc({ ...doc, name: e.target.value })}
                 />
                 <button
                   className="tiny"
-                  aria-label="File menu"
+                  aria-label={t("File menu")}
                   onClick={() => void openFiles()}
                 >
                   <ChevronDown size={12} />
                 </button>
                 <button
                   className="tiny collapse-panel"
-                  aria-label="Hide panels"
+                  aria-label={t("Hide panels")}
                   onClick={() => setHiddenUI(true)}
                 >
                   <PanelLeftClose size={17} />
                 </button>
               </div>
               <div className="file-subtitle">
-                <span>Drafts</span>
-                <span className="local-plan">Local</span>
-                <span className="save-state">{saved}</span>
+                <span>{t("Drafts")}</span>
+                <span className="local-plan">{t("Local")}</span>
+                <span className="save-state">{t(saved)}</span>
               </div>
             </div>
             <div className="page-heading">
-              <span>Pages</span>
+              <span>{t("Pages")}</span>
               <button
                 className="tiny page-search"
-                aria-label="Search layers"
+                aria-label={t("Search layers")}
                 onClick={() => setShowLayerSearch((v) => !v)}
               >
                 <Search size={16} />
               </button>
-              <button className="tiny" aria-label="Add page" onClick={addPage}>
+              <button
+                className="tiny"
+                aria-label={t("Add page")}
+                onClick={addPage}
+              >
                 <Plus size={14} />
               </button>
             </div>
@@ -1593,7 +1611,7 @@ export default function App() {
                     <span
                       onDoubleClick={(e) => {
                         e.stopPropagation();
-                        const name = window.prompt("Page name", p.name);
+                        const name = window.prompt(t("Page name"), p.name);
                         if (name?.trim())
                           change({
                             ...doc,
@@ -1609,7 +1627,7 @@ export default function App() {
                   {p.id === page && (
                     <button
                       className="tiny"
-                      aria-label="Delete current page"
+                      aria-label={t("Delete current page")}
                       onClick={deletePage}
                     >
                       <X size={11} />
@@ -1619,11 +1637,11 @@ export default function App() {
               ))}
             </div>
             <div className="layer-heading">
-              Layers{" "}
+              {t("Layers")}{" "}
               <span>{doc.nodes.filter((n) => n.pageId === page).length}</span>
               <button
                 className="tiny"
-                aria-label="Import assets"
+                aria-label={t("Import assets")}
                 onClick={() => fileInput.current?.click()}
               >
                 <Plus size={14} />
@@ -1634,10 +1652,10 @@ export default function App() {
                 <Search size={14} />
                 <input
                   autoFocus
-                  aria-label="Filter layers"
+                  aria-label={t("Filter layers")}
                   value={layerFilter}
                   onChange={(e) => setLayerFilter(e.target.value)}
-                  placeholder="Search layers…"
+                  placeholder={t("Search layers…")}
                 />
               </div>
             )}
@@ -1646,30 +1664,31 @@ export default function App() {
               {!doc.nodes.some((n) => n.pageId === page) && (
                 <div className="empty-layers">
                   <Square size={24} />
-                  <p>Your next idea starts here.</p>
-                  <span>Choose a tool and draw on the canvas.</span>
+                  <p>{t("Your next idea starts here.")}</p>
+                  <span>{t("Choose a tool and draw on the canvas.")}</span>
                 </div>
               )}
             </div>
             <div className="left-footer">
-              <div className="brand-caption">白泽 · 通万物、识万象</div>
+              <div className="brand-caption">{t("白泽 · 通万物、识万象")}</div>
               <div>
                 <button
                   className="tiny"
-                  aria-label="Keyboard shortcuts"
+                  aria-label={t("Keyboard shortcuts")}
                   onClick={() => setModal("shortcuts")}
                 >
                   <Keyboard size={15} />
                 </button>
                 <button
                   className="tiny"
-                  aria-label="Local files"
+                  aria-label={t("Local files")}
                   onClick={() => void openFiles()}
                 >
                   <FolderOpen size={15} />
                 </button>
                 <span>
-                  LOCAL FIRST <span className="green-dot" />
+                  {t("LOCAL FIRST")}
+                  <span className="green-dot" />
                 </span>
               </div>
             </div>
@@ -1685,12 +1704,12 @@ export default function App() {
         >
           <div className="canvas-top-note">
             <span className="green-dot" />
-            Your canvas. Your possibilities.
+            {t("Your canvas. Your possibilities.")}
           </div>
           <svg
             ref={svg}
             className="design-canvas"
-            aria-label="Design canvas"
+            aria-label={t("Design canvas")}
             onPointerDown={(e) => pointerDown(e)}
             onPointerMove={pointerMove}
             onPointerUp={pointerUp}
@@ -1796,7 +1815,7 @@ export default function App() {
                       return (
                         <rect
                           key={h}
-                          aria-label={`Resize ${h}`}
+                          aria-label={t("Resize {direction}", { direction: h })}
                           x={x - 3.5 / view.zoom}
                           y={y - 3.5 / view.zoom}
                           width={7 / view.zoom}
@@ -1846,8 +1865,8 @@ export default function App() {
           </svg>
           <div className="zoom-controls">
             <button
-              title="Zoom out"
-              aria-label="Zoom out"
+              title={t("Zoom out")}
+              aria-label={t("Zoom out")}
               onClick={() =>
                 setView((v) => ({ ...v, zoom: Math.max(0.05, v.zoom / 1.25) }))
               }
@@ -1857,13 +1876,13 @@ export default function App() {
             <button
               className="zoom-value"
               onClick={() => fit()}
-              title="Zoom to fit"
+              title={t("Zoom to fit")}
             >
               {Math.round(view.zoom * 100)}%<ChevronDown size={10} />
             </button>
             <button
-              title="Zoom in"
-              aria-label="Zoom in"
+              title={t("Zoom in")}
+              aria-label={t("Zoom in")}
               onClick={() =>
                 setView((v) => ({ ...v, zoom: Math.min(8, v.zoom * 1.25) }))
               }
@@ -1872,8 +1891,8 @@ export default function App() {
             </button>
             <span />
             <button
-              title="Fit canvas · Shift 1"
-              aria-label="Zoom to fit"
+              title={t("Fit canvas · Shift 1")}
+              aria-label={t("Zoom to fit")}
               onClick={() => fit()}
             >
               <Maximize size={13} />
@@ -1883,21 +1902,21 @@ export default function App() {
             <div className="dock-grip">
               <Grip size={14} />
             </div>
-            {tools.map((t) => (
+            {tools.map((item) => (
               <button
-                key={t.id}
-                className={tool === t.id ? "active" : ""}
-                aria-label={t.label}
-                title={`${t.label}${t.key ? " · " + t.key : ""}`}
-                onClick={() => setTool(t.id)}
+                key={item.id}
+                className={tool === item.id ? "active" : ""}
+                aria-label={t(item.label)}
+                title={`${t(item.label)}${item.key ? " · " + item.key : ""}`}
+                onClick={() => setTool(item.id)}
               >
-                <t.icon size={18} />
+                <item.icon size={18} />
               </button>
             ))}
             <span className="dock-divider" />
             <button
-              aria-label="AI design engine"
-              title="AI design engine"
+              aria-label={t("AI design engine")}
+              title={t("AI design engine")}
               onClick={() => setModal("ai")}
             >
               <Sparkles size={18} />
@@ -1905,7 +1924,7 @@ export default function App() {
           </div>
           <button
             className="help-fab"
-            aria-label="Keyboard shortcuts and help"
+            aria-label={t("Keyboard shortcuts and help")}
             onClick={() => setModal("shortcuts")}
           >
             <HelpCircle size={21} />
@@ -1916,13 +1935,15 @@ export default function App() {
               onClick={() => setHiddenUI(false)}
             >
               <PanelLeftClose size={17} />
-              Show panels
+              {t("Show panels")}
             </button>
           )}
           <div className="canvas-bottom-note">
             {tool === "move"
-              ? "V to select · Space to pan · ⌘ / Ctrl + scroll to zoom"
-              : `${tools.find((t) => t.id === tool)?.label} · Click and drag to draw · Shift to constrain`}
+              ? t("V to select · Space to pan · ⌘ / Ctrl + scroll to zoom")
+              : t("{tool} · Click and drag to draw · Shift to constrain", {
+                  tool: t(tools.find((item) => item.id === tool)?.label ?? ""),
+                })}
           </div>
         </main>
         {!hiddenUI && (
@@ -1930,7 +1951,7 @@ export default function App() {
             <div className="inspector-top">
               <button
                 className="profile-button"
-                aria-label="Local workspace files"
+                aria-label={t("Local workspace files")}
                 onClick={() => void openFiles()}
               >
                 <span className="profile-avatar">白</span>
@@ -1939,8 +1960,8 @@ export default function App() {
               <div className="inspector-top-actions">
                 <button
                   className="icon-button"
-                  aria-label="Present"
-                  title="Present · Shift Space"
+                  aria-label={t("Present")}
+                  title={t("Present · Shift Space")}
                   onClick={presentStart}
                 >
                   <Play size={21} />
@@ -1949,7 +1970,7 @@ export default function App() {
                   className="share-button"
                   onClick={() => setModal("share")}
                 >
-                  Share
+                  {t("Share")}
                 </button>
               </div>
             </div>
@@ -1958,17 +1979,17 @@ export default function App() {
                 className={tab === "design" ? "active" : ""}
                 onClick={() => setTab("design")}
               >
-                Design
+                {t("Design")}
               </button>
               <button
                 className={tab === "prototype" ? "active" : ""}
                 onClick={() => setTab("prototype")}
               >
-                Prototype
+                {t("Prototype")}
               </button>
               <button
                 className="inspector-zoom"
-                aria-label="Zoom menu"
+                aria-label={t("Zoom menu")}
                 onClick={() => setZoomMenu((v) => !v)}
               >
                 {Math.round(view.zoom * 100)}%<ChevronDown size={12} />
@@ -1993,7 +2014,8 @@ export default function App() {
                       setZoomMenu(false);
                     }}
                   >
-                    Zoom to fit <kbd>Shift 1</kbd>
+                    {t("Zoom to fit")}
+                    <kbd>Shift 1</kbd>
                   </button>
                   <button
                     onClick={() => {
@@ -2001,7 +2023,8 @@ export default function App() {
                       setZoomMenu(false);
                     }}
                   >
-                    Zoom to selection <kbd>Shift 2</kbd>
+                    {t("Zoom to selection")}
+                    <kbd>Shift 2</kbd>
                   </button>
                 </div>
               )}
@@ -2010,11 +2033,11 @@ export default function App() {
               {!first ? (
                 <>
                   <section>
-                    <div className="section-heading">Page</div>
+                    <div className="section-heading">{t("Page")}</div>
                     <label className="color-row">
                       <input
                         type="color"
-                        aria-label="Page background"
+                        aria-label={t("Page background")}
                         value={doc.background}
                         onChange={(e) =>
                           change({ ...doc, background: e.target.value })
@@ -2028,16 +2051,16 @@ export default function App() {
                   </section>
                   <section className="local-styles">
                     <div className="section-heading">
-                      Styles
+                      {t("Styles")}
                       <button
                         className="tiny"
-                        aria-label="Manage variables"
+                        aria-label={t("Manage variables")}
                         onClick={() => setModal("variables")}
                       >
                         <Plus size={16} />
                       </button>
                     </div>
-                    <p className="muted">Local color variables</p>
+                    <p className="muted">{t("Local color variables")}</p>
                     {(doc.variables ?? []).map((v) => (
                       <button
                         className="style-swatch"
@@ -2053,7 +2076,7 @@ export default function App() {
                         className="empty-style"
                         onClick={() => setModal("variables")}
                       >
-                        Create a local variable
+                        {t("Create a local variable")}
                       </button>
                     )}
                   </section>
@@ -2062,18 +2085,18 @@ export default function App() {
                 <>
                   <section>
                     <div className="section-heading">
-                      Interactions
+                      {t("Interactions")}
                       <Plus size={14} />
                     </div>
-                    <p className="muted">On click → Navigate to frame</p>
+                    <p className="muted">{t("On click → Navigate to frame")}</p>
                     <select
-                      aria-label="Prototype destination"
+                      aria-label={t("Prototype destination")}
                       value={first.targetId ?? ""}
                       onChange={(e) =>
                         patch({ targetId: e.target.value || undefined })
                       }
                     >
-                      <option value="">None</option>
+                      <option value="">{t("None")}</option>
                       {doc.nodes
                         .filter((n) => n.type === "frame" && n.pageId === page)
                         .map((n) => (
@@ -2084,14 +2107,14 @@ export default function App() {
                     </select>
                     <button className="primary full" onClick={presentStart}>
                       <Play size={14} />
-                      Present prototype
+                      {t("Present prototype")}
                     </button>
                   </section>
                   <section>
                     <p className="muted">
-                      This version supports click navigation. Advanced triggers,
-                      transitions and smart animation are tracked in the feature
-                      matrix.
+                      {t(
+                        "This version supports click navigation. Advanced triggers, transitions and smart animation are tracked in the feature matrix.",
+                      )}
                     </p>
                   </section>
                 </>
@@ -2101,14 +2124,14 @@ export default function App() {
                     <div className="section-heading">
                       <span>
                         {selected.length > 1
-                          ? `${selected.length} selected`
+                          ? t("{count} selected", { count: selected.length })
                           : first.type.charAt(0).toUpperCase() +
                             first.type.slice(1)}
                       </span>
                       <div className="inline">
                         <button
                           className="tiny"
-                          aria-label="Toggle visibility"
+                          aria-label={t("Toggle visibility")}
                           onClick={() => patch({ visible: !first.visible })}
                         >
                           {first.visible ? (
@@ -2119,7 +2142,7 @@ export default function App() {
                         </button>
                         <button
                           className="tiny"
-                          aria-label="Toggle lock"
+                          aria-label={t("Toggle lock")}
                           onClick={() => patch({ locked: !first.locked })}
                         >
                           {first.locked ? (
@@ -2132,7 +2155,7 @@ export default function App() {
                     </div>
                     <input
                       className="layer-title-input"
-                      aria-label="Layer name"
+                      aria-label={t("Layer name")}
                       key={first.id + first.name}
                       defaultValue={first.name}
                       onBlur={(e) => {
@@ -2151,8 +2174,8 @@ export default function App() {
                       ].map((a) => (
                         <button
                           key={a.axis}
-                          title={`Align ${a.axis}`}
-                          aria-label={`Align ${a.axis}`}
+                          title={t("Align {axis}", { axis: t(a.axis) })}
+                          aria-label={t("Align {axis}", { axis: t(a.axis) })}
                           disabled={selected.length < 2}
                           onClick={() =>
                             run({
@@ -2207,11 +2230,11 @@ export default function App() {
                   {container(first) && (
                     <section>
                       <div className="section-heading">
-                        Auto layout
+                        {t("Auto layout")}
                         <button
                           className="tiny"
-                          title="Add auto layout · Shift A"
-                          aria-label="Add auto layout"
+                          title={t("Add auto layout · Shift A")}
+                          aria-label={t("Add auto layout")}
                           onClick={() => autoLayout()}
                         >
                           <Plus size={14} />
@@ -2233,11 +2256,13 @@ export default function App() {
                                 })
                               }
                             >
-                              {d === "none"
-                                ? "Free"
-                                : d === "horizontal"
-                                  ? "→ Horizontal"
-                                  : "↓ Vertical"}
+                              {t(
+                                d === "none"
+                                  ? "Free"
+                                  : d === "horizontal"
+                                    ? "→ Horizontal"
+                                    : "↓ Vertical",
+                              )}
                             </button>
                           ),
                         )}
@@ -2277,11 +2302,11 @@ export default function App() {
                   {first.type === "text" && (
                     <section>
                       <div className="section-heading">
-                        Typography
+                        {t("Typography")}
                         <Type size={14} />
                       </div>
                       <input
-                        aria-label="Font family"
+                        aria-label={t("Font family")}
                         key={first.id + first.fontFamily}
                         defaultValue={first.fontFamily}
                         onBlur={(e) => patch({ fontFamily: e.target.value })}
@@ -2300,14 +2325,14 @@ export default function App() {
                           onChange={(v) => patch({ fontWeight: v })}
                         />
                         <NumberField
-                          label="Line"
+                          label="Line height"
                           value={first.lineHeight}
                           min={0.1}
                           step={0.1}
                           onChange={(v) => patch({ lineHeight: v })}
                         />
                         <select
-                          aria-label="Text alignment"
+                          aria-label={t("Text alignment")}
                           value={first.textAlign}
                           onChange={(e) =>
                             patch({
@@ -2316,13 +2341,15 @@ export default function App() {
                           }
                         >
                           {["left", "center", "right"].map((a) => (
-                            <option key={a}>{a}</option>
+                            <option key={a} value={a}>
+                              {t(a)}
+                            </option>
                           ))}
                         </select>
                       </div>
                       <textarea
                         className="text-content"
-                        aria-label="Text content"
+                        aria-label={t("Text content")}
                         key={first.id + first.text}
                         defaultValue={first.text}
                         onBlur={(e) => {
@@ -2334,10 +2361,10 @@ export default function App() {
                   )}
                   <section>
                     <div className="section-heading">
-                      Fill
+                      {t("Fill")}
                       <button
                         className="tiny"
-                        aria-label="Reset fill"
+                        aria-label={t("Reset fill")}
                         onClick={() =>
                           patch({
                             fill: first.fill === "none" ? "#d9d9d9" : "none",
@@ -2354,7 +2381,7 @@ export default function App() {
                     <label className="color-row">
                       <input
                         type="color"
-                        aria-label="Fill color"
+                        aria-label={t("Fill color")}
                         value={
                           first.fill === "none"
                             ? "#ffffff"
@@ -2364,7 +2391,7 @@ export default function App() {
                       />
                       <span>
                         {first.fill === "none"
-                          ? "None"
+                          ? t("None")
                           : first.fill.replace("#", "").toUpperCase()}
                       </span>
                       <NumberField
@@ -2379,10 +2406,10 @@ export default function App() {
                   </section>
                   <section>
                     <div className="section-heading">
-                      Stroke
+                      {t("Stroke")}
                       <button
                         className="tiny"
-                        aria-label="Toggle stroke"
+                        aria-label={t("Toggle stroke")}
                         onClick={() =>
                           patch({ strokeWidth: first.strokeWidth ? 0 : 1 })
                         }
@@ -2399,7 +2426,7 @@ export default function App() {
                         <label className="color-row">
                           <input
                             type="color"
-                            aria-label="Stroke color"
+                            aria-label={t("Stroke color")}
                             value={
                               first.stroke === "none"
                                 ? "#202a24"
@@ -2423,7 +2450,7 @@ export default function App() {
                   </section>
                   <section>
                     <div className="section-heading">
-                      Component
+                      {t("Component")}
                       <Component size={14} />
                     </div>
                     {first.type === "component" ? (
@@ -2432,7 +2459,7 @@ export default function App() {
                         onClick={() => createInstance(first)}
                       >
                         <Copy size={14} />
-                        Create instance copy
+                        {t("Create instance copy")}
                       </button>
                     ) : (
                       <button
@@ -2446,13 +2473,14 @@ export default function App() {
                         }
                       >
                         <Component size={14} />
-                        Create component
+                        {t("Create component")}
                       </button>
                     )}
                     {first.type === "instance" && (
                       <p className="muted">
-                        Instance is a snapshot copy in v0.1. Live overrides are
-                        planned.
+                        {t(
+                          "Instance is a snapshot copy in v0.1. Live overrides are planned.",
+                        )}
                       </p>
                     )}
                   </section>
@@ -2460,12 +2488,12 @@ export default function App() {
               )}
               <section>
                 <div className="section-heading">
-                  Export
+                  {t("Export")}
                   <Plus size={14} />
                 </div>
                 <div className="export-controls">
                   <select
-                    aria-label="Export scale"
+                    aria-label={t("Export scale")}
                     value={exportScale}
                     onChange={(e) => setExportScale(Number(e.target.value))}
                   >
@@ -2476,7 +2504,7 @@ export default function App() {
                     ))}
                   </select>
                   <select
-                    aria-label="Export format"
+                    aria-label={t("Export format")}
                     value={exportType}
                     onChange={(e) => setExportType(e.target.value)}
                   >
@@ -2490,23 +2518,26 @@ export default function App() {
                   onClick={() => void exportAsset()}
                 >
                   <Download size={14} />
-                  Export{" "}
-                  {selected.length ? (first?.name ?? "selection") : "page"}
+                  {t("Export {name}", {
+                    name: selected.length
+                      ? (first?.name ?? t("selection"))
+                      : t("page"),
+                  })}
                 </button>
               </section>
             </div>
             <div className="mcp-inspector-row">
               <button onClick={() => setModal("bridge")}>
-                <strong>MCP</strong>
+                <strong>{t("MCP")}</strong>
                 <span>
-                  {bridgeStatus === "Connected" ? "1 connection" : "Connect"}
+                  {t(bridgeStatus === "Connected" ? "1 connection" : "Connect")}
                 </span>
                 <Settings2 size={15} />
               </button>
             </div>
             <div className="right-footer">
               <span className="green-dot" />
-              All changes stay on your device.
+              {t("All changes stay on your device.")}
             </div>
           </aside>
         )}
@@ -2538,7 +2569,7 @@ export default function App() {
                   setContext(null);
                 }}
               >
-                {a.name}
+                {t(a.name)}
                 <kbd>{a.key}</kbd>
               </button>
             ))}
@@ -2549,7 +2580,8 @@ export default function App() {
               setContext(null);
             }}
           >
-            Copy<kbd>⌘ C</kbd>
+            {t("Copy")}
+            <kbd>⌘ C</kbd>
           </button>
           <button
             onClick={() => {
@@ -2557,7 +2589,8 @@ export default function App() {
               setContext(null);
             }}
           >
-            Paste<kbd>⌘ V</kbd>
+            {t("Paste")}
+            <kbd>⌘ V</kbd>
           </button>
           <button
             onClick={() => {
@@ -2565,7 +2598,8 @@ export default function App() {
               setContext(null);
             }}
           >
-            Delete<kbd>⌫</kbd>
+            {t("Delete")}
+            <kbd>⌫</kbd>
           </button>
         </div>
       )}
@@ -2580,34 +2614,75 @@ export default function App() {
             className={`modal modal-${modal}`}
             role="dialog"
             aria-modal="true"
-            aria-label={title}
+            aria-label={t(title)}
           >
             <div className="modal-heading">
               <div>
                 <span className="eyebrow">BAIZEFIG / 白泽</span>
-                <h2>{title}</h2>
+                <h2>{t(title)}</h2>
               </div>
               <button
                 className="icon-button"
-                aria-label="Close dialog"
+                aria-label={t("Close dialog")}
                 onClick={() => setModal(null)}
               >
                 <X size={19} />
               </button>
             </div>
+            {modal === "settings" && (
+              <section className="general-settings">
+                <p className="muted">
+                  {t(
+                    "Choose the language used throughout BaizeFig. Changes take effect immediately.",
+                  )}
+                </p>
+                <div className="setting-row">
+                  <label htmlFor="interface-language">
+                    {t("Interface language")}
+                  </label>
+                  <select
+                    id="interface-language"
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value as Language)}
+                  >
+                    <option value="zh-CN">简体中文</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
+                <p className="notice">
+                  {t(
+                    "Language is saved on this browser and does not change design content, layer names or files.",
+                  )}
+                </p>
+                {persistenceError && (
+                  <p className="settings-error" role="alert">
+                    {t(
+                      "Your language preference could not be saved. It will apply for this session only.",
+                    )}
+                  </p>
+                )}
+                <button
+                  className="primary settings-done"
+                  onClick={() => setModal(null)}
+                >
+                  {t("Done")}
+                </button>
+              </section>
+            )}
             {modal === "share" && (
               <>
                 <p className="muted">
-                  Share a portable copy of this design. Anyone with the file can
-                  open it in BaizeFig.
+                  {t(
+                    "Share a portable copy of this design. Anyone with the file can open it in BaizeFig.",
+                  )}
                 </p>
                 <div className="share-options">
                   <button onClick={localExport}>
                     <File size={20} />
                     <span>
-                      <strong>Download design file</strong>
+                      <strong>{t("Download design file")}</strong>
                       <small>
-                        Editable .baizefig copy, with assets included
+                        {t("Editable .baizefig copy, with assets included")}
                       </small>
                     </span>
                     <Download size={17} />
@@ -2623,31 +2698,34 @@ export default function App() {
                   >
                     <Square size={20} />
                     <span>
-                      <strong>Export an image</strong>
-                      <small>PNG, JPG or SVG from the Export panel</small>
+                      <strong>{t("Export an image")}</strong>
+                      <small>
+                        {t("PNG, JPG or SVG from the Export panel")}
+                      </small>
                     </span>
                     <ArrowUpRight size={17} />
                   </button>
                 </div>
                 <p className="notice">
-                  Live collaboration and shareable room links are still in
-                  development. Sharing a file does not create a live
-                  collaboration session.
+                  {t(
+                    "Live collaboration and shareable room links are still in development. Sharing a file does not create a live collaboration session.",
+                  )}
                 </p>
               </>
             )}
             {modal === "variables" && (
               <>
                 <p className="muted">
-                  Local color variables. Bind a fill to reuse the same color
-                  across this document.
+                  {t(
+                    "Local color variables. Bind a fill to reuse the same color across this document.",
+                  )}
                 </p>
                 <div className="variables-list">
                   {(doc.variables ?? []).map((v) => (
                     <div className="variable-row" key={v.id}>
                       <input
                         type="color"
-                        aria-label={"Color " + v.name}
+                        aria-label={t("Color {name}", { name: v.name })}
                         value={v.value}
                         onChange={(e) =>
                           change({
@@ -2666,7 +2744,7 @@ export default function App() {
                         }
                       />
                       <input
-                        aria-label={"Name " + v.name}
+                        aria-label={t("Name {name}", { name: v.name })}
                         defaultValue={v.name}
                         onBlur={(e) => {
                           if (
@@ -2695,10 +2773,12 @@ export default function App() {
                           notify("Variable applied to selection");
                         }}
                       >
-                        Apply
+                        {t("Apply")}
                       </button>
                       <button
-                        aria-label={"Delete variable " + v.name}
+                        aria-label={t("Delete variable {name}", {
+                          name: v.name,
+                        })}
                         onClick={() =>
                           change({
                             ...doc,
@@ -2727,7 +2807,9 @@ export default function App() {
                         ...(doc.variables ?? []),
                         {
                           id: id(),
-                          name: "Color " + ((doc.variables?.length ?? 0) + 1),
+                          name: t("Color {number}", {
+                            number: (doc.variables?.length ?? 0) + 1,
+                          }),
                           value: "#0d99ff",
                         },
                       ],
@@ -2735,19 +2817,21 @@ export default function App() {
                   }
                 >
                   <Plus size={15} />
-                  Create color variable
+                  {t("Create color variable")}
                 </button>
                 <p className="notice">
-                  Single collection, single mode. Number, string, boolean
-                  variables, aliases and modes are not yet available.
+                  {t(
+                    "Single collection, single mode. Number, string, boolean variables, aliases and modes are not yet available.",
+                  )}
                 </p>
               </>
             )}
             {modal === "assets" && (
               <>
                 <p className="muted">
-                  Components in this file. Instances are snapshot copies in
-                  v0.1.
+                  {t(
+                    "Components in this file. Instances are snapshot copies in v0.1.",
+                  )}
                 </p>
                 <div className="asset-list">
                   {doc.nodes
@@ -2768,8 +2852,9 @@ export default function App() {
                     ))}
                   {!doc.nodes.some((n) => n.type === "component") && (
                     <p className="muted">
-                      Select layers and create a component with ⌥ ⌘ K / Ctrl Alt
-                      K.
+                      {t(
+                        "Select layers and create a component with ⌥ ⌘ K / Ctrl Alt K.",
+                      )}
                     </p>
                   )}
                 </div>
@@ -2778,22 +2863,23 @@ export default function App() {
                   onClick={() => fileInput.current?.click()}
                 >
                   <Upload size={14} />
-                  Import image or SVG
+                  {t("Import image or SVG")}
                 </button>
               </>
             )}
             {modal === "shortcuts" && (
               <>
                 <p className="muted">
-                  Familiar keys. A canvas of your own. ⌘ on Mac, Ctrl on
-                  Windows/Linux.
+                  {t(
+                    "Familiar keys. A canvas of your own. ⌘ on Mac, Ctrl on Windows/Linux.",
+                  )}
                 </p>
                 <div className="shortcut-list">
                   {shortcuts.map(([group, name, key]) => (
                     <div key={name}>
-                      <span className="shortcut-group">{group}</span>
-                      <span>{name}</span>
-                      <kbd>{key}</kbd>
+                      <span className="shortcut-group">{t(group)}</span>
+                      <span>{t(name)}</span>
+                      <kbd>{t(key)}</kbd>
                     </div>
                   ))}
                 </div>
@@ -2805,8 +2891,8 @@ export default function App() {
                   <Search size={17} />
                   <input
                     autoFocus
-                    placeholder="Search actions…"
-                    aria-label="Search actions"
+                    placeholder={t("Search actions…")}
+                    aria-label={t("Search actions")}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                   />
@@ -2814,7 +2900,9 @@ export default function App() {
                 <div className="action-list">
                   {actions
                     .filter((a) =>
-                      a.name.toLowerCase().includes(query.toLowerCase()),
+                      [a.name, t(a.name)].some((name) =>
+                        name.toLowerCase().includes(query.toLowerCase()),
+                      ),
                     )
                     .map((a) => (
                       <button
@@ -2824,7 +2912,7 @@ export default function App() {
                           a.run();
                         }}
                       >
-                        <span>{a.name}</span>
+                        <span>{t(a.name)}</span>
                         <kbd>{a.key}</kbd>
                       </button>
                     ))}
@@ -2834,16 +2922,18 @@ export default function App() {
             {modal === "files" && (
               <>
                 <p className="muted">
-                  Stored in this browser. Export a local copy to keep a backup.
+                  {t(
+                    "Stored in this browser. Export a local copy to keep a backup.",
+                  )}
                 </p>
                 <div className="file-actions">
                   <button className="primary" onClick={newDoc}>
                     <FilePlus2 size={16} />
-                    New design file
+                    {t("New design file")}
                   </button>
                   <button onClick={() => fileInput.current?.click()}>
                     <Upload size={16} />
-                    Import
+                    {t("Import")}
                   </button>
                 </div>
                 <div className="file-grid">
@@ -2868,7 +2958,10 @@ export default function App() {
                       </div>
                       <strong>{d.name}</strong>
                       <span>
-                        {d.pages.length} page · {d.nodes.length} layers
+                        {t("{pages} page · {layers} layers", {
+                          pages: d.pages.length,
+                          layers: d.nodes.length,
+                        })}
                       </span>
                     </button>
                   ))}
@@ -2879,9 +2972,9 @@ export default function App() {
               <>
                 <textarea
                   autoFocus
-                  aria-label={
-                    first?.type === "text" ? "Edit text" : "Rename layer"
-                  }
+                  aria-label={t(
+                    first?.type === "text" ? "Edit text" : "Rename layer",
+                  )}
                   className="edit-text"
                   value={textValue}
                   onChange={(e) => setTextValue(e.target.value)}
@@ -2897,21 +2990,22 @@ export default function App() {
                     setModal(null);
                   }}
                 >
-                  Apply changes
+                  {t("Apply changes")}
                 </button>
               </>
             )}
             {modal === "ai" && (
               <>
                 <p className="muted">
-                  Bring your own model. Generate editable layers, then refine
-                  them by hand.
+                  {t(
+                    "Bring your own model. Generate editable layers, then refine them by hand.",
+                  )}
                 </p>
                 <div className="ai-config">
                   <label>
-                    OpenAI-compatible API base URL
+                    {t("OpenAI-compatible API base URL")}
                     <input
-                      aria-label="AI API URL"
+                      aria-label={t("AI API URL")}
                       value={ai.baseUrl}
                       onChange={(e) =>
                         setAI({ ...ai, baseUrl: e.target.value })
@@ -2921,20 +3015,20 @@ export default function App() {
                   </label>
                   <div className="two-col">
                     <label>
-                      Model
+                      {t("Model")}
                       <input
-                        aria-label="AI model"
+                        aria-label={t("AI model")}
                         value={ai.model}
                         onChange={(e) =>
                           setAI({ ...ai, model: e.target.value })
                         }
-                        placeholder="Your model name"
+                        placeholder={t("Your model name")}
                       />
                     </label>
                     <label>
-                      API key · session only
+                      {t("API key · session only")}
                       <input
-                        aria-label="AI API key"
+                        aria-label={t("AI API key")}
                         type="password"
                         autoComplete="off"
                         value={ai.key}
@@ -2943,37 +3037,43 @@ export default function App() {
                     </label>
                   </div>
                   <label>
-                    Design guidelines
+                    {t("Design guidelines")}
                     <textarea
                       value={ai.system}
                       onChange={(e) => setAI({ ...ai, system: e.target.value })}
-                      placeholder="Your component, color and typography rules"
+                      placeholder={t(
+                        "Your component, color and typography rules",
+                      )}
                     />
                   </label>
                   <label>
-                    What would you like to design?
+                    {t("What would you like to design?")}
                     <textarea
-                      aria-label="Design prompt"
+                      aria-label={t("Design prompt")}
                       className="ai-prompt"
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="Create a minimal dashboard with navigation, search and a table…"
+                      placeholder={t(
+                        "Create a minimal dashboard with navigation, search and a table…",
+                      )}
                     />
                   </label>
                 </div>
                 <p className="notice">
-                  Generating sends this document and selection to your
-                  configured endpoint. Browser access requires CORS support.
-                  Keys remain in memory and are never saved in the design file.
+                  {t(
+                    "Generating sends this document and selection to your configured endpoint. Browser access requires CORS support. Keys remain in memory and are never saved in the design file.",
+                  )}
                 </p>
                 {aiResult && (
                   <div className="ai-result">
                     <strong>
-                      {aiResult.commands.length} proposed operations
+                      {t("{count} proposed operations", {
+                        count: aiResult.commands.length,
+                      })}
                     </strong>
                     <pre>{JSON.stringify(aiResult.commands, null, 2)}</pre>
                     <button className="primary" onClick={applyAI}>
-                      Apply as one undoable change
+                      {t("Apply as one undoable change")}
                     </button>
                   </div>
                 )}
@@ -2984,11 +3084,11 @@ export default function App() {
                     onClick={() => void askAI()}
                   >
                     <Sparkles size={15} />
-                    {aiBusy ? "Generating…" : "Generate proposal"}
+                    {t(aiBusy ? "Generating…" : "Generate proposal")}
                   </button>
                   {aiBusy && (
                     <button onClick={() => abort.current?.abort()}>
-                      Cancel
+                      {t("Cancel")}
                     </button>
                   )}
                 </div>
@@ -2997,8 +3097,9 @@ export default function App() {
             {modal === "bridge" && (
               <>
                 <p className="muted">
-                  Let an MCP client read and edit this open design through the
-                  local bridge.
+                  {t(
+                    "Let an MCP client read and edit this open design through the local bridge.",
+                  )}
                 </p>
                 <div className="connection-state">
                   <span
@@ -3006,27 +3107,29 @@ export default function App() {
                       bridgeStatus === "Connected" ? "green-dot" : "gray-dot"
                     }
                   />
-                  {bridgeStatus}
+                  {t(bridgeStatus)}
                 </div>
                 <ol className="bridge-steps">
                   <li>
-                    In this project, start <code>npm run bridge</code> as a
-                    stdio MCP server in your client.
+                    {t("In this project, start")} <code>npm run bridge</code>{" "}
+                    {t("as a stdio MCP server in your client.")}
                   </li>
                   <li>
-                    Copy the pairing token from the bridge output into the field
-                    below.
+                    {t(
+                      "Copy the pairing token from the bridge output into the field below.",
+                    )}
                   </li>
                   <li>
-                    Connect this browser. Enable writes only when you want the
-                    client to edit.
+                    {t(
+                      "Connect this browser. Enable writes only when you want the client to edit.",
+                    )}
                   </li>
                 </ol>
                 <label className="config-label">
-                  Pairing token
+                  {t("Pairing token")}
                   <input
                     type="password"
-                    aria-label="Bridge pairing token"
+                    aria-label={t("Bridge pairing token")}
                     value={bridgeToken}
                     onChange={(e) => setBridgeToken(e.target.value)}
                   />
@@ -3037,7 +3140,7 @@ export default function App() {
                     checked={bridgeWrite}
                     onChange={(e) => setBridgeWrite(e.target.checked)}
                   />
-                  Allow MCP to modify the currently open document
+                  {t("Allow MCP to modify the currently open document")}
                 </label>
                 <div className="file-actions">
                   <button
@@ -3046,15 +3149,16 @@ export default function App() {
                     onClick={connectBridge}
                   >
                     <Link2 size={15} />
-                    Connect bridge
+                    {t("Connect bridge")}
                   </button>
                   <button onClick={() => socket.current?.close()}>
-                    Disconnect
+                    {t("Disconnect")}
                   </button>
                 </div>
                 <p className="notice">
-                  Local bridge only. Remote ChatGPT HTTPS access and P2P sharing
-                  are not implemented in this version.
+                  {t(
+                    "Local bridge only. Remote ChatGPT HTTPS access and P2P sharing are not implemented in this version.",
+                  )}
                 </p>
               </>
             )}
@@ -3073,11 +3177,11 @@ export default function App() {
                 </span>
                 <button onClick={() => setPresent(null)}>
                   <X size={18} />
-                  Close preview
+                  {t("Close preview")}
                 </button>
               </div>
               <svg
-                aria-label="Prototype preview"
+                aria-label={t("Prototype preview")}
                 viewBox={`0 0 ${n.width} ${n.height}`}
                 onClick={(e) => {
                   const el = (e.target as Element).closest("[data-node-id]");
@@ -3098,14 +3202,14 @@ export default function App() {
                   rootId={n.id}
                 />
               </svg>
-              <p>Click linked elements to navigate · Esc to close</p>
+              <p>{t("Click linked elements to navigate · Esc to close")}</p>
             </div>
           );
         })()}
       {toast && (
         <div className="toast" role="status">
           <Check size={15} />
-          {toast}
+          {t(toast)}
         </div>
       )}
     </div>
@@ -3128,6 +3232,7 @@ function NumberField({
   max?: number;
   step?: number;
 }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState(String(Math.round(value * 100) / 100));
   useEffect(() => setDraft(String(Math.round(value * 100) / 100)), [value]);
   function apply() {
@@ -3140,10 +3245,10 @@ function NumberField({
   }
   return (
     <label className="number-field">
-      <span>{label}</span>
+      <span>{t(label)}</span>
       <input
         type="number"
-        aria-label={aria ?? label}
+        aria-label={t(aria ?? label)}
         value={draft}
         step={step}
         min={min}
