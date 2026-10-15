@@ -2364,3 +2364,26 @@ html[lang="zh-CN"] .layer-title-input {
   border: 1px solid #e5e5e5;
   border-radius: 5px;
 }
+
+.crop-controls {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px #0002;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 12px Arial;
+  min-width: 440px;
+}
+.crop-controls span {
+  color: #777;
+}
+.crop-controls button {
+  font-size: 11px;
+  padding: 5px;
+}
+.crop-controls .find-buttons {
+  flex-wrap: wrap;
+}

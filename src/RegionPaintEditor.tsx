@@ -3,9 +3,11 @@ import { useI18n } from "./LanguageProvider";
 export function RegionPaintEditor({
   paints,
   onChange,
+  onCrop,
 }: {
   paints: ImportedPaint[];
   onChange: (paints: ImportedPaint[]) => void;
+  onCrop?: (index: number) => void;
 }) {
   const { t } = useI18n();
   function patch(index: number, patch: Partial<ImportedPaint>) {
@@ -177,6 +179,11 @@ export function RegionPaintEditor({
           )}
           {p.type === "image" && (
             <>
+              {onCrop && p.image && (
+                <button onClick={() => onCrop(i)}>
+                  {t("Crop image visually")}
+                </button>
+              )}
               <label>
                 {t("Choose image")}
                 <input

@@ -1,3 +1,6 @@
+import { CropEditor } from "./CropEditor";
+import { FillProperties } from "./FillProperties";
+import { StrokeProperties } from "./StrokeProperties";
 import { TextProperties } from "./TextProperties";
 import { changeDocumentTextCase } from "./textCase";
 import { sampleSvgColor } from "./colorPicker";
@@ -354,6 +357,10 @@ export default function App() {
   const [view, setView] = useState({ x: 100, y: 70, zoom: 0.75 }),
     [modal, setModal] = useState<Modal>(null),
     [tab, setTab] = useState<"design" | "prototype">("design");
+  const [editingCrop, setEditingCrop] = useState<{
+    id: string;
+    paintIndex?: number;
+  } | null>(null);
   const [editingVector, setEditingVector] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<TextEditSession | null>(null);
   const [toast, setToast] = useState(""),
@@ -431,7 +438,22 @@ export default function App() {
   } | null>(null);
   useEffect(() => {
     setEditingText(null);
+    setEditingCrop(null);
   }, [doc.id, page]);
+  useEffect(() => {
+    if (
+      editingCrop &&
+      (!selected.includes(editingCrop.id) ||
+        !doc.nodes.some(
+          (n) =>
+            n.id === editingCrop.id &&
+            n.visible &&
+            !n.locked &&
+            !ancestors(doc, n).some((p) => p.locked || !p.visible),
+        ))
+    )
+      setEditingCrop(null);
+  }, [selected, doc.nodes, editingCrop]);
   const [marquee, setMarquee] = useState<{
     x: number;
     y: number;
@@ -750,7 +772,7 @@ export default function App() {
     );
   }
   function pointerDown(e: RPointer, id?: string, handle?: string) {
-    if (editingText) return;
+    if (editingText || editingCrop) return;
     if (colorPicking && e.button === 0) {
       e.preventDefault();
       e.stopPropagation();
@@ -2984,6 +3006,26 @@ export default function App() {
                     />
                   ) : null;
                 })()}
+              {editingCrop &&
+                (() => {
+                  const node = doc.nodes.find(
+                    (n) => n.id === editingCrop.id && n.pageId === page,
+                  );
+                  return node ? (
+                    <CropEditor
+                      key={`${doc.id}-${node.id}-${editingCrop.paintIndex}`}
+                      doc={doc}
+                      node={node}
+                      paintIndex={editingCrop.paintIndex}
+                      point={point}
+                      onCancel={() => setEditingCrop(null)}
+                      onCommit={(patch) => {
+                        run({ type: "update", ids: [node.id], patch });
+                        setEditingCrop(null);
+                      }}
+                    />
+                  ) : null;
+                })()}
               {editingVector &&
                 (() => {
                   const node = doc.nodes.find((n) => n.id === editingVector);
@@ -3023,6 +3065,7 @@ export default function App() {
                 })()}
               {selectionBox &&
                 !editingVector &&
+                !editingCrop &&
                 (tool === "move" || tool === "hand" || tool === "scale") && (
                   <g className="selection-overlay">
                     <rect
@@ -4225,6 +4268,22 @@ export default function App() {
                     </label>
                   </section>
                   <section>
+                    <FillProperties
+                      node={first}
+                      onChange={patch}
+                      onCrop={(paintIndex) => {
+                        if (
+                          !first.locked &&
+                          !ancestors(doc, first).some((p) => p.locked)
+                        ) {
+                          setEditingText(null);
+                          setEditingVector(null);
+                          setEditingCrop({ id: first.id, paintIndex });
+                        }
+                      }}
+                    />
+                  </section>
+                  <section>
                     <div className="section-heading">
                       {t("Stroke")}
                       <button
@@ -4265,6 +4324,7 @@ export default function App() {
                           min={0}
                           onChange={(v) => patch({ strokeWidth: v })}
                         />
+                        <StrokeProperties node={first} onChange={patch} />
                       </>
                     )}
                   </section>

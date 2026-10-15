@@ -50,6 +50,7 @@ export interface Fidelity {
   };
   clipsContent?: boolean;
   corners?: [number, number, number, number];
+  strokeOpacity?: number;
   strokeAlign?: "center" | "inside" | "outside";
   strokeMiterLimit?: number;
   strokeDash?: number[];
@@ -302,7 +303,11 @@ export function validateFidelity(f: Fidelity) {
     !finite(f.size, 2) ||
     f.size.some((x) => x < 0) ||
     (f.linear && !finite(f.linear, 4)) ||
-    (f.corners && (!finite(f.corners, 4) || f.corners.some((x) => x < 0)))
+    (f.corners && (!finite(f.corners, 4) || f.corners.some((x) => x < 0))) ||
+    (f.strokeOpacity !== undefined &&
+      (!Number.isFinite(f.strokeOpacity) ||
+        f.strokeOpacity < 0 ||
+        f.strokeOpacity > 1))
   )
     throw Error("Invalid imported design data");
   if (

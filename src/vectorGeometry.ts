@@ -245,7 +245,25 @@ export function strokeOutline(n: Node): VectorPath[] {
       fill.remove();
       stroke.remove();
       result.remove();
-      return d ? [{ d, rule: "nonzero", color: n.stroke }] : [];
+      return d
+        ? [
+            {
+              d,
+              rule: "nonzero",
+              color: n.stroke,
+              paints:
+                n.fidelity?.strokeOpacity !== undefined
+                  ? [
+                      {
+                        type: "solid",
+                        color: n.stroke,
+                        opacity: n.fidelity.strokeOpacity,
+                      },
+                    ]
+                  : undefined,
+            },
+          ]
+        : [];
     }
     fill.remove();
     stroke.remove();
@@ -263,6 +281,16 @@ export function strokeOutline(n: Node): VectorPath[] {
             .join(" "),
           rule: "nonzero",
           color: n.stroke,
+          paints:
+            n.fidelity?.strokeOpacity !== undefined
+              ? [
+                  {
+                    type: "solid",
+                    color: n.stroke,
+                    opacity: n.fidelity.strokeOpacity,
+                  },
+                ]
+              : undefined,
         },
       ]
     : [];
@@ -580,14 +608,21 @@ export function vectorVisualBounds(
     !n.fidelity?.paths &&
     !n.fidelity?.network &&
     n.type !== "path" &&
-    n.type !== "line"
+    n.type !== "line" &&
+    n.strokeWidth <= 0
   )
     return null;
-  const m = multiply(worldTransform(doc, n), localScale(n)),
-    entries = shapePaths(n),
+  const m = multiply(
+      worldTransform(doc, n),
+      n.fidelity?.paths || n.fidelity?.network
+        ? localScale(n)
+        : [1, 0, 0, 1, 0, 0],
+    ),
+    shapeNode = n.type === "image" ? { ...n, type: "rectangle" as const } : n,
+    entries = shapePaths(shapeNode),
     paths = [...entries];
   if (n.strokeWidth > 0 && !entries.some((p) => p.strokeOutline))
-    paths.push(...strokeOutline(n));
+    paths.push(...strokeOutline(shapeNode));
   let result: paper.Rectangle | undefined;
   for (const entry of paths) {
     if (!entry.d) continue;

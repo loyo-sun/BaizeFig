@@ -30,6 +30,9 @@ function BasicNodeShape({
     stroke: outline ? "#78909c" : n.stroke,
     strokeWidth: outline ? 1 : n.strokeWidth,
     strokeMiterlimit: n.fidelity?.strokeMiterLimit ?? 4,
+    strokeLinecap: n.fidelity?.strokeCap ?? "butt",
+    strokeLinejoin: n.fidelity?.strokeJoin ?? "miter",
+    strokeOpacity: n.fidelity?.strokeOpacity ?? 1,
     strokeDasharray: n.fidelity?.strokeDash?.join(" "),
     strokeDashoffset: n.fidelity?.strokeDashOffset,
   };
@@ -268,6 +271,7 @@ function ShapeContent({
                   ? 2
                   : 1)
           }
+          strokeOpacity={f.strokeOpacity ?? 1}
           strokeLinecap={f.strokeCap ?? "butt"}
           strokeLinejoin={f.strokeJoin ?? "miter"}
           strokeMiterlimit={f.strokeMiterLimit ?? 4}
@@ -344,6 +348,7 @@ function ShapeContent({
                   ? 0
                   : n.strokeWidth
             }
+            strokeOpacity={f.strokeOpacity ?? 1}
             strokeLinecap={f.strokeCap ?? "butt"}
             strokeLinejoin={f.strokeJoin ?? "miter"}
           />
@@ -354,18 +359,16 @@ function ShapeContent({
     const image = f?.image,
       clip = `image-clip-${n.id}`,
       pattern = `image-tile-${n.id}`;
-    const corners = f?.corners;
-    const shape = corners ? (
-      <path d={roundedRect(n.width, n.height, corners)} />
-    ) : n.type === "ellipse" ? (
-      <ellipse
-        cx={n.width / 2}
-        cy={n.height / 2}
-        rx={n.width / 2}
-        ry={n.height / 2}
+    const shape = (
+      <NativeShapeWithStroke
+        node={{
+          ...n,
+          type: n.type === "image" ? "rectangle" : n.type,
+          image: undefined,
+          fill: "#fff",
+          strokeWidth: 0,
+        }}
       />
-    ) : (
-      <rect width={n.width} height={n.height} rx={n.radius} />
     );
     let matrix: string | undefined;
     if (image?.mode === "crop") {
@@ -413,30 +416,96 @@ function ShapeContent({
             />
           )}
         </g>
-        {n.strokeWidth > 0 &&
-          React.cloneElement(shape, {
-            fill: "none",
-            stroke: n.stroke,
-            strokeWidth: n.strokeWidth,
-          })}
+        {n.strokeWidth > 0 && (
+          <NativeShapeWithStroke node={{ ...n, fill: "none" }} />
+        )}
       </g>
     );
   }
-  if (
+  return <NativeShapeWithStroke node={n} outline={outline} />;
+}
+function NativeShapeWithStroke({
+  node: n,
+  outline = false,
+}: {
+  node: Node;
+  outline?: boolean;
+}) {
+  const f = n.fidelity;
+  const shape = (node: Node, o = false) =>
     f?.corners &&
-    n.type !== "text" &&
-    !["ellipse", "line", "path", "star", "polygon"].includes(n.type)
-  )
-    return (
+    !["text", "ellipse", "line", "path", "star", "polygon"].includes(n.type) ? (
       <path
         d={roundedRect(n.width, n.height, f.corners)}
-        fill={outline ? "none" : n.fill}
-        stroke={outline ? "#78909c" : n.stroke}
-        strokeWidth={outline ? 1 : n.strokeWidth}
+        fill={o ? "none" : node.fill}
+        stroke={o ? "#78909c" : node.stroke}
+        strokeWidth={o ? 1 : node.strokeWidth}
+        strokeLinecap={f.strokeCap}
+        strokeLinejoin={f.strokeJoin}
+        strokeMiterlimit={f.strokeMiterLimit}
+        strokeDasharray={f.strokeDash?.join(" ")}
+        strokeDashoffset={f.strokeDashOffset}
+        strokeOpacity={f.strokeOpacity ?? 1}
+      />
+    ) : (
+      <BasicNodeShape
+        node={
+          node.type === "image"
+            ? { ...node, type: "rectangle", image: undefined }
+            : node
+        }
+        outline={o}
       />
     );
-  return <BasicNodeShape node={n} outline={outline} />;
+  if (
+    outline ||
+    !n.strokeWidth ||
+    !f?.strokeAlign ||
+    f.strokeAlign === "center" ||
+    ["text", "line", "path"].includes(n.type)
+  )
+    return shape(n, outline);
+  const inside = f.strokeAlign === "inside",
+    key = `native-stroke-${n.id}`,
+    pad = n.strokeWidth * 2;
+  return (
+    <g>
+      <defs>
+        {inside ? (
+          <clipPath id={key}>
+            {shape({ ...n, fill: "#fff", strokeWidth: 0 })}
+          </clipPath>
+        ) : (
+          <mask
+            id={key}
+            maskUnits="userSpaceOnUse"
+            x={-pad}
+            y={-pad}
+            width={n.width + pad * 2}
+            height={n.height + pad * 2}
+          >
+            <rect
+              x={-pad}
+              y={-pad}
+              width={n.width + pad * 2}
+              height={n.height + pad * 2}
+              fill="white"
+            />
+            {shape({ ...n, fill: "#000", strokeWidth: 0 })}
+          </mask>
+        )}
+      </defs>
+      {shape({ ...n, strokeWidth: 0 })}
+      <g
+        clipPath={inside ? `url(#${key})` : undefined}
+        mask={!inside ? `url(#${key})` : undefined}
+      >
+        {shape({ ...n, fill: "none", strokeWidth: n.strokeWidth * 2 })}
+      </g>
+    </g>
+  );
 }
+
 function textSpans(
   n: Node,
   start: number,

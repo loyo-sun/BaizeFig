@@ -26,6 +26,7 @@ const fidelityFields = [
   "blendMode",
   "corners",
   "strokeAlign",
+  "strokeOpacity",
   "strokeMiterLimit",
   "strokeDash",
   "strokeDashOffset",
