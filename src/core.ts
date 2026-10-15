@@ -1,3 +1,4 @@
+import { equalData } from "./equalData";
 import type { LibrarySubscription } from "./componentLibraries";
 import { remapComponentMetadata, componentPathMapper } from "./componentRemap";
 import {
@@ -15,6 +16,7 @@ import { nodeSelectionBounds } from "./pathBounds";
 import {
   applyTypedBindings,
   bindingTypes,
+  releaseEditedBindings,
   validateTypedVariables,
   type TypedVariable,
   type BindingProperty,
@@ -484,7 +486,7 @@ export function reflowAfterPointerEdit(
   }
   captureSlotContent(original, doc);
   updateLibraryFromMain(doc, [...affected]);
-  synchronizeInstances(doc);
+  synchronizeInstances(doc, [...affected]);
   applyConstraints(original, doc);
   relayout(doc, affected);
   updateLibraryFromMain(doc, [...affected]);
@@ -627,9 +629,21 @@ export function execute(
               ] as const)
                 if (field in patch) delete run[field];
           }
-          if (n.bindings && !("bindings" in patch))
-            for (const key of Object.keys(bindingTypes))
-              if (key in patch) delete n.bindings[key as BindingProperty];
+          releaseEditedBindings(n, patch);
+          if (
+            typeof patch.radius === "number" &&
+            n.fidelity?.corners &&
+            !patch.fidelity
+          )
+            n.fidelity = {
+              ...n.fidelity,
+              corners: [
+                patch.radius!,
+                patch.radius!,
+                patch.radius!,
+                patch.radius!,
+              ],
+            };
           Object.assign(n, patch);
           if (
             [
@@ -1055,11 +1069,14 @@ export function execute(
   for (const changed of original.nodes.filter((n) => modified.includes(n.id)))
     for (const parent of ancestors(original, changed))
       if (!modified.includes(parent.id)) modified.push(parent.id);
+  for (const changed of doc.nodes.filter((n) => modified.includes(n.id)))
+    for (const parent of ancestors(doc, changed))
+      if (!modified.includes(parent.id)) modified.push(parent.id);
   captureSlotContent(original, doc);
   if (command.type === "update" && !command.patch.componentProperties)
     updatePropertyDefaults(doc, command.ids);
   updateLibraryFromMain(doc, modified);
-  synchronizeInstances(doc);
+  synchronizeInstances(doc, modified);
   for (const n of doc.nodes) {
     if (n.variableId) {
       const variable = doc.variables?.find((v) => v.id === n.variableId);
@@ -1075,9 +1092,11 @@ export function execute(
     const old = originalById.get(node.id);
     if (
       old &&
-      ["width", "height", "x", "y", "text", "visible"].some(
+      (["width", "height", "x", "y", "text", "visible", "gap"].some(
         (k) => (old as any)[k] !== (node as any)[k],
-      )
+      ) ||
+        !equalData(old.importedLayout, node.importedLayout) ||
+        !equalData(old.layoutItem, node.layoutItem))
     ) {
       affected.add(node.id);
       ancestors(doc, node).forEach((n) => affected.add(n.id));
@@ -1134,6 +1153,7 @@ export function execute(
 export function validateDocument(
   value: unknown,
   validationDepth = 0,
+  prototypeContext?: Document,
 ): asserts value is Document {
   if (validationDepth > 40)
     throw Error("Component snapshot nesting exceeds limits");
@@ -1253,6 +1273,7 @@ export function validateDocument(
           nodes: entry.nodes,
         },
         validationDepth + 1,
+        prototypeContext ?? d,
       );
     }
   }
@@ -1267,9 +1288,10 @@ export function validateDocument(
           nodes: content,
         },
         validationDepth + 1,
+        prototypeContext ?? d,
       );
   validateTypedVariables(d);
-  validateInteractions(d);
+  validateInteractions(d, prototypeContext);
   if (
     d.guides &&
     (!Array.isArray(d.guides) ||
@@ -1591,7 +1613,9 @@ export function validateDocument(
         throw Error("Invalid parent");
     }
     if (n.targetId) {
-      const target = byId.get(n.targetId);
+      const target =
+        byId.get(n.targetId) ??
+        prototypeContext?.nodes.find((p) => p.id === n.targetId);
       if (!target || target.type !== "frame" || target.pageId !== n.pageId)
         throw Error("Invalid prototype target");
     }

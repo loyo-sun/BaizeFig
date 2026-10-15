@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { zipSync, deflateSync, strToU8 } from "fflate";
 import { parseSchema, encodeBinarySchema, compileSchema } from "kiwi-schema";
-import { importFig, decodeFigMessage } from "../src/figImport";
+import { importFig, decodeFigMessage, readFigArchive } from "../src/figImport";
 import { validateDocument, execute, ancestors } from "../src/core";
 import { transitionPrototype } from "../src/prototype";
 
@@ -307,9 +307,25 @@ it.skipIf(!sample)(
     expect(result.document.pages.map((p) => p.name)).toEqual([
       "REALJET · Precast Plant / Web + Mobile",
     ]);
-    expect(
-      result.document.nodes.filter((n) => !n.parentId).map((n) => n.name),
-    ).toHaveLength(4);
+    const raw = readFigArchive(new Uint8Array(readFileSync(sample!))).message
+      .nodeChanges as Record<string, any>[];
+    const rawGuid = (g: any) => (g ? `${g.sessionID}:${g.localID}` : "");
+    const visiblePages = new Set(
+      raw
+        .filter((n) => n.type === "CANVAS" && n.visible !== false)
+        .map((n) => rawGuid(n.guid)),
+    );
+    const expectedRoots = raw.filter(
+      (n) =>
+        visiblePages.has(rawGuid(n.parentIndex?.guid)) &&
+        n.size &&
+        !n.styleType &&
+        !["TEXT_PATH", "BRUSH"].includes(n.type),
+    );
+    const importedRoots = result.document.nodes.filter((n) => !n.parentId);
+    expect(importedRoots.map((n) => n.fidelity?.sourceId).sort()).toEqual(
+      expectedRoots.map((n) => rawGuid(n.guid)).sort(),
+    );
     expect(result.document.nodes.length).toBeGreaterThan(500);
     expect(result.report.images).toBeGreaterThan(15);
     expect(

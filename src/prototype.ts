@@ -112,7 +112,10 @@ export function transitionPrototype(
   }
   return next;
 }
-export function validateInteractions(doc: Document): void {
+export function validateInteractions(doc: Document, context?: Document): void {
+  const targets = new Map(
+    [...(context?.nodes ?? []), ...doc.nodes].map((n) => [n.id, n]),
+  );
   for (const n of doc.nodes) {
     if (!n.interactions) continue;
     if (!Array.isArray(n.interactions) || n.interactions.length > 1000)
@@ -157,12 +160,11 @@ export function validateInteractions(doc: Document): void {
           throw Error("Invalid prototype component");
         if (
           "targetId" in a &&
-          (!doc.nodes.some(
-            (n) =>
-              n.id === a.targetId &&
-              (a.type === "scrollTo" ||
-                ["frame", "component", "instance"].includes(n.type)),
-          ) ||
+          (!targets.has(a.targetId) ||
+            (a.type !== "scrollTo" &&
+              !["frame", "component", "instance"].includes(
+                targets.get(a.targetId)!.type,
+              )) ||
             (a.durationMs !== undefined &&
               (!Number.isFinite(a.durationMs) ||
                 a.durationMs < 0 ||

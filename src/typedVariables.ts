@@ -1,3 +1,4 @@
+import { equalData } from "./equalData";
 import { type Document, type Node, ancestors, relayout } from "./core";
 import { applyConstraints } from "./layout";
 import { reflowText } from "./textLayout";
@@ -23,7 +24,24 @@ export type BindingProperty =
   | "fontFamily"
   | "text"
   | "visible"
-  | "gap";
+  | "gap"
+  | "fontWeight"
+  | "lineHeight"
+  | "letterSpacing"
+  | "paragraphSpacing"
+  | "paddingTop"
+  | "paddingRight"
+  | "paddingBottom"
+  | "paddingLeft"
+  | "cornerTopLeft"
+  | "cornerTopRight"
+  | "cornerBottomRight"
+  | "cornerBottomLeft"
+  | "counterGap"
+  | "minWidth"
+  | "maxWidth"
+  | "minHeight"
+  | "maxHeight";
 export const bindingTypes: Record<BindingProperty, TypedVariable["type"]> = {
   width: "number",
   height: "number",
@@ -38,7 +56,139 @@ export const bindingTypes: Record<BindingProperty, TypedVariable["type"]> = {
   text: "string",
   visible: "boolean",
   gap: "number",
+  fontWeight: "number",
+  lineHeight: "number",
+  letterSpacing: "number",
+  paragraphSpacing: "number",
+  paddingTop: "number",
+  paddingRight: "number",
+  paddingBottom: "number",
+  paddingLeft: "number",
+  cornerTopLeft: "number",
+  cornerTopRight: "number",
+  cornerBottomRight: "number",
+  cornerBottomLeft: "number",
+  counterGap: "number",
+  minWidth: "number",
+  maxWidth: "number",
+  minHeight: "number",
+  maxHeight: "number",
 };
+const paddingKeys = [
+  "paddingTop",
+  "paddingRight",
+  "paddingBottom",
+  "paddingLeft",
+];
+const cornerKeys = [
+  "cornerTopLeft",
+  "cornerTopRight",
+  "cornerBottomRight",
+  "cornerBottomLeft",
+];
+export function bindingValue(node: Node, property: string): unknown {
+  const padding = paddingKeys.indexOf(property),
+    corner = cornerKeys.indexOf(property);
+  if (padding >= 0)
+    return node.importedLayout?.padding[padding] ?? node.padding ?? 16;
+  if (corner >= 0) return node.fidelity?.corners?.[corner] ?? node.radius;
+  if (property === "counterGap")
+    return node.importedLayout?.counterGap ?? node.gap ?? 12;
+  if (property === "letterSpacing")
+    return (
+      node.textFlow?.letterSpacing ?? node.fidelity?.text?.letterSpacing ?? 0
+    );
+  if (property === "paragraphSpacing")
+    return node.textFlow?.paragraphSpacing ?? 0;
+  if (["minWidth", "maxWidth", "minHeight", "maxHeight"].includes(property))
+    return node.layoutItem?.[property as "minWidth"];
+  return (node as unknown as Record<string, unknown>)[property];
+}
+function setBindingValue(node: Node, property: string, value: Scalar) {
+  const padding = paddingKeys.indexOf(property),
+    corner = cornerKeys.indexOf(property);
+  if (padding >= 0 || property === "counterGap") {
+    node.importedLayout = {
+      padding: [
+        node.padding ?? 16,
+        node.padding ?? 16,
+        node.padding ?? 16,
+        node.padding ?? 16,
+      ],
+      primary: "fixed",
+      counter: "fixed",
+      justify: "start",
+      align: "start",
+      ...node.importedLayout,
+    };
+    if (padding >= 0) {
+      node.importedLayout.padding = [...node.importedLayout.padding];
+      node.importedLayout.padding[padding] = value as number;
+    } else node.importedLayout.counterGap = value as number;
+  } else if (corner >= 0) {
+    node.fidelity = {
+      size: [node.width, node.height],
+      ...node.fidelity,
+      corners: [
+        ...(node.fidelity?.corners ?? [
+          node.radius,
+          node.radius,
+          node.radius,
+          node.radius,
+        ]),
+      ] as [number, number, number, number],
+    };
+    node.fidelity.corners![corner] = value as number;
+  } else if (["letterSpacing", "paragraphSpacing"].includes(property)) {
+    node.textFlow = {
+      autoResize: "fixed",
+      verticalAlign: "top",
+      letterSpacing: node.fidelity?.text?.letterSpacing ?? 0,
+      runs: node.fidelity?.text?.spans,
+      ...node.textFlow,
+      [property]: value,
+    };
+  } else if (
+    ["minWidth", "maxWidth", "minHeight", "maxHeight"].includes(property)
+  )
+    node.layoutItem = { ...node.layoutItem, [property]: value };
+  else (node as unknown as Record<string, unknown>)[property] = value;
+}
+export function releaseEditedBindings(node: Node, patch: Partial<Node>) {
+  if (!node.bindings || "bindings" in patch) return;
+  const changed = { ...node, ...patch };
+  for (const property of Object.keys(node.bindings))
+    if (
+      property in patch ||
+      bindingValue(node, property) !== bindingValue(changed, property) ||
+      ("radius" in patch && cornerKeys.includes(property))
+    )
+      delete node.bindings[property as BindingProperty];
+}
+export function canBindProperty(node: Node, property: string): boolean {
+  if (
+    [
+      "fontSize",
+      "fontFamily",
+      "fontWeight",
+      "text",
+      "lineHeight",
+      "letterSpacing",
+      "paragraphSpacing",
+    ].includes(property)
+  )
+    return node.type === "text";
+  if (
+    paddingKeys.includes(property) ||
+    ["gap", "counterGap"].includes(property)
+  )
+    return !!node.layout && node.layout !== "none";
+  if (cornerKeys.includes(property))
+    return ["rectangle", "frame", "component", "instance", "image"].includes(
+      node.type,
+    );
+  return true;
+}
 export function inheritedModes(
   doc: Document,
   node: Node,
@@ -109,19 +259,52 @@ export function applyTypedBindings(doc: Document): void {
             "strokeWidth",
             "fontSize",
             "gap",
+            "paragraphSpacing",
+            "paddingTop",
+            "paddingRight",
+            "paddingBottom",
+            "paddingLeft",
+            "counterGap",
+            "cornerTopLeft",
+            "cornerTopRight",
+            "cornerBottomRight",
+            "cornerBottomLeft",
+            "minWidth",
+            "maxWidth",
+            "minHeight",
+            "maxHeight",
           ].includes(property) &&
             value < 0) ||
-          (property === "opacity" && (value < 0 || value > 1)))
+          (property === "opacity" && (value < 0 || value > 1)) ||
+          (property === "fontWeight" && (value < 1 || value > 1000)) ||
+          (property === "lineHeight" && value <= 0) ||
+          (property === "paragraphSpacing" && value > 10000))
       )
         throw Error("Invalid variable binding");
       if (
-        ["text", "fontSize", "fontFamily", "width"].includes(property) &&
-        (node as any)[property] !== value
+        [
+          "text",
+          "fontSize",
+          "fontFamily",
+          "fontWeight",
+          "lineHeight",
+          "letterSpacing",
+          "paragraphSpacing",
+          "width",
+        ].includes(property) &&
+        bindingValue(node, property) !== value
       )
         textChanged = true;
-      (node as any)[property] = value;
+      setBindingValue(node, property, value);
     }
     if (textChanged) reflowText(node);
+    const item = node.layoutItem;
+    if (
+      item &&
+      ((item.minWidth ?? 0) > (item.maxWidth ?? Infinity) ||
+        (item.minHeight ?? 0) > (item.maxHeight ?? Infinity))
+    )
+      throw Error("Invalid variable binding");
   }
 }
 export function reflowVariableGeometry(before: Document, doc: Document): void {
@@ -131,9 +314,10 @@ export function reflowVariableGeometry(before: Document, doc: Document): void {
     const old = beforeById.get(node.id);
     if (
       old &&
-      ["x", "y", "width", "height", "text", "visible"].some(
+      (["x", "y", "width", "height", "text", "visible", "gap"].some(
         (k) => (old as any)[k] !== (node as any)[k],
-      )
+      ) ||
+        !equalData(old.importedLayout, node.importedLayout))
     ) {
       affected.add(node.id);
       ancestors(doc, node).forEach((n) => affected.add(n.id));

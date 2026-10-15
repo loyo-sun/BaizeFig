@@ -168,7 +168,7 @@ export function importFig(
     throw fail();
   }
 }
-function parseFig(input: Uint8Array, filename: string): FigImportResult {
+export function readFigArchive(input: Uint8Array) {
   if (input.length > 50 * 1024 * 1024)
     throw Error("Figma file exceeds import limits");
   let files: Record<string, Uint8Array> = {},
@@ -224,6 +224,10 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       /* optional metadata */
     }
   }
+  return { files, bytes, chunks, schema, message, meta };
+}
+function parseFig(input: Uint8Array, filename: string): FigImportResult {
+  const { files, message, meta } = readFigArchive(input);
   const source: Raw[] = message.nodeChanges;
   const index = new Map(source.map((n) => [guid(n.guid), n]));
   for (const node of source) {
@@ -1012,6 +1016,23 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             STROKE_WEIGHT: "strokeWidth",
             FONT_SIZE: "fontSize",
             FONT_FAMILY: "fontFamily",
+            MIN_WIDTH: "minWidth",
+            MAX_WIDTH: "maxWidth",
+            MIN_HEIGHT: "minHeight",
+            MAX_HEIGHT: "maxHeight",
+            FONT_WEIGHT: "fontWeight",
+            LINE_HEIGHT: "lineHeight",
+            LETTER_SPACING: "letterSpacing",
+            PARAGRAPH_SPACING: "paragraphSpacing",
+            STACK_PADDING_TOP: "paddingTop",
+            STACK_PADDING_RIGHT: "paddingRight",
+            STACK_PADDING_BOTTOM: "paddingBottom",
+            STACK_PADDING_LEFT: "paddingLeft",
+            RECTANGLE_TOP_LEFT_CORNER_RADIUS: "cornerTopLeft",
+            RECTANGLE_TOP_RIGHT_CORNER_RADIUS: "cornerTopRight",
+            RECTANGLE_BOTTOM_RIGHT_CORNER_RADIUS: "cornerBottomRight",
+            RECTANGLE_BOTTOM_LEFT_CORNER_RADIUS: "cornerBottomLeft",
+            STACK_COUNTER_SPACING: "counterGap",
             TEXT_DATA: "text",
             VISIBLE: "visible",
             STACK_SPACING: "gap",
@@ -1407,11 +1428,11 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     )
   )
     warnings.add("Some advanced variable types are not supported.");
-  linkImportedComponents(doc);
   applyTypedBindings(doc);
   for (const node of doc.nodes)
     if (node.variableId)
       node.fill = resolveVariable(doc, node.variableId, new Set(), node);
+  linkImportedComponents(doc);
   validateDocument(doc);
   return {
     document: doc,

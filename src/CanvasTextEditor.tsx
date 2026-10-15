@@ -1,3 +1,4 @@
+import {createPortal} from "react-dom";
 import {
   validateTextFragment,
   sliceTextFragment,
@@ -58,6 +59,7 @@ export function CanvasTextEditor({
     typingStyle = useRef<TextStyle | null>(null),
     pendingBlur = useRef(false),
     finished = useRef(false),
+    [toolbarHost,setToolbarHost]=useState<HTMLElement|null>(null),
     [draft, setDraft] = useState(node.text),
     [, refreshStyles] = useState(0);
   const read = () => {
@@ -359,44 +361,10 @@ export function CanvasTextEditor({
     paragraphs: paragraphs.current,
   };
   reflowText(preview);
-  const style: CSSProperties = {
-    fontFamily: node.fontFamily,
-    fontSize: node.fontSize,
-    fontWeight: node.fontWeight,
-    lineHeight: node.lineHeight,
-    textAlign: node.textAlign,
-    direction:
-      node.textFlow?.direction === "auto"
-        ? undefined
-        : node.textFlow?.direction,
-    letterSpacing:
-      node.textFlow?.letterSpacing ?? node.fidelity?.text?.letterSpacing ?? 0,
-    color: node.fill === "none" ? "#202a24" : node.fill,
-    whiteSpace: node.textFlow?.autoResize === "both" ? "pre" : "pre-wrap",
-    minHeight: node.fontSize * node.lineHeight,
-    width: Math.max(1, preview.width),
-    opacity: node.opacity,
-  };
-  return (
-    <g
-      transform={`matrix(${worldTransform(doc, node).join(" ")})`}
-      className="canvas-text-edit-layer"
-      onPointerDown={(e) => e.stopPropagation()}
-      onDoubleClick={(e) => e.stopPropagation()}
-    >
-      <foreignObject
-        x={0}
-        y={0}
-        width={Math.max(16, preview.width)}
-        height={Math.max(
-          preview.height,
-          node.height,
-          node.fontSize * node.lineHeight,
-        )}
-        overflow="visible"
-      >
-        <div
-          className="text-range-toolbar"
+  useLayoutEffect(()=>{const host=document.getElementById('text-style-editor-slot');if(host!==toolbarHost)setToolbarHost(host);});
+  const toolbar=(
+<div
+          className="text-range-toolbar text-sidebar-toolbar"
           role="toolbar"
           aria-label={t("Text selection styles")}
           onPointerDown={(e) => e.preventDefault()}
@@ -507,6 +475,44 @@ export function CanvasTextEditor({
             ↗
           </button>
         </div>
+  );
+  const style: CSSProperties = {
+    fontFamily: node.fontFamily,
+    fontSize: node.fontSize,
+    fontWeight: node.fontWeight,
+    lineHeight: node.lineHeight,
+    textAlign: node.textAlign,
+    direction:
+      node.textFlow?.direction === "auto"
+        ? undefined
+        : node.textFlow?.direction,
+    letterSpacing:
+      node.textFlow?.letterSpacing ?? node.fidelity?.text?.letterSpacing ?? 0,
+    color: node.fill === "none" ? "#202a24" : node.fill,
+    whiteSpace: node.textFlow?.autoResize === "both" ? "pre" : "pre-wrap",
+    minHeight: node.fontSize * node.lineHeight,
+    width: Math.max(1, preview.width),
+    opacity: node.opacity,
+  };
+  return (
+    <g
+      transform={`matrix(${worldTransform(doc, node).join(" ")})`}
+      className="canvas-text-edit-layer"
+      onPointerDown={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+    >
+      <foreignObject
+        x={0}
+        y={0}
+        width={Math.max(16, preview.width)}
+        height={Math.max(
+          preview.height,
+          node.height,
+          node.fontSize * node.lineHeight,
+        )}
+        overflow="visible"
+      >
+        {toolbarHost&&createPortal(toolbar,toolbarHost)}
         <div
           ref={element}
           className="canvas-text-editor"

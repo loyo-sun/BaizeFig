@@ -377,7 +377,36 @@ export function linkImportedComponents(doc: Document): void {
       }
   }
 }
-export function synchronizeInstances(doc: Document): void {
+export function synchronizeInstances(
+  doc: Document,
+  modifiedIds?: string[],
+): void {
+  const changed = new Set(modifiedIds),
+    references = new Set<string>();
+  if (modifiedIds)
+    for (const n of doc.nodes)
+      if (changed.has(n.id) && n.type === "component") {
+        references.add(n.id);
+        if (n.fidelity?.sourceId) references.add(n.fidelity.sourceId);
+      }
+  const dependencyCache = new Map<string, boolean>();
+  const dependsOnChange = (ref: string, seen = new Set<string>()): boolean => {
+    if (references.has(ref)) return true;
+    if (seen.has(ref)) return false;
+    if (dependencyCache.has(ref)) return dependencyCache.get(ref)!;
+    const next = new Set(seen).add(ref),
+      def = definition(doc, ref);
+    const dependent =
+      !!def &&
+      [...paths(def.nodes, def.root).values()].some(
+        (n) =>
+          n.type === "instance" &&
+          !!n.componentId &&
+          dependsOnChange(n.componentId, next),
+      );
+    dependencyCache.set(ref, dependent);
+    return dependent;
+  };
   const roots = doc.nodes.filter(
     (n) =>
       n.type === "instance" &&
@@ -385,6 +414,12 @@ export function synchronizeInstances(doc: Document): void {
       (!n.componentOwner || n.componentOwner === n.id),
   );
   for (const root of roots) {
+    if (
+      modifiedIds &&
+      !changed.has(root.id) &&
+      !dependsOnChange(root.componentId!)
+    )
+      continue;
     const subtree = paths(doc.nodes, root),
       ids = new Set([...subtree.values()].map((n) => n.id)),
       index = doc.nodes.indexOf(root);

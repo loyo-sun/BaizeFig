@@ -4,6 +4,21 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+ "Text effects panel":"文字效果面板",
+ "Text effects":"文字效果",
+  cornerBottomLeft: "左下圆角",
+  cornerBottomRight: "右下圆角",
+  cornerTopRight: "右上圆角",
+  cornerTopLeft: "左上圆角",
+  counterGap: "换行间距",
+  paddingLeft: "左内边距",
+  paddingBottom: "下内边距",
+  paddingRight: "右内边距",
+  paddingTop: "上内边距",
+  paragraphSpacing: "段间距",
+  letterSpacing: "字间距",
+  lineHeight: "行高",
+  fontWeight: "字重",
   Close: "关闭",
 
   "Performance diagnostics": "性能诊断",

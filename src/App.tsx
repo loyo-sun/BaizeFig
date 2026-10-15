@@ -63,7 +63,11 @@ import { editableNetwork, convertToPaths } from "./vectorGeometry";
 import { BooleanIcon } from "./BooleanIcon";
 import { CanvasTextEditor, type TextEditSession } from "./CanvasTextEditor";
 import { combineShapes } from "./combine";
-import { editTypedVariable, bindingTypes } from "./typedVariables";
+import {
+  editTypedVariable,
+  bindingTypes,
+  canBindProperty,
+} from "./typedVariables";
 import {
   resizeInWorld,
   resizeSelection,
@@ -4949,6 +4953,11 @@ export default function App() {
                         {t("Typography")}
                         <Type size={14} />
                       </div>
+                      <div id="text-style-editor-slot" aria-label={t("Text effects panel")}>
+                        {(editingText?.id!==first.id||editingText.documentId!==doc.id)&&<div className="text-sidebar-toolbar text-range-toolbar" role="toolbar" aria-label={t("Text effects")}>
+                          {([['Bold','B'],['Italic','I'],['Underline','U'],['Strikethrough','S'],['Bulleted list','• ≡'],['Numbered list','1. ≡']] as const).map(([name,label])=><button key={name} title={t(name)} aria-label={t(name)} onClick={()=>actions.find(a=>a.name===name)?.run?.()}>{label}</button>)}
+                        </div>}
+                      </div>
                       <input
                         aria-label={t("Font family")}
                         key={first.id + first.fontFamily}
@@ -5766,24 +5775,32 @@ export default function App() {
                       value=""
                       disabled={!selected.length}
                       onChange={(e) => {
-                        let next = doc;
-                        for (const node of chosen)
-                          next = execute(next, {
-                            type: "update",
-                            ids: [node.id],
-                            patch: {
-                              bindings: {
-                                ...node.bindings,
-                                [e.target.value]: v.id,
+                        try {
+                          let next = doc;
+                          for (const node of chosen)
+                            next = execute(next, {
+                              type: "update",
+                              ids: [node.id],
+                              patch: {
+                                bindings: {
+                                  ...node.bindings,
+                                  [e.target.value]: v.id,
+                                },
                               },
-                            },
-                          }).doc;
-                        change(next);
+                            }).doc;
+                          change(next);
+                        } catch (error) {
+                          notify((error as Error).message);
+                        }
                       }}
                     >
                       <option value="">{t("Bind property")}</option>
                       {Object.entries(bindingTypes)
-                        .filter(([, type]) => type === v.type)
+                        .filter(
+                          ([key, type]) =>
+                            type === v.type &&
+                            chosen.every((n) => canBindProperty(n, key)),
+                        )
                         .map(([key]) => (
                           <option key={key} value={key}>
                             {t(key)}
