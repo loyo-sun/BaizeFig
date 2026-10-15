@@ -1,3 +1,4 @@
+import { editableNetwork } from "../src/vectorGeometry";
 import { it, expect } from "vitest";
 import { emptyDocument, makeNode, validateDocument } from "../src/core";
 import { svgString, Scene } from "../src/Canvas";
@@ -260,4 +261,61 @@ it("validates image options inside paint stacks and rejects unsafe transforms", 
     },
   ];
   expect(() => validateDocument(d)).toThrow("Invalid image transform");
+});
+
+it("renders path paint overrides once and does not inherit fill paints into saved strokes", async () => {
+  const d = emptyDocument(),
+    p = d.pages[0].id;
+  const fillPath = "M0 0L100 0L100 100L0 100Z";
+  const strokePath = "M0 0L100 0L100 8L0 8Z";
+  d.nodes = [
+    makeNode("rectangle", p, {
+      id: "paint-scope",
+      width: 100,
+      height: 100,
+      stroke: "#00ff00",
+      strokeWidth: 8,
+      fidelity: {
+        size: [100, 100],
+        paints: [
+          { type: "solid", color: "#ff0000", opacity: 0.5 },
+          { type: "solid", color: "#0000ff", opacity: 0.5 },
+        ],
+        paths: [
+          {
+            d: fillPath,
+            rule: "nonzero",
+            paints: [{ type: "solid", color: "#ffaa00", opacity: 0.5 }],
+          },
+          { d: strokePath, rule: "nonzero", strokeOutline: true },
+        ],
+      },
+    }),
+  ];
+  validateDocument(d);
+  let svg = await svgString(d, p);
+  expect(svg.split(`d="${fillPath}"`).length - 1).toBe(1);
+  expect(svg.split(`d="${strokePath}"`).length - 1).toBe(1);
+  expect(svg).toContain("#00ff00");
+  expect(svg).not.toContain("#ff0000");
+  d.nodes[0].fidelity!.paths![1].paints = [
+    { type: "solid", color: "#ff00ff", opacity: 0.4 },
+    { type: "solid", color: "#00ffff", opacity: 0.3 },
+  ];
+  svg = await svgString(d, p);
+  expect(svg.split(`d="${fillPath}"`).length - 1).toBe(1);
+  expect(svg.split(`d="${strokePath}"`).length - 1).toBe(2);
+  expect(svg).toContain("#ff00ff");
+  expect(svg).toContain("#00ffff");
+  if (process.env.STROKE_PAINT_FIXTURE_PATH)
+    writeFileSync(process.env.STROKE_PAINT_FIXTURE_PATH, JSON.stringify(d));
+});
+
+it("does not multiply region overrides by the parent paint stack",async()=>{
+ const d=emptyDocument(),p=d.pages[0].id,n=makeNode("rectangle",p,{id:"network-paints",width:100,height:100});
+ const network=editableNetwork(n); network.regions[0].paints=[{type:"solid",color:"#ffaa00",opacity:.4}];
+ n.fidelity={size:[100,100],network,paints:[{type:"solid",color:"#ff0000",opacity:.5},{type:"solid",color:"#0000ff",opacity:.5}]};
+ d.nodes=[n];validateDocument(d);
+ const svg=await svgString(d,p);expect(svg.match(/fill="#ffaa00"/g)).toHaveLength(1);
+ expect(svg).not.toContain('#ff0000');expect(svg).not.toContain('#0000ff');
 });

@@ -35,7 +35,15 @@ export function Appearance({
   render: (n: Node, o: boolean) => React.ReactNode;
 }) {
   const paints = node.fidelity?.paints;
-  if (outline || !paints?.length) return <>{render(node, outline)}</>;
+  // Path/region renderers resolve local overrides and inherited paints once.
+  // Applying the whole stack here too would repaint their alpha and strokes.
+  if (
+    outline ||
+    !paints?.length ||
+    node.fidelity?.network ||
+    node.fidelity?.paths?.some((p) => p.paints)
+  )
+    return <>{render(node, outline)}</>;
   return (
     <>
       {[...paints].reverse().map((paint, index) => {
@@ -178,10 +186,17 @@ export function Appearance({
                 ...node.fidelity!,
                 image: undefined,
                 paints: undefined,
-                paths: node.fidelity?.paths?.map((p) => ({
-                  ...p,
-                  color: p.strokeOutline ? node.stroke : "none",
-                })),
+                paths: node.fidelity?.paths
+                  ?.filter(
+                    (p) =>
+                      !node.fidelity?.paths?.some((q) => q.strokeOutline) ||
+                      p.strokeOutline,
+                  )
+                  .map((p) => ({
+                    ...p,
+                    color: p.strokeOutline ? (p.color ?? node.stroke) : "none",
+                    paints: p.strokeOutline ? p.paints : undefined,
+                  })),
               },
             },
             false,

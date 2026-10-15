@@ -950,7 +950,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
         (o: Raw) => o.styleID === entries?.[index]?.styleID,
       );
       const source = path.strokeOutline
-        ? override?.strokePaints
+        ? (override?.strokePaints ?? r.strokePaints)
         : override?.fillPaints;
       if (source) {
         path.paints = convertPaints(source);

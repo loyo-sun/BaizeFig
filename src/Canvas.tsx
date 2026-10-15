@@ -446,12 +446,16 @@ function ShapeContent({
               width: f.size[0],
               height: f.size[1],
               fill: p.color ?? (p.strokeOutline ? n.stroke : n.fill),
-              stroke: p.strokeOutline ? "none" : n.stroke,
-              strokeWidth: p.strokeOutline ? 0 : n.strokeWidth,
+              stroke: f.paths?.some((q) => q.strokeOutline) ? "none" : n.stroke,
+              strokeWidth: f.paths?.some((q) => q.strokeOutline)
+                ? 0
+                : n.strokeWidth,
               fidelity: {
                 size: f.size,
                 paths: [{ ...p, strokeOutline: false, paints: undefined }],
-                paints: p.paints ?? (p.color ? undefined : f.paints),
+                paints:
+                  p.paints ??
+                  (p.strokeOutline || p.color ? undefined : f.paints),
               },
             }}
             outline={outline}

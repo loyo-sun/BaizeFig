@@ -19,14 +19,14 @@ struct Transform { float m00; float m01; float m02; float m10; float m11; float 
 message Parent { GUID guid = 1; string position = 2; }
 message Font { string family = 1; string style = 2; }
 message Text { string characters = 1; }
-enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; BRUSH = 7; TEXT_PATH = 8; VARIABLE = 9; VARIABLE_SET = 10; }
+enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; BRUSH = 7; TEXT_PATH = 8; VARIABLE = 9; VARIABLE_SET = 10; VECTOR = 11; }
 message GUIDPath { GUID[] guids = 1; }
 message SymbolOverride { GUIDPath guidPath = 1; float fontSize = 2; }
 message SymbolData { GUID symbolID = 1; SymbolOverride[] symbolOverrides = 2; }
 message Event { string interactionType = 1; }
 message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; Vector extraScrollOffset = 4; string transitionType = 5; float transitionDuration = 6; }
 message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; DerivedText derivedTextData = 20; TextPathStart textPathStart = 21; StyleRef styleIdForText = 22; string styleType = 23; string key = 24; LineHeight lineHeight = 25; string textDecoration = 26; string variableResolvedType = 27; StyleRef variableSetID = 28; Mode[] variableSetModes = 29; Values variableDataValues = 30; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; DerivedText derivedTextData = 20; TextPathStart textPathStart = 21; StyleRef styleIdForText = 22; string styleType = 23; string key = 24; LineHeight lineHeight = 25; string textDecoration = 26; string variableResolvedType = 27; StyleRef variableSetID = 28; Mode[] variableSetModes = 29; Values variableDataValues = 30; Geometry[] strokeGeometry = 31; Paint[] strokePaints = 32; float strokeWeight = 33; }
 message AssetRef { string key = 1; }
 message StyleRef { GUID guid = 1; AssetRef assetRef = 2; }
 message LineHeight { string units = 1; float value = 2; }
@@ -1208,4 +1208,55 @@ it("restores diamond gradient stops and transforms from binary paints", async ()
   expect(result.report.warnings).not.toContain(
     "Some fill types are not supported.",
   );
+});
+
+it("restores layered stroke paints on saved outline geometry without painting the fill twice", async () => {
+  const ops: number[] = [];
+  const cmd = (op: number, ...values: number[]) => {
+    ops.push(op);
+    for (const value of values) {
+      const b = new Uint8Array(4);
+      new DataView(b.buffer).setFloat32(0, value, true);
+      ops.push(...b);
+    }
+  };
+  cmd(1, 0, 0);
+  cmd(2, 100, 0);
+  cmd(2, 100, 10);
+  cmd(2, 0, 10);
+  cmd(0);
+  const source = [
+    nodes[0],
+    nodes[1],
+    {
+      guid: g(91),
+      parentIndex: { guid: g(1), position: "a" },
+      type: "VECTOR",
+      name: "Gradient stroke",
+      size: { x: 100, y: 100 },
+      strokeWeight: 10,
+      strokeGeometry: [{ commandsBlob: 0, windingRule: "NONZERO" }],
+      strokePaints: [
+        { type: "SOLID", color: { r: 1, g: 0, b: 0, a: 1 }, opacity: 0.25 },
+        {
+          type: "GRADIENT_LINEAR",
+          stops: [
+            { position: 0, color: { r: 0, g: 1, b: 0, a: 1 } },
+            { position: 1, color: { r: 0, g: 0, b: 1, a: 1 } },
+          ],
+        },
+      ],
+    },
+  ];
+  const result = importFig(
+    stream({ nodeChanges: source, blobs: [{ bytes: ops }] } as any),
+  );
+  const path = result.document.nodes[0].fidelity!.paths![0];
+  expect(path.strokeOutline).toBe(true);
+  expect(path.paints?.map((p) => p.type)).toEqual(["solid", "linear"]);
+  expect(path.paints![0].opacity).toBe(0.25);
+  validateDocument(JSON.parse(JSON.stringify(result.document)));
+  const svg = await svgString(result.document, result.document.pages[0].id);
+  expect(svg).toContain("<linearGradient");
+  expect(svg.split(`d="${path.d}"`).length - 1).toBe(2);
 });
