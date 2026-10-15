@@ -1,3 +1,4 @@
+import { FontSettingsPanel } from "./FontSettingsPanel";
 import type { Node } from "./core";
 import { useI18n } from "./LanguageContext";
 import type { TextCase } from "./textCase";
@@ -21,6 +22,7 @@ export function TextProperties({
     onChange({ textFlow: { ...flow, ...value } });
   return (
     <div className="text-properties">
+      <FontSettingsPanel node={node} onChange={onChange} />
       <label>
         {t("Text resizing")}
         <select

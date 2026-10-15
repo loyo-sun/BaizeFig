@@ -1,3 +1,8 @@
+import {
+  fontSettingsStyle,
+  mergeFontSettings,
+  type FontSettings,
+} from "./fontSettings";
 import { renderFontFamily } from "./fontFamily";
 import { listMarkers } from "./textParagraphs";
 import type { Node } from "./core";
@@ -7,6 +12,7 @@ export interface TextRun {
   fontFamily?: string;
   fontSize?: number;
   fontWeight?: number;
+  fontSettings?: FontSettings;
   fill?: string;
   italic?: boolean;
   underline?: boolean;
@@ -70,13 +76,79 @@ export interface TextLine {
 }
 export type TextMeasure = (
   text: string,
-  font: { family: string; size: number; weight: number; italic?: boolean },
+  font: {
+    family: string;
+    size: number;
+    weight: number;
+    italic?: boolean;
+    settings?: FontSettings;
+  },
 ) => number;
 let context:
   | OffscreenCanvasRenderingContext2D
   | CanvasRenderingContext2D
   | null
   | undefined;
+let fontMeasureRoot: SVGSVGElement | undefined;
+let fontMeasureText: SVGTextElement | undefined;
+const advancedWidths = new Map<string, number>();
+function measureAdvancedFont(
+  text: string,
+  font: Parameters<TextMeasure>[1],
+): number | undefined {
+  const settings = fontSettingsStyle(font.settings);
+  if (
+    (!settings.fontFeatureSettings && !settings.fontVariationSettings) ||
+    typeof document === "undefined" ||
+    !document.body
+  )
+    return undefined;
+  if (!fontMeasureRoot) {
+    fontMeasureRoot = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "svg",
+    );
+    fontMeasureRoot.setAttribute("aria-hidden", "true");
+    Object.assign(fontMeasureRoot.style, {
+      position: "fixed",
+      left: "-100000px",
+      top: "0",
+      visibility: "hidden",
+      pointerEvents: "none",
+      width: "1px",
+      height: "1px",
+      overflow: "visible",
+    });
+    fontMeasureText = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text",
+    );
+    fontMeasureRoot.append(fontMeasureText);
+    document.body.append(fontMeasureRoot);
+    document.fonts?.addEventListener("loadingdone", () =>
+      advancedWidths.clear(),
+    );
+  }
+  const key = JSON.stringify([text, font, settings]),
+    cached = advancedWidths.get(key);
+  if (cached !== undefined) return cached;
+  const el = fontMeasureText!;
+  Object.assign(el.style, {
+    fontFamily: renderFontFamily(font.family),
+    fontSize: font.size + "px",
+    fontWeight: String(font.weight),
+    fontStyle: font.italic ? "italic" : "normal",
+    whiteSpace: "pre",
+    fontFeatureSettings: settings.fontFeatureSettings ?? "normal",
+    fontVariationSettings: settings.fontVariationSettings ?? "normal",
+  });
+  el.textContent = text;
+  if (typeof el.getComputedTextLength !== "function") return undefined;
+  const width = el.getComputedTextLength();
+  if (advancedWidths.size >= 4000) advancedWidths.clear();
+  advancedWidths.set(key, width);
+  return width;
+}
 export const browserMeasure: TextMeasure = (text, font) => {
   if (context === undefined) {
     if (typeof OffscreenCanvas !== "undefined")
@@ -85,6 +157,8 @@ export const browserMeasure: TextMeasure = (text, font) => {
       context = document.createElement("canvas").getContext("2d");
     else context = null;
   }
+  const advanced = measureAdvancedFont(text, font);
+  if (advanced !== undefined) return advanced;
   if (context) {
     context.font = `${font.italic ? "italic " : ""}${font.weight} ${font.size}px ${renderFontFamily(font.family)}`;
     return context.measureText(text).width;
@@ -115,6 +189,7 @@ export function layoutText(
       size: run?.fontSize ?? node.fontSize,
       weight: run?.fontWeight ?? node.fontWeight,
       italic: run?.italic,
+      settings: mergeFontSettings(flow?.fontSettings, run?.fontSettings),
     };
   };
   // Measure complete style runs so browser shaping retains kerning and ligatures.

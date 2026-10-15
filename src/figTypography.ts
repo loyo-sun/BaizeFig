@@ -9,6 +9,15 @@ const typographyFields = [
   "fontVariations",
   "fontVariantCommonLigatures",
   "fontVariantContextualLigatures",
+  "fontVariantDiscretionaryLigatures",
+  "fontVariantHistoricalLigatures",
+  "fontVariantOrdinal",
+  "fontVariantSlashedZero",
+  "fontVariantNumericFigure",
+  "fontVariantNumericSpacing",
+  "fontVariantNumericFraction",
+  "fontVariantCaps",
+  "fontVariantPosition",
 ];
 export function figFontWeight(
   style: string,

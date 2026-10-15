@@ -383,3 +383,14 @@ SVG/HTML 导出按实际字符选取所需Unicode字体包并嵌入数据；原�
 IAB实际验证40px/600斜体下划线文字双击编辑为“BaizeFig 字体一致”，SVG画布与编辑器均使用同一fallback family；字体管理器显示“内置兼容字体”；实际下载SVG含字体data URL，实际PNG清晰显示修改后的文字。不能据此保证原始字体版本、中文回退、OpenType或跨平台像素等价。
 
 本项最终299项测试（60文件，含REALJET真实样本）全部通过，生产构建通过。
+
+
+## OpenType 特性与可变字体轴
+
+按当前原始文件内嵌Schema识别标准/上下文/任意/历史连字、序数、斜线零、数字形态/宽度/分数、大小写替换/上下标及FontVariation四字节轴。关联文字样式、整层与局部范围设置分别保留；明确false/normal会关闭对应特性。使用可用字体实现特性，不保证该字体具备全部替代字形。
+
+SVG画布、可编辑范围、导出和排版测量共用font-feature-settings/font-variation-settings；需要高级特性时以浏览器SVG字体引擎测量，并用有界缓存避免重复测量。右侧高级字体面板提供常用特性的默认/开关与轴值调整/重置；全层修改清理对应范围覆盖，普通字重修改解除wght轴覆盖。富文本复制同时带出原图层有效字体设置，保持局部差异。
+
+304项测试（61文件，含当前REALJET）通过。可信自有Kiwi样本覆盖二进制字段→局部覆盖→输入编辑→撤销→原生重载→SVG，真实REALJET联合回归通过。IAB在75%缩放下，111111/000000原宽87.86/136.27px，开启tnum后均140.06px；wght400→800实际改变字形和宽度；650→撤销800→重做650、刷新保持。直接文字编辑器使用同一特性，实际SVG下载包含tnum1/wght650及内置字体数据。此项不代表完整RTL/OpenType脚本塑形或跨版本像素等价。
+
+实现参考：[CSS font-feature-settings](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-feature-settings)、[CSS font-variation-settings](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variation-settings)。

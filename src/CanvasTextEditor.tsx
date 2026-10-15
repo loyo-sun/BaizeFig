@@ -1,8 +1,10 @@
+import { fontSettingsStyle, mergeFontSettings } from "./fontSettings";
 import { renderFontFamily } from "./fontFamily";
 import {createPortal} from "react-dom";
 import {
   validateTextFragment,
   sliceTextFragment,
+  textRunsForClipboard,
   insertTextFragment,
 } from "./textClipboard";
 import { changeTextCase, type TextCase } from "./textCase";
@@ -154,6 +156,7 @@ export function CanvasTextEditor({
         span.append(document.createTextNode(text.slice(a, b)));
         if (style)
           Object.assign(span.style, {
+            ...fontSettingsStyle(mergeFontSettings(node.textFlow?.fontSettings, style.fontSettings)),
             fontFamily: style.fontFamily ? renderFontFamily(style.fontFamily) : "",
             fontSize: style.fontSize ? `${style.fontSize}px` : "",
             fontWeight: style.fontWeight ? String(style.fontWeight) : "",
@@ -478,6 +481,7 @@ export function CanvasTextEditor({
         </div>
   );
   const style: CSSProperties = {
+    ...fontSettingsStyle(node.textFlow?.fontSettings),
     fontFamily: renderFontFamily(node.fontFamily),
     fontSize: node.fontSize,
     fontWeight: node.fontWeight,
@@ -687,7 +691,7 @@ export function CanvasTextEditor({
             const fragment = sliceTextFragment(
               {
                 text: buffer.current,
-                runs: runs.current,
+                runs: textRunsForClipboard(node, buffer.current, runs.current),
                 paragraphs: paragraphs.current,
               },
               range.start,

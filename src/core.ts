@@ -1,3 +1,4 @@
+import { validFontSettings, type FontSettings } from "./fontSettings";
 import { equalData } from "./equalData";
 import type { LibrarySubscription } from "./componentLibraries";
 import { remapComponentMetadata, componentPathMapper } from "./componentRemap";
@@ -78,6 +79,7 @@ export interface Node {
   visible: boolean;
   locked: boolean;
   textFlow?: {
+    fontSettings?: FontSettings;
     autoResize: "fixed" | "height" | "both";
     verticalAlign: "top" | "center" | "bottom";
     letterSpacing: number;
@@ -628,6 +630,10 @@ export function execute(
                 "fill",
               ] as const)
                 if (field in patch) delete run[field];
+          }
+          if ("fontWeight" in patch && !("textFlow" in patch)) {
+            if(n.textFlow?.fontSettings?.variations)delete n.textFlow.fontSettings.variations.wght;
+            for(const run of n.textFlow?.runs??[])if(run.fontSettings?.variations)delete run.fontSettings.variations.wght;
           }
           releaseEditedBindings(n, patch);
           if (
@@ -1345,6 +1351,7 @@ export function validateDocument(
     if (n.textFlow) {
       const f = n.textFlow;
       validateParagraphs(n.text, f.paragraphs);
+      if (!validFontSettings(f.fontSettings)) throw Error("Invalid font settings");
       if (
         (f.direction !== undefined &&
           !["auto", "ltr", "rtl"].includes(f.direction)) ||
@@ -1365,6 +1372,7 @@ export function validateDocument(
           (!Array.isArray(f.runs) ||
             f.runs.some(
               (r) =>
+                !validFontSettings(r.fontSettings) ||
                 !Number.isInteger(r.start) ||
                 !Number.isInteger(r.end) ||
                 r.start < 0 ||

@@ -6,6 +6,36 @@ import {
   type TextParagraph,
 } from "./textParagraphs";
 import { remapTextRuns, type TextRun } from "./textLayout";
+import type { Node } from "./core";
+import { mergeFontSettings } from "./fontSettings";
+export function textRunsForClipboard(
+  node: Node,
+  text: string,
+  runs: TextRun[],
+): TextRun[] {
+  const cuts = [
+    ...new Set([0, text.length, ...runs.flatMap((r) => [r.start, r.end])]),
+  ]
+    .filter((i) => i >= 0 && i <= text.length)
+    .sort((a, b) => a - b);
+  return cuts.slice(0, -1).map((start, i) => {
+    const end = cuts[i + 1],
+      run = runs.find((r) => r.start <= start && r.end >= end);
+    return {
+      fontFamily: node.fontFamily,
+      fontSize: node.fontSize,
+      fontWeight: node.fontWeight,
+      ...(/^#[\da-f]{3,8}$/i.test(node.fill) ? { fill: node.fill } : {}),
+      ...run,
+      fontSettings: mergeFontSettings(
+        node.textFlow?.fontSettings,
+        run?.fontSettings,
+      ),
+      start,
+      end,
+    };
+  });
+}
 export interface TextFragment {
   text: string;
   runs: TextRun[];

@@ -1,3 +1,4 @@
+import { figFontSettings } from "./fontSettings";
 import {
   resolveFigTypography,
   figFontWeight,
@@ -814,6 +815,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             (p: Raw) => p.visible !== false && p.type === "SOLID",
           );
           spans.push({
+            fontSettings: figFontSettings(style),
             start,
             end,
             ...(solid ? { fill: color(solid.color, solid.opacity ?? 1) } : {}),
@@ -1221,6 +1223,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       ...(kind === "text"
         ? {
             textFlow: {
+              fontSettings: figFontSettings(r),
               autoResize:
                 r.textAutoResize === "WIDTH_AND_HEIGHT"
                   ? "both"

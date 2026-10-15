@@ -1,3 +1,4 @@
+import { validFontSettings, type FontSettings } from "./fontSettings";
 import { baselineTrail, type PathText, type SavedGlyph } from "./textPath";
 import type { TextLine } from "./textLayout";
 import type { ImportedPaint, ImportedEffect } from "./appearance";
@@ -45,6 +46,7 @@ export interface Fidelity {
       fontFamily?: string;
       fontSize?: number;
       fontWeight?: number;
+      fontSettings?: FontSettings;
       italic?: boolean;
       underline?: boolean;
       strikethrough?: boolean;
@@ -394,6 +396,7 @@ export function validateFidelity(f: Fidelity) {
       f.text.spans.length > 20000 ||
       f.text.spans.some(
         (s) =>
+          !validFontSettings(s.fontSettings) ||
           !Number.isInteger(s.start) ||
           !Number.isInteger(s.end) ||
           s.start < 0 ||

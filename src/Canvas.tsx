@@ -1,3 +1,4 @@
+import { fontSettingsStyle, mergeFontSettings } from "./fontSettings";
 import { renderFontFamily } from "./fontFamily";
 import { bundledFontCss, bundledFontLicense } from "./bundledFonts";
 import { textBaselineD } from "./textPath";
@@ -63,7 +64,10 @@ function BasicNodeShape({
               : 0
         }
         y={n.fontSize}
-        style={{ userSelect: "none" }}
+        style={{
+          ...fontSettingsStyle(n.textFlow?.fontSettings),
+          userSelect: "none",
+        }}
       >
         {n.text.split("\n").map((line, i) => (
           <tspan
@@ -220,6 +224,7 @@ function ShapeContent({
           <text
             fill={outline ? "none" : n.fill}
             stroke={outline ? "#78909c" : undefined}
+            style={fontSettingsStyle(n.textFlow?.fontSettings)}
             fontFamily={renderFontFamily(n.fontFamily)}
             fontSize={n.fontSize}
             fontWeight={n.fontWeight}
@@ -259,7 +264,11 @@ function ShapeContent({
         fontSize={n.fontSize}
         fontWeight={n.fontWeight}
         letterSpacing={f.text.letterSpacing}
-        style={{ whiteSpace: "pre", userSelect: "none" }}
+        style={{
+          ...fontSettingsStyle(n.textFlow?.fontSettings),
+          whiteSpace: "pre",
+          userSelect: "none",
+        }}
       >
         {f.text.lines.map((line, i) => (
           <React.Fragment key={i}>
@@ -612,6 +621,9 @@ function textSpans(
       <tspan
         key={a}
         fill={style?.fill}
+        style={fontSettingsStyle(
+          mergeFontSettings(n.textFlow?.fontSettings, style?.fontSettings),
+        )}
         fontFamily={
           style?.fontFamily ? renderFontFamily(style.fontFamily) : undefined
         }
