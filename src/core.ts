@@ -590,7 +590,11 @@ export function execute(
             reflowText(n);
           if ("fill" in patch && !("variableId" in patch)) {
             delete n.variableId;
-            if (n.fidelity?.paints) delete n.fidelity.paints;
+            if (
+              n.fidelity?.paints &&
+              !(patch.fidelity as Node["fidelity"])?.paints
+            )
+              delete n.fidelity.paints;
           }
         }
       break;

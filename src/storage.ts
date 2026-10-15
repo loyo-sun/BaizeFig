@@ -2,8 +2,12 @@ import { openDB } from "idb";
 import { type Document, validateDocument } from "./core";
 let connection: ReturnType<typeof openDB> | undefined;
 const database = () =>
-  (connection ??= openDB("baizefig", 2, {
+  (connection ??= openDB("baizefig", 3, {
     upgrade(db) {
+      if (!db.objectStoreNames.contains("versions")) {
+        const versions = db.createObjectStore("versions", { keyPath: "id" });
+        versions.createIndex("documentId", "documentId");
+      }
       if (!db.objectStoreNames.contains("documents"))
         db.createObjectStore("documents", { keyPath: "id" });
       if (!db.objectStoreNames.contains("settings"))
@@ -86,4 +90,73 @@ export function download(
   a.download = name;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
+export interface DocumentVersion {
+  id: string;
+  documentId: string;
+  name: string;
+  createdAt: number;
+  document: Document;
+}
+export async function saveVersion(
+  doc: Document,
+  name: string,
+): Promise<DocumentVersion> {
+  validateDocument(doc);
+  const version: DocumentVersion = {
+    id: crypto.randomUUID(),
+    documentId: doc.id,
+    name: name.trim() || doc.name,
+    createdAt: Date.now(),
+    document: structuredClone(doc),
+  };
+  const db = await database();
+  await db.put("versions", version);
+  return version;
+}
+export async function listVersions(
+  documentId: string,
+): Promise<DocumentVersion[]> {
+  return (
+    (await (
+      await database()
+    ).getAllFromIndex(
+      "versions",
+      "documentId",
+      documentId,
+    )) as DocumentVersion[]
+  ).sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
+}
+export async function restoreVersion(
+  current: Document,
+  versionId: string,
+): Promise<Document> {
+  const db = await database(),
+    tx = db.transaction(["documents", "versions", "trash"], "readwrite");
+  const version = (await tx.objectStore("versions").get(versionId)) as
+    DocumentVersion | undefined;
+  if (!version || version.documentId !== current.id) {
+    await tx.done;
+    throw Error("Version not found");
+  }
+  if (await tx.objectStore("trash").get(current.id)) {
+    await tx.done;
+    throw Error("Restore the file from trash first");
+  }
+  validateDocument(version.document);
+  validateDocument(current);
+  // The recovery checkpoint and restored document commit atomically.
+  await tx
+    .objectStore("versions")
+    .put({
+      id: crypto.randomUUID(),
+      documentId: current.id,
+      name: "Before restore",
+      createdAt: Date.now(),
+      document: structuredClone(current),
+    } satisfies DocumentVersion);
+  await tx.objectStore("documents").put(version.document);
+  await tx.done;
+  return structuredClone(version.document);
 }

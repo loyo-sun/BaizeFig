@@ -2242,3 +2242,31 @@ html[lang="zh-CN"] .layer-title-input {
     left: 16px;
   }
 }
+
+.version-history {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.version-history input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+.version-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+.version-row p {
+  font-size: 12px;
+  color: #888;
+}
+.version-row button {
+  flex-shrink: 0;
+}

@@ -1,3 +1,12 @@
+import { VersionHistory } from "./VersionHistory";
+import {
+  copyProperties,
+  pasteProperties,
+  propertyPatch,
+  readDefaultStyles,
+  DEFAULT_STYLES_KEY,
+  type StyleProperties,
+} from "./styleClipboard";
 import { FindPanel } from "./FindPanel";
 import { replaceMatches, type FindMatch } from "./findReplace";
 import { FrameGrid } from "./FrameGrid";
@@ -177,6 +186,7 @@ type Modal =
   | "variables"
   | "fig-report"
   | "settings"
+  | "versions"
   | null;
 const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "move", label: "Move", key: "V", icon: MousePointer2 },
@@ -258,6 +268,8 @@ export default function App() {
   const latestDocument = useRef(doc);
   latestDocument.current = doc;
   const figInput = useRef<HTMLInputElement>(null);
+  const styleClipboard = useRef<StyleProperties | null>(null);
+  const [defaultStyles, setDefaultStyles] = useState(readDefaultStyles);
   const [findOpen, setFindOpen] = useState(false);
   const [arrangeGap, setArrangeGap] = useState(16);
   const [rulers, setRulers] = useState(() => readCanvasAids().rulers),
@@ -806,6 +818,8 @@ export default function App() {
                 ? "#202a24"
                 : "#c5c8d0",
       });
+      if (defaultStyles[n.type])
+        Object.assign(n, propertyPatch(n, defaultStyles[n.type]!));
       setDoc({ ...doc, nodes: [...doc.nodes, n] });
       setSelected([n.id]);
       drag.current = {
@@ -1473,7 +1487,60 @@ export default function App() {
       notify((error as Error).message);
     }
   }
+  function copyStyle() {
+    if (!first) return;
+    styleClipboard.current = copyProperties(first);
+    notify("Properties copied");
+  }
+  function pasteStyle() {
+    if (!styleClipboard.current) {
+      notify("Copy properties first");
+      return;
+    }
+    try {
+      change(pasteProperties(doc, selected, styleClipboard.current));
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
+  function saveDefaultStyle() {
+    if (!first) return;
+    const next = { ...defaultStyles, [first.type]: copyProperties(first) };
+    try {
+      localStorage.setItem(DEFAULT_STYLES_KEY, JSON.stringify(next));
+      setDefaultStyles(next);
+      notify("Default properties saved");
+    } catch {
+      notify("Could not save default properties");
+    }
+  }
+  async function pickColor() {
+    if (!first) return;
+    const EyeDropper = (
+      window as unknown as {
+        EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> };
+      }
+    ).EyeDropper;
+    if (!EyeDropper) {
+      notify(
+        "Screen color picking is unavailable in this browser. Use the fill color control.",
+      );
+      return;
+    }
+    try {
+      const result = await new EyeDropper().open();
+      run({ type: "update", ids: selected, patch: { fill: result.sRGBHex } });
+    } catch (error) {
+      if ((error as Error).name !== "AbortError")
+        notify((error as Error).message);
+    }
+  }
   const actions = [
+    { name: "Version history", key: "", run: () => setModal("versions") },
+    { name: "Copy properties", key: "⌥ ⌘ / Ctrl Alt C", run: copyStyle },
+    { name: "Paste properties", key: "⌥ ⌘ / Ctrl Alt V", run: pasteStyle },
+    { name: "Set default properties", key: "", run: saveDefaultStyle },
+    { name: "Pick color", key: "", run: () => void pickColor() },
     {
       name: "Find and replace",
       key: "⌘ / Ctrl F",
@@ -1716,7 +1783,7 @@ export default function App() {
         }
         if (k === "c") {
           e.preventDefault();
-          copy();
+          e.altKey ? copyStyle() : copy();
           return;
         }
         if (k === "x") {
@@ -1726,7 +1793,8 @@ export default function App() {
         }
         if (k === "v") {
           e.preventDefault();
-          void paste();
+          if (e.altKey) pasteStyle();
+          else void paste();
           return;
         }
         if (k === "\\") {
@@ -2221,27 +2289,29 @@ export default function App() {
       }));
   }
   const title =
-    modal === "fig-report"
-      ? "Figma import result"
-      : modal === "settings"
-        ? "General settings"
-        : modal === "share"
-          ? "Share this design"
-          : modal === "variables"
-            ? "Local color variables"
-            : modal === "assets"
-              ? "Components & assets"
-              : modal === "files"
-                ? "Your local workspace"
-                : modal === "shortcuts"
-                  ? "Keyboard shortcuts"
-                  : modal === "commands"
-                    ? "Actions"
-                    : modal === "ai"
-                      ? "Create with Baize"
-                      : modal === "bridge"
-                        ? "Connect external AI"
-                        : "Rename layer";
+    modal === "versions"
+      ? "Version history"
+      : modal === "fig-report"
+        ? "Figma import result"
+        : modal === "settings"
+          ? "General settings"
+          : modal === "share"
+            ? "Share this design"
+            : modal === "variables"
+              ? "Local color variables"
+              : modal === "assets"
+                ? "Components & assets"
+                : modal === "files"
+                  ? "Your local workspace"
+                  : modal === "shortcuts"
+                    ? "Keyboard shortcuts"
+                    : modal === "commands"
+                      ? "Actions"
+                      : modal === "ai"
+                        ? "Create with Baize"
+                        : modal === "bridge"
+                          ? "Connect external AI"
+                          : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -2726,6 +2796,11 @@ export default function App() {
                     const first = network.vertices[0],
                       parent = parentFor(first),
                       node = drawnPath(doc, page, network, parent?.id ?? null);
+                    if (defaultStyles.path)
+                      Object.assign(
+                        node,
+                        propertyPatch(node, defaultStyles.path),
+                      );
                     change({ ...doc, nodes: [...doc.nodes, node] }, [node.id]);
                   }}
                 />
@@ -4230,6 +4305,42 @@ export default function App() {
             <kbd>⌘ V</kbd>
           </button>
           <button
+            disabled={!first}
+            onClick={() => {
+              copyStyle();
+              setContext(null);
+            }}
+          >
+            {t("Copy properties")}
+          </button>
+          <button
+            disabled={!styleClipboard.current || !selected.length}
+            onClick={() => {
+              pasteStyle();
+              setContext(null);
+            }}
+          >
+            {t("Paste properties")}
+          </button>
+          <button
+            disabled={!first}
+            onClick={() => {
+              saveDefaultStyle();
+              setContext(null);
+            }}
+          >
+            {t("Set default properties")}
+          </button>
+          <button
+            disabled={!first}
+            onClick={() => {
+              void pickColor();
+              setContext(null);
+            }}
+          >
+            {t("Pick color")}
+          </button>
+          <button
             onClick={() => {
               run({ type: "delete", ids: selected });
               setContext(null);
@@ -4302,6 +4413,15 @@ export default function App() {
                 <X size={19} />
               </button>
             </div>
+            {modal === "versions" && (
+              <VersionHistory
+                doc={doc}
+                onRestore={(next) => {
+                  change(next, []);
+                  setPage(next.pages[0].id);
+                }}
+              />
+            )}
             {modal === "fig-report" && figReport && (
               <section className="fig-import-report">
                 <p>
@@ -4870,6 +4990,9 @@ export default function App() {
                   )}
                 </p>
                 <div className="file-actions">
+                  <button onClick={() => setModal("versions")}>
+                    {t("Version history")}
+                  </button>
                   <button className="primary" onClick={newDoc}>
                     <FilePlus2 size={16} />
                     {t("New design file")}

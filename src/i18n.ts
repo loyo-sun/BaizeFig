@@ -4,6 +4,26 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Named snapshots are stored in this browser. Restoring creates a recovery checkpoint and can be undone.":
+    "命名版本保存在当前浏览器。恢复前会自动备份当前内容，也可通过撤销返回。",
+  "Restore the file from trash first": "请先从回收站恢复文件",
+  "Version not found": "找不到此版本",
+  "No saved versions yet": "尚未保存版本",
+  "Before restore": "恢复前的自动备份",
+  "Restore version": "恢复此版本",
+  "Save version": "保存版本",
+  "Version name": "版本名称",
+  "Version history": "版本历史",
+  "Screen color picking is unavailable in this browser. Use the fill color control.":
+    "此浏览器不支持屏幕取色，请使用填充颜色控件。",
+  "Could not save default properties": "无法保存工具默认属性",
+  "Default properties saved": "已保存工具默认属性",
+  "Copy properties first": "请先复制属性",
+  "Properties copied": "已复制属性",
+  "Pick color": "取色",
+  "Set default properties": "设为工具默认属性",
+  "Paste properties": "粘贴属性",
+  "Copy properties": "复制属性",
   "Find next / previous": "查找下一个 / 上一个",
   "Find and replace": "查找与替换",
   "Find text": "查找内容",
