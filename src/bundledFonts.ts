@@ -116,9 +116,12 @@ export async function bundledFontCss(
     if (
       n.type !== "text" ||
       !n.visible ||
-      (n.fidelity?.textPath &&
-        n.fidelity.text?.characters === n.text &&
-        n.fidelity.text.glyphs)
+      (n.fidelity?.text?.characters === n.text &&
+        ((n.fidelity.textPath && n.fidelity.text.glyphs) ||
+          (n.fidelity.text.glyphCache &&
+            !n.fidelity.text.spans?.some(
+              (s) => s.underline || s.strikethrough || s.href,
+            ))))
     )
       continue;
     if (usesBundledInter(n.fontFamily))

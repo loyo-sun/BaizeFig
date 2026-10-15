@@ -1,3 +1,4 @@
+import { readFigGlyphCache } from "./figGlyphCache";
 import { figFontSettings } from "./fontSettings";
 import {
   resolveFigTypography,
@@ -418,6 +419,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     );
   let images = 0,
     instances = 0;
+  const glyphContourCache = new Map<number, string>();
   const imageCache = new Map<string, string | undefined>();
   const mapping: Record<string, Kind> = {
     FRAME: "frame",
@@ -969,6 +971,47 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       } catch {
         warnings.add(
           "Some vector networks retain editable path contours instead of shared topology.",
+        );
+      }
+    }
+    if (
+      r.type === "TEXT" &&
+      r.derivedTextData?.glyphs?.length &&
+      text === r.textData?.characters &&
+      (![
+        "textData",
+        "fontName",
+        "fontSize",
+        "fontVariations",
+        "styleIdForText",
+      ].some((field) => explicitFields.has(field)) ||
+        explicitFields.has("derivedTextData"))
+    ) {
+      try {
+        const glyphCache = readFigGlyphCache(
+          text,
+          r.derivedTextData.glyphs,
+          (index) => message.blobs?.[index]?.bytes,
+          glyphContourCache,
+        );
+        if (
+          fidelity.text ||
+          !importedRuns.some((s) => s.underline || s.strikethrough || s.href)
+        ) {
+          fidelity.text ??= {
+            characters: text,
+            lines: [],
+            letterSpacing,
+            spans: importedRuns,
+          };
+          fidelity.text.glyphCache = glyphCache;
+          warnings.add(
+            "Saved glyph outlines preserve unchanged text where available; editing uses available fonts.",
+          );
+        }
+      } catch {
+        warnings.add(
+          "Some saved text outlines are unavailable; the available font is used.",
         );
       }
     }

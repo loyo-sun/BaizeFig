@@ -1,9 +1,18 @@
+import { savedTextGlyphs } from "./glyphCache";
 import { fontSettingsStyle, mergeFontSettings } from "./fontSettings";
 import { renderFontFamily } from "./fontFamily";
-import { bundledFontCss, bundledFontLicense, preloadEmbeddedFonts } from "./bundledFonts";
+import {
+  bundledFontCss,
+  bundledFontLicense,
+  preloadEmbeddedFonts,
+} from "./bundledFonts";
 import { textBaselineD } from "./textPath";
 import { documentIndex } from "./documentIndex";
-import { transformedPath, vectorVisualBounds } from "./vectorGeometry";
+import {
+  transformedPath,
+  vectorVisualBounds,
+  savedGlyphPaths,
+} from "./vectorGeometry";
 import { networkGeometry, networkStroke } from "./vectorNetwork";
 import { Appearance, EffectDefinitions } from "./appearance";
 import { layoutText } from "./textLayout";
@@ -255,6 +264,33 @@ function ShapeContent({
       </g>
     );
   }
+  if (
+    n.type === "text" &&
+    f?.text?.characters === n.text &&
+    f.text.glyphCache &&
+    !(n.textFlow?.runs ?? f.text.spans)?.some(
+      (s) => s.underline || s.strikethrough || s.href,
+    )
+  )
+    return (
+      <g
+        aria-label={n.text}
+        transform={`scale(${f.size[0] ? n.width / f.size[0] : 1} ${f.size[1] ? n.height / f.size[1] : 1})`}
+      >
+        {savedGlyphPaths(
+          savedTextGlyphs(f.text)!,
+          n.textFlow?.runs ?? f.text.spans,
+        ).map((p, i) => (
+          <path
+            key={i}
+            d={p.d}
+            fill={outline ? "none" : (p.fill ?? n.fill)}
+            stroke={outline ? "#78909c" : n.stroke}
+            strokeWidth={outline ? 1 : n.strokeWidth}
+          />
+        ))}
+      </g>
+    );
   if (n.type === "text" && f?.text && f.text.characters === n.text)
     return (
       <text

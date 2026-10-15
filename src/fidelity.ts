@@ -1,3 +1,4 @@
+import {decodeGlyphCache} from "./glyphCache";
 import { validFontSettings, type FontSettings } from "./fontSettings";
 import { baselineTrail, type PathText, type SavedGlyph } from "./textPath";
 import type { TextLine } from "./textLayout";
@@ -36,6 +37,7 @@ export interface Fidelity {
   textPath?: PathText;
   text?: {
     glyphs?: SavedGlyph[];
+    glyphCache?: string;
     characters: string;
     lines: TextLine[];
     letterSpacing: number;
@@ -341,6 +343,10 @@ export function validateFidelity(f: Fidelity) {
       typeof f.textPath.reverse !== "boolean"
     )
       throw Error("Invalid text baseline");
+  }
+  if(f.text?.glyphCache!==undefined){
+    if(typeof f.text.characters!=='string')throw Error('Invalid saved glyph cache');
+    decodeGlyphCache(f.text.glyphCache,f.text.characters.length);
   }
   if (
     f.text?.glyphs &&

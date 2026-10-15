@@ -1,3 +1,6 @@
+import { savedTextGlyphs } from "./glyphCache";
+import type { SavedGlyph } from "./textPath";
+import type { TextRun } from "./textLayout";
 import { textBaselineD } from "./textPath";
 import type { ImportedPaint } from "./appearance";
 import { dashContours, bevelStroke } from "./strokeContours";
@@ -141,6 +144,35 @@ export function transformedPath(d: string, m: Matrix) {
   const out = p.pathData;
   p.remove();
   return out;
+}
+const glyphContours = new WeakMap<SavedGlyph[], string[]>();
+export function savedGlyphPaths(glyphs: SavedGlyph[], spans: TextRun[] = []) {
+  let paths = glyphContours.get(glyphs);
+  if (!paths) {
+    paths = glyphs.map((g) => {
+      const a = -g.rotation,
+        c = Math.cos(a),
+        s = Math.sin(a);
+      return transformedPath(g.d, [
+        c * g.size,
+        s * g.size,
+        s * g.size,
+        -c * g.size,
+        g.x,
+        g.y,
+      ]);
+    });
+    glyphContours.set(glyphs, paths);
+  }
+  const groups: { d: string; fill?: string }[] = [];
+  glyphs.forEach((g, i) => {
+    if (!paths![i]) return;
+    const fill = spans.find((s) => s.start <= g.start && s.end > g.start)?.fill,
+      last = groups.at(-1);
+    if (last && last.fill === fill) last.d += " " + paths![i];
+    else groups.push({ d: paths![i], fill });
+  });
+  return groups;
 }
 // Stroke offsets are generated with a 0.05 local-unit curve tolerance, not a raster image.
 export function strokeOutline(n: Node): VectorPath[] {
@@ -605,29 +637,27 @@ export function vectorVisualBounds(
   doc: Document,
   n: Node,
 ): { x: number; y: number; width: number; height: number } | null {
-  if (n.type === "text" && n.fidelity?.textPath) {
-    const f = n.fidelity;
-    if (f.text?.characters === n.text && f.text.glyphs?.length) {
-      const paths = f.text.glyphs.map((g) => {
-        const a = -g.rotation,
-          c = Math.cos(a),
-          s = Math.sin(a);
-        return {
-          d: transformedPath(g.d, [
-            c * g.size,
-            s * g.size,
-            s * g.size,
-            -c * g.size,
-            g.x,
-            g.y,
-          ]),
-          rule: "nonzero" as const,
-        };
-      });
+  const savedGlyphs =
+    n.type === "text" &&
+    n.fidelity?.text?.characters === n.text &&
+    (n.fidelity.textPath ||
+      (n.fidelity.text.glyphCache &&
+        !(n.textFlow?.runs ?? n.fidelity.text.spans)?.some(
+          (s) => s.underline || s.strikethrough || s.href,
+        )))
+      ? savedTextGlyphs(n.fidelity.text)
+      : undefined;
+  if (n.type === "text" && (n.fidelity?.textPath || savedGlyphs?.length)) {
+    const f = n.fidelity!;
+    if (savedGlyphs?.length) {
+      const paths = savedGlyphPaths(savedGlyphs).map((p) => ({
+        d: p.d,
+        rule: "nonzero" as const,
+      }));
       return vectorVisualBounds(doc, {
         ...n,
         type: "path",
-        strokeWidth: 0,
+        strokeWidth: f.textPath ? 0 : n.strokeWidth,
         fidelity: { ...f, textPath: undefined, paths, network: undefined },
       });
     }
