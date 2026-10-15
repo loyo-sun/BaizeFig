@@ -742,6 +742,13 @@ export const zhCN: Record<string, string> = {
     "部分组件首选项或属性变量绑定尚未还原。",
   "Some component variants could not be restored.":
     "部分组件变体组合尚未还原。",
+  "Curved text preserves saved glyph outlines; edited text uses the available font along its baseline.":
+    "路径文字保留保存的字形轮廓；修改内容后使用可用字体沿基线重新排版。",
+  "Some curved text baselines could not be restored.":
+    "部分路径文字基线尚未还原。",
+  "Text on path": "路径文字",
+  "Text path position": "路径文字位置（%）",
+  "Reverse text path": "反向路径文字",
   "Some unsupported layers were skipped.": "部分不支持的图层已跳过。",
   "Vector networks are represented by bounds; vector paths are not restored.":
     "矢量网络暂以边界矩形表示，尚未还原真实路径。",

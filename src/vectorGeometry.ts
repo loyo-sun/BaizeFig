@@ -1,3 +1,4 @@
+import { textBaselineD } from "./textPath";
 import type { ImportedPaint } from "./appearance";
 import { dashContours, bevelStroke } from "./strokeContours";
 import paper from "paper";
@@ -604,6 +605,58 @@ export function vectorVisualBounds(
   doc: Document,
   n: Node,
 ): { x: number; y: number; width: number; height: number } | null {
+  if (n.type === "text" && n.fidelity?.textPath) {
+    const f = n.fidelity;
+    if (f.text?.characters === n.text && f.text.glyphs?.length) {
+      const paths = f.text.glyphs.map((g) => {
+        const a = -g.rotation,
+          c = Math.cos(a),
+          s = Math.sin(a);
+        return {
+          d: transformedPath(g.d, [
+            c * g.size,
+            s * g.size,
+            s * g.size,
+            -c * g.size,
+            g.x,
+            g.y,
+          ]),
+          rule: "nonzero" as const,
+        };
+      });
+      return vectorVisualBounds(doc, {
+        ...n,
+        type: "path",
+        strokeWidth: 0,
+        fidelity: { ...f, textPath: undefined, paths, network: undefined },
+      });
+    }
+    const path = new scope.Path({
+      pathData: transformedPath(textBaselineD(f.textPath!), localScale(n)),
+      insert: false,
+    });
+    const font = Math.max(
+      n.fontSize,
+      ...(n.textFlow?.runs ?? []).map((r) => r.fontSize ?? 0),
+    );
+    const b = path.bounds.expand(font * 4);
+    path.remove();
+    const world = worldTransform(doc, n);
+    const points = [
+      [b.left, b.top],
+      [b.right, b.top],
+      [b.right, b.bottom],
+      [b.left, b.bottom],
+    ].map(([x, y]) => ({
+      x: world[0] * x + world[2] * y + world[4],
+      y: world[1] * x + world[3] * y + world[5],
+    }));
+    const xs = points.map((p) => p.x),
+      ys = points.map((p) => p.y),
+      x = Math.min(...xs),
+      y = Math.min(...ys);
+    return { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y };
+  }
   if (
     !n.fidelity?.paths &&
     !n.fidelity?.network &&

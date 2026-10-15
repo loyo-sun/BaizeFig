@@ -1,3 +1,4 @@
+import { baselineTrail, type PathText, type SavedGlyph } from "./textPath";
 import type { TextLine } from "./textLayout";
 import type { ImportedPaint, ImportedEffect } from "./appearance";
 import { validateNetwork, type VectorNetwork } from "./vectorNetwork";
@@ -31,7 +32,9 @@ export interface Fidelity {
     scale: number;
     opacity: number;
   };
+  textPath?: PathText;
   text?: {
+    glyphs?: SavedGlyph[];
     characters: string;
     lines: TextLine[];
     letterSpacing: number;
@@ -326,6 +329,34 @@ export function validateFidelity(f: Fidelity) {
       ))
   )
     throw Error("Invalid vector geometry");
+  if (f.textPath) {
+    validateNetwork(f.textPath.network);
+    baselineTrail(f.textPath.network);
+    if (
+      !Number.isFinite(f.textPath.offset) ||
+      f.textPath.offset < 0 ||
+      f.textPath.offset > 1 ||
+      typeof f.textPath.reverse !== "boolean"
+    )
+      throw Error("Invalid text baseline");
+  }
+  if (
+    f.text?.glyphs &&
+    (!Array.isArray(f.text.glyphs) ||
+      f.text.glyphs.length > 20000 ||
+      f.text.glyphs.some(
+        (g) =>
+          typeof g.d !== "string" ||
+          g.d.length > 2000000 ||
+          !/^[MLHVQCSTAZmlhvqcstaz\d\s.,+eE-]*$/.test(g.d) ||
+          ![g.x, g.y, g.size, g.rotation].every(Number.isFinite) ||
+          g.size <= 0 ||
+          !Number.isInteger(g.start) ||
+          g.start < 0 ||
+          g.start >= f.text!.characters.length,
+      ))
+  )
+    throw Error("Invalid saved glyph");
   if (
     f.image &&
     (!finite(f.image.transform, 6) ||

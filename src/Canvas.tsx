@@ -1,5 +1,6 @@
+import { textBaselineD } from "./textPath";
 import { documentIndex } from "./documentIndex";
-import { vectorVisualBounds } from "./vectorGeometry";
+import { transformedPath, vectorVisualBounds } from "./vectorGeometry";
 import { networkGeometry, networkStroke } from "./vectorNetwork";
 import { Appearance, EffectDefinitions } from "./appearance";
 import { layoutText } from "./textLayout";
@@ -169,6 +170,84 @@ function ShapeContent({
         },
       }
     : n.fidelity;
+  if (n.type === "text" && f?.textPath) {
+    const id = "text-baseline-" + n.id;
+    const sx = f.size[0] ? n.width / f.size[0] : 1,
+      sy = f.size[1] ? n.height / f.size[1] : 1;
+    const glyphs = f.text?.characters === n.text ? f.text.glyphs : undefined;
+    return (
+      <g transform={glyphs ? `scale(${sx} ${sy})` : undefined}>
+        <defs>
+          <path
+            id={id}
+            d={
+              glyphs
+                ? textBaselineD(f.textPath)
+                : transformedPath(textBaselineD(f.textPath), [
+                    sx,
+                    0,
+                    0,
+                    sy,
+                    0,
+                    0,
+                  ])
+            }
+          />
+        </defs>
+        {outline && <use href={"#" + id} fill="none" stroke="#78909c" />}
+        {glyphs ? (
+          <g aria-label={n.text}>
+            {glyphs.map((g, i) => (
+              <path
+                key={i}
+                d={g.d}
+                fill={
+                  outline
+                    ? "none"
+                    : (f.text?.spans?.find(
+                        (s) => s.start <= g.start && s.end > g.start,
+                      )?.fill ?? n.fill)
+                }
+                stroke={outline ? "#78909c" : undefined}
+                vectorEffect="non-scaling-stroke"
+                transform={`translate(${g.x} ${g.y}) rotate(${(-g.rotation * 180) / Math.PI}) scale(${g.size} ${-g.size})`}
+              />
+            ))}
+          </g>
+        ) : (
+          <text
+            fill={outline ? "none" : n.fill}
+            stroke={outline ? "#78909c" : undefined}
+            fontFamily={n.fontFamily}
+            fontSize={n.fontSize}
+            fontWeight={n.fontWeight}
+            letterSpacing={
+              n.textFlow?.letterSpacing ?? f.text?.letterSpacing ?? 0
+            }
+            textAnchor={
+              n.textAlign === "center"
+                ? "middle"
+                : n.textAlign === "right"
+                  ? "end"
+                  : "start"
+            }
+          >
+            <textPath
+              href={"#" + id}
+              startOffset={`${f.textPath.offset * 100}%`}
+            >
+              {textSpans(
+                n,
+                0,
+                n.text.length,
+                n.textFlow?.runs ?? f.text?.spans,
+              )}
+            </textPath>
+          </text>
+        )}
+      </g>
+    );
+  }
   if (n.type === "text" && f?.text && f.text.characters === n.text)
     return (
       <text

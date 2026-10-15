@@ -1,3 +1,4 @@
+import { baselineTrail, nearestBaselineOffset } from "./textPath";
 import { type PrototypeAction, type PrototypeInteraction } from "./prototype";
 import {
   applyTypedBindings,
@@ -425,6 +426,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     REGULAR_POLYGON: "polygon",
     VECTOR: "path",
     BRUSH: "path",
+    TEXT_PATH: "text",
     BOOLEAN_OPERATION: "group",
     SECTION: "frame",
   };
@@ -947,6 +949,69 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
         );
       }
     }
+    if (r.type === "TEXT_PATH") {
+      try {
+        networkPaths(
+          message.blobs?.[r.vectorData?.vectorNetworkBlob]?.bytes ??
+            new Uint8Array(),
+          r.size.x,
+          r.size.y,
+          r.vectorData?.normalizedSize ?? r.size,
+          (network) => {
+            baselineTrail(network);
+            fidelity.textPath = {
+              network,
+              offset: 0,
+              reverse: r.textPathStart?.forward === false,
+            };
+          },
+        );
+        if (!fidelity.textPath) throw Error();
+        const saved: Raw[] = r.derivedTextData?.glyphs ?? [];
+        fidelity.text ??= {
+          characters: text,
+          lines: [],
+          letterSpacing: r.letterSpacing?.value ?? 0,
+        };
+        if (saved.length) {
+          fidelity.text.glyphs = saved.map((g) => ({
+            d: commandsPath(
+              message.blobs?.[g.commandsBlob]?.bytes ?? new Uint8Array(),
+            ),
+            x: g.position.x,
+            y: g.position.y,
+            size: g.fontSize,
+            rotation: g.rotation ?? 0,
+            start: g.firstCharacter,
+          }));
+          const advances = saved.map((g) => (g.advance ?? 0) * g.fontSize),
+            total = advances.reduce((a, b) => a + b, 0);
+          let remaining =
+            r.textAlignHorizontal === "CENTER"
+              ? total / 2
+              : r.textAlignHorizontal === "RIGHT"
+                ? total
+                : 0;
+          let chosen = 0;
+          while (chosen < saved.length - 1 && remaining > advances[chosen]) {
+            remaining -= advances[chosen++];
+          }
+          const glyph = saved[chosen],
+            angle = -(glyph.rotation ?? 0);
+          fidelity.textPath.offset = nearestBaselineOffset(fidelity.textPath, {
+            x: glyph.position.x + Math.cos(angle) * remaining,
+            y: glyph.position.y + Math.sin(angle) * remaining,
+          });
+        } else if (!text) fidelity.text.glyphs = [];
+        warnings.add(
+          "Curved text preserves saved glyph outlines; edited text uses the available font along its baseline.",
+        );
+      } catch {
+        delete fidelity.textPath;
+        if (fidelity.text) delete fidelity.text.glyphs;
+        warnings.add("Some curved text baselines could not be restored.");
+      }
+    }
     const align = (value: string) =>
       value === "CENTER"
         ? ("center" as const)
@@ -1212,6 +1277,8 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             : r.lineHeight?.value || 1.2,
       ...(image ? { image } : {}),
     });
+    if (kind === "text" && fidelity.textPath && node.textFlow)
+      node.textFlow.autoResize = "fixed";
     if (kind === "text")
       warnings.add(
         "Saved text line positions are restored; fonts, mixed styles and reflow may differ.",

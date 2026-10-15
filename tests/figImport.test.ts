@@ -18,12 +18,15 @@ struct Transform { float m00; float m01; float m02; float m10; float m11; float 
 message Parent { GUID guid = 1; string position = 2; }
 message Font { string family = 1; string style = 2; }
 message Text { string characters = 1; }
-enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; BRUSH = 7; }
+enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; BRUSH = 7; TEXT_PATH = 8; }
 message SymbolData { GUID symbolID = 1; }
 message Event { string interactionType = 1; }
 message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; Vector extraScrollOffset = 4; string transitionType = 5; float transitionDuration = 6; }
 message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; DerivedText derivedTextData = 20; TextPathStart textPathStart = 21; }
+message Glyph { uint commandsBlob = 1; Vector position = 2; float fontSize = 3; uint firstCharacter = 4; float advance = 5; float rotation = 6; }
+message DerivedText { Glyph[] glyphs = 1; }
+message TextPathStart { float tValue = 1; bool forward = 2; }
 message PropertyValue { Text textValue = 1; bool boolValue = 2; GUID guidValue = 3; }
 message PropertyDef { GUID id = 1; string name = 2; string type = 3; PropertyValue initialValue = 4; GUID parentPropDefId = 5; }
 message PropertyRef { GUID defID = 1; string componentPropNodeField = 2; }
@@ -206,6 +209,111 @@ describe("Figma import", () => {
       componentId: "0:51",
     });
     validateDocument(doc);
+  });
+  it("imports a curved text baseline and saved glyphs from binary data", async () => {
+    const bytes = new Uint8Array(12 + 2 * 12 + 28),
+      v = new DataView(bytes.buffer);
+    let at = 0;
+    const u = (x: number) => {
+        v.setUint32(at, x, true);
+        at += 4;
+      },
+      f = (x: number) => {
+        v.setFloat32(at, x, true);
+        at += 4;
+      };
+    u(2);
+    u(1);
+    u(0);
+    u(0);
+    f(10);
+    f(100);
+    u(0);
+    f(250);
+    f(100);
+    u(0);
+    u(0);
+    f(60);
+    f(-100);
+    u(1);
+    f(-60);
+    f(-100);
+    const glyph = new Uint8Array(1 + 8 + 1 + 8 + 1 + 8 + 1 + 8 + 1),
+      b = new DataView(glyph.buffer);
+    let offset = 0;
+    for (const [op, x, y] of [
+      [1, 0, 0],
+      [2, 0, 1],
+      [2, 0.8, 1],
+      [2, 0.8, 0],
+    ] as const) {
+      glyph[offset++] = op;
+      b.setFloat32(offset, x, true);
+      offset += 4;
+      b.setFloat32(offset, y, true);
+      offset += 4;
+    }
+    glyph[offset] = 0;
+    const result = importFig(
+      stream({
+        nodeChanges: [
+          nodes[0],
+          nodes[1],
+          {
+            guid: g(30),
+            parentIndex: { guid: g(1), position: "a" },
+            type: "TEXT_PATH",
+            name: "Curved text",
+            size: { x: 260, y: 120 },
+            textData: { characters: "白泽" },
+            fontSize: 24,
+            vectorData: {
+              vectorNetworkBlob: 0,
+              normalizedSize: { x: 260, y: 120 },
+            },
+            textPathStart: { forward: true, tValue: 0.5 },
+            derivedTextData: {
+              glyphs: [
+                {
+                  commandsBlob: 1,
+                  position: { x: 100, y: 30 },
+                  fontSize: 24,
+                  firstCharacter: 0,
+                  advance: 1,
+                  rotation: 0,
+                },
+                {
+                  commandsBlob: 1,
+                  position: { x: 126, y: 30 },
+                  fontSize: 24,
+                  firstCharacter: 1,
+                  advance: 1,
+                  rotation: 0,
+                },
+              ],
+            },
+          },
+        ],
+        blobs: [{ bytes: [...bytes] }, { bytes: [...glyph] }],
+      } as any),
+    );
+    const doc = result.document,
+      node = doc.nodes[0];
+    expect(node.type).toBe("text");
+    expect(node.fidelity?.text?.glyphs).toHaveLength(2);
+    expect(node.fidelity?.textPath?.network.segments).toHaveLength(1);
+    expect(node.textFlow?.autoResize).toBe("fixed");
+    expect(await svgString(doc, doc.pages[0].id, [node.id])).toContain(
+      "scale(24 -24)",
+    );
+    const changed = execute(doc, {
+      type: "update",
+      ids: [node.id],
+      patch: { text: "BaizeFig" },
+    }).doc;
+    expect(await svgString(changed, changed.pages[0].id, [node.id])).toContain(
+      "<textPath",
+    );
   });
   it("imports saved brush outlines rather than replacing them with the brush centerline", async () => {
     const ops: number[] = [];
@@ -529,13 +637,47 @@ it.skipIf(!sample)(
       (n) =>
         visiblePages.has(rawGuid(n.parentIndex?.guid)) &&
         n.size &&
-        !n.styleType &&
-        n.type !== "TEXT_PATH",
+        !n.styleType,
     );
     const importedRoots = result.document.nodes.filter((n) => !n.parentId);
     expect(importedRoots.map((n) => n.fidelity?.sourceId).sort()).toEqual(
       expectedRoots.map((n) => rawGuid(n.guid)).sort(),
     );
+    const curved = raw.filter((n) => n.type === "TEXT_PATH");
+    const curvedDoc = importFig(
+      stream({
+        nodeChanges: [
+          nodes[0],
+          nodes[1],
+          ...curved.map((n) => ({
+            ...n,
+            parentIndex: { guid: g(1), position: "a" },
+          })),
+        ],
+        blobs: archive.message.blobs,
+      } as any),
+    ).document;
+    expect(curvedDoc.nodes).toHaveLength(curved.length);
+    for (const original of curved) {
+      const converted = curvedDoc.nodes.find(
+        (n) => n.fidelity?.sourceId === rawGuid(original.guid),
+      )!;
+      expect(converted.fidelity?.textPath).toBeDefined();
+      expect(converted.fidelity?.text?.glyphs?.length ?? 0).toBe(
+        original.derivedTextData?.glyphs?.length ?? 0,
+      );
+      expect(converted.text).toBe(original.textData.characters);
+      for (const [i, g] of (original.derivedTextData?.glyphs ?? []).entries()) {
+        expect(converted.fidelity!.text!.glyphs![i]).toMatchObject({
+          d: commandsPath(archive.message.blobs[g.commandsBlob].bytes),
+          x: g.position.x,
+          y: g.position.y,
+          size: g.fontSize,
+          rotation: g.rotation ?? 0,
+          start: g.firstCharacter,
+        });
+      }
+    }
     const brushes = raw.filter((n) => n.type === "BRUSH");
     // The supplied brush nodes belong to an internal hidden page. Exercise
     // their exact saved geometry in a visible page using our trusted test schema.
@@ -711,4 +853,5 @@ it.skipIf(!sample)(
       }),
     );
   },
+  15000,
 );
