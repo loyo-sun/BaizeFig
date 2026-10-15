@@ -123,3 +123,43 @@ it("provides the isolated browser verification document without committing priva
   if (process.env.CANVAS_TEXT_FIXTURE_PATH)
     writeFileSync(process.env.CANVAS_TEXT_FIXTURE_PATH, JSON.stringify(d));
 });
+
+import { editablePlainText, type EditableNode } from "../src/textEditing";
+it("serializes styled empty paragraphs and native Shift Enter without doubling blank lines", () => {
+  const text = (value: string): EditableNode => ({
+    nodeType: 3,
+    nodeName: "#text",
+    nodeValue: value,
+    childNodes: [],
+  });
+  const element = (
+    name: string,
+    ...children: EditableNode[]
+  ): EditableNode => ({
+    nodeType: 1,
+    nodeName: name,
+    nodeValue: null,
+    childNodes: children,
+  });
+  expect(
+    editablePlainText(
+      element(
+        "DIV",
+        element("DIV", text("甲")),
+        element("DIV", element("SPAN", text("")), element("BR")),
+        element("DIV", text("乙")),
+      ),
+    ),
+  ).toBe("甲\n\n乙");
+  expect(
+    editablePlainText(
+      element("DIV", element("DIV", text("甲")), element("DIV", element("BR"))),
+    ),
+  ).toBe("甲\n");
+  expect(
+    editablePlainText(element("DIV", text("甲"), element("BR"), element("BR"))),
+  ).toBe("甲\n");
+  expect(editablePlainText(element("DIV", element("DIV", element("BR"))))).toBe(
+    "",
+  );
+});

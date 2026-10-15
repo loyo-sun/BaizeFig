@@ -1,3 +1,8 @@
+import {
+  validateParagraphs,
+  remapParagraphs,
+  type TextParagraph,
+} from "./textParagraphs";
 import { validateInteractions, type PrototypeInteraction } from "./prototype";
 import { nodeSelectionBounds } from "./pathBounds";
 import {
@@ -65,6 +70,11 @@ export interface Node {
     verticalAlign: "top" | "center" | "bottom";
     letterSpacing: number;
     runs?: TextRun[];
+    paragraphs?: TextParagraph[];
+    direction?: "auto" | "ltr" | "rtl";
+    paragraphSpacing?: number;
+    spellCheck?: boolean;
+    language?: string;
   };
   text: string;
   fontSize: number;
@@ -555,6 +565,12 @@ export function execute(
             n.fidelity = structuredClone(n.fidelity);
             delete n.fidelity.text;
           }
+          if (n.textFlow?.paragraphs && typeof patch.text === "string")
+            n.textFlow.paragraphs = remapParagraphs(
+              n.text,
+              patch.text,
+              n.textFlow.paragraphs,
+            );
           if (n.textFlow?.runs) {
             if (typeof patch.text === "string")
               n.textFlow.runs = remapTextRuns(
@@ -1179,6 +1195,19 @@ export function validateDocument(value: unknown): asserts value is Document {
     if (n.fidelity) validateFidelity(n.fidelity);
     if (n.textFlow) {
       const f = n.textFlow;
+      validateParagraphs(n.text, f.paragraphs);
+      if (
+        (f.direction !== undefined &&
+          !["auto", "ltr", "rtl"].includes(f.direction)) ||
+        (f.paragraphSpacing !== undefined &&
+          (!Number.isFinite(f.paragraphSpacing) ||
+            f.paragraphSpacing < 0 ||
+            f.paragraphSpacing > 10000)) ||
+        (f.spellCheck !== undefined && typeof f.spellCheck !== "boolean") ||
+        (f.language !== undefined &&
+          (typeof f.language !== "string" || f.language.length > 40))
+      )
+        throw Error("Invalid text layout");
       if (
         !["fixed", "height", "both"].includes(f.autoResize) ||
         !["top", "center", "bottom"].includes(f.verticalAlign) ||

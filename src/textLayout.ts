@@ -1,3 +1,4 @@
+import { listMarkers } from "./textParagraphs";
 import type { Node } from "./core";
 export interface TextRun {
   start: number;
@@ -62,6 +63,9 @@ export interface TextLine {
   end: number;
   x: number;
   y: number;
+  marker?: string;
+  markerX?: number;
+  direction?: "ltr" | "rtl";
 }
 export type TextMeasure = (
   text: string,
@@ -101,7 +105,8 @@ export function layoutText(
 ): { lines: TextLine[]; width: number; height: number } {
   const flow = node.textFlow,
     spacing = flow?.letterSpacing ?? 0,
-    runs = flow?.runs ?? [];
+    runs = flow?.runs ?? [],
+    markers = listMarkers(node.text, flow?.paragraphs ?? []);
   const metrics = (index: number) => {
     const run = runs.find((r) => r.start <= index && r.end > index);
     return {
@@ -143,7 +148,14 @@ export function layoutText(
       width: number;
       height: number;
       ascent: number;
+      indent: number;
+      marker?: string;
+      paragraphEnd?: boolean;
+      direction: "ltr" | "rtl";
     }[] = [];
+  let indent = 0,
+    marker: string | undefined,
+    direction: "ltr" | "rtl" = "ltr";
   const add = (start: number, end: number) => {
     const sizes = [
       node.fontSize,
@@ -158,17 +170,36 @@ export function layoutText(
       width: width(start, end),
       height: Math.max(1, size * node.lineHeight),
       ascent: size,
+      indent,
+      marker,
+      direction,
     });
+    marker = undefined;
   };
   let paragraphStart = 0;
   for (const paragraph of node.text.split("\n")) {
+    const p = flow?.paragraphs?.find((p) => p.start === paragraphStart);
+    indent = p ? (p.level + 1) * node.fontSize * 1.5 : 0;
+    marker = markers.get(paragraphStart);
+    direction =
+      flow?.direction === "rtl" ||
+      (flow?.direction !== "ltr" &&
+        /^[^A-Za-z\p{Script=Han}]*[\p{Script=Hebrew}\p{Script=Arabic}]/u.test(
+          paragraph,
+        ))
+        ? "rtl"
+        : "ltr";
     const chars = graphemes(paragraph);
     let start = paragraphStart,
       lastBreak = -1;
     for (const g of chars) {
       const at = paragraphStart + g.index,
         end = at + g.text.length;
-      while (wrap && at > start && width(start, end) > limit) {
+      while (
+        wrap &&
+        at > start &&
+        width(start, end) > Math.max(1, limit - indent)
+      ) {
         const cut = lastBreak > start ? lastBreak : at;
         add(start, cut);
         start = cut;
@@ -178,9 +209,18 @@ export function layoutText(
         lastBreak = end;
     }
     add(start, paragraphStart + paragraph.length);
+    lines.at(-1)!.paragraphEnd = true;
     paragraphStart += paragraph.length + 1;
   }
-  const height = lines.reduce((n, l) => n + l.height, 0),
+  const height = lines.reduce(
+      (sum, l, i) =>
+        sum +
+        l.height +
+        (l.paragraphEnd && i < lines.length - 1
+          ? (flow?.paragraphSpacing ?? 0)
+          : 0),
+      0,
+    ),
     boxHeight = flow?.autoResize === "fixed" ? node.height : height;
   let top =
     flow?.verticalAlign === "center"
@@ -190,18 +230,33 @@ export function layoutText(
         : 0;
   const boxWidth =
     flow?.autoResize === "both"
-      ? Math.max(1, ...lines.map((l) => l.width))
+      ? Math.max(1, ...lines.map((l) => l.width + l.indent))
       : node.width;
   const output = lines.map((l) => {
     const x =
       node.textAlign === "center"
-        ? (boxWidth - l.width) / 2
+        ? l.indent + (boxWidth - l.indent - l.width) / 2
         : node.textAlign === "right"
           ? boxWidth - l.width
-          : 0;
+          : l.indent;
     const y = top + l.ascent;
-    top += l.height;
-    return { start: l.start, end: l.end, x, y };
+    top += l.height + (l.paragraphEnd ? (flow?.paragraphSpacing ?? 0) : 0);
+    return {
+      start: l.start,
+      end: l.end,
+      x: l.direction === "rtl" ? x + l.width : x,
+      y,
+      ...(l.marker
+        ? {
+            marker: l.marker,
+            markerX:
+              l.direction === "rtl"
+                ? boxWidth
+                : Math.max(0, l.indent - node.fontSize * 0.9),
+          }
+        : {}),
+      ...(l.direction === "rtl" ? { direction: l.direction } : {}),
+    };
   });
   return { lines: output, width: boxWidth, height: boxHeight };
 }

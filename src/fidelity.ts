@@ -1,3 +1,4 @@
+import type { TextLine } from "./textLayout";
 import type { ImportedPaint, ImportedEffect } from "./appearance";
 import { validateNetwork, type VectorNetwork } from "./vectorNetwork";
 // Imported design data shared by the canvas, exports and native file round trips.
@@ -32,7 +33,7 @@ export interface Fidelity {
   };
   text?: {
     characters: string;
-    lines: { start: number; end: number; x: number; y: number }[];
+    lines: TextLine[];
     letterSpacing: number;
     spans?: {
       start: number;

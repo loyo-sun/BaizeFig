@@ -4,6 +4,33 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  Center: "居中",
+  Automatic: "自动",
+  Bottom: "底部",
+  Top: "顶部",
+  "Spell check uses your browser dictionaries and privacy settings. BaizeFig does not send text to a spelling service.":
+    "拼写检查使用浏览器词典及其隐私设置。白泽不会将文字发送到拼写服务。",
+  "Text language": "文本语言",
+  "Browser spell check": "浏览器拼写检查",
+  "Title Case": "词首大写",
+  lowercase: "全部小写",
+  UPPERCASE: "全部大写",
+  "Right to left": "从右到左",
+  "Left to right": "从左到右",
+  "Automatic direction": "自动方向",
+  "Text direction": "文字方向",
+  "Vertical text alignment": "垂直对齐",
+  "Paragraph spacing": "段落间距",
+  "Letter spacing": "字间距",
+  "Auto width and height": "自动宽高",
+  "Auto height": "自动高度",
+  "Fixed size": "固定尺寸",
+  "Text resizing": "文本尺寸",
+  "Invalid text paragraphs": "无效的文本段落",
+  "Redo text edit": "重做文字编辑",
+  "Undo text edit": "撤销文字编辑",
+  "Numbered list": "编号列表",
+  "Bulleted list": "项目符号列表",
   "Color picked": "已取色",
   "Design changed; pick the color again": "设计已更改，请重新取色",
   "Click the canvas to pick a color; Escape cancels":

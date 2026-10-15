@@ -2326,3 +2326,41 @@ html[lang="zh-CN"] .layer-title-input {
   max-height: min(600px, calc(100vh - 16px));
   overflow-y: auto;
 }
+
+.text-paragraph::before {
+  content: attr(data-marker);
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  pointer-events: none;
+}
+.text-range-toolbar {
+  max-width: 95vw;
+  flex-wrap: wrap;
+  min-width: 280px;
+}
+.text-paragraph {
+  white-space: pre-wrap;
+}
+
+.text-properties {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.text-properties > label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+.text-properties select,
+.text-properties input[type="number"] {
+  max-width: 160px;
+  width: 55%;
+  padding: 6px;
+  border: 1px solid #e5e5e5;
+  border-radius: 5px;
+}

@@ -176,9 +176,26 @@ function ShapeContent({
         style={{ whiteSpace: "pre", userSelect: "none" }}
       >
         {f.text.lines.map((line, i) => (
-          <tspan key={i} x={line.x} y={line.y}>
-            {textSpans(n, line.start, line.end, f.text?.spans)}
-          </tspan>
+          <React.Fragment key={i}>
+            {line.marker && (
+              <tspan
+                x={line.markerX}
+                y={line.y}
+                direction={line.direction}
+                unicodeBidi="isolate"
+              >
+                {line.marker}
+              </tspan>
+            )}
+            <tspan
+              x={line.x}
+              y={line.y}
+              direction={line.direction}
+              unicodeBidi={line.direction ? "plaintext" : undefined}
+            >
+              {textSpans(n, line.start, line.end, f.text?.spans)}
+            </tspan>
+          </React.Fragment>
         ))}
       </text>
     );

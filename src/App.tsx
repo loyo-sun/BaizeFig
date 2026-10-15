@@ -1,3 +1,5 @@
+import { TextProperties } from "./TextProperties";
+import { changeDocumentTextCase } from "./textCase";
 import { sampleSvgColor } from "./colorPicker";
 import { pasteNodes, type NodeClipboard, type PasteMode } from "./clipboard";
 import { FontManager } from "./FontManager";
@@ -2953,12 +2955,14 @@ export default function App() {
                       node={node}
                       session={editingText}
                       onCancel={() => setEditingText(null)}
-                      onCommit={(text, runs) => {
+                      onCommit={(text, runs, paragraphs) => {
                         setEditingText(null);
                         if (
                           text !== node.text ||
                           JSON.stringify(runs) !==
-                            JSON.stringify(node.textFlow?.runs ?? [])
+                            JSON.stringify(node.textFlow?.runs ?? []) ||
+                          JSON.stringify(paragraphs) !==
+                            JSON.stringify(node.textFlow?.paragraphs ?? [])
                         )
                           run({
                             type: "update",
@@ -2972,6 +2976,7 @@ export default function App() {
                                   letterSpacing: 0,
                                 }),
                                 runs,
+                                paragraphs,
                               },
                             },
                           });
@@ -4158,6 +4163,17 @@ export default function App() {
                           ))}
                         </select>
                       </div>
+                      <TextProperties
+                        node={first}
+                        onChange={patch}
+                        onCase={(mode) => {
+                          try {
+                            change(changeDocumentTextCase(doc, selected, mode));
+                          } catch (error) {
+                            notify((error as Error).message);
+                          }
+                        }}
+                      />
                       <p className="muted">
                         {t("Double-click text on the canvas to edit content.")}
                       </p>
