@@ -98,3 +98,10 @@ THE SOFTWARE.
  *******************************************************************************/
 
 ```
+
+
+## Inter variable font
+
+BaizeFig bundles `@fontsource-variable/inter` 5.3.0 normal and italic variable-weight webfonts. Copyright 2016 The Inter Project Authors. Licensed under the SIL Open Font License 1.1; full notice is distributed at [public/licenses/Inter-OFL.txt](../public/licenses/Inter-OFL.txt) and embedded in SVG metadata when the bundled font is exported. Package fonts are included as local assets; no hosted font service is used. This version is a compatible fallback, not a claim that the source Figma document used the same release.
+
+Sources: [Fontsource Inter](https://fontsource.org/fonts/inter), [Inter license](https://github.com/rsms/inter/blob/master/LICENSE.txt).

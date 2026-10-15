@@ -1,3 +1,4 @@
+import { renderFontFamily } from "./fontFamily";
 import { listMarkers } from "./textParagraphs";
 import type { Node } from "./core";
 export interface TextRun {
@@ -85,7 +86,7 @@ export const browserMeasure: TextMeasure = (text, font) => {
     else context = null;
   }
   if (context) {
-    context.font = `${font.italic ? "italic " : ""}${font.weight} ${font.size}px ${font.family}`;
+    context.font = `${font.italic ? "italic " : ""}${font.weight} ${font.size}px ${renderFontFamily(font.family)}`;
     return context.measureText(text).width;
   }
   // Non-browser tests inject metrics. This fallback is never presented as exact font shaping.

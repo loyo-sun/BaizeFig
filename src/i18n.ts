@@ -531,6 +531,14 @@ export const zhCN: Record<string, string> = {
   "Enter a font family": "请输入字体名称",
   "Replace font in document": "替换文档字体",
   "Replacement font": "替代字体",
+  "Built-in compatible font": "内置兼容字体",
+  "Installed fonts are preferred. Built-in Inter is a compatible fallback; matching the original font version is still needed for precise typography.":
+    "优先使用已安装字体。内置 Inter 提供兼容回退；精确还原排版仍需匹配原始字体版本。",
+  "SVG and HTML preserve vectors and embed the built-in Inter fallback. Other fonts must be installed on the receiving device.":
+    "SVG 和 HTML 保留矢量并嵌入内置 Inter 回退字体；其他字体仍需在接收设备安装。",
+  "Could not load a bundled font for export":
+    "无法加载导出所需的内置字体，请重试。",
+  "Invalid bundled font": "内置字体文件无效。",
   "Not detected": "未检测到",
   Available: "可用",
   "Checking fonts\u2026": "正在检测字体…",

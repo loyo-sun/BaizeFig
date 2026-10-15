@@ -1,3 +1,5 @@
+import { renderFontFamily } from "./fontFamily";
+import { bundledFontCss, bundledFontLicense } from "./bundledFonts";
 import { textBaselineD } from "./textPath";
 import { documentIndex } from "./documentIndex";
 import { transformedPath, vectorVisualBounds } from "./vectorGeometry";
@@ -43,7 +45,7 @@ function BasicNodeShape({
     return (
       <text
         {...shared}
-        fontFamily={n.fontFamily}
+        fontFamily={renderFontFamily(n.fontFamily)}
         fontSize={n.fontSize}
         fontWeight={n.fontWeight}
         textAnchor={
@@ -218,7 +220,7 @@ function ShapeContent({
           <text
             fill={outline ? "none" : n.fill}
             stroke={outline ? "#78909c" : undefined}
-            fontFamily={n.fontFamily}
+            fontFamily={renderFontFamily(n.fontFamily)}
             fontSize={n.fontSize}
             fontWeight={n.fontWeight}
             letterSpacing={
@@ -253,7 +255,7 @@ function ShapeContent({
       <text
         fill={outline ? "none" : n.fill}
         stroke={outline ? "#78909c" : undefined}
-        fontFamily={n.fontFamily}
+        fontFamily={renderFontFamily(n.fontFamily)}
         fontSize={n.fontSize}
         fontWeight={n.fontWeight}
         letterSpacing={f.text.letterSpacing}
@@ -610,7 +612,9 @@ function textSpans(
       <tspan
         key={a}
         fill={style?.fill}
-        fontFamily={style?.fontFamily}
+        fontFamily={
+          style?.fontFamily ? renderFontFamily(style.fontFamily) : undefined
+        }
         fontSize={style?.fontSize}
         fontWeight={style?.fontWeight}
         fontStyle={style?.italic ? "italic" : undefined}
@@ -1130,6 +1134,9 @@ export async function svgString(
         ),
     };
   }
+  const fontCss = await bundledFontCss(
+    exportDoc.nodes.filter((n) => n.pageId === pageId),
+  );
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
     renderToStaticMarkup(
@@ -1140,6 +1147,12 @@ export async function svgString(
         height={Math.max(1, b.height)}
         viewBox={`${b.x} ${b.y} ${Math.max(1, b.width)} ${Math.max(1, b.height)}`}
       >
+        {fontCss && (
+          <defs>
+            <metadata>{bundledFontLicense}</metadata>
+            <style>{fontCss}</style>
+          </defs>
+        )}
         {options.background && (
           <rect
             x={b.x}

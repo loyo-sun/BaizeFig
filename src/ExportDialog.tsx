@@ -1,3 +1,4 @@
+import { renderFontFamily } from "./fontFamily";
 import { useEffect, useRef, useState } from "react";
 import type { Document } from "./core";
 import { raster } from "./Canvas";
@@ -93,7 +94,7 @@ export function ExportDialog({
           )
           .map((n) =>
             document.fonts.load(
-              `${n.fontWeight} ${n.fontSize}px ${n.fontFamily}`,
+              `${n.fontWeight} ${n.fontSize}px ${renderFontFamily(n.fontFamily)}`,
               n.text,
             ),
           ),
@@ -254,7 +255,7 @@ export function ExportDialog({
       {["SVG", "HTML"].includes(format) && (
         <p className="muted">
           {t(
-            "SVG and HTML keep vector geometry and font references at 1x. The receiving device needs the same fonts.",
+            "SVG and HTML preserve vectors and embed the built-in Inter fallback. Other fonts must be installed on the receiving device.",
           )}
         </p>
       )}

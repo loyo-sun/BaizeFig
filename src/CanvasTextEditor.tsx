@@ -1,3 +1,4 @@
+import { renderFontFamily } from "./fontFamily";
 import {createPortal} from "react-dom";
 import {
   validateTextFragment,
@@ -153,7 +154,7 @@ export function CanvasTextEditor({
         span.append(document.createTextNode(text.slice(a, b)));
         if (style)
           Object.assign(span.style, {
-            fontFamily: style.fontFamily ?? "",
+            fontFamily: style.fontFamily ? renderFontFamily(style.fontFamily) : "",
             fontSize: style.fontSize ? `${style.fontSize}px` : "",
             fontWeight: style.fontWeight ? String(style.fontWeight) : "",
             color: style.fill ?? "",
@@ -477,7 +478,7 @@ export function CanvasTextEditor({
         </div>
   );
   const style: CSSProperties = {
-    fontFamily: node.fontFamily,
+    fontFamily: renderFontFamily(node.fontFamily),
     fontSize: node.fontSize,
     fontWeight: node.fontWeight,
     lineHeight: node.lineHeight,

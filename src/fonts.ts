@@ -1,3 +1,5 @@
+import { fontFamilies } from "./fontFamily";
+export { fontFamilies } from "./fontFamily";
 import { ancestors, execute, type Document } from "./core";
 const generic = new Set([
   "serif",
@@ -14,11 +16,6 @@ const generic = new Set([
   "math",
   "fangsong",
 ]);
-export function fontFamilies(value: string): string[] {
-  return (value.match(/"[^"]*"|'[^']*'|[^,]+/g) ?? [])
-    .map((v) => v.trim().replace(/^['"]|['"]$/g, ""))
-    .filter(Boolean);
-}
 export type FontProbe = (family: string, sample: string) => number;
 export function hasFont(family: string, measure: FontProbe): boolean {
   if (generic.has(family.toLowerCase())) return true;

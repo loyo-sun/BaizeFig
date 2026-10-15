@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Document } from "./core";
+import { usesBundledInter } from "./fontFamily";
 import { documentFonts, hasFont, replaceFont } from "./fonts";
 import { useI18n } from "./LanguageContext";
 export function FontManager({
@@ -10,7 +11,9 @@ export function FontManager({
   onReplace: (d: Document) => void;
 }) {
   const { t } = useI18n(),
-    [status, setStatus] = useState<Record<string, boolean>>({}),
+    [status, setStatus] = useState<
+      Record<string, "system" | "bundled" | "missing">
+    >({}),
     [from, setFrom] = useState(""),
     [to, setTo] = useState("Arial"),
     [message, setMessage] = useState("");
@@ -26,7 +29,16 @@ export function FontManager({
         return ctx.measureText(sample).width;
       };
       setStatus(
-        Object.fromEntries(names.map((name) => [name, hasFont(name, probe)])),
+        Object.fromEntries(
+          names.map((name) => [
+            name,
+            hasFont(name, probe)
+              ? "system"
+              : usesBundledInter(name) && hasFont("Inter Variable", probe)
+                ? "bundled"
+                : "missing",
+          ]),
+        ),
       );
     });
     return () => {
@@ -37,7 +49,7 @@ export function FontManager({
     <section className="font-manager">
       <p className="muted">
         {t(
-          "Font detection uses browser rendering. Install the original fonts for matching typography; fallback fonts can change line breaks.",
+          "Installed fonts are preferred. Built-in Inter is a compatible fallback; matching the original font version is still needed for precise typography.",
         )}
       </p>
       <div className="font-list">
@@ -53,9 +65,11 @@ export function FontManager({
             <small>
               {status[name] === undefined
                 ? t("Checking fonts…")
-                : status[name]
-                  ? t("Available")
-                  : t("Not detected")}
+                : status[name] === "bundled"
+                  ? t("Built-in compatible font")
+                  : status[name] === "system"
+                    ? t("Available")
+                    : t("Not detected")}
             </small>
           </label>
         ))}
