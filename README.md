@@ -61,6 +61,8 @@ BaizeFig 仍在持续开发，以逐步对齐 Figma Design 的创作体验为目
 
 [查看功能进展](https://github.com/loyo-sun/BaizeFig/issues/30) · [反馈问题](https://github.com/loyo-sun/BaizeFig/issues) · [功能支持范围](docs/FIGMA_PARITY.md)
 
+组件可以通过文字、显示开关、图标交换和变体快速调整；插槽允许自由添加内容，保留设计规范和主组件更新。
+
 SVG 图标可以作为可编辑矢量导入，保留分组、路径、孔洞和常见渐变裁剪；进入节点编辑后继续打磨曲线。
 
 自动布局可直接调整宽高适应／填充、四边内边距、换行、网格轨道与跨行列；从按钮到嵌套界面，内容变化时同步更新尺寸。

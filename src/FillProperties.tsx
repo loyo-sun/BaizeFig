@@ -1,6 +1,6 @@
 import type { Node } from "./core";
 import { RegionPaintEditor } from "./RegionPaintEditor";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export function FillProperties({
   node,
   onChange,

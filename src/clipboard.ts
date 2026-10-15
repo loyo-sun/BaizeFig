@@ -1,3 +1,5 @@
+import { remapComponentMetadata, componentPathMapper } from "./componentRemap";
+import { inComponentSlot } from "./components";
 import type { PrototypeAction } from "./prototype";
 import {
   ancestors,
@@ -51,14 +53,23 @@ export function pasteNodes(
   let next = original;
   const selection: string[] = [];
   for (const destination of groups) {
+    const selectedSlot =
+      mode === "normal" && targets.length === 1 && targets[0].componentSlot
+        ? targets[0]
+        : undefined;
     const parentId =
-      destination.length &&
+      selectedSlot?.id ??
+      (destination.length &&
       new Set(destination.map((n) => n.parentId)).size === 1
         ? destination[0].parentId
-        : null;
+        : null);
     if (parentId) {
       const parent = next.nodes.find((n) => n.id === parentId);
-      if (parent && (parent.type === "instance" || parent.componentOwner))
+      if (
+        parent &&
+        (parent.type === "instance" || parent.componentOwner) &&
+        !inComponentSlot(next, parent, true)
+      )
         throw Error("Detach instance before changing its layer structure");
     }
     const map = new Map(data.nodes.map((n) => [n.id, id()]));
@@ -70,25 +81,7 @@ export function pasteNodes(
             ? ref
             : undefined))
         : undefined;
-    const pathKeys = new Map(
-      data.nodes
-        .filter((n) => !n.fidelity?.sourceId)
-        .map((n) => [
-          encodeURIComponent(n.id),
-          encodeURIComponent(map.get(n.id)!),
-        ]),
-    );
-    const remapPath = (path: string) =>
-      path
-        .split("/")
-        .map((part) => {
-          const marker = part.lastIndexOf("#");
-          return marker < 0
-            ? part
-            : (pathKeys.get(part.slice(0, marker)) ?? part.slice(0, marker)) +
-                part.slice(marker);
-        })
-        .join("/");
+    const remapPath = componentPathMapper(data.nodes, map);
     const copied = data.nodes.map((n) => {
       const node = structuredClone(n);
       node.id = map.get(n.id)!;
@@ -167,6 +160,13 @@ export function pasteNodes(
         for (const key of Object.keys(node.variableModes))
           if (!next.variableCollections?.some((v) => v.id === key))
             delete node.variableModes[key];
+      remapComponentMetadata(
+        node,
+        remapPath,
+        (ref) => external(ref) ?? ref,
+        pageId,
+        map,
+      );
       return node;
     });
     const detachedOwners = new Set(
@@ -193,9 +193,11 @@ export function pasteNodes(
         sourceDoc,
         copied.filter((n) => copiedRootIds.has(n.id)),
       );
-    const target = destination.length
-      ? bounds(original, destination)
-      : undefined;
+    const target = selectedSlot
+      ? bounds(original, [selectedSlot])
+      : destination.length
+        ? bounds(original, destination)
+        : undefined;
     const dx = target ? target.x + target.width / 2 - b.x - b.width / 2 : 20,
       dy = target ? target.y + target.height / 2 - b.y - b.height / 2 : 20;
     for (const source of sourceRoots) {

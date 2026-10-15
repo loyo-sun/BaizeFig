@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export interface MenuItem {
   name: string;
   run?: () => void;

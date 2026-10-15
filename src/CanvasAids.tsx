@@ -1,6 +1,6 @@
 import { useRef, useState, type PointerEvent } from "react";
 import type { Guide } from "./core";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export function rulerTicks(offset: number, zoom: number, length: number) {
   const rough = 70 / zoom,
     power = 10 ** Math.floor(Math.log10(rough)),

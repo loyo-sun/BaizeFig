@@ -1,5 +1,5 @@
 import type { Node } from "./core";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 import type { TextCase } from "./textCase";
 export function TextProperties({
   node,

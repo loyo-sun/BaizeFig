@@ -8,7 +8,7 @@ import {
   type Node,
 } from "./core";
 import { identity } from "./fidelity";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 
 // Only render rows close to the scroll viewport; previews share the actual scene renderer.
 export const LayerThumbnail = memo(function LayerThumbnail({

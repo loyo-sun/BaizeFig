@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Document } from "./core";
 import { documentFonts, hasFont, replaceFont } from "./fonts";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export function FontManager({
   doc,
   onReplace,

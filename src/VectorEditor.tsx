@@ -20,7 +20,7 @@ import {
   type Vec,
   type VectorNetwork,
 } from "./vectorNetwork";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export function VectorEditor({
   doc,
   node,

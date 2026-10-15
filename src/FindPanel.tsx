@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 import type { Document } from "./core";
 import { findMatches, type FindMatch, type FindOptions } from "./findReplace";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export function FindPanel({
   doc,
   pageId,

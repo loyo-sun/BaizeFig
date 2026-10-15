@@ -7,7 +7,7 @@ import {
   printTracks,
   type Sizing,
 } from "./layoutSizing";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export function LayoutProperties({
   doc,
   node,
@@ -74,7 +74,7 @@ export function LayoutProperties({
     </label>
   );
   return (
-    <section className="text-properties">
+    <section className="text-properties layout-properties">
       <div className="section-heading">{t("Sizing and constraints")}</div>
       {(["width", "height"] as const).map((axis) => (
         <label key={axis}>

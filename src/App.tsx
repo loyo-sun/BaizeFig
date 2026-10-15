@@ -1,3 +1,4 @@
+import { ComponentProperties } from "./ComponentProperties";
 import { CommandMenu, type MenuItem } from "./CommandMenu";
 import {
   shortcutRegistry,
@@ -74,6 +75,7 @@ import {
   detachComponentInstance,
   editLibraryComponent,
   swapComponentInstance,
+  inComponentSlot,
 } from "./components";
 import { localDelta, worldTransform, reflowAfterPointerEdit } from "./core";
 import {
@@ -179,7 +181,7 @@ import {
   type TrashRecord,
 } from "./storage";
 import { generate, type AIConfig } from "./ai";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 import type { Language } from "./i18n";
 
 type Tool =
@@ -735,9 +737,11 @@ export default function App() {
     return [...doc.nodes].reverse().find(
       (n) =>
         n.pageId === page &&
-        n.type === "frame" &&
+        (n.type === "frame" || n.componentSlot) &&
+        (!n.componentOwner || inComponentSlot(doc, n, true)) &&
         n.visible &&
         !n.locked &&
+        !ancestors(doc, n).some((p) => p.locked || !p.visible) &&
         (() => {
           try {
             const local = transformPoint(
@@ -836,7 +840,13 @@ export default function App() {
     }
     if (tool !== "move" && tool !== "scale") {
       const kind: Kind = tool;
-      const parent = kind === "frame" ? undefined : parentFor(p);
+      const candidate = parentFor(p);
+      const parent =
+        kind === "frame"
+          ? candidate?.componentSlot
+            ? candidate
+            : undefined
+          : candidate;
       const origin = parent
         ? transformPoint(inverse(worldTransform(doc, parent)), p.x, p.y)
         : p;
@@ -1933,6 +1943,22 @@ export default function App() {
     { name: "Import Figma (.fig)", run: () => figInput.current?.click() },
     { name: "Export", run: () => void exportAsset() },
     { name: "Remove auto layout", run: () => autoLayout(true) },
+    {
+      name: "Layout rules",
+      disabled: !first,
+      run: () => {
+        if (first?.parentId && !first.layout) {
+          const parent = doc.nodes.find((n) => n.id === first.parentId);
+          if (parent?.layout && parent.layout !== "none")
+            setSelected([parent.id]);
+        }
+        requestAnimationFrame(() =>
+          document
+            .querySelector(".layout-properties")
+            ?.scrollIntoView({ block: "center" }),
+        );
+      },
+    },
     ...(
       [
         ["Bring to front", "front"],
@@ -2179,18 +2205,13 @@ export default function App() {
     },
     {
       name: "Go to main component",
-      disabled: !doc.nodes.some(
-        (n) => n.type === "component" && n.id === first?.componentId,
-      ),
-      run: () => {
-        const main = doc.nodes.find(
-          (n) => n.type === "component" && n.id === first?.componentId,
-        );
-        if (main) {
-          setPage(main.pageId);
-          setSelected([main.id]);
-        }
-      },
+      disabled:
+        !first?.componentId ||
+        ![
+          ...doc.nodes.filter((n) => n.type === "component").map((n) => n.id),
+          ...(doc.componentLibrary ?? []).map((n) => n.sourceId),
+        ].includes(first.componentId),
+      run: openMainComponent,
     },
     {
       name: "Remove fill",
@@ -2271,6 +2292,21 @@ export default function App() {
     },
     { name: "Keyboard layout", run: () => setModal("settings") },
     { name: "Libraries", run: () => setModal("assets") },
+    {
+      name: "Manage slots",
+      disabled:
+        !first ||
+        !(
+          first.type === "component" ||
+          first.componentOwner ||
+          ancestors(doc, first).some((n) => n.type === "component")
+        ),
+      run: () => {
+        document
+          .querySelector(".component-properties")
+          ?.scrollIntoView({ block: "center" });
+      },
+    },
     ...(
       [
         ["", "Automatic spelling language"],
@@ -2417,7 +2453,7 @@ export default function App() {
       "Restore default thumbnail",
       "Use as mask",
       "Add auto layout",
-      sub("More layout options", ["Remove auto layout", "General settings"]),
+      sub("More layout options", ["Layout rules", "Remove auto layout"]),
       "Create component",
       sub("Slots", ["Manage slots"]),
       "Reset instance",
@@ -4786,6 +4822,14 @@ export default function App() {
                         notify((error as Error).message);
                       }
                     }}
+                  />
+                  <ComponentProperties
+                    key={first.id + "component"}
+                    doc={doc}
+                    node={first}
+                    selected={selected}
+                    onChange={change}
+                    onSelect={setSelected}
                   />
                   {first.type === "text" && (
                     <section>

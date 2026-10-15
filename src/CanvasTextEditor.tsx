@@ -17,7 +17,7 @@ import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { type Node, type Document, worldTransform } from "./core";
 import { styleTextRange, safeTextLink, type TextStyle } from "./richText";
 import { reflowText, remapTextRuns, type TextRun } from "./textLayout";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 import { editablePlainText, canonicalEditableText } from "./textEditing";
 export interface TextEditSession {
   id: string;

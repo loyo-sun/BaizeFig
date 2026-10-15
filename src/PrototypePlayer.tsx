@@ -8,7 +8,7 @@ import {
   type PrototypeState,
   transitionPrototype,
 } from "./prototype";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 import {
   clampScroll,
   scrolledDocument,

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Node } from "./core";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export function parseStrokeDash(value: string) {
   if (!value.trim()) return [];
   const dash = value

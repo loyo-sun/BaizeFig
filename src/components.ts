@@ -1,16 +1,50 @@
+import { relayout, validateDocument, ancestors } from "./core";
+import { applyConstraints } from "./layout";
 import { reflowText } from "./textLayout";
+import type { ComponentProperty, ComponentSet } from "./componentModel";
 import type { Document, Node } from "./core";
 
+function finalized(original: Document, doc: Document) {
+  const affected = new Set<string>();
+  for (const n of doc.nodes) {
+    const old = original.nodes.find((p) => p.id === n.id);
+    if (
+      !old ||
+      [
+        "width",
+        "height",
+        "text",
+        "layout",
+        "importedLayout",
+        "layoutItem",
+      ].some(
+        (k) =>
+          JSON.stringify((old as any)[k]) !== JSON.stringify((n as any)[k]),
+      )
+    ) {
+      affected.add(n.id);
+      for (const p of ancestors(doc, n)) affected.add(p.id);
+    }
+  }
+  applyConstraints(original, doc);
+  relayout(doc, affected);
+  validateDocument(doc);
+  return doc;
+}
 type Patch = Partial<Node>;
 const fixed = new Set([
   "id",
   "pageId",
   "parentId",
-  "componentId",
   "componentOwner",
   "componentPath",
   "componentOverrides",
   "componentClears",
+  "componentValues",
+  "componentSlots",
+  "componentSlot",
+  "componentSlotKey",
+  "componentProperties",
 ]);
 const properties = (n: Node): Patch =>
   Object.fromEntries(
@@ -18,7 +52,8 @@ const properties = (n: Node): Patch =>
   ) as Patch;
 const same = (a: unknown, b: unknown) =>
   JSON.stringify(a) === JSON.stringify(b);
-const key = (n: Node) => encodeURIComponent(n.fidelity?.sourceId ?? n.id);
+const key = (n: Node) =>
+  encodeURIComponent(n.componentSlotKey ?? n.fidelity?.sourceId ?? n.id);
 function children(nodes: Node[], parent: string) {
   return nodes.filter((n) => n.parentId === parent);
 }
@@ -97,6 +132,8 @@ function expanded(
     if (n.componentOwner === instance.id && n.componentPath !== undefined)
       old.set(n.componentPath, n);
   const overrides = instance.componentOverrides ?? {};
+  const properties = def.root.componentProperties ?? [];
+  const values = instance.componentValues ?? {};
   function clearFields(node: Node, path: string) {
     for (const field of instance.componentClears?.[path] ?? []) {
       if (field === "variableId") delete node.variableId;
@@ -114,13 +151,35 @@ function expanded(
     nestedPath = "",
     resolved = false,
   ) {
-    const oldNode = old.get(path),
+    const oldNode =
+        old.get(path) ??
+        (path.includes("/$slot/")
+          ? previous.find((n) => n.id === base.id)
+          : undefined),
       id = path === "" ? instance.id : (oldNode?.id ?? crypto.randomUUID());
     let node = merge(
       merge(structuredClone(base), nestedOverrides[nestedPath]),
       overrides[path],
     );
     clearFields(node, path);
+    for (const property of properties.filter((p) => p.targetPath === path)) {
+      const value = values[property.id] ?? property.defaultValue;
+      if (
+        property.type === "text" &&
+        node.type === "text" &&
+        typeof value === "string"
+      )
+        node.text = value;
+      if (property.type === "boolean" && typeof value === "boolean")
+        node.visible = value;
+      if (
+        property.type === "instance" &&
+        node.type === "instance" &&
+        typeof value === "string"
+      )
+        node.componentId = value;
+      if (property.type === "slot") node.componentSlot = true;
+    }
     node = {
       ...node,
       id,
@@ -144,6 +203,8 @@ function expanded(
         componentId: ref,
         componentOwner: instance.id,
         componentOverrides: structuredClone(overrides),
+        componentValues: structuredClone(instance.componentValues),
+        componentSlots: structuredClone(instance.componentSlots),
         componentClears: structuredClone(instance.componentClears),
         x: instance.x,
         y: instance.y,
@@ -154,7 +215,6 @@ function expanded(
     if (
       node.type === "text" &&
       node.textFlow &&
-      oldNode &&
       [
         "text",
         "fontSize",
@@ -162,7 +222,7 @@ function expanded(
         "fontWeight",
         "width",
         "lineHeight",
-      ].some((k) => !same((oldNode as any)[k], (node as any)[k]))
+      ].some((k) => !same(((oldNode ?? base) as any)[k], (node as any)[k]))
     )
       reflowText(node);
     out.push(node);
@@ -174,14 +234,14 @@ function expanded(
       !resolved &&
       path !== "" &&
       base.type === "instance" &&
-      base.componentId
+      node.componentId
     ) {
-      const target = definition(doc, base.componentId);
+      const target = definition(doc, node.componentId!);
       if (target) {
-        if (chain.has(base.componentId))
+        if (chain.has(node.componentId!))
           throw Error("Cyclic component reference");
         const virtual = {
-          ...base,
+          ...node,
           id: node.id,
           parentId: node.parentId,
           pageId: node.pageId,
@@ -196,6 +256,7 @@ function expanded(
         node = merge(
           {
             ...nestedRoot,
+            visible: node.visible,
             id: node.id,
             parentId: node.parentId,
             componentOwner: instance.id,
@@ -212,12 +273,24 @@ function expanded(
         resolved = true;
       }
     }
+    const slotContent = instance.componentSlots?.[path];
+    if (node.componentSlot && slotContent) {
+      source = slotContent;
+      sourceRoot = { ...node, id: "__slot_root__" };
+      localOverrides = {};
+      localPath = "";
+    }
     const counts = new Map<string, number>();
-    for (const child of children(source, sourceRoot.id)) {
+    const sourceChildren =
+      node.componentSlot && slotContent
+        ? source.filter((n) => !n.parentId)
+        : children(source, sourceRoot.id);
+    for (const child of sourceChildren) {
       const k = key(child),
         index = counts.get(k) ?? 0;
       counts.set(k, index + 1);
-      const suffix = "/" + k + "#" + index;
+      const suffix =
+        (node.componentSlot && slotContent ? "/$slot/" : "/") + k + "#" + index;
       walk(
         child,
         path + suffix,
@@ -326,8 +399,26 @@ export function recordOverrides(
   )) {
     const owner = doc.nodes.find((o) => o.id === n.componentOwner);
     if (!owner) continue;
-    owner.componentOverrides ??= {};
     const path = n.componentPath ?? "";
+    if (path.includes("/$slot/")) continue;
+    const def = owner.componentId && definition(doc, owner.componentId);
+    if (def)
+      for (const property of def.root.componentProperties ?? []) {
+        if (property.targetPath !== path) continue;
+        const field =
+          property.type === "text"
+            ? "text"
+            : property.type === "boolean"
+              ? "visible"
+              : property.type === "instance"
+                ? "componentId"
+                : undefined;
+        if (field && field in patch) {
+          owner.componentValues ??= {};
+          owner.componentValues[property.id] = patch[field] as string | boolean;
+        }
+      }
+    owner.componentOverrides ??= {};
     const safe = Object.fromEntries(
       Object.entries(patch).filter(([k]) => !fixed.has(k)),
     ) as Patch;
@@ -374,7 +465,7 @@ export function createComponentInstance(
     };
   doc.nodes.push(root);
   synchronizeInstances(doc);
-  return { doc, id };
+  return { doc: finalized(original, doc), id };
 }
 export function resetComponentInstance(
   original: Document,
@@ -383,25 +474,31 @@ export function resetComponentInstance(
   const doc = structuredClone(original),
     root = doc.nodes.find((n) => n.id === id && n.type === "instance");
   if (!root) throw Error("Select a component instance");
+  assertWritable(doc, root);
   root.componentOverrides = {};
+  delete root.componentValues;
+  delete root.componentSlots;
   delete root.componentClears;
   synchronizeInstances(doc);
-  return doc;
+  return finalized(original, doc);
 }
 export function swapComponentInstance(
   original: Document,
   id: string,
   reference: string,
 ): Document {
-  const doc = structuredClone(original),
-    root = doc.nodes.find((n) => n.id === id && n.type === "instance");
-  if (!root || !definition(doc, reference))
-    throw Error("Missing main component");
-  // Source paths retain overrides on corresponding layers; unmatched overrides remain
-  // in the document so switching back to a variant does not discard user edits.
-  root.componentId = reference;
+  const current = original.nodes.find((n) => n.id === id);
+  if (!current) throw Error("Select a component instance");
+  assertWritable(original, current);
+  if (current.componentOwner && current.componentOwner !== current.id) {
+    const doc = structuredClone(original);
+    recordOverrides(doc, [id], { componentId: reference });
+    synchronizeInstances(doc);
+    return finalized(original, doc);
+  }
+  const doc = changePrototypeComponent(original, id, reference);
   synchronizeInstances(doc);
-  return doc;
+  return finalized(original, doc);
 }
 // Prototype-only replacement: keep other instances and the editor document untouched.
 // Rebuild just the chosen subtree, including when it is nested inside another instance.
@@ -417,8 +514,9 @@ export function changePrototypeComponent(
   const subtree = paths(doc.nodes, root),
     ids = new Set([...subtree.values()].map((n) => n.id)),
     index = doc.nodes.indexOf(root);
-  const previousDefinition =
-      root.componentId && definition(doc, root.componentId),
+  const previousDefinition = root.componentId
+      ? definition(doc, root.componentId)
+      : undefined,
     nextDefinition = definition(doc, reference)!;
   function namedPaths(nodes: Node[], base: Node) {
     const result = new Map<string, string>(),
@@ -466,6 +564,26 @@ export function changePrototypeComponent(
         });
     }
   }
+  const oldProps = previousDefinition?.root.componentProperties ?? [],
+    newProps = nextDefinition.root.componentProperties ?? [];
+  for (const oldProp of oldProps) {
+    const next = newProps.find(
+      (p) => p.name === oldProp.name && p.type === oldProp.type,
+    );
+    if (next && root.componentValues && oldProp.id in root.componentValues)
+      root.componentValues[next.id] = root.componentValues[oldProp.id];
+  }
+  if (root.componentSlots && previousDefinition) {
+    const from = namedPaths(previousDefinition.nodes, previousDefinition.root),
+      to = namedPaths(nextDefinition.nodes, nextDefinition.root);
+    for (const [name, oldPath] of from) {
+      const next = to.get(name);
+      if (next !== undefined && root.componentSlots[oldPath])
+        root.componentSlots[next] = structuredClone(
+          root.componentSlots[oldPath],
+        );
+    }
+  }
   root.componentId = reference;
   const replacement = expanded(doc, root, previous);
   doc.nodes = doc.nodes.filter((n) => !ids.has(n.id));
@@ -477,19 +595,27 @@ export function detachComponentInstance(
   id: string,
 ): Document {
   const doc = structuredClone(original);
+  const root = doc.nodes.find((n) => n.id === id);
+  if (root) assertWritable(doc, root);
   for (const n of doc.nodes) {
     if (n.componentOwner === id) {
       delete n.componentOwner;
       delete n.componentPath;
       delete n.componentOverrides;
       delete n.componentClears;
+      delete n.componentSlot;
+      if (n.id === id) {
+        delete n.componentValues;
+        delete n.componentSlots;
+        delete n.componentProperties;
+      }
       if (n.id === id) {
         n.type = "group";
         delete n.componentId;
       }
     }
   }
-  return doc;
+  return finalized(original, doc);
 }
 export function editLibraryComponent(
   original: Document,
@@ -542,4 +668,312 @@ export function updateLibraryFromMain(doc: Document, ids: string[]): void {
     lib.nodes = structuredClone([...family.values()]);
     lib.nodes[0].parentId = null;
   }
+}
+
+export function componentDefinitions(doc: Document) {
+  return [
+    ...(doc.componentLibrary ?? []).map((c) => ({
+      reference: c.sourceId,
+      name: c.name,
+      ...definition(doc, c.sourceId)!,
+    })),
+    ...doc.nodes
+      .filter((n) => n.type === "component")
+      .map((root) => ({
+        reference: root.id,
+        name: root.name,
+        root,
+        nodes: doc.nodes,
+      })),
+  ];
+}
+export function componentTargets(doc: Document, reference: string) {
+  const def = definition(doc, reference);
+  return def
+    ? [...paths(def.nodes, def.root)].map(([path, node]) => ({ path, node }))
+    : [];
+}
+function assertWritable(doc: Document, node: Node) {
+  let n: Node | undefined = node;
+  const seen = new Set<string>();
+  while (n) {
+    if (n.locked) throw Error("Unlock the component before editing");
+    if (seen.has(n.id)) throw Error("Cyclic component tree");
+    seen.add(n.id);
+    n = doc.nodes.find((p) => p.id === n!.parentId);
+  }
+}
+export function inComponentSlot(
+  doc: Document,
+  node: Node,
+  includeSelf = false,
+) {
+  let n = includeSelf ? node : doc.nodes.find((p) => p.id === node.parentId);
+  const seen = new Set<string>();
+  while (n && !seen.has(n.id)) {
+    if (n.componentSlot && n.componentOwner) return true;
+    seen.add(n.id);
+    n = doc.nodes.find((p) => p.id === n!.parentId);
+  }
+  return false;
+}
+function slotSnapshot(doc: Document, slot: Node) {
+  const family = paths(doc.nodes, slot);
+  return [...family.values()]
+    .filter((n) => n.id !== slot.id)
+    .map((n) => {
+      const clone = structuredClone(n);
+      clone.componentSlotKey ??= n.id;
+      if (clone.parentId === slot.id) clone.parentId = null;
+      delete clone.componentOwner;
+      delete clone.componentPath;
+      delete clone.componentSlot;
+      return clone;
+    });
+}
+export function captureSlotContent(original: Document, doc: Document) {
+  for (const slot of doc.nodes.filter(
+    (n) => n.componentSlot && n.componentOwner,
+  )) {
+    const previous = original.nodes.find((n) => n.id === slot.id);
+    if (!previous) continue;
+    const before = slotSnapshot(original, previous),
+      after = slotSnapshot(doc, slot);
+    if (!same(before, after)) {
+      const owner = doc.nodes.find((n) => n.id === slot.componentOwner);
+      if (owner) {
+        owner.componentSlots ??= {};
+        owner.componentSlots[slot.componentPath ?? ""] = after;
+      }
+    }
+  }
+}
+export function setComponentProperty(
+  original: Document,
+  reference: string,
+  property: ComponentProperty | undefined,
+  removeId?: string,
+): Document {
+  const doc = structuredClone(original),
+    def = definition(doc, reference);
+  if (!def) throw Error("Missing main component");
+  assertWritable(doc, def.root);
+  if (property) {
+    const target = paths(def.nodes, def.root).get(property.targetPath);
+    if (!target) throw Error("Missing property target");
+    if (
+      def.root.componentProperties?.some(
+        (p) =>
+          p.id !== property.id &&
+          p.type === property.type &&
+          p.targetPath === property.targetPath,
+      )
+    )
+      throw Error("This layer already has that property type");
+    if (
+      (property.type === "text" && target.type !== "text") ||
+      (property.type === "instance" && target.type !== "instance") ||
+      (property.type === "slot" && !["frame", "group"].includes(target.type))
+    )
+      throw Error("Incompatible component property target");
+  }
+  if (property) {
+    const target = paths(def.nodes, def.root).get(property.targetPath)!;
+    if (property.type === "text" && typeof property.defaultValue === "string") {
+      target.text = property.defaultValue;
+      reflowText(target);
+    }
+    if (
+      property.type === "boolean" &&
+      typeof property.defaultValue === "boolean"
+    )
+      target.visible = property.defaultValue;
+    if (
+      property.type === "instance" &&
+      typeof property.defaultValue === "string"
+    )
+      target.componentId = property.defaultValue;
+  }
+  def.root.componentProperties = [
+    ...(def.root.componentProperties ?? []).filter(
+      (p) => p.id !== (property?.id ?? removeId),
+    ),
+    ...(property ? [structuredClone(property)] : []),
+  ];
+  updateLibraryFromMain(doc, [def.root.id]);
+  synchronizeInstances(doc);
+  return finalized(original, doc);
+}
+export function setComponentValue(
+  original: Document,
+  instanceId: string,
+  propertyId: string,
+  value: string | boolean,
+): Document {
+  const doc = structuredClone(original),
+    root = doc.nodes.find((n) => n.id === instanceId && n.type === "instance"),
+    def = root?.componentId && definition(doc, root.componentId);
+  if (!root || !def) throw Error("Missing main component");
+  assertWritable(doc, root);
+  const prop = def.root.componentProperties?.find((p) => p.id === propertyId);
+  if (
+    !prop ||
+    prop.type === "slot" ||
+    (prop.type === "boolean"
+      ? typeof value !== "boolean"
+      : typeof value !== "string")
+  )
+    throw Error("Invalid component property value");
+  if (prop.type === "instance" && !definition(doc, String(value)))
+    throw Error("Missing main component");
+  root.componentValues = { ...root.componentValues, [propertyId]: value };
+  synchronizeInstances(doc);
+  return finalized(original, doc);
+}
+export function resetComponentSlot(
+  original: Document,
+  instanceId: string,
+  path: string,
+) {
+  const doc = structuredClone(original),
+    root = doc.nodes.find((n) => n.id === instanceId);
+  if (!root) throw Error("Missing component instance");
+  assertWritable(doc, root);
+  delete root.componentSlots?.[path];
+  synchronizeInstances(doc);
+  return finalized(original, doc);
+}
+export function setComponentSet(
+  original: Document,
+  set: ComponentSet,
+): Document {
+  const doc = structuredClone(original);
+  if (!set.name.trim() || !Object.keys(set.axes).length)
+    throw Error("Variant set needs a name and an axis");
+  if (
+    doc.componentSets?.some(
+      (other) =>
+        other.id !== set.id &&
+        other.variants.some((v) =>
+          set.variants.some((n) => n.componentId === v.componentId),
+        ),
+    )
+  )
+    throw Error("A component already belongs to another variant set");
+  for (const variant of set.variants) {
+    const def = definition(doc, variant.componentId);
+    if (!def) throw Error("Missing main component");
+    assertWritable(doc, def.root);
+  }
+  doc.componentSets = [
+    ...(doc.componentSets ?? []).filter((s) => s.id !== set.id),
+    structuredClone(set),
+  ];
+  return finalized(original, doc);
+}
+export function switchVariant(
+  original: Document,
+  instanceId: string,
+  axis: string,
+  value: string,
+) {
+  const instance = original.nodes.find((n) => n.id === instanceId),
+    set = original.componentSets?.find((s) =>
+      s.variants.some((v) => v.componentId === instance?.componentId),
+    );
+  if (!instance || !set || !set.axes[axis]?.includes(value))
+    throw Error("Missing component variant");
+  const current = set.variants.find(
+    (v) => v.componentId === instance.componentId,
+  )!;
+  const candidates = set.variants
+    .filter((v) => v.values[axis] === value)
+    .sort(
+      (a, b) =>
+        Object.keys(current.values).filter(
+          (k) => b.values[k] === current.values[k],
+        ).length -
+        Object.keys(current.values).filter(
+          (k) => a.values[k] === current.values[k],
+        ).length,
+    );
+  if (!candidates.length) throw Error("Missing component variant");
+  return swapComponentInstance(original, instanceId, candidates[0].componentId);
+}
+
+export function updatePropertyDefaults(doc: Document, ids: string[]) {
+  for (const main of doc.nodes.filter(
+    (n) => n.type === "component" && n.componentProperties?.length,
+  )) {
+    const targets = paths(doc.nodes, main);
+    for (const p of main.componentProperties ?? []) {
+      const target = targets.get(p.targetPath);
+      if (!target || !ids.includes(target.id)) continue;
+      if (p.type === "text") p.defaultValue = target.text;
+      if (p.type === "boolean") p.defaultValue = target.visible;
+      if (p.type === "instance" && target.componentId)
+        p.defaultValue = target.componentId;
+    }
+  }
+}
+export function propagatePropertiesToVariants(
+  original: Document,
+  reference: string,
+) {
+  let doc = structuredClone(original);
+  const set = doc.componentSets?.find((s) =>
+      s.variants.some((v) => v.componentId === reference),
+    ),
+    source = definition(doc, reference);
+  if (!set || !source) throw Error("Missing component variant");
+  function named(nodes: Node[], root: Node) {
+    const result = new Map<string, Node>();
+    const walk = (n: Node, path: string) => {
+      result.set(path, n);
+      const counts = new Map<string, number>();
+      for (const c of children(nodes, n.id)) {
+        const label = c.type + ":" + c.name,
+          index = counts.get(label) ?? 0;
+        counts.set(label, index + 1);
+        walk(c, path + "/" + encodeURIComponent(label) + "#" + index);
+      }
+    };
+    walk(root, "");
+    return result;
+  }
+  const sourceNames = named(source.nodes, source.root),
+    sourcePaths = paths(source.nodes, source.root);
+  for (const variant of set.variants) {
+    if (variant.componentId === reference) continue;
+    const target = definition(doc, variant.componentId);
+    if (!target) continue;
+    const names = named(target.nodes, target.root),
+      targetPaths = paths(target.nodes, target.root);
+    for (const property of source.root.componentProperties ?? []) {
+      const sourceNode = sourcePaths.get(property.targetPath),
+        name = [...sourceNames].find(([, n]) => n.id === sourceNode?.id)?.[0],
+        targetNode = name !== undefined ? names.get(name) : undefined,
+        targetPath = [...targetPaths].find(
+          ([, n]) => n.id === targetNode?.id,
+        )?.[0];
+      if (!targetNode || targetPath === undefined) continue;
+      const existing = target.root.componentProperties?.find(
+        (p) => p.name === property.name && p.type === property.type,
+      );
+      doc = setComponentProperty(doc, variant.componentId, {
+        ...structuredClone(property),
+        id: existing?.id ?? property.id,
+        targetPath,
+        defaultValue:
+          property.type === "text"
+            ? targetNode.text
+            : property.type === "boolean"
+              ? targetNode.visible
+              : property.type === "instance"
+                ? (targetNode.componentId ?? String(property.defaultValue))
+                : "",
+      });
+    }
+  }
+  return finalized(original, doc);
 }

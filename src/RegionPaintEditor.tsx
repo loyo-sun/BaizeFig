@@ -1,5 +1,5 @@
 import type { ImportedPaint } from "./appearance";
-import { useI18n } from "./LanguageProvider";
+import { useI18n } from "./LanguageContext";
 export function RegionPaintEditor({
   paints,
   onChange,

@@ -1,3 +1,9 @@
+import { remapComponentMetadata, componentPathMapper } from "./componentRemap";
+import {
+  validateComponentModels,
+  type ComponentProperty,
+  type ComponentSet,
+} from "./componentModel";
 import {
   validateParagraphs,
   remapParagraphs,
@@ -23,6 +29,9 @@ import { reflowText, remapTextRuns, type TextRun } from "./textLayout";
 import {
   recordOverrides,
   synchronizeInstances,
+  captureSlotContent,
+  inComponentSlot,
+  updatePropertyDefaults,
   updateLibraryFromMain,
 } from "./components";
 import { type VariableCollection, type ColorVariable } from "./variables";
@@ -122,6 +131,11 @@ export interface Node {
   layout?: "none" | "horizontal" | "vertical" | "grid";
   gap?: number;
   padding?: number;
+  componentProperties?: ComponentProperty[];
+  componentValues?: Record<string, string | boolean>;
+  componentSlots?: Record<string, Node[]>;
+  componentSlot?: boolean;
+  componentSlotKey?: string;
   componentId?: string;
   componentOwner?: string;
   componentPath?: string;
@@ -145,6 +159,7 @@ export interface Guide {
   position: number;
 }
 export interface Document {
+  componentSets?: ComponentSet[];
   guides?: Guide[];
   format: "baizefig";
   version: 1;
@@ -456,6 +471,7 @@ export function reflowAfterPointerEdit(
       if (Object.keys(patch).length) recordOverrides(doc, [n.id], patch);
     }
   }
+  captureSlotContent(original, doc);
   updateLibraryFromMain(doc, [...affected]);
   synchronizeInstances(doc);
   applyConstraints(original, doc);
@@ -496,6 +512,7 @@ export function execute(
         (n) =>
           ids.includes(n.id) &&
           n.componentOwner &&
+          !inComponentSlot(doc, n, command.type === "create") &&
           (command.type === "create" ||
             (n.componentOwner !== n.id && !ids.includes(n.componentOwner))),
       )
@@ -518,6 +535,9 @@ export function execute(
             throw Error("Only vector path conversion is supported");
           const allowed = new Set([
             "type",
+            "componentProperties",
+            "componentValues",
+            "componentSlots",
             "layoutItem",
             "frameGrid",
             "constraints",
@@ -738,6 +758,9 @@ export function execute(
             n.y +
             (selected.some((r) => r.id === n.id) ? (command.offset ?? 20) : 0),
           name: n.name + " copy",
+          componentSlotKey: n.componentSlotKey
+            ? (map.get(n.id) ?? n.componentSlotKey)
+            : undefined,
           componentOwner: n.componentOwner
             ? (map.get(n.componentOwner) ?? n.componentOwner)
             : undefined,
@@ -748,7 +771,18 @@ export function execute(
             ? (map.get(n.targetId) ?? n.targetId)
             : undefined,
         }));
+      const remapPath = componentPathMapper(
+        original.nodes.filter((n) => all.includes(n.id)),
+        map,
+      );
       for (const clone of clones) {
+        remapComponentMetadata(
+          clone,
+          remapPath,
+          (ref) => map.get(ref) ?? ref,
+          clone.pageId,
+          map,
+        );
         if (clone.targetId)
           clone.targetId = map.get(clone.targetId) ?? clone.targetId;
         if (clone.interactions)
@@ -852,7 +886,11 @@ export function execute(
         (!parent || !container(parent) || !writable(parent) || !parent.visible)
       )
         throw Error("Invalid drop target");
-      if (parent?.componentOwner || parent?.type === "instance")
+      if (
+        parent &&
+        (parent.componentOwner || parent.type === "instance") &&
+        !inComponentSlot(doc, parent, true)
+      )
         throw Error("Detach instance before changing its layer structure");
       const ids = new Set(
         descendants(
@@ -880,6 +918,20 @@ export function execute(
       doc.nodes = doc.nodes.filter((n) => !ids.has(n.id));
       nodes.forEach((n, i) => {
         n.parentId = command.parentId;
+        const oldNode = original.nodes.find((c) => c.id === n.id);
+        if (
+          !inComponentSlot(doc, n) &&
+          oldNode &&
+          inComponentSlot(original, oldNode)
+        ) {
+          const family = new Set(descendants({ ...doc, nodes: block }, [n.id]));
+          for (const member of block.filter((c) => family.has(c.id))) {
+            delete member.componentOwner;
+            delete member.componentPath;
+            delete member.componentSlot;
+          }
+        }
+
         setWorldTransform(doc, n, transforms[i]);
       });
       let index = doc.nodes.length;
@@ -991,6 +1043,9 @@ export function execute(
   for (const changed of original.nodes.filter((n) => modified.includes(n.id)))
     for (const parent of ancestors(original, changed))
       if (!modified.includes(parent.id)) modified.push(parent.id);
+  captureSlotContent(original, doc);
+  if (command.type === "update" && !command.patch.componentProperties)
+    updatePropertyDefaults(doc, command.ids);
   updateLibraryFromMain(doc, modified);
   synchronizeInstances(doc);
   for (const n of doc.nodes) {
@@ -1064,7 +1119,12 @@ export function execute(
   validateDocument(doc);
   return { doc, selection };
 }
-export function validateDocument(value: unknown): asserts value is Document {
+export function validateDocument(
+  value: unknown,
+  validationDepth = 0,
+): asserts value is Document {
+  if (validationDepth > 40)
+    throw Error("Component snapshot nesting exceeds limits");
   const d = value as Document;
   if (
     !d ||
@@ -1145,13 +1205,28 @@ export function validateDocument(value: unknown): asserts value is Document {
         !Array.isArray(entry.nodes)
       )
         throw Error("Invalid component library");
-      validateDocument({
-        ...d,
-        componentLibrary: undefined,
-        nodes: entry.nodes,
-      });
+      validateDocument(
+        {
+          ...d,
+          componentLibrary: undefined,
+          nodes: entry.nodes,
+        },
+        validationDepth + 1,
+      );
     }
   }
+  validateComponentModels(d);
+  for (const n of d.nodes)
+    for (const content of Object.values(n.componentSlots ?? {}))
+      validateDocument(
+        {
+          ...d,
+          componentLibrary: undefined,
+          componentSets: undefined,
+          nodes: content,
+        },
+        validationDepth + 1,
+      );
   validateTypedVariables(d);
   validateInteractions(d);
   if (

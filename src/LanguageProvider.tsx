@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -14,12 +12,7 @@ import {
   type Language,
   type TranslationValues,
 } from "./i18n";
-const LanguageContext = createContext<{
-  language: Language;
-  setLanguage: (language: Language) => void;
-  persistenceError: boolean;
-  t: (source: string, values?: TranslationValues) => string;
-} | null>(null);
+import { LanguageContext } from "./LanguageContext";
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, updateLanguage] = useState<Language>(readLanguage);
   const [persistenceError, setPersistenceError] = useState(false);
@@ -49,9 +42,4 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
       {children}
     </LanguageContext.Provider>
   );
-}
-export function useI18n() {
-  const context = useContext(LanguageContext);
-  if (!context) throw Error("LanguageProvider is required");
-  return context;
 }
