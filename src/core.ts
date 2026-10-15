@@ -73,6 +73,13 @@ export interface Node {
   textAlign: "left" | "center" | "right";
   lineHeight: number;
   fidelity?: Fidelity;
+  frameGrid?: {
+    axis: "columns" | "rows";
+    count: number;
+    gap: number;
+    margin: number;
+    visible: boolean;
+  };
   layoutItem?: LayoutItem;
   constraints?: {
     horizontal: "min" | "center" | "max" | "stretch" | "scale";
@@ -121,7 +128,14 @@ export interface Page {
   id: string;
   name: string;
 }
+export interface Guide {
+  id: string;
+  pageId: string;
+  axis: "x" | "y";
+  position: number;
+}
 export interface Document {
+  guides?: Guide[];
   format: "baizefig";
   version: 1;
   id: string;
@@ -487,6 +501,7 @@ export function execute(
           const allowed = new Set([
             "type",
             "layoutItem",
+            "frameGrid",
             "constraints",
             "textFlow",
             "fidelity",
@@ -1108,6 +1123,22 @@ export function validateDocument(value: unknown): asserts value is Document {
   }
   validateTypedVariables(d);
   validateInteractions(d);
+  if (
+    d.guides &&
+    (!Array.isArray(d.guides) ||
+      d.guides.length > 1000 ||
+      new Set(d.guides.map((g) => g?.id)).size !== d.guides.length ||
+      d.guides.some(
+        (g) =>
+          !g ||
+          typeof g.id !== "string" ||
+          !d.pages.some((p) => p.id === g.pageId) ||
+          !["x", "y"].includes(g.axis) ||
+          !Number.isFinite(g.position) ||
+          Math.abs(g.position) > 10000000,
+      ))
+  )
+    throw Error("Invalid guides");
   const pages = new Set(d.pages.map((p) => p.id));
   if (
     pages.size !== d.pages.length ||
@@ -1222,6 +1253,20 @@ export function validateDocument(value: unknown): asserts value is Document {
         ))
     )
       throw Error("Invalid imported layout");
+    if (n.frameGrid) {
+      const g = n.frameGrid;
+      if (
+        !["columns", "rows"].includes(g.axis) ||
+        !Number.isInteger(g.count) ||
+        g.count < 1 ||
+        g.count > 64 ||
+        ![g.gap, g.margin].every(
+          (v) => Number.isFinite(v) && v >= 0 && v <= 100000,
+        ) ||
+        typeof g.visible !== "boolean"
+      )
+        throw Error("Invalid frame grid");
+    }
     if (n.layoutItem) {
       const item = n.layoutItem;
       if (

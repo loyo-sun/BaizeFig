@@ -108,3 +108,27 @@ it("supports atomic undo and rejects locked or zero-size transforms", () => {
   d.nodes[2].width = 0;
   expect(() => resizeSelection(d, ["b"], "se", 10, 10)).toThrow(/zero-size/);
 });
+
+it("reports and edits rotation after affine Scale while preserving the selected layer's center", async () => {
+  const { nodeRotation, setSelectionRotation } =
+    await import("../src/geometry");
+  const d = sample(),
+    r = rotateSelection(d, ["b"], Math.PI / 2),
+    node = r.nodes[2];
+  expect(nodeRotation(node)).toBeCloseTo(90);
+  const before = transformPoint(
+      worldTransform(r, node),
+      node.width / 2,
+      node.height / 2,
+    ),
+    n = setSelectionRotation(r, ["b"], 30),
+    after = transformPoint(
+      worldTransform(n, n.nodes[2]),
+      node.width / 2,
+      node.height / 2,
+    );
+  expect(nodeRotation(n.nodes[2])).toBeCloseTo(30);
+  expect(after.x).toBeCloseTo(before.x);
+  expect(after.y).toBeCloseTo(before.y);
+  validateDocument(n);
+});

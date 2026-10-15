@@ -1,3 +1,4 @@
+import { frameGridRects } from "./FrameGrid";
 import {
   ancestors,
   bounds,
@@ -31,59 +32,87 @@ export function snapTargets(
   exclude: string[] = [],
 ): SnapTarget[] {
   const skip = new Set(descendants(doc, exclude));
-  return doc.nodes
-    .filter(
-      (n) =>
-        n.pageId === page &&
-        !skip.has(n.id) &&
-        n.visible &&
-        !ancestors(doc, n).some((a) => !a.visible),
-    )
-    .flatMap((n) => {
-      const b = bounds(doc, [n]);
-      const result: SnapTarget[] = [b.x, b.x + b.width / 2, b.x + b.width].map(
-        (value) => ({
+  const guides: SnapTarget[] = (doc.guides ?? [])
+    .filter((g) => g.pageId === page)
+    .map((g) => ({
+      axis: g.axis,
+      value: g.position,
+      from: 0,
+      to: 0,
+      kind: "objects",
+    }));
+  return [
+    ...guides,
+    ...doc.nodes
+      .filter(
+        (n) =>
+          n.pageId === page &&
+          !skip.has(n.id) &&
+          n.visible &&
+          !ancestors(doc, n).some((a) => !a.visible),
+      )
+      .flatMap((n) => {
+        const b = bounds(doc, [n]);
+        const result: SnapTarget[] = [
+          b.x,
+          b.x + b.width / 2,
+          b.x + b.width,
+        ].map((value) => ({
           axis: "x",
           value,
           from: b.y,
           to: b.y + b.height,
           kind: "objects",
-        }),
-      );
-      result.push(
-        ...[b.y, b.y + b.height / 2, b.y + b.height].map((value) => ({
-          axis: "y" as const,
-          value,
-          from: b.x,
-          to: b.x + b.width,
-          kind: "objects" as const,
-        })),
-      );
-      // Geometry candidates are actual path vertices in world coordinates, including rotated parents.
-      if (
-        ["path", "line", "rectangle", "ellipse", "polygon", "star"].includes(
-          n.type,
-        )
-      ) {
-        let network;
-        try {
-          network = editableNetwork(n);
-        } catch {
-          return result;
+        }));
+        result.push(
+          ...[b.y, b.y + b.height / 2, b.y + b.height].map((value) => ({
+            axis: "y" as const,
+            value,
+            from: b.x,
+            to: b.x + b.width,
+            kind: "objects" as const,
+          })),
+        );
+        if (n.frameGrid?.visible) {
+          const m = worldTransform(doc, n);
+          for (const r of frameGridRects(n))
+            for (const [x, y] of [
+              [r.x, r.y],
+              [r.x + r.width, r.y + r.height],
+            ]) {
+              const p = transformPoint(m, x, y);
+              result.push(
+                { axis: "x", value: p.x, from: p.y, to: p.y, kind: "objects" },
+                { axis: "y", value: p.y, from: p.x, to: p.x, kind: "objects" },
+              );
+            }
         }
-        const m = worldTransform(doc, n),
-          sx = n.fidelity?.size[0] ? n.width / n.fidelity.size[0] : 1,
-          sy = n.fidelity?.size[1] ? n.height / n.fidelity.size[1] : 1;
-        for (const v of network.vertices) {
-          const p = transformPoint(m, v.x * sx, v.y * sy);
-          result.push(
-            { axis: "x", value: p.x, from: p.y, to: p.y, kind: "geometry" },
-            { axis: "y", value: p.y, from: p.x, to: p.x, kind: "geometry" },
-          );
+        // Geometry candidates are actual path vertices in world coordinates, including rotated parents.
+        if (
+          ["path", "line", "rectangle", "ellipse", "polygon", "star"].includes(
+            n.type,
+          )
+        ) {
+          let network;
+          try {
+            network = editableNetwork(n);
+          } catch {
+            return result;
+          }
+          const m = worldTransform(doc, n),
+            sx = n.fidelity?.size[0] ? n.width / n.fidelity.size[0] : 1,
+            sy = n.fidelity?.size[1] ? n.height / n.fidelity.size[1] : 1;
+          for (const v of network.vertices) {
+            const p = transformPoint(m, v.x * sx, v.y * sy);
+            result.push(
+              { axis: "x", value: p.x, from: p.y, to: p.y, kind: "geometry" },
+              { axis: "y", value: p.y, from: p.x, to: p.x, kind: "geometry" },
+            );
+          }
         }
-      }
-      return result;
-    });
+        return result;
+      }),
+  ];
 }
 export function snapCoordinates(
   xs: number[],

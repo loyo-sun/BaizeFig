@@ -1,3 +1,5 @@
+import { FrameGrid } from "./FrameGrid";
+import { CanvasAids, MeasureOverlay, type Box } from "./CanvasAids";
 import { arrangeNodes, type ArrangeMode } from "./arrange";
 import {
   snapTargets,
@@ -28,6 +30,8 @@ import {
   resizeSelection,
   rotateSelection,
   flipSelection,
+  nodeRotation,
+  setSelectionRotation,
 } from "./geometry";
 import { inverse, transformPoint } from "./fidelity";
 import { PrototypePlayer } from "./PrototypePlayer";
@@ -224,6 +228,21 @@ const shortcuts = [
   ["Prototype", "Present", "Shift Space"],
 ];
 const clone = <T,>(value: T): T => structuredClone(value);
+function readCanvasAids() {
+  try {
+    const v = JSON.parse(localStorage.getItem("baizefig-canvas-aids") ?? "{}");
+    return {
+      rulers: v.rulers === true,
+      grid: v.grid === true,
+      step:
+        typeof v.step === "number" && v.step >= 1 && v.step <= 1000
+          ? v.step
+          : 8,
+    };
+  } catch {
+    return { rulers: false, grid: false, step: 8 };
+  }
+}
 export default function App() {
   const { language, setLanguage, persistenceError, t } = useI18n();
   const [doc, setDoc] = useState<Document>(() => demoDocument());
@@ -236,8 +255,44 @@ export default function App() {
   latestDocument.current = doc;
   const figInput = useRef<HTMLInputElement>(null);
   const [arrangeGap, setArrangeGap] = useState(16);
-  const layerDrag = useRef<string[]>([]),
-    pageDrag = useRef<string | null>(null);
+  const [rulers, setRulers] = useState(() => readCanvasAids().rulers),
+    [layoutGrid, setLayoutGrid] = useState(() => readCanvasAids().grid),
+    [gridStep, setGridStep] = useState(() => readCanvasAids().step);
+  const [measure, setMeasure] = useState<{ a: Box; b: Box } | null>(null);
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "baizefig-canvas-aids",
+        JSON.stringify({ rulers, grid: layoutGrid, step: gridStep }),
+      );
+    } catch {
+      notify("Canvas aid preferences apply for this session only.");
+    }
+  }, [rulers, layoutGrid, gridStep]);
+  const layerPointer = useRef<{
+      ids: string[];
+      x: number;
+      y: number;
+      active: boolean;
+    } | null>(null),
+    layerPointerDrop = useRef<{
+      id: string;
+      position: "before" | "inside" | "after";
+    } | null>(null),
+    suppressLayerClick = useRef(false),
+    pagePointer = useRef<{
+      id: string;
+      x: number;
+      y: number;
+      target?: string;
+      after?: boolean;
+      active: boolean;
+    } | null>(null),
+    suppressPageClick = useRef(false);
+  const [pageDrop, setPageDrop] = useState<{
+    id: string;
+    after: boolean;
+  } | null>(null);
   const [layerDrop, setLayerDrop] = useState<{
     id: string;
     position: "before" | "inside" | "after";
@@ -607,15 +662,36 @@ export default function App() {
       y: (e.clientY - rect.top - view.y) / view.zoom,
     };
   };
+  const snapCache = useRef<{
+    doc: Document;
+    page: string;
+    key: string;
+    targets: SnapTarget[];
+  } | null>(null);
   function snapWorldPoint(
     p: { x: number; y: number },
     exclude: string[] = [],
     disabled = false,
+    prepared?: SnapTarget[],
   ) {
+    const key = exclude.join("|");
+    if (
+      !prepared &&
+      (!snapCache.current ||
+        snapCache.current.doc !== doc ||
+        snapCache.current.page !== page ||
+        snapCache.current.key !== key)
+    )
+      snapCache.current = {
+        doc,
+        page,
+        key,
+        targets: snapTargets(doc, page, exclude),
+      };
     const result = snapCoordinates(
       [p.x],
       [p.y],
-      snapTargets(doc, page, exclude),
+      prepared ?? snapCache.current!.targets,
       snapOptions,
       view.zoom,
       disabled,
@@ -678,6 +754,11 @@ export default function App() {
         ids: selected.includes(id) ? selected : [id],
         nodeId: id,
         handle,
+        targets: snapTargets(
+          doc,
+          page,
+          selected.includes(id) ? selected : [id],
+        ),
       };
       return;
     }
@@ -722,7 +803,13 @@ export default function App() {
       });
       setDoc({ ...doc, nodes: [...doc.nodes, n] });
       setSelected([n.id]);
-      drag.current = { ...base, type: "draw", ids: [n.id], nodeId: n.id };
+      drag.current = {
+        ...base,
+        type: "draw",
+        ids: [n.id],
+        nodeId: n.id,
+        targets: snapTargets(doc, page),
+      };
       return;
     }
     if (id) {
@@ -777,11 +864,31 @@ export default function App() {
   }
   function pointerMove(e: RPointer) {
     const d = drag.current;
-    if (!d) return;
+    if (!d) {
+      if (e.altKey && selected.length && tool === "move") {
+        const id = (e.target as Element)
+            .closest("[data-node-id]")
+            ?.getAttribute("data-node-id"),
+          node = doc.nodes.find((n) => n.id === id);
+        if (node && !descendants(doc, selected).includes(node.id))
+          setMeasure({
+            a: bounds(doc, roots(doc, selected)),
+            b: bounds(doc, [node]),
+          });
+        else setMeasure(null);
+      } else setMeasure(null);
+      return;
+    }
+    setMeasure(null);
     const raw = point(e),
       p =
         d.type === "resize" || d.type === "draw"
-          ? snapWorldPoint(raw, d.ids, e.ctrlKey || e.metaKey || e.shiftKey)
+          ? snapWorldPoint(
+              raw,
+              d.ids,
+              e.ctrlKey || e.metaKey || e.shiftKey,
+              d.targets,
+            )
           : raw,
       dx = p.x - d.start.x,
       dy = p.y - d.start.y;
@@ -1281,6 +1388,7 @@ export default function App() {
       {
         ...doc,
         pages: doc.pages.filter((p) => p.id !== page),
+        guides: doc.guides?.filter((g) => g.pageId !== page),
         nodes: doc.nodes.filter((n) => n.pageId !== page),
       },
       [],
@@ -1720,12 +1828,18 @@ export default function App() {
       }
     }
     const up = (e: KeyboardEvent) => {
+      if (e.key === "Alt") setMeasure(null);
       if (e.key === " ") {
         space.current = false;
         setSpaceHeld(false);
       }
     };
     const blur = () => {
+      layerPointer.current = null;
+      layerPointerDrop.current = null;
+      pagePointer.current = null;
+      setLayerDrop(null);
+      setPageDrop(null);
       space.current = false;
       setSpaceHeld(false);
       cancelDrag();
@@ -1884,6 +1998,75 @@ export default function App() {
       }
     };
   }
+  function beginLayerDrag(e: React.PointerEvent<HTMLDivElement>, n: Node) {
+    suppressLayerClick.current = false;
+    if (
+      e.button !== 0 ||
+      n.locked ||
+      ancestors(doc, n).some((p) => p.locked) ||
+      (e.target as Element).closest("button,input,select")
+    )
+      return;
+    layerPointer.current = {
+      ids: selected.includes(n.id) ? selected : [n.id],
+      x: e.clientX,
+      y: e.clientY,
+      active: false,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function moveLayerDrag(e: React.PointerEvent<HTMLDivElement>) {
+    const d = layerPointer.current;
+    if (!d) return;
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 4 && !d.active) return;
+    d.active = true;
+    const hit = document.elementFromPoint(e.clientX, e.clientY),
+      row = hit?.closest<HTMLElement>("[data-layer-id]"),
+      target = doc.nodes.find((n) => n.id === row?.dataset.layerId);
+    let drop: null | { id: string; position: "before" | "inside" | "after" } =
+      null;
+    if (row && target) {
+      const r = row.getBoundingClientRect(),
+        ratio = (e.clientY - r.top) / r.height;
+      drop = {
+        id: target.id,
+        position:
+          container(target) && ratio > 0.25 && ratio < 0.75
+            ? "inside"
+            : ratio < 0.5
+              ? "before"
+              : "after",
+      };
+    } else if (hit?.closest(".layer-root-drop"))
+      drop = { id: "", position: "inside" };
+    layerPointerDrop.current = drop;
+    setLayerDrop(drop);
+  }
+  function endLayerDrag(e: React.PointerEvent<HTMLDivElement>) {
+    const d = layerPointer.current,
+      drop = layerPointerDrop.current;
+    layerPointer.current = null;
+    layerPointerDrop.current = null;
+    setLayerDrop(null);
+    if (!d?.active) return;
+    suppressLayerClick.current = true;
+    e.preventDefault();
+    e.stopPropagation();
+    if (drop) {
+      const target = doc.nodes.find((n) => n.id === drop.id);
+      run({
+        type: "reparent",
+        ids: d.ids,
+        parentId: !target
+          ? null
+          : drop.position === "inside"
+            ? target.id
+            : target.parentId,
+        targetId: !target || drop.position === "inside" ? undefined : target.id,
+        after: drop.position === "before",
+      });
+    }
+  }
   function tree(parentId: string | null, depth = 0) {
     return [
       ...doc.nodes.filter((n) => n.pageId === page && n.parentId === parentId),
@@ -1905,63 +2088,35 @@ export default function App() {
           <div key={n.id}>
             <div
               className={`layer ${selected.includes(n.id) ? "selected" : ""} ${!n.visible ? "dim" : ""}`}
-              style={{ paddingLeft: 12 + depth * 14 }}
-              draggable={!n.locked && !ancestors(doc, n).some((p) => p.locked)}
+              style={{ paddingLeft: 12 + depth * 14, touchAction: "none" }}
+              data-layer-id={n.id}
+              draggable={false}
+              onPointerDown={(e) => beginLayerDrag(e, n)}
+              onPointerMove={moveLayerDrag}
+              onPointerUp={endLayerDrag}
+              onPointerCancel={() => {
+                layerPointer.current = null;
+                layerPointerDrop.current = null;
+                setLayerDrop(null);
+              }}
               aria-label={t("Layer {name}", { name: n.name })}
-              onDragStart={(e) => {
-                e.stopPropagation();
-                layerDrag.current = selected.includes(n.id) ? selected : [n.id];
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", n.id);
-              }}
-              onDragEnd={() => {
-                layerDrag.current = [];
-                setLayerDrop(null);
-              }}
-              onDragOver={(e) => {
-                if (!layerDrag.current.length) return;
-                e.preventDefault();
-                e.stopPropagation();
-                const r = e.currentTarget.getBoundingClientRect(),
-                  ratio = (e.clientY - r.top) / r.height;
-                setLayerDrop({
-                  id: n.id,
-                  position:
-                    container(n) && ratio > 0.25 && ratio < 0.75
-                      ? "inside"
-                      : ratio < 0.5
-                        ? "before"
-                        : "after",
-                });
-              }}
-              onDrop={(e) => {
-                if (!layerDrag.current.length) return;
-                e.preventDefault();
-                e.stopPropagation();
-                const target = layerDrop;
-                if (target?.id === n.id)
-                  run({
-                    type: "reparent",
-                    ids: layerDrag.current,
-                    parentId: target.position === "inside" ? n.id : n.parentId,
-                    targetId: target.position === "inside" ? undefined : n.id,
-                    after: target.position === "before",
-                  });
-                setLayerDrop(null);
-                layerDrag.current = [];
-              }}
+
               data-drop-position={
                 layerDrop?.id === n.id ? layerDrop.position : undefined
               }
-              onClick={(e) =>
+              onClick={(e) => {
+                if (suppressLayerClick.current) {
+                  suppressLayerClick.current = false;
+                  return;
+                }
                 setSelected(
                   e.shiftKey
                     ? selected.includes(n.id)
                       ? selected.filter((s) => s !== n.id)
                       : [...selected, n.id]
                     : [n.id],
-                )
-              }
+                );
+              }}
               onDoubleClick={() => {
                 setSelected([n.id]);
                 setTextValue(n.name);
@@ -2183,33 +2338,88 @@ export default function App() {
                 <div
                   className={`page ${p.id === page ? "active" : ""}`}
                   key={p.id}
-                  draggable
-                  onDragStart={(e) => {
-                    pageDrag.current = p.id;
-                    e.dataTransfer.setData("text/plain", p.id);
-                    e.dataTransfer.effectAllowed = "move";
+                  data-page-id={p.id}
+                  data-page-drop={
+                    pageDrop?.id === p.id
+                      ? pageDrop.after
+                        ? "after"
+                        : "before"
+                      : undefined
+                  }
+                  style={{ touchAction: "none" }}
+                  onPointerDown={(e) => {
+                    suppressPageClick.current = false;
+                    if (
+                      e.button !== 0 ||
+                      (e.target as Element).closest(".tiny")
+                    )
+                      return;
+                    pagePointer.current = {
+                      id: p.id,
+                      x: e.clientX,
+                      y: e.clientY,
+                      active: false,
+                    };
+                    e.currentTarget.setPointerCapture(e.pointerId);
                   }}
-                  onDragEnd={() => (pageDrag.current = null)}
-                  onDragOver={(e) => {
-                    if (pageDrag.current) e.preventDefault();
-                  }}
-                  onDrop={(e) => {
-                    if (!pageDrag.current) return;
-                    e.preventDefault();
-                    const pages = doc.pages.filter(
-                        (a) => a.id !== pageDrag.current,
-                      ),
-                      moving = doc.pages.find((a) => a.id === pageDrag.current);
-                    if (moving && moving.id !== p.id) {
-                      pages.splice(
-                        pages.findIndex((a) => a.id === p.id),
-                        0,
-                        moving,
+                  onPointerMove={(e) => {
+                    const d = pagePointer.current;
+                    if (!d) return;
+                    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) {
+                      d.active = true;
+                      const row = document
+                        .elementFromPoint(e.clientX, e.clientY)
+                        ?.closest<HTMLElement>("[data-page-id]");
+                      d.target = row?.dataset.pageId;
+                      d.after =
+                        !!row &&
+                        e.clientY >
+                          row.getBoundingClientRect().top +
+                            row.getBoundingClientRect().height / 2;
+                      setPageDrop(
+                        d.target ? { id: d.target, after: !!d.after } : null,
                       );
-                      change({ ...doc, pages });
                     }
-                    pageDrag.current = null;
                   }}
+                  onPointerUp={(e) => {
+                    const d = pagePointer.current;
+                    pagePointer.current = null;
+                    setPageDrop(null);
+                    if (!d?.active) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    suppressPageClick.current = true;
+                    if (d.target && d.target !== d.id) {
+                      const pages = doc.pages.filter((a) => a.id !== d.id),
+                        moving = doc.pages.find((a) => a.id === d.id);
+                      if (moving) {
+                        pages.splice(
+                          pages.findIndex((a) => a.id === d.target) +
+                            (d.after ? 1 : 0),
+                          0,
+                          moving,
+                        );
+                        change({ ...doc, pages });
+                      }
+                    }
+                  }}
+                  onPointerCancel={() => {
+                    pagePointer.current = null;
+                    setPageDrop(null);
+                  }}
+                  onClickCapture={(e) => {
+                    if (suppressPageClick.current) {
+                      suppressPageClick.current = false;
+                      e.stopPropagation();
+                    } else if (
+                      (e.target as Element).closest(".page") &&
+                      !(e.target as Element).closest(".tiny")
+                    ) {
+                      setPage(p.id);
+                      setSelected([]);
+                    }
+                  }}
+                  draggable={false}
                 >
                   <button
                     onClick={() => {
@@ -2324,20 +2534,6 @@ export default function App() {
                   }
                 }}
                 aria-label={t("Move to page root")}
-                onDragOver={(e) => {
-                  if (layerDrag.current.length) e.preventDefault();
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (layerDrag.current.length)
-                    run({
-                      type: "reparent",
-                      ids: layerDrag.current,
-                      parentId: null,
-                    });
-                  layerDrag.current = [];
-                  setLayerDrop(null);
-                }}
               >
                 {t("Drop here to move to page root")}
               </div>
@@ -2376,11 +2572,6 @@ export default function App() {
         )}
         <main
           className={`canvas-wrap tool-${effectiveTool}${effectiveTool !== "move" ? " cursor-override" : ""}`}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            void importFiles(e.dataTransfer.files);
-          }}
         >
           <div className="canvas-top-note">
             <span className="green-dot" />
@@ -2436,21 +2627,21 @@ export default function App() {
             <defs>
               <pattern
                 id="pixel-grid"
-                width={view.zoom * 10}
-                height={view.zoom * 10}
+                width={view.zoom * (layoutGrid ? gridStep : 10)}
+                height={view.zoom * (layoutGrid ? gridStep : 10)}
                 patternUnits="userSpaceOnUse"
                 x={view.x}
                 y={view.y}
               >
                 <path
-                  d={`M ${view.zoom * 10} 0 L 0 0 0 ${view.zoom * 10}`}
+                  d={`M ${view.zoom * (layoutGrid ? gridStep : 10)} 0 L 0 0 0 ${view.zoom * (layoutGrid ? gridStep : 10)}`}
                   fill="none"
                   stroke="#aeb2ba"
                   strokeWidth=".5"
                 />
               </pattern>
             </defs>
-            {grid && (
+            {(grid || layoutGrid) && (
               <rect
                 width="100%"
                 height="100%"
@@ -2487,6 +2678,7 @@ export default function App() {
                     : undefined)
                 }
               />
+              <FrameGrid doc={doc} page={page} />
               {(tool === "pen" || tool === "pencil") && !editingVector && (
                 <PathDrawingOverlay
                   key={`${doc.id}-${page}-${tool}`}
@@ -2676,6 +2868,9 @@ export default function App() {
                     </g>
                   </g>
                 )}
+              {measure && (
+                <MeasureOverlay a={measure.a} b={measure.b} zoom={view.zoom} />
+              )}
               <SnapOverlay guides={snapGuides} zoom={view.zoom} />
               {marquee && (
                 <rect
@@ -2687,6 +2882,16 @@ export default function App() {
                 />
               )}
             </g>
+            {rulers && (
+              <CanvasAids
+                guides={doc.guides ?? []}
+                page={page}
+                view={view}
+                width={svg.current?.clientWidth ?? 0}
+                height={svg.current?.clientHeight ?? 0}
+                onChange={(guides) => change({ ...doc, guides })}
+              />
+            )}
           </svg>
           <div className="zoom-controls">
             <button
@@ -3401,6 +3606,100 @@ export default function App() {
                         {t("Flatten")}
                       </button>
                     </div>
+                    {container(first) && (
+                      <details className="arrange-tools">
+                        <summary>{t("Frame layout grid")}</summary>
+                        <button
+                          onClick={() =>
+                            patch({
+                              frameGrid: first.frameGrid
+                                ? undefined
+                                : {
+                                    axis: "columns",
+                                    count: 4,
+                                    gap: 8,
+                                    margin: 16,
+                                    visible: true,
+                                  },
+                            })
+                          }
+                        >
+                          {t(first.frameGrid ? "Remove grid" : "Add grid")}
+                        </button>
+                        {first.frameGrid && (
+                          <>
+                            <label className="setting-row">
+                              {t("Grid direction")}
+                              <select
+                                aria-label={t("Grid direction")}
+                                value={first.frameGrid.axis}
+                                onChange={(e) =>
+                                  patch({
+                                    frameGrid: {
+                                      ...first.frameGrid!,
+                                      axis: e.target.value as
+                                        "columns" | "rows",
+                                    },
+                                  })
+                                }
+                              >
+                                <option value="columns">{t("Columns")}</option>
+                                <option value="rows">{t("Rows")}</option>
+                              </select>
+                            </label>
+                            <NumberField
+                              label="Grid count"
+                              min={1}
+                              max={64}
+                              value={first.frameGrid.count}
+                              onChange={(count) =>
+                                patch({
+                                  frameGrid: {
+                                    ...first.frameGrid!,
+                                    count: Math.round(count),
+                                  },
+                                })
+                              }
+                            />
+                            <NumberField
+                              label="Grid gap"
+                              min={0}
+                              value={first.frameGrid.gap}
+                              onChange={(gap) =>
+                                patch({
+                                  frameGrid: { ...first.frameGrid!, gap },
+                                })
+                              }
+                            />
+                            <NumberField
+                              label="Grid margin"
+                              min={0}
+                              value={first.frameGrid.margin}
+                              onChange={(margin) =>
+                                patch({
+                                  frameGrid: { ...first.frameGrid!, margin },
+                                })
+                              }
+                            />
+                            <label className="setting-row">
+                              {t("Show grid")}
+                              <input
+                                type="checkbox"
+                                checked={first.frameGrid.visible}
+                                onChange={(e) =>
+                                  patch({
+                                    frameGrid: {
+                                      ...first.frameGrid!,
+                                      visible: e.target.checked,
+                                    },
+                                  })
+                                }
+                              />
+                            </label>
+                          </>
+                        )}
+                      </details>
+                    )}
                     <div className="field-grid">
                       <NumberField
                         label="X"
@@ -3414,21 +3713,57 @@ export default function App() {
                       />
                       <NumberField
                         label="W"
-                        value={first.width}
+                        value={
+                          first.width *
+                          Math.hypot(
+                            ...(first.fidelity?.linear?.slice(0, 2) ?? [1, 0]),
+                          )
+                        }
                         min={1}
-                        onChange={(v) => patch({ width: v })}
+                        onChange={(v) =>
+                          patch({
+                            width:
+                              v /
+                              Math.hypot(
+                                ...(first.fidelity?.linear?.slice(0, 2) ?? [
+                                  1, 0,
+                                ]),
+                              ),
+                          })
+                        }
                       />
                       <NumberField
                         label="H"
-                        value={first.height}
+                        value={
+                          first.height *
+                          Math.hypot(
+                            ...(first.fidelity?.linear?.slice(2, 4) ?? [0, 1]),
+                          )
+                        }
                         min={1}
-                        onChange={(v) => patch({ height: v })}
+                        onChange={(v) =>
+                          patch({
+                            height:
+                              v /
+                              Math.hypot(
+                                ...(first.fidelity?.linear?.slice(2, 4) ?? [
+                                  0, 1,
+                                ]),
+                              ),
+                          })
+                        }
                       />
                       <NumberField
                         label="↻"
                         aria="Rotation"
-                        value={first.rotation}
-                        onChange={(v) => patch({ rotation: v })}
+                        value={nodeRotation(first)}
+                        onChange={(v) => {
+                          try {
+                            change(setSelectionRotation(doc, selected, v));
+                          } catch (error) {
+                            notify((error as Error).message);
+                          }
+                        }}
                       />
                       <NumberField
                         label="⌜"
@@ -3973,6 +4308,92 @@ export default function App() {
                     )}
                   </p>
                 )}
+                <h3>{t("Canvas aids")}</h3>
+                <label className="setting-row">
+                  {t("Rulers and guides")}
+                  <input
+                    type="checkbox"
+                    checked={rulers}
+                    onChange={(e) => setRulers(e.target.checked)}
+                  />
+                </label>
+                <label className="setting-row">
+                  {t("Canvas grid")}
+                  <input
+                    type="checkbox"
+                    checked={layoutGrid}
+                    onChange={(e) => setLayoutGrid(e.target.checked)}
+                  />
+                </label>
+                <NumberField
+                  label="Grid spacing"
+                  min={1}
+                  max={1000}
+                  value={gridStep}
+                  onChange={setGridStep}
+                />
+                <p className="muted">
+                  {t(
+                    "Drag from a ruler to create a guide. Drag it outside the canvas to remove it. Hold Alt over another layer to measure gaps.",
+                  )}
+                </p>
+                <div className="arrange-grid">
+                  <button
+                    onClick={() =>
+                      change({
+                        ...doc,
+                        guides: [
+                          ...(doc.guides ?? []),
+                          { id: id(), pageId: page, axis: "x", position: 0 },
+                        ],
+                      })
+                    }
+                  >
+                    {t("Add vertical guide")}
+                  </button>
+                  <button
+                    onClick={() =>
+                      change({
+                        ...doc,
+                        guides: [
+                          ...(doc.guides ?? []),
+                          { id: id(), pageId: page, axis: "y", position: 0 },
+                        ],
+                      })
+                    }
+                  >
+                    {t("Add horizontal guide")}
+                  </button>
+                </div>
+                {(doc.guides ?? [])
+                  .filter((g) => g.pageId === page)
+                  .map((g) => (
+                    <div className="setting-row" key={g.id}>
+                      <NumberField
+                        label={g.axis.toUpperCase()}
+                        value={g.position}
+                        onChange={(position) =>
+                          change({
+                            ...doc,
+                            guides: doc.guides!.map((a) =>
+                              a.id === g.id ? { ...a, position } : a,
+                            ),
+                          })
+                        }
+                      />
+                      <button
+                        aria-label={t("Delete guide")}
+                        onClick={() =>
+                          change({
+                            ...doc,
+                            guides: doc.guides!.filter((a) => a.id !== g.id),
+                          })
+                        }
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
                 <h3>{t("Snapping")}</h3>
                 {(["objects", "geometry", "pixel"] as const).map((key) => (
                   <label className="setting-row" key={key}>

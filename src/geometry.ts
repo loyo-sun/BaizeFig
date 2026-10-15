@@ -6,6 +6,7 @@ import {
   ancestors,
   bounds,
   reflowAfterPointerEdit,
+  localTransform,
 } from "./core";
 import { inverse, transformPoint, multiply } from "./fidelity";
 import { nodeSelectionBounds } from "./pathBounds";
@@ -178,4 +179,46 @@ export function flipSelection(
       ? [-1, 0, 0, 1, 2 * b.x + b.width, 0]
       : [1, 0, 0, -1, 0, 2 * b.y + b.height],
   );
+}
+
+export function nodeRotation(node: import("./core").Node) {
+  const m = localTransform(node);
+  return (Math.atan2(m[1], m[0]) * 180) / Math.PI;
+}
+export function setSelectionRotation(
+  original: Document,
+  ids: string[],
+  degrees: number,
+) {
+  if (!Number.isFinite(degrees)) throw Error("Invalid transform");
+  const next = structuredClone(original),
+    nodes = roots(next, ids);
+  for (const n of nodes) {
+    if (n.locked || ancestors(next, n).some((p) => p.locked))
+      throw Error("Select unlocked layers");
+    const delta = ((degrees - nodeRotation(n)) * Math.PI) / 180,
+      c = Math.cos(delta),
+      s = Math.sin(delta),
+      m = localTransform(n),
+      b = nodeSelectionBounds(n),
+      center = transformPoint(m, b.x + b.width / 2, b.y + b.height / 2),
+      local = multiply(
+        [
+          c,
+          s,
+          -s,
+          c,
+          center.x - c * center.x + s * center.y,
+          center.y - s * center.x - c * center.y,
+        ],
+        m,
+      ),
+      parent = next.nodes.find((p) => p.id === n.parentId);
+    setWorldTransform(
+      next,
+      n,
+      parent ? multiply(worldTransform(next, parent), local) : local,
+    );
+  }
+  return reflowAfterPointerEdit(original, next);
 }
