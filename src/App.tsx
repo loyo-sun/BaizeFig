@@ -206,6 +206,7 @@ type Modal =
   | "share"
   | "variables"
   | "fig-report"
+  | "svg-report"
   | "settings"
   | "versions"
   | "fonts"
@@ -243,6 +244,10 @@ function readCanvasAids() {
 export default function App() {
   const { language, setLanguage, persistenceError, t } = useI18n();
   const [doc, setDoc] = useState<Document>(() => demoDocument());
+  const [svgReport, setSvgReport] = useState<{
+    layers: number;
+    warnings: string[];
+  } | null>(null);
   const [figReport, setFigReport] = useState<FigImportResult["report"] | null>(
     null,
   );
@@ -1306,6 +1311,7 @@ export default function App() {
     importInFlight.current = true;
     let next = doc;
     const selection: string[] = [];
+    const svgResults = { layers: 0, warnings: [] as string[] };
     try {
       for (const file of Array.from(files)) {
         if (file.size > 50 * 1024 * 1024)
@@ -1322,6 +1328,17 @@ export default function App() {
           setModal(null);
           notify("Document imported");
           return;
+        }
+        if (/\.svg$/i.test(file.name) || file.type === "image/svg+xml") {
+          const { importSvg } = await import("./svgImport");
+          const result = importSvg(await file.text(), page, file.name);
+          next = execute(next, { type: "create", nodes: result.nodes }).doc;
+          selection.push(result.rootId);
+          svgResults.layers += result.report.layers;
+          svgResults.warnings.push(
+            ...result.report.warnings.map((w) => `${file.name}: ${w}`),
+          );
+          continue;
         }
         if (/\.fig$/i.test(file.name)) {
           setImportBusy(true);
@@ -1394,19 +1411,6 @@ export default function App() {
         await image.decode();
         if (image.width * image.height > 40000000)
           throw Error("Image dimensions exceed 40 megapixels");
-        if (file.type === "image/svg+xml") {
-          data = await new Promise<string>((resolve, reject) => {
-            const c = document.createElement("canvas");
-            c.width = Math.min(image.width || 800, 4096);
-            c.height = Math.min(image.height || 600, 4096);
-            c.getContext("2d")!.drawImage(image, 0, 0, c.width, c.height);
-            try {
-              resolve(c.toDataURL("image/png"));
-            } catch {
-              reject(Error("SVG contains unsupported resources"));
-            }
-          });
-        }
         const n = makeNode("image", page, {
           name: file.name,
           image: data,
@@ -1420,12 +1424,10 @@ export default function App() {
         selection.push(n.id);
       }
       change(next, selection);
-      notify(
-        "Assets imported" +
-          (Array.from(files).some((f) => f.type === "image/svg+xml")
-            ? " · SVG imported as image"
-            : ""),
-      );
+      if (svgResults.layers) {
+        setSvgReport(svgResults);
+        setModal("svg-report");
+      } else notify("Assets imported");
     } catch (e) {
       notify((e as Error).message);
     } finally {
@@ -3055,31 +3057,33 @@ export default function App() {
       }));
   }
   const title =
-    modal === "fonts"
-      ? "Font availability and replacement"
-      : modal === "versions"
-        ? "Version history"
-        : modal === "fig-report"
-          ? "Figma import result"
-          : modal === "settings"
-            ? "General settings"
-            : modal === "share"
-              ? "Share this design"
-              : modal === "variables"
-                ? "Local color variables"
-                : modal === "assets"
-                  ? "Components & assets"
-                  : modal === "files"
-                    ? "Your local workspace"
-                    : modal === "shortcuts"
-                      ? "Keyboard shortcuts"
-                      : modal === "commands"
-                        ? "Actions"
-                        : modal === "ai"
-                          ? "Create with Baize"
-                          : modal === "bridge"
-                            ? "Connect external AI"
-                            : "Rename layer";
+    modal === "svg-report"
+      ? "Editable SVG import"
+      : modal === "fonts"
+        ? "Font availability and replacement"
+        : modal === "versions"
+          ? "Version history"
+          : modal === "fig-report"
+            ? "Figma import result"
+            : modal === "settings"
+              ? "General settings"
+              : modal === "share"
+                ? "Share this design"
+                : modal === "variables"
+                  ? "Local color variables"
+                  : modal === "assets"
+                    ? "Components & assets"
+                    : modal === "files"
+                      ? "Your local workspace"
+                      : modal === "shortcuts"
+                        ? "Keyboard shortcuts"
+                        : modal === "commands"
+                          ? "Actions"
+                          : modal === "ai"
+                            ? "Create with Baize"
+                            : modal === "bridge"
+                              ? "Connect external AI"
+                              : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -5765,6 +5769,40 @@ export default function App() {
                 >
                   <Upload size={14} />
                   {t("Import image or SVG")}
+                </button>
+              </>
+            )}
+            {modal === "svg-report" && svgReport && (
+              <>
+                <p>
+                  {t("Imported {count} editable layers.", {
+                    count: svgReport.layers,
+                  })}
+                </p>
+                <p className="muted">
+                  {t(
+                    "SVG paths and supported styles remain editable. Keep the original file for unsupported features.",
+                  )}
+                </p>
+                {svgReport.warnings.length ? (
+                  <>
+                    <h3>{t("Import compatibility notes")}</h3>
+                    <ul>
+                      {svgReport.warnings.map((warning, i) => (
+                        <li key={i}>
+                          {warning
+                            .split(": ")
+                            .map((part) => t(part))
+                            .join("：")}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : (
+                  <p>{t("No unsupported SVG features were detected.")}</p>
+                )}
+                <button className="primary" onClick={() => setModal(null)}>
+                  {t("Continue editing")}
                 </button>
               </>
             )}

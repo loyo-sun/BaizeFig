@@ -4,6 +4,68 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Editable SVG import": "可编辑 SVG 导入",
+  "Imported {count} editable layers.": "已导入 {count} 个可编辑图层。",
+  "SVG paths and supported styles remain editable. Keep the original file for unsupported features.":
+    "SVG 路径和已支持的样式可以继续编辑；涉及未支持的特性时请保留原文件。",
+  "Import compatibility notes": "导入兼容性说明",
+  "No unsupported SVG features were detected.":
+    "未检测到超出支持范围的 SVG 特性。",
+  "Removed SVG event attributes": "已移除 SVG 事件属性",
+  "Removed active or unsupported SVG element": "已移除主动内容或未支持元素",
+  "SVG filters are omitted": "未导入 SVG 滤镜",
+  "SVG blend modes require review": "SVG 混合模式需要复核",
+  "SVG image references are omitted; import bitmap assets separately":
+    "未导入 SVG 图片引用，请单独导入位图素材",
+  "SVG text uses local fonts; precise tspan positioning is not retained":
+    "SVG 文字使用本地字体，未保留 tspan 精确定位",
+  "SVG tspan mixed positioning/style requires review":
+    "SVG tspan 混排样式和定位需要复核",
+  "SVG text paint is approximated": "SVG 文字填充使用近似颜色",
+  "External SVG use references are blocked": "已阻止 SVG 外部实例引用",
+  "External or invalid SVG paint reference was blocked":
+    "已阻止外部或无效 SVG 填充引用",
+  "Unsupported or missing SVG paint": "未支持或缺失的 SVG 填充",
+  "SVG gradient strokes are omitted": "未导入 SVG 渐变描边",
+  "Zero or negative SVG dash patterns are omitted":
+    "未导入包含零或负数的 SVG 虚线",
+  "Non-scaling SVG strokes are not retained":
+    "未保留 SVG 不随缩放变化的描边规则",
+  "SVG gradient spread is approximated as pad":
+    "SVG 渐变延展方式近似为边缘填充",
+  "Focal SVG radial gradients use a centered focus":
+    "SVG 径向渐变焦点近似为居中",
+  "Degenerate SVG gradient omitted": "未导入退化的 SVG 渐变",
+  "Cyclic SVG gradient reference": "SVG 渐变引用循环",
+  "Missing SVG use reference": "缺失 SVG 实例引用",
+  "SVG symbol viewBox requires review": "SVG 符号视口需要复核",
+  "Missing or external SVG clip was omitted": "未导入缺失或外部 SVG 裁剪引用",
+  "Object bounding box clip on groups requires review":
+    "分组的包围盒裁剪需要复核",
+  "Nested SVG overflow requires review": "嵌套 SVG 的溢出规则需要复核",
+  "Missing or external SVG mask was omitted": "未导入缺失或外部 SVG 蒙版",
+  "Object bounding box mask on groups requires review":
+    "分组的包围盒蒙版需要复核",
+  "SVG mask region bounds require review": "SVG 蒙版区域边界需要复核",
+  "Unsupported SVG element": "未支持的 SVG 元素",
+  "Invalid SVG XML": "SVG XML 格式无效",
+  "SVG document types and entities are not allowed":
+    "SVG 不允许包含文档类型声明及实体",
+  "SVG exceeds 8 MiB processing limit": "SVG 超过 8 MiB 处理限制",
+  "Invalid SVG path": "SVG 路径格式无效",
+  "Invalid SVG path arguments": "SVG 路径参数无效",
+  "SVG geometry is outside supported limits": "SVG 几何数据超出支持范围",
+  "SVG dimensions are outside supported limits": "SVG 尺寸超出支持范围",
+  "SVG structure exceeds processing limits": "SVG 文档结构超出处理限制",
+  "SVG nesting exceeds processing limits": "SVG 嵌套超出处理限制",
+  "SVG layer count exceeds processing limits": "SVG 图层数超出处理限制",
+  "Cyclic SVG use reference": "SVG 实例引用存在循环",
+  "Cyclic SVG mask reference": "SVG 蒙版引用存在循环",
+  "Duplicate SVG id": "SVG 中存在重复 ID",
+  "Invalid SVG transform": "SVG 变换参数无效",
+  "Unsupported SVG transform": "未支持的 SVG 变换",
+  "Unsupported SVG length": "未支持的 SVG 长度",
+  "Unsupported SVG color": "未支持的 SVG 颜色",
   "Back to files": "返回文件",
   New: "新建",
   "Save to version history": "保存到版本历史",

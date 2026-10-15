@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.0",
+    "@xmldom/xmldom": "^0.9.12",
     "clipper-lib": "^6.4.2",
     "fflate": "^0.8.3",
     "fzstd": "^0.1.1",

@@ -170,3 +170,6 @@
 Mac 层级顺序、取消组合、像素网格与缩放按用户截图修正；Windows/Linux Ctrl 键位冲突单独映射。真实 Windows/Linux 浏览器和全部保留键行为仍需平台复验；不因纯函数测试通过就声称三平台原生行为等价。
 [复制格式官方依据](https://www.figma.com/best-practices/tips-on-developer-handoff/)：CSS/SVG/PNG。CSS仅交付基础属性，复杂路径/分层填充/效果请用SVG。
 [文字属性依据](https://help.figma.com/hc/en-us/articles/360039956634-Explore-text-properties)、[RTL](https://help.figma.com/hc/en-us/articles/4972283635863-Add-right-to-left-text)、[拼写检查](https://help.figma.com/hc/en-us/articles/27323589692055-Use-spell-check)：本产品菜单覆盖对齐、字号/字距/尺寸、大小写、方向和浏览器拼写检查及语言；小型大写、复杂OpenType等仍归#34，不声称截图未展开子菜单逐字等价。
+
+### 可编辑SVG（2026-10-15）
+SVG导入已从位图转换升级为原生路径/分组，可继续编辑节点、控制柄和样式。支持基础形状、变换、孔洞、基本渐变与裁剪/蒙版。导入结果逐项报告降级：本机字体/tspan、图片引用、滤镜、焦点/延展渐变及复杂蒙版区域等；不加载外部内容。原生文件保存与SVG再次导出、导入共用画布几何。与 .fig 无损兼容分开跟踪。
