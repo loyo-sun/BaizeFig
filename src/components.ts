@@ -164,6 +164,10 @@ function expanded(
     clearFields(node, path);
     for (const property of properties.filter((p) => p.targetPath === path)) {
       const value = values[property.id] ?? property.defaultValue;
+      if (Object.hasOwn(values, property.id) && node.bindings) {
+        if (property.type === "text") delete node.bindings.text;
+        if (property.type === "boolean") delete node.bindings.visible;
+      }
       if (
         property.type === "text" &&
         node.type === "text" &&
@@ -449,6 +453,13 @@ export function createComponentInstance(
   const doc = structuredClone(original),
     def = definition(doc, reference);
   if (!def) throw Error("Missing main component");
+  const entry = doc.componentLibrary?.find((c) => c.sourceId === reference);
+  if (
+    entry?.libraryId &&
+    (entry.missing ||
+      doc.libraries?.find((s) => s.id === entry.libraryId)?.enabled === false)
+  )
+    throw Error("Enable the library before inserting components");
   const id = crypto.randomUUID(),
     root = {
       ...structuredClone(def.root),
@@ -490,6 +501,8 @@ export function swapComponentInstance(
   const current = original.nodes.find((n) => n.id === id);
   if (!current) throw Error("Select a component instance");
   assertWritable(original, current);
+  if (current.componentId !== reference)
+    assertLibraryEnabled(original, reference);
   if (current.componentOwner && current.componentOwner !== current.id) {
     const doc = structuredClone(original);
     recordOverrides(doc, [id], { componentId: reference });
@@ -665,6 +678,7 @@ export function updateLibraryFromMain(doc: Document, ids: string[]): void {
     if (!lib) continue;
     const family = paths(doc.nodes, main);
     if (![...family.values()].some((n) => ids.includes(n.id))) continue;
+    if (lib.libraryId) lib.localEdits = true;
     lib.nodes = structuredClone([...family.values()]);
     lib.nodes[0].parentId = null;
   }
@@ -692,6 +706,15 @@ export function componentTargets(doc: Document, reference: string) {
   return def
     ? [...paths(def.nodes, def.root)].map(([path, node]) => ({ path, node }))
     : [];
+}
+function assertLibraryEnabled(doc: Document, reference: string) {
+  const entry = doc.componentLibrary?.find((c) => c.sourceId === reference);
+  if (
+    entry?.libraryId &&
+    (entry.missing ||
+      doc.libraries?.find((s) => s.id === entry.libraryId)?.enabled === false)
+  )
+    throw Error("Enable the library before inserting components");
 }
 function assertWritable(doc: Document, node: Node) {
   let n: Node | undefined = node;
@@ -824,6 +847,7 @@ export function setComponentValue(
       : typeof value !== "string")
   )
     throw Error("Invalid component property value");
+  if (prop.type === "instance") assertLibraryEnabled(doc, String(value));
   if (prop.type === "instance" && !definition(doc, String(value)))
     throw Error("Missing main component");
   root.componentValues = { ...root.componentValues, [propertyId]: value };

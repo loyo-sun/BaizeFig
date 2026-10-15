@@ -1,3 +1,5 @@
+import { LibraryManager } from "./LibraryManager";
+import { availableLibraryEntries } from "./componentLibraries";
 import { ComponentProperties } from "./ComponentProperties";
 import { CommandMenu, type MenuItem } from "./CommandMenu";
 import {
@@ -4184,7 +4186,7 @@ export default function App() {
                         }
                       >
                         {[
-                          ...(doc.componentLibrary ?? []).map((c) => ({
+                          ...availableLibraryEntries(doc).map((c) => ({
                             id: c.sourceId,
                             name: c.name,
                           })),
@@ -5062,7 +5064,23 @@ export default function App() {
                               }
                             }}
                           >
-                            {(doc.componentLibrary ?? []).map((c) => (
+                            {first.componentId &&
+                              !availableLibraryEntries(doc).some(
+                                (c) => c.sourceId === first.componentId,
+                              ) &&
+                              doc.componentLibrary?.some(
+                                (c) => c.sourceId === first.componentId,
+                              ) && (
+                                <option value={first.componentId} disabled>
+                                  {
+                                    doc.componentLibrary.find(
+                                      (c) => c.sourceId === first.componentId,
+                                    )?.name
+                                  }{" "}
+                                  · {t("Cached")}
+                                </option>
+                              )}
+                            {availableLibraryEntries(doc).map((c) => (
                               <option key={c.sourceId} value={c.sourceId}>
                                 {c.name}
                               </option>
@@ -5777,12 +5795,40 @@ export default function App() {
             )}
             {modal === "assets" && (
               <>
+                <LibraryManager doc={doc} onChange={change} />
                 <p className="muted">
                   {t(
                     "Instances follow their main component while preserving local overrides.",
                   )}
                 </p>
                 <div className="asset-list">
+                  {availableLibraryEntries(doc).map((entry) => (
+                    <button
+                      key={entry.sourceId}
+                      aria-label={t("Insert library component {name}", {
+                        name: entry.name,
+                      })}
+                      onClick={() => {
+                        try {
+                          const result = createComponentInstance(
+                            doc,
+                            entry.sourceId,
+                            page,
+                            80,
+                            80,
+                          );
+                          change(result.doc, [result.id]);
+                          setModal(null);
+                        } catch (error) {
+                          notify((error as Error).message);
+                        }
+                      }}
+                    >
+                      <Component size={18} />
+                      <span>{entry.name}</span>
+                      <Plus size={14} />
+                    </button>
+                  ))}
                   {doc.nodes
                     .filter((n) => n.type === "component")
                     .map((n) => (

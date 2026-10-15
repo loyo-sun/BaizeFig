@@ -1,9 +1,15 @@
+import {
+  validateLibraryPackage,
+  type LibraryPackage,
+} from "./componentLibraries";
 import { openDB } from "idb";
 import { type Document, validateDocument } from "./core";
 let connection: ReturnType<typeof openDB> | undefined;
 const database = () =>
-  (connection ??= openDB("baizefig", 3, {
+  (connection ??= openDB("baizefig", 4, {
     upgrade(db) {
+      if (!db.objectStoreNames.contains("libraries"))
+        db.createObjectStore("libraries", { keyPath: "key" });
       if (!db.objectStoreNames.contains("versions")) {
         const versions = db.createObjectStore("versions", { keyPath: "id" });
         versions.createIndex("documentId", "documentId");
@@ -147,16 +153,55 @@ export async function restoreVersion(
   validateDocument(version.document);
   validateDocument(current);
   // The recovery checkpoint and restored document commit atomically.
-  await tx
-    .objectStore("versions")
-    .put({
-      id: crypto.randomUUID(),
-      documentId: current.id,
-      name: "Before restore",
-      createdAt: Date.now(),
-      document: structuredClone(current),
-    } satisfies DocumentVersion);
+  await tx.objectStore("versions").put({
+    id: crypto.randomUUID(),
+    documentId: current.id,
+    name: "Before restore",
+    createdAt: Date.now(),
+    document: structuredClone(current),
+  } satisfies DocumentVersion);
   await tx.objectStore("documents").put(version.document);
   await tx.done;
   return structuredClone(version.document);
+}
+
+function libraryJSON(value: unknown): string {
+  return JSON.stringify(value, (_key, value) =>
+    value && typeof value === "object" && !Array.isArray(value)
+      ? Object.fromEntries(
+          Object.keys(value)
+            .sort()
+            .map((key) => [key, value[key]]),
+        )
+      : value,
+  );
+}
+export async function saveLibrary(pack: LibraryPackage) {
+  validateLibraryPackage(pack);
+  const db = await database(),
+    key = pack.id + "@" + pack.revision,
+    tx = db.transaction("libraries", "readwrite"),
+    existing = await tx.store.get(key);
+  if (existing && libraryJSON(existing.package) !== libraryJSON(pack)) {
+    tx.abort();
+    await tx.done.catch(() => {});
+    throw Error("A different library version already uses this revision");
+  }
+  await tx.store.put({ key, package: pack });
+  await tx.done;
+}
+export async function listLibraryVersions(
+  libraryId?: string,
+): Promise<LibraryPackage[]> {
+  const records = await (await database()).getAll("libraries");
+  return records
+    .map((r) => r.package as LibraryPackage)
+    .filter((p) => !libraryId || p.id === libraryId)
+    .sort((a, b) => b.revision - a.revision);
+}
+export async function latestLibraries(): Promise<LibraryPackage[]> {
+  const versions = await listLibraryVersions(),
+    latest = new Map<string, LibraryPackage>();
+  for (const p of versions) if (!latest.has(p.id)) latest.set(p.id, p);
+  return [...latest.values()].sort((a, b) => a.name.localeCompare(b.name));
 }

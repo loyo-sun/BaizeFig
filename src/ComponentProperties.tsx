@@ -230,7 +230,21 @@ export function ComponentProperties({
                             ),
                         )
                         .map((d) => (
-                          <option key={d.reference} value={d.reference}>
+                          <option
+                            key={d.reference}
+                            value={d.reference}
+                            disabled={
+                              !!doc.componentLibrary?.some(
+                                (c) =>
+                                  c.sourceId === d.reference &&
+                                  c.libraryId &&
+                                  (c.missing ||
+                                    doc.libraries?.find(
+                                      (s) => s.id === c.libraryId,
+                                    )?.enabled === false),
+                              )
+                            }
+                          >
                             {property.preferred?.includes(d.reference)
                               ? "★ "
                               : ""}

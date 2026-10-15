@@ -1,3 +1,4 @@
+import type { LibrarySubscription } from "./componentLibraries";
 import { remapComponentMetadata, componentPathMapper } from "./componentRemap";
 import {
   validateComponentModels,
@@ -160,6 +161,7 @@ export interface Guide {
 }
 export interface Document {
   componentSets?: ComponentSet[];
+  libraries?: LibrarySubscription[];
   guides?: Guide[];
   format: "baizefig";
   version: 1;
@@ -168,7 +170,15 @@ export interface Document {
   pages: Page[];
   nodes: Node[];
   background: string;
-  componentLibrary?: { sourceId: string; name: string; nodes: Node[] }[];
+  componentLibrary?: {
+    sourceId: string;
+    name: string;
+    nodes: Node[];
+    libraryId?: string;
+    libraryRevision?: number;
+    missing?: boolean;
+    localEdits?: boolean;
+  }[];
   variableCollections?: VariableCollection[];
   variables?: ColorVariable[];
   typedVariables?: TypedVariable[];
@@ -1195,11 +1205,40 @@ export function validateDocument(
     )
       throw Error("Invalid variable values");
   }
+  if (
+    d.libraries &&
+    (!Array.isArray(d.libraries) ||
+      d.libraries.length > 2000 ||
+      new Set(d.libraries.map((s) => s.id)).size !== d.libraries.length ||
+      d.libraries.some(
+        (s) =>
+          !s ||
+          typeof s.id !== "string" ||
+          typeof s.name !== "string" ||
+          !Number.isInteger(s.revision) ||
+          s.revision < 1 ||
+          typeof s.enabled !== "boolean",
+      ))
+  )
+    throw Error("Invalid library subscriptions");
   if (d.componentLibrary) {
-    if (!Array.isArray(d.componentLibrary) || d.componentLibrary.length > 2000)
+    if (
+      !Array.isArray(d.componentLibrary) ||
+      d.componentLibrary.length > 2000 ||
+      new Set(d.componentLibrary.map((c) => c.sourceId)).size !==
+        d.componentLibrary.length
+    )
       throw Error("Invalid component library");
     for (const entry of d.componentLibrary) {
       if (
+        (entry.libraryId !== undefined &&
+          typeof entry.libraryId !== "string") ||
+        (entry.libraryRevision !== undefined &&
+          (!Number.isInteger(entry.libraryRevision) ||
+            entry.libraryRevision < 1)) ||
+        [entry.missing, entry.localEdits].some(
+          (v) => v !== undefined && typeof v !== "boolean",
+        ) ||
         typeof entry.sourceId !== "string" ||
         typeof entry.name !== "string" ||
         !Array.isArray(entry.nodes)

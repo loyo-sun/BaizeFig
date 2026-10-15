@@ -4,6 +4,51 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  Cached: "缓存",
+  "Insert library component {name}": "插入库组件：{name}",
+  "Component library exceeds 50000 layers": "组件库超过 50000 图层限制",
+
+  "Local component libraries": "本地组件库",
+  "Publish a version, reuse it in another document, and apply updates when you choose. Cached components work offline.":
+    "发布版本后可在多个文档复用，并自行决定何时更新。缓存组件可离线使用。",
+  "Library name": "组件库名称",
+  "Publish library version": "发布组件库版本",
+  "Import component library": "导入组件库",
+  "Replace local edits to library mains when applying a version":
+    "应用版本时替换本文件对库主组件的修改",
+  "Published v{published}; this document: {current}":
+    "已发布 v{published}；本文件：{current}",
+  "Not enabled": "未启用",
+  "Library version": "库版本",
+  "Library version {name}": "库版本：{name}",
+  "Apply library version": "应用库版本",
+  "Enable library": "启用组件库",
+  "Disable library": "禁用组件库",
+  "Enable cached library": "启用缓存库",
+  "Export library file": "导出库文件",
+  "{count} removed definitions remain cached for existing instances.":
+    "已移除的 {count} 个组件定义仍保留缓存供现有实例使用。",
+  "Only the document cache is available. Import a library file to check updates; existing instances are preserved.":
+    "当前仅有文档缓存。导入库文件可检查更新，已有实例保持可用。",
+  "No published libraries yet. Publish this document or import a library file.":
+    "尚无组件库。可发布本文件的组件，或导入已有库文件。",
+  "Library version published locally": "组件库版本已发布到本机",
+  "Library imported locally": "组件库已导入本机",
+  "Library version applied to this document": "已将库版本应用到本文件",
+  "This library has local main edits. Enable replacement to apply the published version.":
+    "本文件修改过库的主组件。若要应用已发布版本，请勾选替换本地修改。",
+  "Create a component before publishing a library":
+    "请先创建组件，再发布组件库",
+  "Invalid BaizeFig component library": "BaizeFig 组件库文件无效",
+  "A different library version already uses this revision":
+    "此版本号已有不同内容，请使用新的版本号",
+  "Enable the library before inserting components":
+    "请先启用组件库，再插入组件",
+  "Library file exceeds 50 MiB": "组件库文件超过 50 MiB",
+  "Library is missing a nested component dependency": "组件库缺少嵌套组件依赖",
+  "Library is missing a variant dependency": "组件库缺少变体依赖",
+  "Cyclic component library dependency": "组件库依赖存在循环",
+  "Publish this document as a new library": "请将本文件发布为新的组件库",
   "Add component to variant set": "向变体集添加组件",
   "Choose component": "选择组件",
   "Add variant": "添加变体",

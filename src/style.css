@@ -2439,3 +2439,27 @@ html[lang="zh-CN"] .layer-title-input {
   width: 12px;
   flex-shrink: 0;
 }
+
+.library-card {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 12px 0;
+}
+.library-card .segmented {
+  flex-wrap: wrap;
+}
+.library-card .segmented button {
+  flex: 1 0 110px;
+}
+.library-manager {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 20px;
+}
+.property-definition {
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+  display: grid;
+  gap: 8px;
+}
