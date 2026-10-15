@@ -295,6 +295,14 @@ export const zhCN: Record<string, string> = {
   "On click → Navigate to frame": "点击 → 跳转至画板",
   "Prototype destination": "原型目标画板",
   "On click action": "点击动作",
+  Snapping: "智能吸附",
+  "Snap to objects": "吸附到对象",
+  "Snap to geometry": "吸附到几何节点",
+  "Snap to pixel grid": "吸附到像素网格",
+  "Hold Ctrl or Command while dragging to temporarily disable snapping.":
+    "拖动时按住 Ctrl 或 Command 可临时关闭吸附。",
+  "Snapping preferences apply for this session only.":
+    "吸附偏好无法保存，仅在本次会话生效。",
   "Layer thumbnail {name}": "图层缩略图 {name}",
   "Click to add points · Drag for curves · Click first point to close · Enter / Esc to finish":
     "点击落点 · 拖拽绘制曲线 · 点击起点闭合 · Enter / Esc 完成",

@@ -23,8 +23,13 @@ export const PathDrawingOverlay = forwardRef<
     zoom: number;
     temporaryHand: boolean;
     onFinish: (network: VectorNetwork) => void;
+    snapPoint?: (p: Vec, disabled: boolean) => Vec;
+    onSnapEnd?: () => void;
   }
->(function PathDrawingOverlay({ tool, zoom, temporaryHand, onFinish }, ref) {
+>(function PathDrawingOverlay(
+  { tool, zoom, temporaryHand, onFinish, snapPoint, onSnapEnd },
+  ref,
+) {
   const group = useRef<SVGGElement>(null),
     anchors = useRef<PenAnchor[]>([]),
     stroke = useRef<Vec[]>([]),
@@ -40,14 +45,24 @@ export const PathDrawingOverlay = forwardRef<
     original: PenAnchor;
     handle?: HandleDrag;
   } | null>(null);
-  const point = (e: { clientX: number; clientY: number }) => {
+  const point = (e: {
+    clientX: number;
+    clientY: number;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    shiftKey?: boolean;
+  }) => {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
       group.current!.getScreenCTM()!.inverse(),
     );
-    return { x: p.x, y: p.y };
+    const raw = { x: p.x, y: p.y };
+    return tool === "pen" && snapPoint
+      ? snapPoint(raw, !!(e.ctrlKey || e.metaKey || e.shiftKey))
+      : raw;
   };
   const paint = () => refresh((v) => v + 1);
   function finish(closed = false) {
+    onSnapEnd?.();
     const network =
       tool === "pen"
         ? penNetwork(anchors.current, closed)
@@ -151,6 +166,7 @@ export const PathDrawingOverlay = forwardRef<
         anchorDrag.current = null;
       }}
       onPointerUp={(e) => {
+        onSnapEnd?.();
         if (anchorDrag.current) {
           const d = anchorDrag.current,
             a = anchors.current[d.index],
@@ -234,6 +250,7 @@ export const PathDrawingOverlay = forwardRef<
           paint();
         }}
         onPointerUp={(e) => {
+          onSnapEnd?.();
           if (
             e.button === 1 ||
             (temporaryHand && !dragging.current && !closing.current)

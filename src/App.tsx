@@ -1,3 +1,12 @@
+import {
+  snapTargets,
+  snapCoordinates,
+  defaultSnapOptions,
+  type SnapOptions,
+  type SnapTarget,
+  type SnapGuide,
+} from "./snapping";
+import { SnapOverlay } from "./SnapOverlay";
 import { LayerThumbnail } from "./LayerThumbnail";
 import { splitVectorLayers } from "./vectorSplit";
 import { canvasCursor, prepareToolCursors } from "./toolCursor";
@@ -219,6 +228,32 @@ export default function App() {
   latestDocument.current = doc;
   const figInput = useRef<HTMLInputElement>(null);
   const [ready, setReady] = useState(false);
+  const [snapOptions, setSnapOptions] = useState<SnapOptions>(() => {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem("baizefig-snapping") ?? "null",
+      );
+      return Object.fromEntries(
+        Object.entries(defaultSnapOptions).map(([k, v]) => [
+          k,
+          typeof saved?.[k] === "boolean" ? saved[k] : v,
+        ]),
+      ) as SnapOptions;
+    } catch {
+      return defaultSnapOptions;
+    }
+  });
+  const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
+  const [snapSaveError, setSnapSaveError] = useState(false);
+  useEffect(() => {
+    try {
+      localStorage.setItem("baizefig-snapping", JSON.stringify(snapOptions));
+      setSnapSaveError(false);
+    } catch {
+      setSnapSaveError(true);
+    }
+  }, [snapOptions]);
+
   const [page, setPage] = useState(doc.pages[0].id),
     [selected, setSelected] = useState<string[]>([]),
     [tool, setTool] = useState<Tool>("move");
@@ -297,6 +332,8 @@ export default function App() {
     handle?: string;
     view: { x: number; y: number; zoom: number };
     shift?: boolean;
+    targets?: SnapTarget[];
+    moveBase?: Document;
   } | null>(null);
   useEffect(() => {
     setEditingText(null);
@@ -555,6 +592,22 @@ export default function App() {
       y: (e.clientY - rect.top - view.y) / view.zoom,
     };
   };
+  function snapWorldPoint(
+    p: { x: number; y: number },
+    exclude: string[] = [],
+    disabled = false,
+  ) {
+    const result = snapCoordinates(
+      [p.x],
+      [p.y],
+      snapTargets(doc, page, exclude),
+      snapOptions,
+      view.zoom,
+      disabled,
+    );
+    setSnapGuides(result.guides);
+    return { x: p.x + result.x, y: p.y + result.y };
+  }
   function parentFor(p: { x: number; y: number }) {
     return [...doc.nodes].reverse().find(
       (n) =>
@@ -683,7 +736,13 @@ export default function App() {
         base.before = result.doc;
       }
       setSelected(ids);
-      drag.current = { ...base, type: "move", ids };
+      drag.current = {
+        ...base,
+        type: "move",
+        ids,
+        moveBase: clone(e.altKey ? base.before : doc),
+        targets: snapTargets(doc, page, ids),
+      };
       if (e.altKey) drag.current.before = before;
       return;
     }
@@ -698,7 +757,11 @@ export default function App() {
   function pointerMove(e: RPointer) {
     const d = drag.current;
     if (!d) return;
-    const p = point(e),
+    const raw = point(e),
+      p =
+        d.type === "resize" || d.type === "draw"
+          ? snapWorldPoint(raw, d.ids, e.ctrlKey || e.metaKey || e.shiftKey)
+          : raw,
       dx = p.x - d.start.x,
       dy = p.y - d.start.y;
     if (d.type === "pan") {
@@ -719,39 +782,39 @@ export default function App() {
       return;
     }
     if (d.type === "move") {
-      // Alt-drag uses the duplicate's initial positions, while retaining the pre-drag undo state.
-      setDoc((prev) => ({
-        ...prev,
-        nodes: prev.nodes.map((n) => {
-          if (
-            !d.ids.includes(n.id) ||
-            roots(prev, d.ids).every((r) => r.id !== n.id)
-          )
-            return n;
-          const source = d.before.nodes.find((a) => a.id === n.id);
-          const initial = source ?? prev.nodes.find((a) => a.id === n.id)!;
-          if (!source) {
-            const last = (d as typeof d & { last?: { x: number; y: number } })
-              .last ?? { x: 0, y: 0 };
-            const delta = localDelta(prev, n, dx - last.x, dy - last.y);
-            return { ...n, x: n.x + delta.x, y: n.y + delta.y };
-          }
-          const delta = localDelta(
-            prev,
-            n,
-            e.shiftKey && Math.abs(dy) > Math.abs(dx) ? 0 : dx,
-            e.shiftKey && Math.abs(dx) > Math.abs(dy) ? 0 : dy,
-          );
-          let x = initial.x + delta.x,
-            y = initial.y + delta.y;
-
-          return { ...n, x: Math.round(x), y: Math.round(y) };
+      const source = d.moveBase!,
+        nodes = roots(source, d.ids),
+        box = bounds(source, nodes);
+      let mx = e.shiftKey && Math.abs(dy) > Math.abs(dx) ? 0 : dx,
+        my = e.shiftKey && Math.abs(dx) > Math.abs(dy) ? 0 : dy;
+      const snapped = snapCoordinates(
+        [box.x + mx, box.x + box.width / 2 + mx, box.x + box.width + mx],
+        [box.y + my, box.y + box.height / 2 + my, box.y + box.height + my],
+        d.targets ?? [],
+        snapOptions,
+        view.zoom,
+        e.ctrlKey || e.metaKey,
+      );
+      if (!e.shiftKey || Math.abs(dx) >= Math.abs(dy)) mx += snapped.x;
+      if (!e.shiftKey || Math.abs(dy) >= Math.abs(dx)) my += snapped.y;
+      setSnapGuides(
+        snapped.guides.filter(
+          (g) =>
+            !e.shiftKey ||
+            (g.axis === "x"
+              ? Math.abs(dx) >= Math.abs(dy)
+              : Math.abs(dy) >= Math.abs(dx)),
+        ),
+      );
+      const ids = new Set(nodes.map((n) => n.id));
+      setDoc({
+        ...source,
+        nodes: source.nodes.map((n) => {
+          if (!ids.has(n.id)) return n;
+          const delta = localDelta(source, n, mx, my);
+          return { ...n, x: n.x + delta.x, y: n.y + delta.y };
         }),
-      }));
-      (d as typeof d & { last?: { x: number; y: number } }).last = {
-        x: dx,
-        y: dy,
-      };
+      });
       return;
     }
     if (d.type === "resize") {
@@ -813,6 +876,7 @@ export default function App() {
     }
   }
   function pointerUp() {
+    setSnapGuides([]);
     setIsPanning(false);
     const d = drag.current;
     if (!d) return;
@@ -881,6 +945,7 @@ export default function App() {
       setEditingText({ id: d.nodeId!, documentId: next.id, selectAll: true });
   }
   function cancelDrag() {
+    setSnapGuides([]);
     setIsPanning(false);
     const d = drag.current;
     if (d) {
@@ -1282,6 +1347,11 @@ export default function App() {
         el.isContentEditable
       )
         return;
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "Quote") {
+        e.preventDefault();
+        setSnapOptions((v) => ({ ...v, pixel: !v.pixel }));
+        return;
+      }
       if (editingVector) return;
       if (e.key === "Enter" && first && !modal && !present) {
         e.preventDefault();
@@ -2147,6 +2217,8 @@ export default function App() {
                   tool={tool}
                   zoom={view.zoom}
                   temporaryHand={spaceHeld || isPanning}
+                  snapPoint={(p, disabled) => snapWorldPoint(p, [], disabled)}
+                  onSnapEnd={() => setSnapGuides([])}
                   onFinish={(network) => {
                     const first = network.vertices[0],
                       parent = parentFor(first),
@@ -2194,6 +2266,10 @@ export default function App() {
                         (svg.current?.clientWidth ?? 762) - 32,
                       )}
                       panTool={tool === "hand"}
+                      snapPoint={(p, disabled) =>
+                        snapWorldPoint(p, [node.id], disabled)
+                      }
+                      onSnapEnd={() => setSnapGuides([])}
                       onTemporaryHandChange={(held) => {
                         space.current = held;
                         setSpaceHeld(held);
@@ -2295,6 +2371,7 @@ export default function App() {
                     </g>
                   </g>
                 )}
+              <SnapOverlay guides={snapGuides} zoom={view.zoom} />
               {marquee && (
                 <rect
                   {...marquee}
@@ -3503,6 +3580,38 @@ export default function App() {
                     {t(
                       "Your language preference could not be saved. It will apply for this session only.",
                     )}
+                  </p>
+                )}
+                <h3>{t("Snapping")}</h3>
+                {(["objects", "geometry", "pixel"] as const).map((key) => (
+                  <label className="setting-row" key={key}>
+                    {t(
+                      key === "objects"
+                        ? "Snap to objects"
+                        : key === "geometry"
+                          ? "Snap to geometry"
+                          : "Snap to pixel grid",
+                    )}
+                    <input
+                      type="checkbox"
+                      checked={snapOptions[key]}
+                      onChange={(e) =>
+                        setSnapOptions({
+                          ...snapOptions,
+                          [key]: e.target.checked,
+                        })
+                      }
+                    />
+                  </label>
+                ))}
+                <p className="muted">
+                  {t(
+                    "Hold Ctrl or Command while dragging to temporarily disable snapping.",
+                  )}
+                </p>
+                {snapSaveError && (
+                  <p role="alert">
+                    {t("Snapping preferences apply for this session only.")}
                   </p>
                 )}
                 <button

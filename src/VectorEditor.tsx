@@ -9,7 +9,7 @@ import React, { useEffect, useRef, useState } from "react";
 import type { Document, Node } from "./core";
 import { NodeShape } from "./Canvas";
 import { worldTransform } from "./core";
-import { multiply } from "./fidelity";
+import { multiply, inverse, transformPoint } from "./fidelity";
 import { editableNetwork, networkPatch } from "./vectorGeometry";
 import {
   joinVertices,
@@ -36,7 +36,11 @@ export function VectorEditor({
   panTool,
   onTemporaryHandChange,
   onPanningChange,
+  snapPoint,
+  onSnapEnd,
 }: {
+  snapPoint?: (p: Vec, disabled: boolean) => Vec;
+  onSnapEnd?: () => void;
   doc: Document;
   node: Node;
   zoom: number;
@@ -87,10 +91,21 @@ export function VectorEditor({
     0,
     0,
   ]);
-  const point = (e: { clientX: number; clientY: number }) => {
+  const point = (e: {
+    clientX: number;
+    clientY: number;
+    ctrlKey?: boolean;
+    metaKey?: boolean;
+    shiftKey?: boolean;
+  }) => {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
       group.current!.getScreenCTM()!.inverse(),
     );
+    if (snapPoint && !panKey.current && !panTool) {
+      const world = transformPoint(m, p.x, p.y),
+        snapped = snapPoint(world, !!(e.ctrlKey || e.metaKey || e.shiftKey));
+      return transformPoint(inverse(m), snapped.x, snapped.y);
+    }
     return { x: p.x, y: p.y };
   };
   const save = (next: VectorNetwork) => {
@@ -351,6 +366,7 @@ export function VectorEditor({
     setDraft(next);
   };
   const end = (e: React.PointerEvent) => {
+    onSnapEnd?.();
     onPanningChange(false);
     const d = drag.current;
     if (!d) return;
