@@ -19,11 +19,16 @@ message Parent { GUID guid = 1; string position = 2; }
 message Font { string family = 1; string style = 2; }
 message Text { string characters = 1; }
 enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; BRUSH = 7; TEXT_PATH = 8; }
-message SymbolData { GUID symbolID = 1; }
+message GUIDPath { GUID[] guids = 1; }
+message SymbolOverride { GUIDPath guidPath = 1; float fontSize = 2; }
+message SymbolData { GUID symbolID = 1; SymbolOverride[] symbolOverrides = 2; }
 message Event { string interactionType = 1; }
 message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; Vector extraScrollOffset = 4; string transitionType = 5; float transitionDuration = 6; }
 message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; DerivedText derivedTextData = 20; TextPathStart textPathStart = 21; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; DerivedText derivedTextData = 20; TextPathStart textPathStart = 21; StyleRef styleIdForText = 22; string styleType = 23; string key = 24; LineHeight lineHeight = 25; string textDecoration = 26; }
+message AssetRef { string key = 1; }
+message StyleRef { GUID guid = 1; AssetRef assetRef = 2; }
+message LineHeight { string units = 1; float value = 2; }
 message Glyph { uint commandsBlob = 1; Vector position = 2; float fontSize = 3; uint firstCharacter = 4; float advance = 5; float rotation = 6; }
 message DerivedText { Glyph[] glyphs = 1; }
 message TextPathStart { float tValue = 1; bool forward = 2; }
@@ -209,6 +214,119 @@ describe("Figma import", () => {
       componentId: "0:51",
     });
     validateDocument(doc);
+  });
+  it("resolves linked typography, decorations and preserves styled edits", async () => {
+    const result = importFig(
+      stream({
+        nodeChanges: [
+          nodes[0],
+          nodes[1],
+          {
+            guid: g(70),
+            type: "TEXT",
+            styleType: "TEXT",
+            key: "heading-style",
+            fontSize: 40,
+            fontName: { family: "Inter", style: "Semi Bold Italic" },
+            lineHeight: { units: "PIXELS", value: 46 },
+            textDecoration: "UNDERLINE",
+          },
+          {
+            guid: g(71),
+            type: "TEXT",
+            parentIndex: { guid: g(1), position: "a" },
+            name: "Styled heading",
+            size: { x: 420, y: 100 },
+            fontSize: 12,
+            fontName: { family: "Inter", style: "Regular" },
+            styleIdForText: { assetRef: { key: "heading-style" } },
+            textData: { characters: "BaizeFig 白泽" },
+          },
+        ],
+      } as any),
+    );
+    const doc = result.document,
+      node = doc.nodes[0];
+    expect(node.fontSize).toBe(40);
+    expect(node.fontWeight).toBe(600);
+    expect(node.lineHeight).toBeCloseTo(1.15);
+    expect(node.textFlow?.runs?.[0]).toMatchObject({
+      italic: true,
+      underline: true,
+    });
+    const svg = await svgString(doc, doc.pages[0].id, [node.id]);
+    expect(svg).toContain('font-size="40"');
+    expect(svg).toContain('font-style="italic"');
+    expect(svg).toContain('text-decoration="underline"');
+    const changed = execute(doc, {
+      type: "update",
+      ids: [node.id],
+      patch: { text: "BaizeFig 文字样式" },
+    }).doc;
+    expect(changed.nodes[0].fontSize).toBe(40);
+    validateDocument(JSON.parse(JSON.stringify(changed)));
+    if (process.env.BAIZEFIG_STYLED_TEXT_FIXTURE)
+      writeFileSync(
+        "/private/tmp/baizefig-styled-text.baizefig",
+        JSON.stringify(doc),
+      );
+  });
+  it("keeps explicit symbol typography overrides over an inherited text style", () => {
+    const result = importFig(
+      stream({
+        nodeChanges: [
+          nodes[0],
+          nodes[1],
+          {
+            guid: g(10),
+            type: "CANVAS",
+            visible: false,
+            parentIndex: { guid: g(0), position: "z" },
+          },
+          {
+            guid: g(70),
+            type: "TEXT",
+            styleType: "TEXT",
+            key: "type-style",
+            fontSize: 40,
+            fontName: { family: "Inter", style: "Semi Bold" },
+          },
+          {
+            guid: g(72),
+            type: "SYMBOL",
+            parentIndex: { guid: g(10), position: "a" },
+            size: { x: 300, y: 100 },
+          },
+          {
+            guid: g(73),
+            type: "TEXT",
+            parentIndex: { guid: g(72), position: "a" },
+            name: "Label",
+            size: { x: 300, y: 60 },
+            fontSize: 12,
+            styleIdForText: { assetRef: { key: "type-style" } },
+            textData: { characters: "Default" },
+          },
+          {
+            guid: g(74),
+            type: "INSTANCE",
+            parentIndex: { guid: g(1), position: "a" },
+            name: "Override",
+            size: { x: 300, y: 100 },
+            symbolData: {
+              symbolID: g(72),
+              symbolOverrides: [{ guidPath: { guids: [g(73)] }, fontSize: 24 }],
+            },
+          },
+        ],
+      } as any),
+    ).document;
+    expect(result.nodes.find((n) => n.name === "Label")!.fontSize).toBe(24);
+    expect(
+      result
+        .componentLibrary!.find((c) => c.sourceId === "0:72")!
+        .nodes.find((n) => n.name === "Label")!.fontSize,
+    ).toBe(40);
   });
   it("imports a curved text baseline and saved glyphs from binary data", async () => {
     const bytes = new Uint8Array(12 + 2 * 12 + 28),

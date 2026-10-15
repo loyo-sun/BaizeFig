@@ -749,6 +749,8 @@ export const zhCN: Record<string, string> = {
   "Text on path": "路径文字",
   "Text path position": "路径文字位置（%）",
   "Reverse text path": "反向路径文字",
+  "Some text styles are unavailable; saved font metrics are used where possible.":
+    "部分文字样式不可用，已尽量保留保存的字体度量。",
   "Some unsupported layers were skipped.": "部分不支持的图层已跳过。",
   "Vector networks are represented by bounds; vector paths are not restored.":
     "矢量网络暂以边界矩形表示，尚未还原真实路径。",

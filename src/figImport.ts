@@ -1,3 +1,8 @@
+import {
+  resolveFigTypography,
+  figFontWeight,
+  figTextDecorations,
+} from "./figTypography";
 import { baselineTrail, nearestBaselineOffset } from "./textPath";
 import { type PrototypeAction, type PrototypeInteraction } from "./prototype";
 import {
@@ -458,6 +463,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     path: Set<string>,
     inheritedOverrides: Raw[] = [],
     assignments: Raw[] = [],
+    explicitFields = new Set<string>(),
   ) {
     const key = guid(raw.guid);
     if (path.has(key) || path.size > 60) throw fail();
@@ -496,7 +502,12 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       raw.type === "INSTANCE"
         ? index.get(guid(raw.symbolData?.symbolID))
         : undefined;
-    let r = { ...base, ...raw };
+    let r = resolveFigTypography(
+      { ...base, ...raw },
+      rawRef,
+      warnings,
+      explicitFields,
+    );
     if (raw.type === "INSTANCE") {
       instances++;
       warnings.add(
@@ -539,6 +550,10 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       r.stackMode,
     );
     const size = r.fontSize ?? 16;
+    const letterSpacing =
+      r.letterSpacing?.units === "PERCENT"
+        ? ((r.letterSpacing.value ?? 0) * size) / 100
+        : (r.letterSpacing?.value ?? 0);
     let text = r.textData?.characters ?? "";
     for (const ref of r.componentPropRefs ?? []) {
       const assignment = [...assignments]
@@ -778,13 +793,11 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             x: l.position.x,
             y: l.position.y,
           })),
-          letterSpacing:
-            r.letterSpacing?.units === "PERCENT"
-              ? ((r.letterSpacing.value ?? 0) * size) / 100
-              : (r.letterSpacing?.value ?? 0),
+          letterSpacing,
         };
     }
-    if (fidelity.text) {
+    let importedRuns: NonNullable<NonNullable<Fidelity["text"]>["spans"]> = [];
+    if (kind === "text") {
       const ids: number[] = r.textData?.characterStyleIDs ?? [],
         table: Raw[] = r.textData?.styleOverrideTable ?? [];
       const spans: NonNullable<NonNullable<Fidelity["text"]>["spans"]> = [];
@@ -808,21 +821,29 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
               ? { fontFamily: style.fontName.family }
               : {}),
             ...(style.fontSize ? { fontSize: style.fontSize } : {}),
+            ...(style.textDecoration !== undefined
+              ? {
+                  underline: style.textDecoration === "UNDERLINE",
+                  strikethrough: style.textDecoration === "STRIKETHROUGH",
+                }
+              : {}),
             ...(style.fontName?.style
               ? {
                   italic: /italic/i.test(style.fontName.style),
-                  fontWeight: /bold/i.test(style.fontName.style)
-                    ? 700
-                    : /medium/i.test(style.fontName.style)
-                      ? 500
-                      : 400,
+                  fontWeight: figFontWeight(
+                    style.fontName.style,
+                    r.derivedTextData?.fontMetaData,
+                    style.fontName.family,
+                  ),
                 }
               : {}),
           });
         }
         start = end;
       }
-      if (spans.length) fidelity.text.spans = spans;
+      const decorated = figTextDecorations(text, r, spans);
+      importedRuns = decorated as typeof spans;
+      if (decorated.length && fidelity.text) fidelity.text.spans = importedRuns;
     }
     function convertPaints(source: Raw[]): ImportedPaint[] {
       return source
@@ -1003,6 +1024,11 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             y: glyph.position.y + Math.sin(angle) * remaining,
           });
         } else if (!text) fidelity.text.glyphs = [];
+        fidelity.text.spans = figTextDecorations(
+          text,
+          r,
+          fidelity.text.spans ?? importedRuns,
+        ) as typeof fidelity.text.spans;
         warnings.add(
           "Curved text preserves saved glyph outlines; edited text uses the available font along its baseline.",
         );
@@ -1207,8 +1233,14 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
                   : r.textAlignVertical === "BOTTOM"
                     ? "bottom"
                     : "top",
-              letterSpacing: fidelity.text?.letterSpacing ?? 0,
-              runs: fidelity.text?.spans,
+              letterSpacing,
+              paragraphSpacing: Math.min(
+                10000,
+                Math.max(0, r.paragraphSpacing ?? 0),
+              ),
+              runs:
+                fidelity.text?.spans ??
+                (importedRuns.length ? importedRuns : undefined),
             },
           }
         : {}),
@@ -1256,13 +1288,11 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       text,
       fontSize: size,
       fontFamily: r.fontName?.family ?? "Inter, Arial, sans-serif",
-      fontWeight:
-        r.derivedTextData?.fontMetaData?.[0]?.fontWeight ??
-        (/bold/i.test(r.fontName?.style ?? "")
-          ? 700
-          : /medium/i.test(r.fontName?.style ?? "")
-            ? 500
-            : 400),
+      fontWeight: figFontWeight(
+        r.fontName?.style ?? "",
+        r.derivedTextData?.fontMetaData,
+        r.fontName?.family,
+      ),
       textAlign:
         r.textAlignHorizontal === "CENTER"
           ? "center"
@@ -1298,10 +1328,13 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     for (const child of defs) {
       const childKey = guid(child.overrideKey ?? child.guid);
       let copy = { ...child };
+      const explicit = new Set<string>();
       for (const override of overrides) {
         const guids = override.guidPath?.guids ?? [];
-        if (guids.length === 1 && guid(guids[0]) === childKey)
+        if (guids.length === 1 && guid(guids[0]) === childKey) {
           copy = { ...copy, ...override };
+          for (const key of Object.keys(override)) explicit.add(key);
+        }
       }
       const nested = overrides
         .filter(
@@ -1310,7 +1343,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             guid(o.guidPath.guids[0]) === childKey,
         )
         .map((o) => ({ ...o, guidPath: { guids: o.guidPath.guids.slice(1) } }));
-      add(copy, pageId, node.id, nextPath, nested, props);
+      add(copy, pageId, node.id, nextPath, nested, props, explicit);
     }
     if (raw.type === "INSTANCE" && !base && !ownChildren.length)
       warnings.add("Some component definitions are unavailable.");
