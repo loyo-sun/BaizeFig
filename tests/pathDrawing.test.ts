@@ -105,3 +105,46 @@ it("retains world-space strokes inside rotated and sheared frames and round-trip
   expect(history.undo(next).nodes).toHaveLength(1);
   expect(history.redo(d).nodes).toHaveLength(2);
 });
+
+it("breaks one handle without jumping at the hit target edge or changing its opposite after Alt release", async () => {
+  const { dragHandle } = await import("../src/pathDrawing");
+  const drag = {
+    start: { x: 102, y: 48 },
+    original: { x: 40, y: 10 },
+    opposite: { x: -40, y: -10 },
+    independent: true,
+  };
+  expect(dragHandle(drag, { x: 102, y: 48 }, true)).toEqual({
+    handle: { x: 40, y: 10 },
+    opposite: { x: -40, y: -10 },
+  });
+  expect(dragHandle(drag, { x: 122, y: 68 }, false)).toEqual({
+    handle: { x: 60, y: 30 },
+    opposite: { x: -40, y: -10 },
+  });
+  expect(dragHandle(drag, { x: 122, y: 88 }, true, true).opposite).toEqual({
+    x: -40,
+    y: -10,
+  });
+});
+it("freezes the current opposite when Alt is pressed midway through creating a curve", async () => {
+  const { dragHandle } = await import("../src/pathDrawing");
+  const drag = {
+    start: { x: 100, y: 100 },
+    original: { x: 0, y: 0 },
+    opposite: { x: 0, y: 0 },
+    independent: false,
+  };
+  expect(dragHandle(drag, { x: 140, y: 110 }, false).opposite).toEqual({
+    x: -40,
+    y: -10,
+  });
+  expect(dragHandle(drag, { x: 160, y: 130 }, true).opposite).toEqual({
+    x: -40,
+    y: -10,
+  });
+  expect(dragHandle(drag, { x: 170, y: 150 }, false).opposite).toEqual({
+    x: -40,
+    y: -10,
+  });
+});

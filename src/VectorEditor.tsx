@@ -72,6 +72,8 @@ export function VectorEditor({
       vertices: number[];
       segment?: number;
       end?: "ha" | "hb";
+      independent?: boolean;
+      frozen?: VectorNetwork;
       marquee?: boolean;
       pan?: { screen: Vec; view: Vec };
     } | null>(null),
@@ -261,12 +263,15 @@ export function VectorEditor({
         ? picked
         : [vertex];
     setPicked(ids);
+    if (end && e.altKey) setMode("free");
     drag.current = {
       network: structuredClone(network),
       start: point(e),
       vertices: ids,
       segment,
       end,
+      independent: e.altKey,
+      frozen: e.altKey ? structuredClone(network) : undefined,
     };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -304,7 +309,22 @@ export function VectorEditor({
         handle = s[d.end];
       handle.x += dx;
       handle.y += dy;
-      if (mode !== "free" && !e.altKey) {
+      if (e.altKey && !d.independent) {
+        setMode("free");
+        d.independent = true;
+        d.frozen = structuredClone(latest.current);
+      }
+      if (d.independent && d.frozen) {
+        for (let i = 0; i < next.segments.length; i++) {
+          for (const end of ["ha", "hb"] as const) {
+            const attached =
+              end === "ha" ? next.segments[i].a : next.segments[i].b;
+            if (attached === v && !(i === d.segment && end === d.end))
+              next.segments[i][end] = { ...d.frozen.segments[i][end] };
+          }
+        }
+      }
+      if (mode !== "free" && !d.independent) {
         const attached = next.segments
           .flatMap((s, i) => [
             { i, end: "ha" as const, v: s.a },

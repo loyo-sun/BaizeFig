@@ -5,6 +5,32 @@ import { networkBounds } from "./pathBounds";
 export interface PenAnchor extends Vec {
   incoming: Vec;
   outgoing: Vec;
+  independent?: boolean;
+}
+export interface HandleDrag {
+  start: Vec;
+  original: Vec;
+  opposite: Vec;
+  independent: boolean;
+}
+export function dragHandle(
+  drag: HandleDrag,
+  pointer: Vec,
+  alt: boolean,
+  shift = false,
+) {
+  drag.independent ||= alt;
+  let x = drag.original.x + pointer.x - drag.start.x,
+    y = drag.original.y + pointer.y - drag.start.y;
+  if (shift) {
+    const angle = (Math.round(Math.atan2(y, x) / (Math.PI / 4)) * Math.PI) / 4,
+      length = Math.hypot(x, y);
+    x = Math.cos(angle) * length;
+    y = Math.sin(angle) * length;
+  }
+  const handle = { x, y };
+  if (!drag.independent) drag.opposite = { x: -x, y: -y };
+  return { handle, opposite: { ...drag.opposite } };
 }
 export function penNetwork(
   anchors: PenAnchor[],

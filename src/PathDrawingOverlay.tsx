@@ -5,7 +5,13 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { penNetwork, pencilNetwork, type PenAnchor } from "./pathDrawing";
+import {
+  penNetwork,
+  pencilNetwork,
+  dragHandle,
+  type HandleDrag,
+  type PenAnchor,
+} from "./pathDrawing";
 import { networkStroke, type Vec, type VectorNetwork } from "./vectorNetwork";
 export interface PathDrawingHandle {
   finish: () => void;
@@ -26,11 +32,13 @@ export const PathDrawingOverlay = forwardRef<
     closing = useRef(false),
     [revision, refresh] = useState(0),
     [hover, setHover] = useState<Vec | null>(null);
+  const creationDrag = useRef<HandleDrag | null>(null);
   const anchorDrag = useRef<{
     index: number;
     kind: "anchor" | "incoming" | "outgoing";
     start: Vec;
     original: PenAnchor;
+    handle?: HandleDrag;
   } | null>(null);
   const point = (e: { clientX: number; clientY: number }) => {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
@@ -132,21 +140,10 @@ export const PathDrawingOverlay = forwardRef<
           a.x = d.original.x + p.x - d.start.x;
           a.y = d.original.y + p.y - d.start.y;
         } else {
-          let x = p.x - a.x,
-            y = p.y - a.y;
-          if (e.shiftKey) {
-            const angle =
-                (Math.round(Math.atan2(y, x) / (Math.PI / 4)) * Math.PI) / 4,
-              length = Math.hypot(x, y);
-            x = Math.cos(angle) * length;
-            y = Math.sin(angle) * length;
-          }
-          a[d.kind] = { x, y };
-          if (!e.altKey)
-            a[d.kind === "incoming" ? "outgoing" : "incoming"] = {
-              x: -x,
-              y: -y,
-            };
+          const next = dragHandle(d.handle!, p, e.altKey, e.shiftKey);
+          a.independent = d.handle!.independent;
+          a[d.kind] = next.handle;
+          a[d.kind === "incoming" ? "outgoing" : "incoming"] = next.opposite;
         }
         paint();
       }}
@@ -198,6 +195,12 @@ export const PathDrawingOverlay = forwardRef<
           }
           if (e.shiftKey) p = snap(p);
           if (last && Math.hypot(p.x - last.x, p.y - last.y) < 1 / zoom) return;
+          creationDrag.current = {
+            start: p,
+            original: { x: 0, y: 0 },
+            opposite: { x: 0, y: 0 },
+            independent: e.altKey,
+          };
           anchors.current.push({
             ...p,
             incoming: { x: 0, y: 0 },
@@ -218,18 +221,16 @@ export const PathDrawingOverlay = forwardRef<
             return;
           }
           const a = anchors.current.at(-1)!;
-          let x = p.x - a.x,
-            y = p.y - a.y;
-          if (e.shiftKey) {
-            const angle =
-                (Math.round(Math.atan2(y, x) / (Math.PI / 4)) * Math.PI) / 4,
-              length = Math.hypot(x, y);
-            x = Math.cos(angle) * length;
-            y = Math.sin(angle) * length;
-          }
-          if (Math.hypot(x, y) < 2 / zoom) return;
-          a.outgoing = { x, y };
-          a.incoming = e.altKey ? { x: 0, y: 0 } : { x: -x, y: -y };
+          if (Math.hypot(p.x - a.x, p.y - a.y) < 2 / zoom) return;
+          const next = dragHandle(
+            creationDrag.current!,
+            p,
+            e.altKey,
+            e.shiftKey,
+          );
+          a.outgoing = next.handle;
+          a.incoming = next.opposite;
+          a.independent = creationDrag.current!.independent;
           paint();
         }}
         onPointerUp={(e) => {
@@ -312,11 +313,20 @@ export const PathDrawingOverlay = forwardRef<
                       if (temporaryHand) return;
                       e.preventDefault();
                       e.stopPropagation();
+                      if (e.altKey) a.independent = true;
                       anchorDrag.current = {
                         index: i,
                         kind,
                         start: point(e),
                         original: structuredClone(a),
+                        handle: {
+                          start: point(e),
+                          original: { ...a[kind] },
+                          opposite: {
+                            ...a[kind === "incoming" ? "outgoing" : "incoming"],
+                          },
+                          independent: !!a.independent || e.altKey,
+                        },
                       };
                       e.currentTarget.setPointerCapture(e.pointerId);
                     }}
