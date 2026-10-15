@@ -1,7 +1,11 @@
 import { relayout, validateDocument, ancestors } from "./core";
 import { applyConstraints } from "./layout";
 import { reflowText } from "./textLayout";
-import type { ComponentProperty, ComponentSet } from "./componentModel";
+import {
+  propertyPaths,
+  type ComponentProperty,
+  type ComponentSet,
+} from "./componentModel";
 import type { Document, Node } from "./core";
 
 function finalized(original: Document, doc: Document) {
@@ -162,7 +166,24 @@ function expanded(
       overrides[path],
     );
     clearFields(node, path);
-    for (const property of properties.filter((p) => p.targetPath === path)) {
+    for (const property of properties.filter((p) =>
+      propertyPaths(p).includes(path),
+    )) {
+      const field =
+        property.type === "text"
+          ? "text"
+          : property.type === "boolean"
+            ? "visible"
+            : property.type === "instance"
+              ? "componentId"
+              : undefined;
+      if (
+        field &&
+        !Object.hasOwn(values, property.id) &&
+        (Object.hasOwn(overrides[path] ?? {}, field) ||
+          Object.hasOwn(nestedOverrides[nestedPath] ?? {}, field))
+      )
+        continue;
       const value = values[property.id] ?? property.defaultValue;
       if (Object.hasOwn(values, property.id) && node.bindings) {
         if (property.type === "text") delete node.bindings.text;
@@ -443,7 +464,7 @@ export function recordOverrides(
     const def = owner.componentId && definition(doc, owner.componentId);
     if (def)
       for (const property of def.root.componentProperties ?? []) {
-        if (property.targetPath !== path) continue;
+        if (!propertyPaths(property).includes(path)) continue;
         const field =
           property.type === "text"
             ? "text"
@@ -817,40 +838,48 @@ export function setComponentProperty(
   if (!def) throw Error("Missing main component");
   assertWritable(doc, def.root);
   if (property) {
-    const target = paths(def.nodes, def.root).get(property.targetPath);
-    if (!target) throw Error("Missing property target");
-    if (
-      def.root.componentProperties?.some(
-        (p) =>
-          p.id !== property.id &&
-          p.type === property.type &&
-          p.targetPath === property.targetPath,
+    const targets = paths(def.nodes, def.root);
+    for (const targetPath of propertyPaths(property)) {
+      const target = targets.get(targetPath);
+      if (!target) throw Error("Missing property target");
+      if (
+        def.root.componentProperties?.some(
+          (p) =>
+            p.id !== property.id &&
+            p.type === property.type &&
+            propertyPaths(p).includes(targetPath),
+        )
       )
-    )
-      throw Error("This layer already has that property type");
-    if (
-      (property.type === "text" && target.type !== "text") ||
-      (property.type === "instance" && target.type !== "instance") ||
-      (property.type === "slot" && !["frame", "group"].includes(target.type))
-    )
-      throw Error("Incompatible component property target");
+        throw Error("This layer already has that property type");
+      if (
+        (property.type === "text" && target.type !== "text") ||
+        (property.type === "instance" && target.type !== "instance") ||
+        (property.type === "slot" && !["frame", "group"].includes(target.type))
+      )
+        throw Error("Incompatible component property target");
+    }
   }
   if (property) {
-    const target = paths(def.nodes, def.root).get(property.targetPath)!;
-    if (property.type === "text" && typeof property.defaultValue === "string") {
-      target.text = property.defaultValue;
-      reflowText(target);
+    for (const targetPath of propertyPaths(property)) {
+      const target = paths(def.nodes, def.root).get(targetPath)!;
+      if (
+        property.type === "text" &&
+        typeof property.defaultValue === "string"
+      ) {
+        target.text = property.defaultValue;
+        reflowText(target);
+      }
+      if (
+        property.type === "boolean" &&
+        typeof property.defaultValue === "boolean"
+      )
+        target.visible = property.defaultValue;
+      if (
+        property.type === "instance" &&
+        typeof property.defaultValue === "string"
+      )
+        target.componentId = property.defaultValue;
     }
-    if (
-      property.type === "boolean" &&
-      typeof property.defaultValue === "boolean"
-    )
-      target.visible = property.defaultValue;
-    if (
-      property.type === "instance" &&
-      typeof property.defaultValue === "string"
-    )
-      target.componentId = property.defaultValue;
   }
   def.root.componentProperties = [
     ...(def.root.componentProperties ?? []).filter(
@@ -966,12 +995,30 @@ export function updatePropertyDefaults(doc: Document, ids: string[]) {
   )) {
     const targets = paths(doc.nodes, main);
     for (const p of main.componentProperties ?? []) {
-      const target = targets.get(p.targetPath);
-      if (!target || !ids.includes(target.id)) continue;
+      const target = propertyPaths(p)
+        .map((path) => targets.get(path))
+        .find((n) => n && ids.includes(n.id));
+      if (!target) continue;
       if (p.type === "text") p.defaultValue = target.text;
       if (p.type === "boolean") p.defaultValue = target.visible;
       if (p.type === "instance" && target.componentId)
         p.defaultValue = target.componentId;
+      for (const path of propertyPaths(p)) {
+        const other = targets.get(path);
+        if (!other || other.id === target.id) continue;
+        if (p.type === "text" && typeof p.defaultValue === "string") {
+          other.text = p.defaultValue;
+          if (other.bindings) delete other.bindings.text;
+          if (other.fidelity) delete other.fidelity.text;
+          reflowText(other);
+        }
+        if (p.type === "boolean" && typeof p.defaultValue === "boolean") {
+          other.visible = p.defaultValue;
+          if (other.bindings) delete other.bindings.visible;
+        }
+        if (p.type === "instance" && typeof p.defaultValue === "string")
+          other.componentId = p.defaultValue;
+      }
     }
   }
 }
@@ -1009,13 +1056,23 @@ export function propagatePropertiesToVariants(
     const names = named(target.nodes, target.root),
       targetPaths = paths(target.nodes, target.root);
     for (const property of source.root.componentProperties ?? []) {
-      const sourceNode = sourcePaths.get(property.targetPath),
-        name = [...sourceNames].find(([, n]) => n.id === sourceNode?.id)?.[0],
-        targetNode = name !== undefined ? names.get(name) : undefined,
-        targetPath = [...targetPaths].find(
+      const mapped = propertyPaths(property).map((path) => {
+        const sourceNode = sourcePaths.get(path);
+        const name = [...sourceNames].find(
+          ([, n]) => n.id === sourceNode?.id,
+        )?.[0];
+        const targetNode = name !== undefined ? names.get(name) : undefined;
+        const targetPath = [...targetPaths].find(
           ([, n]) => n.id === targetNode?.id,
         )?.[0];
-      if (!targetNode || targetPath === undefined) continue;
+        return { targetNode, targetPath };
+      });
+      if (mapped.some((m) => !m.targetNode || m.targetPath === undefined))
+        continue;
+      const { targetNode, targetPath } = mapped[0] as {
+        targetNode: Node;
+        targetPath: string;
+      };
       const existing = target.root.componentProperties?.find(
         (p) => p.name === property.name && p.type === property.type,
       );
@@ -1023,6 +1080,7 @@ export function propagatePropertiesToVariants(
         ...structuredClone(property),
         id: existing?.id ?? property.id,
         targetPath,
+        additionalTargetPaths: mapped.slice(1).map((m) => m.targetPath!),
         defaultValue:
           property.type === "text"
             ? targetNode.text

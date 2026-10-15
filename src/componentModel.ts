@@ -4,9 +4,14 @@ export interface ComponentProperty {
   name: string;
   type: "text" | "boolean" | "instance" | "slot";
   targetPath: string;
+  additionalTargetPaths?: string[];
   defaultValue: string | boolean;
   preferred?: string[];
 }
+export const propertyPaths = (p: ComponentProperty) => [
+  p.targetPath,
+  ...(p.additionalTargetPaths ?? []),
+];
 export interface ComponentSet {
   id: string;
   name: string;
@@ -98,6 +103,13 @@ export function validateComponentModels(doc: Document) {
           !["text", "boolean", "instance", "slot"].includes(p.type) ||
           typeof p.targetPath !== "string" ||
           p.targetPath.length > 10000 ||
+          (p.additionalTargetPaths !== undefined &&
+            (!Array.isArray(p.additionalTargetPaths) ||
+              p.additionalTargetPaths.length > 1000 ||
+              p.additionalTargetPaths.some(
+                (v) => typeof v !== "string" || v.length > 10000,
+              ) ||
+              new Set(propertyPaths(p)).size !== propertyPaths(p).length)) ||
           (p.type === "boolean"
             ? typeof p.defaultValue !== "boolean"
             : typeof p.defaultValue !== "string") ||

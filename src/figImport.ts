@@ -7,6 +7,10 @@ import {
   bindingTypes,
 } from "./typedVariables";
 import type { ImportedPaint } from "./appearance";
+import {
+  figPropertyResolver,
+  restoreFigComponentModels,
+} from "./figComponents";
 import { linkImportedComponents } from "./components";
 import { resolveVariable } from "./variables";
 import { commandsPath, networkPaths, type Fidelity } from "./fidelity";
@@ -230,6 +234,9 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
   const { files, message, meta } = readFigArchive(input);
   const source: Raw[] = message.nodeChanges;
   const index = new Map(source.map((n) => [guid(n.guid), n]));
+  const resolveProperty = figPropertyResolver(source);
+  const propertyId = (value: Raw) =>
+    resolveProperty(guid(value))?.canonical ?? guid(value);
   for (const node of source) {
     const seen = new Set<string>();
     let current: Raw | undefined = node;
@@ -461,6 +468,28 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     )
       return;
     const nextPath = new Set(path).add(key);
+    let swapped = false;
+    for (const ref of raw.componentPropRefs ?? []) {
+      const assigned = [...assignments]
+        .reverse()
+        .find((a) => propertyId(a.defID) === propertyId(ref.defID))?.value;
+      if (
+        ref.componentPropNodeField === "VISIBLE" &&
+        typeof assigned?.boolValue === "boolean"
+      )
+        raw = { ...raw, visible: assigned.boolValue };
+      if (
+        ref.componentPropNodeField === "OVERRIDDEN_SYMBOL_ID" &&
+        raw.type === "INSTANCE" &&
+        index.get(guid(assigned?.guidValue))?.type === "SYMBOL"
+      ) {
+        swapped = guid(raw.symbolData?.symbolID) !== guid(assigned.guidValue);
+        raw = {
+          ...raw,
+          symbolData: { ...raw.symbolData, symbolID: assigned.guidValue },
+        };
+      }
+    }
     const base =
       raw.type === "INSTANCE"
         ? index.get(guid(raw.symbolData?.symbolID))
@@ -510,9 +539,9 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     const size = r.fontSize ?? 16;
     let text = r.textData?.characters ?? "";
     for (const ref of r.componentPropRefs ?? []) {
-      const assignment = assignments.find(
-        (a) => guid(a.defID) === guid(ref.defID),
-      );
+      const assignment = [...assignments]
+        .reverse()
+        .find((a) => propertyId(a.defID) === propertyId(ref.defID));
       if (
         ref.componentPropNodeField === "TEXT_DATA" &&
         assignment?.value?.textValue?.characters !== undefined
@@ -1190,7 +1219,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     doc.nodes.push(node);
     const ownChildren = children.get(key) ?? [];
     const defs =
-      base && !ownChildren.length
+      base && (swapped || !ownChildren.length)
         ? (children.get(guid(base.guid)) ?? [])
         : ownChildren;
     const overrides = [
@@ -1439,6 +1468,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     if (node.variableId)
       node.fill = resolveVariable(doc, node.variableId, new Set(), node);
   linkImportedComponents(doc);
+  restoreFigComponentModels(doc, source, warnings);
   validateDocument(doc);
   return {
     document: doc,

@@ -447,3 +447,58 @@ it("pastes customized slot instances onto another page with remapped snapshot pa
     ),
   ).toBe(true);
 });
+
+it("keeps a multi-target main property and its instances synchronized", () => {
+  let doc = fixture();
+  doc.nodes.push(
+    makeNode("text", doc.pages[0].id, {
+      id: "label2",
+      parentId: "main",
+      name: "Label 2",
+      text: "Default",
+    }),
+  );
+  const paths = componentTargets(doc, "main");
+  doc = setComponentProperty(doc, "main", {
+    id: "shared",
+    name: "Shared",
+    type: "text",
+    targetPath: paths.find((t) => t.node.id === "label")!.path,
+    additionalTargetPaths: [paths.find((t) => t.node.id === "label2")!.path],
+    defaultValue: "Default",
+  });
+  const inserted = createComponentInstance(
+    doc,
+    "main",
+    doc.pages[0].id,
+    300,
+    40,
+  );
+  doc = inserted.doc;
+  doc = execute(doc, {
+    type: "update",
+    ids: ["label2"],
+    patch: { text: "Main update" },
+  }).doc;
+  expect(
+    doc.nodes
+      .filter((n) => n.type === "text" && ["label", "label2"].includes(n.id))
+      .map((n) => n.text),
+  ).toEqual(["Main update", "Main update"]);
+  expect(
+    doc.nodes
+      .filter((n) => n.type === "text" && n.componentOwner === inserted.id)
+      .map((n) => n.text),
+  ).toEqual(["Main update", "Main update"]);
+  doc = setComponentValue(doc, inserted.id, "shared", "Override");
+  doc = execute(doc, {
+    type: "update",
+    ids: ["label"],
+    patch: { text: "New main" },
+  }).doc;
+  expect(
+    doc.nodes
+      .filter((n) => n.type === "text" && n.componentOwner === inserted.id)
+      .map((n) => n.text),
+  ).toEqual(["Override", "Override"]);
+});

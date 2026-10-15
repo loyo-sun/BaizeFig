@@ -736,6 +736,12 @@ export const zhCN: Record<string, string> = {
     "组件实例已转换为可编辑快照，不保留与主组件的联动。",
   "Brush strokes use editable outline paths; brush dynamics are not retained.":
     "画笔笔触已转换为可编辑轮廓路径，暂不保留笔压与画笔动态。",
+  "Some component property bindings could not be restored.":
+    "部分组件属性绑定尚未还原。",
+  "Some component property preferences or variable bindings were not restored.":
+    "部分组件首选项或属性变量绑定尚未还原。",
+  "Some component variants could not be restored.":
+    "部分组件变体组合尚未还原。",
   "Some unsupported layers were skipped.": "部分不支持的图层已跳过。",
   "Vector networks are represented by bounds; vector paths are not restored.":
     "矢量网络暂以边界矩形表示，尚未还原真实路径。",

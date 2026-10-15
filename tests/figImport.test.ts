@@ -5,6 +5,7 @@ import { parseSchema, encodeBinarySchema, compileSchema } from "kiwi-schema";
 import { importFig, decodeFigMessage, readFigArchive } from "../src/figImport";
 import { validateDocument, execute, ancestors } from "../src/core";
 import { svgString } from "../src/Canvas";
+import { setComponentValue } from "../src/components";
 import { commandsPath } from "../src/fidelity";
 import { editableNetwork } from "../src/vectorGeometry";
 import { networkGeometry } from "../src/vectorNetwork";
@@ -22,7 +23,11 @@ message SymbolData { GUID symbolID = 1; }
 message Event { string interactionType = 1; }
 message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; Vector extraScrollOffset = 4; string transitionType = 5; float transitionDuration = 6; }
 message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; }
+message PropertyValue { Text textValue = 1; bool boolValue = 2; GUID guidValue = 3; }
+message PropertyDef { GUID id = 1; string name = 2; string type = 3; PropertyValue initialValue = 4; GUID parentPropDefId = 5; }
+message PropertyRef { GUID defID = 1; string componentPropNodeField = 2; }
+message Assignment { GUID defID = 1; PropertyValue value = 2; }
 message Blob { byte[] bytes = 1; }
 message Color { float r = 1; float g = 2; float b = 3; float a = 4; }
 message Paint { string type = 1; Color color = 2; float opacity = 3; bool visible = 4; }
@@ -86,6 +91,122 @@ function stream(message = { nodeChanges: nodes }) {
   return result;
 }
 describe("Figma import", () => {
+  it("applies inherited text, boolean and nested swap assignments while importing binary data", () => {
+    const source: any[] = [
+      nodes[0],
+      nodes[1],
+      {
+        guid: g(10),
+        parentIndex: { guid: g(0), position: "z" },
+        type: "CANVAS",
+        visible: false,
+      },
+      {
+        guid: g(11),
+        parentIndex: { guid: g(10), position: "a" },
+        type: "SYMBOL",
+        name: "Button",
+        size: { x: 200, y: 100 },
+        componentPropDefs: [
+          {
+            id: g(100),
+            name: "Label",
+            type: "TEXT",
+            initialValue: { textValue: { characters: "Default" } },
+          },
+          {
+            id: g(101),
+            name: "Visible",
+            type: "BOOL",
+            initialValue: { boolValue: true },
+          },
+          {
+            id: g(102),
+            name: "Icon",
+            type: "INSTANCE_SWAP",
+            initialValue: { guidValue: g(50) },
+          },
+        ],
+      },
+      {
+        guid: g(12),
+        parentIndex: { guid: g(11), position: "a" },
+        type: "TEXT",
+        name: "Label",
+        size: { x: 100, y: 30 },
+        textData: { characters: "Default" },
+        componentPropRefs: [
+          { defID: g(100), componentPropNodeField: "TEXT_DATA" },
+          { defID: g(101), componentPropNodeField: "VISIBLE" },
+        ],
+      },
+      {
+        guid: g(13),
+        parentIndex: { guid: g(11), position: "b" },
+        type: "INSTANCE",
+        name: "Icon",
+        size: { x: 20, y: 20 },
+        symbolData: { symbolID: g(50) },
+        componentPropRefs: [
+          { defID: g(102), componentPropNodeField: "OVERRIDDEN_SYMBOL_ID" },
+        ],
+      },
+      ...[50, 51].map((i) => ({
+        guid: g(i),
+        parentIndex: { guid: g(10), position: String(i) },
+        type: "SYMBOL",
+        name: "Icon " + i,
+        size: { x: 20, y: 20 },
+      })),
+      {
+        guid: g(14),
+        parentIndex: { guid: g(13), position: "z" },
+        type: "ROUNDED_RECTANGLE",
+        name: "Stale icon child",
+        size: { x: 8, y: 8 },
+      },
+      {
+        guid: g(52),
+        parentIndex: { guid: g(51), position: "a" },
+        type: "ROUNDED_RECTANGLE",
+        name: "New icon child",
+        size: { x: 10, y: 10 },
+      },
+      {
+        guid: g(90),
+        parentIndex: { guid: g(1), position: "a" },
+        type: "INSTANCE",
+        name: "Imported",
+        size: { x: 200, y: 100 },
+        symbolData: { symbolID: g(11) },
+        componentPropAssignments: [
+          { defID: g(100), value: { textValue: { characters: "Custom" } } },
+          { defID: g(101), value: { boolValue: false } },
+          { defID: g(102), value: { guidValue: g(51) } },
+        ],
+      },
+    ];
+    let doc = importFig(stream({ nodeChanges: source })).document;
+    const instance = doc.nodes.find((n) => n.name === "Imported")!;
+    expect(doc.nodes.find((n) => n.name === "Label")).toMatchObject({
+      text: "Custom",
+      visible: false,
+    });
+    expect(doc.nodes.find((n) => n.name === "Icon")).toMatchObject({
+      componentId: "0:51",
+    });
+    expect(doc.nodes.some((n) => n.name === "New icon child")).toBe(true);
+    expect(doc.nodes.some((n) => n.name === "Stale icon child")).toBe(false);
+    doc = setComponentValue(doc, instance.id, "figprop:0:101", true);
+    expect(doc.nodes.find((n) => n.name === "Label")).toMatchObject({
+      text: "Custom",
+      visible: true,
+    });
+    expect(doc.nodes.find((n) => n.name === "Icon")).toMatchObject({
+      componentId: "0:51",
+    });
+    validateDocument(doc);
+  });
   it("imports saved brush outlines rather than replacing them with the brush centerline", async () => {
     const ops: number[] = [];
     const command = (op: number, ...values: number[]) => {
@@ -468,6 +589,25 @@ it.skipIf(!sample)(
       result.document.nodes.filter((n) => n.variableId).length,
     ).toBeGreaterThan(100);
     expect(result.document.componentLibrary!.length).toBeGreaterThan(20);
+    expect(result.document.componentSets?.length).toBe(
+      raw.filter((n) => n.isStateGroup).length,
+    );
+    expect(
+      result.document.componentLibrary!.some((c) =>
+        c.nodes[0].componentProperties?.some((p) => p.type === "text"),
+      ),
+    ).toBe(true);
+    expect(
+      result.document.componentLibrary!.some((c) =>
+        c.nodes[0].componentProperties?.some((p) => p.type === "boolean"),
+      ),
+    ).toBe(true);
+    expect(
+      result.document.componentLibrary!.some((c) =>
+        c.nodes[0].componentProperties?.some((p) => p.type === "instance"),
+      ),
+    ).toBe(true);
+
     for (const node of result.document.nodes)
       for (const interaction of node.interactions ?? []) {
         const actions = interaction.actions.filter(
