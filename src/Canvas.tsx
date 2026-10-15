@@ -269,7 +269,7 @@ function ShapeContent({
     f?.text?.characters === n.text &&
     f.text.glyphCache &&
     !(n.textFlow?.runs ?? f.text.spans)?.some(
-      (s) => s.underline || s.strikethrough || s.href,
+      (s) => s.underline || s.strikethrough,
     )
   )
     return (
@@ -280,15 +280,24 @@ function ShapeContent({
         {savedGlyphPaths(
           savedTextGlyphs(f.text)!,
           n.textFlow?.runs ?? f.text.spans,
-        ).map((p, i) => (
-          <path
-            key={i}
-            d={p.d}
-            fill={outline ? "none" : (p.fill ?? n.fill)}
-            stroke={outline ? "#78909c" : n.stroke}
-            strokeWidth={outline ? 1 : n.strokeWidth}
-          />
-        ))}
+        ).map((p, i) => {
+          const path = (
+            <path
+              key={i}
+              d={p.d}
+              fill={outline ? "none" : (p.fill ?? n.fill)}
+              stroke={outline ? "#78909c" : n.stroke}
+              strokeWidth={outline ? 1 : n.strokeWidth}
+            />
+          );
+          return p.href ? (
+            <a key={i} href={p.href} onClick={(e) => e.preventDefault()}>
+              {path}
+            </a>
+          ) : (
+            path
+          );
+        })}
       </g>
     );
   if (n.type === "text" && f?.text && f.text.characters === n.text)

@@ -94,3 +94,25 @@ it("preserves inherited italic and decoration while allowing a mixed range to ov
     { start: 2, end: 3, italic: true, underline: true },
   ]);
 });
+it("restores safe whole-layer and range links while retaining explicit link removal", () => {
+  const linked = figTextDecorations(
+    "abc",
+    { hyperlink: { url: "https://example.com" } },
+    [
+      { start: 1, end: 2, href: undefined },
+      { start: 2, end: 3, href: "mailto:hello@example.com" },
+    ],
+  );
+  expect(linked).toEqual([
+    { start: 0, end: 1, href: "https://example.com/" },
+    { start: 1, end: 2, href: undefined },
+    { start: 2, end: 3, href: "mailto:hello@example.com" },
+  ]);
+  expect(
+    figTextDecorations(
+      "abc",
+      { hyperlink: { url: "javascript:alert(1)" } },
+      [],
+    ),
+  ).toEqual([]);
+});

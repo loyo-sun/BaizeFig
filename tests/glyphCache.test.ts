@@ -186,3 +186,63 @@ it.skipIf(!sample)(
   },
   15000,
 );
+it("retains font-independent outlines when only local color or links change, with distinct clickable path groups", async () => {
+  const d = fixture(),
+    n = d.nodes[0],
+    cache = n.fidelity!.text!.glyphCache;
+  const changed = execute(d, {
+    type: "update",
+    ids: [n.id],
+    patch: {
+      textFlow: {
+        ...n.textFlow!,
+        runs: [
+          {
+            start: 0,
+            end: 2,
+            fill: "#cc0000",
+            href: "https://example.com/first",
+          },
+          {
+            start: 2,
+            end: 4,
+            fill: "#cc0000",
+            href: "https://example.com/second",
+          },
+          { start: 4, end: 5 },
+        ],
+      },
+    },
+  }).doc;
+  expect(changed.nodes[0].fidelity?.text?.glyphCache).toBe(cache);
+  validateDocument(changed);
+  const svg = await svgString(changed, changed.pages[0].id);
+  expect(svg).not.toContain("<text ");
+  expect(svg.match(/<path /g)).toHaveLength(3);
+  expect(svg).toContain('href="https://example.com/first"');
+  expect(svg).toContain('href="https://example.com/second"');
+  const loaded = JSON.parse(JSON.stringify(changed));
+  validateDocument(loaded);
+  expect(await svgString(loaded, loaded.pages[0].id)).toBe(svg);
+  expect(vectorVisualBounds(changed, changed.nodes[0])).toMatchObject({
+    width: 140,
+    height: 40,
+  });
+  for (const runs of [
+    [{ start: 0, end: 5, fontSize: 48 }],
+    [{ start: 0, end: 5, underline: true }],
+    [{ start: 0, end: 5, fontSettings: { features: { liga: 0 } } }],
+  ]) {
+    const reflowed = execute(changed, {
+      type: "update",
+      ids: [n.id],
+      patch: { textFlow: { ...n.textFlow!, runs } },
+    }).doc;
+    expect(reflowed.nodes[0].fidelity?.text?.glyphCache).toBeUndefined();
+  }
+  if (process.env.BAIZEFIG_GLYPH_FIXTURE)
+    writeFileSync(
+      "/private/tmp/baizefig-linked-glyph.baizefig",
+      JSON.stringify(changed),
+    );
+});

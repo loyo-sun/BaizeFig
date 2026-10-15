@@ -1,3 +1,4 @@
+import { safeTextLink } from "./richText";
 type Raw = Record<string, any>;
 const typographyFields = [
   "fontSize",
@@ -85,6 +86,9 @@ export function resolveFigTypography(
 }
 export function figTextDecorations(text: string, node: Raw, spans: Raw[]) {
   const base = {
+    ...(figTextLink(node.hyperlink)
+      ? { href: figTextLink(node.hyperlink) }
+      : {}),
     ...(/italic|oblique/i.test(node.fontName?.style ?? "")
       ? { italic: true }
       : {}),
@@ -101,4 +105,13 @@ export function figTextDecorations(text: string, node: Raw, spans: Raw[]) {
     start,
     end: cuts[i + 1],
   }));
+}
+
+export function figTextLink(value?: Raw): string | undefined {
+  if (typeof value?.url !== "string") return undefined;
+  try {
+    return safeTextLink(value.url);
+  } catch {
+    return undefined;
+  }
 }

@@ -632,8 +632,11 @@ export function execute(
                 if (field in patch) delete run[field];
           }
           if ("fontWeight" in patch && !("textFlow" in patch)) {
-            if(n.textFlow?.fontSettings?.variations)delete n.textFlow.fontSettings.variations.wght;
-            for(const run of n.textFlow?.runs??[])if(run.fontSettings?.variations)delete run.fontSettings.variations.wght;
+            if (n.textFlow?.fontSettings?.variations)
+              delete n.textFlow.fontSettings.variations.wght;
+            for (const run of n.textFlow?.runs ?? [])
+              if (run.fontSettings?.variations)
+                delete run.fontSettings.variations.wght;
           }
           releaseEditedBindings(n, patch);
           if (
@@ -650,7 +653,27 @@ export function execute(
                 patch.radius!,
               ],
             };
+          const keepSavedGlyphs =
+            !!n.fidelity?.text?.glyphCache &&
+            !Object.keys(patch).some((k) =>
+              [
+                "text",
+                "fontSize",
+                "fontFamily",
+                "fontWeight",
+                "lineHeight",
+                "textAlign",
+                "width",
+                "fidelity",
+              ].includes(k),
+            ) &&
+            (patch.textFlow === undefined ||
+              sameTextLayout(n.textFlow, patch.textFlow as Node["textFlow"]));
           Object.assign(n, patch);
+          if (keepSavedGlyphs && n.fidelity?.text && patch.textFlow) {
+            n.fidelity = structuredClone(n.fidelity);
+            n.fidelity.text!.spans = n.textFlow?.runs;
+          }
           if (
             [
               "text",
@@ -663,7 +686,7 @@ export function execute(
               "textFlow",
             ].some((k) => k in patch)
           )
-            reflowText(n);
+            if (!keepSavedGlyphs) reflowText(n);
           if ("fill" in patch && !("variableId" in patch)) {
             delete n.variableId;
             if (
@@ -1351,7 +1374,8 @@ export function validateDocument(
     if (n.textFlow) {
       const f = n.textFlow;
       validateParagraphs(n.text, f.paragraphs);
-      if (!validFontSettings(f.fontSettings)) throw Error("Invalid font settings");
+      if (!validFontSettings(f.fontSettings))
+        throw Error("Invalid font settings");
       if (
         (f.direction !== undefined &&
           !["auto", "ltr", "rtl"].includes(f.direction)) ||
@@ -1824,4 +1848,28 @@ export function demoDocument(): Document {
     fill: "#87927f",
   });
   return d;
+}
+
+// Paint and link ranges do not affect shaping. Compare coalesced shaping runs so
+// splitting a range to recolor it does not discard the source outlines.
+function sameTextLayout(a: Node["textFlow"], b: Node["textFlow"]) {
+  const shaping = (flow: Node["textFlow"]) => {
+    if (!flow) return flow;
+    const runs: TextRun[] = [];
+    for (const { fill: _fill, href: _href, ...run } of flow.runs ?? []) {
+      const { start, end, ...style } = run;
+      if (!Object.values(style).some((v) => v !== undefined)) continue;
+      const last = runs.at(-1);
+      if (last && last.end === start) {
+        const { start: _start, end: _end, ...previous } = last;
+        if (equalData(previous, style)) {
+          last.end = end;
+          continue;
+        }
+      }
+      runs.push({ ...style, start, end });
+    }
+    return { ...flow, runs };
+  };
+  return equalData(shaping(a), shaping(b));
 }

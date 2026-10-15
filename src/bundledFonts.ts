@@ -119,8 +119,8 @@ export async function bundledFontCss(
       (n.fidelity?.text?.characters === n.text &&
         ((n.fidelity.textPath && n.fidelity.text.glyphs) ||
           (n.fidelity.text.glyphCache &&
-            !n.fidelity.text.spans?.some(
-              (s) => s.underline || s.strikethrough || s.href,
+            !(n.textFlow?.runs ?? n.fidelity.text.spans)?.some(
+              (s) => s.underline || s.strikethrough,
             ))))
     )
       continue;

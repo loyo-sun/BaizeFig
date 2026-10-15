@@ -164,13 +164,16 @@ export function savedGlyphPaths(glyphs: SavedGlyph[], spans: TextRun[] = []) {
     });
     glyphContours.set(glyphs, paths);
   }
-  const groups: { d: string; fill?: string }[] = [];
+  const groups: { d: string; fill?: string; href?: string }[] = [];
   glyphs.forEach((g, i) => {
     if (!paths![i]) return;
-    const fill = spans.find((s) => s.start <= g.start && s.end > g.start)?.fill,
+    const style = spans.find((s) => s.start <= g.start && s.end > g.start),
+      fill = style?.fill,
+      href = style?.href || undefined,
       last = groups.at(-1);
-    if (last && last.fill === fill) last.d += " " + paths![i];
-    else groups.push({ d: paths![i], fill });
+    if (last && last.fill === fill && last.href === href)
+      last.d += " " + paths![i];
+    else groups.push({ d: paths![i], fill, href });
   });
   return groups;
 }
@@ -643,7 +646,7 @@ export function vectorVisualBounds(
     (n.fidelity.textPath ||
       (n.fidelity.text.glyphCache &&
         !(n.textFlow?.runs ?? n.fidelity.text.spans)?.some(
-          (s) => s.underline || s.strikethrough || s.href,
+          (s) => s.underline || s.strikethrough,
         )))
       ? savedTextGlyphs(n.fidelity.text)
       : undefined;

@@ -4,6 +4,7 @@ import {
   resolveFigTypography,
   figFontWeight,
   figTextDecorations,
+  figTextLink,
 } from "./figTypography";
 import { baselineTrail, nearestBaselineOffset } from "./textPath";
 import { type PrototypeAction, type PrototypeInteraction } from "./prototype";
@@ -817,6 +818,9 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             (p: Raw) => p.visible !== false && p.type === "SOLID",
           );
           spans.push({
+            ...(style.hyperlink !== undefined
+              ? { href: figTextLink(style.hyperlink) }
+              : {}),
             fontSettings: figFontSettings(style),
             start,
             end,
@@ -996,7 +1000,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
         );
         if (
           fidelity.text ||
-          !importedRuns.some((s) => s.underline || s.strikethrough || s.href)
+          !importedRuns.some((s) => s.underline || s.strikethrough)
         ) {
           fidelity.text ??= {
             characters: text,
