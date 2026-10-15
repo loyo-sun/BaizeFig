@@ -1,3 +1,4 @@
+import { arrangeNodes, type ArrangeMode } from "./arrange";
 import {
   snapTargets,
   snapCoordinates,
@@ -227,6 +228,7 @@ export default function App() {
   const latestDocument = useRef(doc);
   latestDocument.current = doc;
   const figInput = useRef<HTMLInputElement>(null);
+  const [arrangeGap, setArrangeGap] = useState(16);
   const [ready, setReady] = useState(false);
   const [snapOptions, setSnapOptions] = useState<SnapOptions>(() => {
     try {
@@ -1265,7 +1267,33 @@ export default function App() {
       notify((error as Error).message);
     }
   }
+  const arrangeCommands: { mode: ArrangeMode; name: string }[] = [
+    { mode: "round", name: "Round to pixel" },
+    { mode: "tidy", name: "Tidy up" },
+    { mode: "pack-x", name: "Pack horizontal" },
+    { mode: "pack-y", name: "Pack vertical" },
+    { mode: "space-x", name: "Distribute horizontal spacing" },
+    { mode: "space-y", name: "Distribute vertical spacing" },
+    { mode: "left", name: "Distribute left" },
+    { mode: "center", name: "Distribute horizontal centers" },
+    { mode: "right", name: "Distribute right" },
+    { mode: "top", name: "Distribute top" },
+    { mode: "middle", name: "Distribute vertical centers" },
+    { mode: "bottom", name: "Distribute bottom" },
+  ];
+  function arrangeSelection(mode: ArrangeMode) {
+    try {
+      change(arrangeNodes(doc, selected, mode, arrangeGap));
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
   const actions = [
+    ...arrangeCommands.map((c) => ({
+      name: c.name,
+      key: "",
+      run: () => arrangeSelection(c.mode),
+    })),
     { name: "General settings", key: "", run: () => setModal("settings") },
     ...[
       { name: "Desktop frame · 1440 × 900", width: 1440, height: 900 },
@@ -1351,6 +1379,34 @@ export default function App() {
         e.preventDefault();
         setSnapOptions((v) => ({ ...v, pixel: !v.pixel }));
         return;
+      }
+      if (e.altKey && e.ctrlKey && ["KeyT", "KeyH", "KeyV"].includes(e.code)) {
+        e.preventDefault();
+        arrangeSelection(
+          e.code === "KeyT"
+            ? "tidy"
+            : e.code === "KeyH"
+              ? "space-x"
+              : "space-y",
+        );
+        return;
+      }
+      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        const align = (
+          {
+            KeyA: "left",
+            KeyH: "center",
+            KeyD: "right",
+            KeyW: "top",
+            KeyV: "middle",
+            KeyS: "bottom",
+          } as const
+        )[e.code as "KeyA"];
+        if (align) {
+          e.preventDefault();
+          run({ type: "align", ids: selected, axis: align });
+          return;
+        }
       }
       if (editingVector) return;
       if (e.key === "Enter" && first && !modal && !present) {
@@ -2984,6 +3040,25 @@ export default function App() {
                         ))}
                       </div>
                     )}
+                    <details className="arrange-tools">
+                      <summary>{t("Arrange and distribute")}</summary>
+                      <NumberField
+                        label="Spacing"
+                        value={arrangeGap}
+                        min={0}
+                        onChange={setArrangeGap}
+                      />
+                      <div className="arrange-grid">
+                        {arrangeCommands.map((c) => (
+                          <button
+                            key={c.mode}
+                            onClick={() => arrangeSelection(c.mode)}
+                          >
+                            {t(c.name)}
+                          </button>
+                        ))}
+                      </div>
+                    </details>
                     <div className="vector-actions">
                       <button onClick={splitVectorSelection}>
                         {t("Split vector into layers")}

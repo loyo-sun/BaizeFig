@@ -2152,3 +2152,21 @@ html[lang="zh-CN"] .layer-title-input {
   color: #83551f;
   border-radius: 4px;
 }
+.arrange-tools {
+  margin: 10px 0;
+}
+.arrange-tools summary {
+  cursor: pointer;
+  padding: 6px 0;
+  font-size: 12px;
+}
+.arrange-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-top: 8px;
+}
+.arrange-grid button {
+  font-size: 11px;
+  padding: 6px;
+}
