@@ -426,9 +426,10 @@ export function reflowAfterPointerEdit(
   updated: Document,
 ): Document {
   const doc = structuredClone(updated),
+    originalById = new Map(original.nodes.map((n) => [n.id, n])),
     affected = new Set<string>();
   for (const n of doc.nodes) {
-    const previous = original.nodes.find((a) => a.id === n.id);
+    const previous = originalById.get(n.id);
     if (!previous) {
       affected.add(n.id);
       for (const parent of ancestors(doc, n)) affected.add(parent.id);
@@ -494,7 +495,8 @@ export function execute(
   original: Document,
   command: Command,
 ): { doc: Document; selection?: string[] } {
-  const doc = structuredClone(original);
+  const doc = structuredClone(original),
+    originalById = new Map(original.nodes.map((n) => [n.id, n]));
   let selection: string[] | undefined;
   const writable = (n: Node) =>
     !n.locked && !ancestors(doc, n).some((p) => p.locked);
@@ -1070,7 +1072,7 @@ export function execute(
     for (const n of original.nodes.filter((n) => command.ids.includes(n.id)))
       for (const p of ancestors(original, n)) affected.add(p.id);
   for (const node of doc.nodes) {
-    const old = original.nodes.find((n) => n.id === node.id);
+    const old = originalById.get(node.id);
     if (
       old &&
       ["width", "height", "x", "y", "text", "visible"].some(
@@ -1581,39 +1583,76 @@ export function validateDocument(
     )
       throw Error("Invalid path");
   }
+  const byId = new Map(d.nodes.map((n) => [n.id, n]));
   for (const n of d.nodes) {
     if (n.parentId !== null) {
-      const parent = d.nodes.find((a) => a.id === n.parentId);
+      const parent = byId.get(n.parentId);
       if (!parent || !container(parent) || parent.pageId !== n.pageId)
         throw Error("Invalid parent");
     }
-    if (
-      n.targetId &&
-      !d.nodes.some(
-        (a) =>
-          a.id === n.targetId && a.type === "frame" && a.pageId === n.pageId,
-      )
-    )
-      throw Error("Invalid prototype target");
-    absolute(d, n);
+    if (n.targetId) {
+      const target = byId.get(n.targetId);
+      if (!target || target.type !== "frame" || target.pageId !== n.pageId)
+        throw Error("Invalid prototype target");
+    }
+  }
+  // Iterative cycle detection avoids repeated whole-document parent scans and recursion overflow.
+  const complete = new Set<string>();
+  for (const node of d.nodes) {
+    let next: Node | undefined = node;
+    const trail = new Set<string>();
+    while (next && !complete.has(next.id)) {
+      if (trail.has(next.id)) throw Error("Cyclic node tree");
+      trail.add(next.id);
+      next = next.parentId ? byId.get(next.parentId) : undefined;
+    }
+    for (const id of trail) complete.add(id);
   }
 }
 export class History {
   past: Document[] = [];
   future: Document[] = [];
+  constructor(
+    public maxEntries = 100,
+    public maxEstimatedBytes = 32 * 1024 * 1024,
+  ) {}
+  private sizes = new WeakMap<Document, number>();
+  private snapshot(doc: Document) {
+    const snapshot = structuredClone(doc);
+    this.sizes.set(snapshot, JSON.stringify(doc).length * 2);
+    return snapshot;
+  }
+  get estimatedBytes() {
+    return [...this.past, ...this.future].reduce(
+      (sum, d) => sum + (this.sizes.get(d) ?? JSON.stringify(d).length * 2),
+      0,
+    );
+  }
+  private trim() {
+    while (
+      this.past.length + this.future.length > 1 &&
+      (this.past.length + this.future.length > this.maxEntries ||
+        this.estimatedBytes > this.maxEstimatedBytes)
+    ) {
+      if (this.past.length > 1 || !this.future.length) this.past.shift();
+      else this.future.shift();
+    }
+  }
   push(doc: Document) {
-    this.past.push(structuredClone(doc));
-    if (this.past.length > 100) this.past.shift();
+    this.past.push(this.snapshot(doc));
     this.future = [];
+    this.trim();
   }
   undo(current: Document) {
     const previous = this.past.pop();
-    if (previous) this.future.push(structuredClone(current));
+    if (previous) this.future.push(this.snapshot(current));
+    this.trim();
     return previous ?? current;
   }
   redo(current: Document) {
     const next = this.future.pop();
-    if (next) this.past.push(structuredClone(current));
+    if (next) this.past.push(this.snapshot(current));
+    this.trim();
     return next ?? current;
   }
 }

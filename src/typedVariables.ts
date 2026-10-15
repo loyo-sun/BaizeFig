@@ -91,6 +91,7 @@ export function applyTypedBindings(doc: Document): void {
     ...doc.nodes,
     ...(doc.componentLibrary ?? []).flatMap((c) => c.nodes),
   ]) {
+    if (!Object.keys(node.bindings ?? {}).length) continue;
     const modes = inheritedModes(doc, node);
     let textChanged = false;
     for (const [property, id] of Object.entries(node.bindings ?? {})) {
@@ -124,9 +125,10 @@ export function applyTypedBindings(doc: Document): void {
   }
 }
 export function reflowVariableGeometry(before: Document, doc: Document): void {
-  const affected = new Set<string>();
+  const affected = new Set<string>(),
+    beforeById = new Map(before.nodes.map((n) => [n.id, n]));
   for (const node of doc.nodes) {
-    const old = before.nodes.find((n) => n.id === node.id);
+    const old = beforeById.get(node.id);
     if (
       old &&
       ["x", "y", "width", "height", "text", "visible"].some(

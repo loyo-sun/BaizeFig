@@ -4,6 +4,37 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  Close: "关闭",
+
+  "Performance diagnostics": "性能诊断",
+  "Measurements apply only to this device and browser. Input latency measures event handling to the next animation frame, not hardware latency. Runs stop after 30 seconds.":
+    "测量仅代表本设备和浏览器。输入延迟为事件处理到下一动画帧的时间，不含硬件延迟；30秒后自动停止。",
+  "Undo checkpoints": "撤销检查点",
+  "Estimated history size": "历史估算容量",
+  "Last save": "最近保存",
+  "Last restore": "最近恢复",
+  "Stop measurement": "停止测量",
+  "Start measurement": "开始测量",
+  "Frame samples": "帧样本",
+  "Frame interval P95": "帧间隔P95",
+  "Worst frame": "最长帧间隔",
+  "Input to frame P95": "输入至下一帧P95",
+  "Long tasks": "长任务",
+  "Observed JS heap peak": "观测到的JS堆峰值",
+  "Unavailable in this browser": "本浏览器不提供",
+  Browser: "浏览器",
+
+  "Your latest work is not saved": "最新改动尚未保存",
+  "Keep this tab open until you save a backup or a separate copy.":
+    "请保持此标签页开启，先导出备份或另存副本。",
+  "Retry save": "重试保存",
+  "Export editable backup": "导出可编辑备份",
+  "Save a separate copy": "另存独立副本",
+  "Browser storage is full. Export a backup or free storage, then retry.":
+    "浏览器存储空间已满。请先导出备份，释放空间后重试。",
+  "This file changed in another tab. Export your work or save a separate copy.":
+    "文件已在另一个标签页修改。请导出当前内容或另存副本，避免覆盖。",
+
   "Compare version": "比较版本",
   "Comparing saved version with current design":
     "以下为此保存版本与当前设计的字段差异。",

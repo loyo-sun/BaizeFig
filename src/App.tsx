@@ -1,3 +1,4 @@
+import { PerformanceMonitor } from "./PerformanceMonitor";
 import { ExportDialog } from "./ExportDialog";
 import type { ExportFormat, ExportScope } from "./exportPlan";
 import { LibraryManager } from "./LibraryManager";
@@ -178,6 +179,8 @@ import { Scene, svgString, raster } from "./Canvas";
 import {
   save,
   loadLast,
+  getDocument,
+  saveRecoveryCopy,
   listDocuments,
   download,
   trashDocument,
@@ -364,10 +367,12 @@ export default function App() {
   const [editingText, setEditingText] = useState<TextEditSession | null>(null);
   const [toast, setToast] = useState(""),
     [saved, setSaved] = useState("Loading…"),
+    [persistentSaveError, setPersistentSaveError] = useState(""),
     [collapsed, setCollapsed] = useState<Set<string>>(new Set()),
     [outline, setOutline] = useState(false),
     [grid, setGrid] = useState(false),
     [hiddenUI, setHiddenUI] = useState(false);
+  const [showPerformance, setShowPerformance] = useState(false);
   const [zoomMenu, setZoomMenu] = useState(false),
     [layerFilter, setLayerFilter] = useState(""),
     [showLayerSearch, setShowLayerSearch] = useState(false);
@@ -459,8 +464,15 @@ export default function App() {
     width: number;
     height: number;
   } | null>(null);
+  const committedDocument = useRef<Document | null>(null);
   const current = useRef({ doc, page, selected, bridgeWrite });
   current.current = { doc, page, selected, bridgeWrite };
+  const scenePointerRef = useRef(pointerDown);
+  scenePointerRef.current = pointerDown;
+  const scenePointerDown = useCallback(
+    (event: RPointer, id: string) => scenePointerRef.current(event, id),
+    [],
+  );
   const notify = useCallback((message: string) => {
     setToast(message);
   }, []);
@@ -474,6 +486,7 @@ export default function App() {
     loadLast()
       .then((found) => {
         if (alive && found) {
+          committedDocument.current = found;
           setDoc(found);
           setPage(found.pages[0].id);
         }
@@ -488,23 +501,61 @@ export default function App() {
       alive = false;
     };
   }, [notify]);
+  const persistCurrent = useCallback(async (snapshot: Document) => {
+    try {
+      const written = await save(snapshot);
+      if (!written) throw Error("File is in trash");
+      committedDocument.current = snapshot;
+      if (current.current.doc === snapshot) {
+        setSaved("Saved locally");
+        setPersistentSaveError("");
+      }
+    } catch (error) {
+      if (current.current.doc !== snapshot) return;
+      setSaved("Save failed");
+      const e = error as Error;
+      setPersistentSaveError(
+        e.name === "QuotaExceededError"
+          ? "Browser storage is full. Export a backup or free storage, then retry."
+          : e.message,
+      );
+    }
+  }, []);
   useEffect(() => {
     if (!ready) return;
+    if (doc === committedDocument.current) {
+      setSaved("Saved locally");
+      return;
+    }
     setSaved("Saving…");
-    const t = setTimeout(
-      () =>
-        save(doc)
-          .then((written) =>
-            setSaved(written ? "Saved locally" : "File is in trash"),
-          )
-          .catch(() => {
-            setSaved("Save failed");
-            notify("Local storage unavailable. Export a .baizefig backup.");
-          }),
-      400,
-    );
-    return () => clearTimeout(t);
-  }, [doc, ready, notify]);
+    const timer = setTimeout(() => void persistCurrent(doc), 400);
+    return () => clearTimeout(timer);
+  }, [doc, ready, persistCurrent]);
+  useEffect(() => {
+    if (!ready) return;
+    const flush = () => {
+      if (current.current.doc !== committedDocument.current)
+        void persistCurrent(current.current.doc);
+    };
+    const hidden = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    const unload = (event: BeforeUnloadEvent) => {
+      if (current.current.doc !== committedDocument.current) {
+        flush();
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    document.addEventListener("visibilitychange", hidden);
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", unload);
+    return () => {
+      document.removeEventListener("visibilitychange", hidden);
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", unload);
+    };
+  }, [ready, persistCurrent]);
   useEffect(
     () => () => {
       socket.current?.close();
@@ -622,11 +673,15 @@ export default function App() {
   const patch = (patch: Partial<Node>) =>
     run({ type: "update", ids: selected, patch });
   const openFiles = async () => {
-    await save(doc);
-    setDocuments(await listDocuments());
-    setTrashedFiles(await listTrash());
-    setShowTrash(false);
-    setModal("files");
+    try {
+      await save(doc);
+      setDocuments(await listDocuments());
+      setTrashedFiles(await listTrash());
+      setShowTrash(false);
+      setModal("files");
+    } catch (e) {
+      setPersistentSaveError((e as Error).message);
+    }
   };
   async function deleteLocalFile(target: Document) {
     if (fileBusy) return;
@@ -1742,6 +1797,13 @@ export default function App() {
       run: () => setModal("fonts"),
     },
     { name: "Create branch", run: () => setModal("branches") },
+    {
+      name: "Performance diagnostics",
+      run: () => {
+        setModal(null);
+        setShowPerformance(true);
+      },
+    },
     { name: "Version history", key: "", run: () => setModal("versions") },
     { name: "Save to version history", run: () => setModal("versions") },
     { name: "Copy properties", key: "⌥ ⌘ / Ctrl Alt C", run: copyStyle },
@@ -2578,6 +2640,7 @@ export default function App() {
     actionItem("Open in desktop app"),
     sub("AI balance", ["AI design engine"]),
     sub("Help and account", [
+      "Performance diagnostics",
       "Keyboard shortcuts",
       "MCP connection",
       "General settings",
@@ -3145,6 +3208,44 @@ export default function App() {
         accept=".fig"
         onChange={(e) => void importFiles(e.target.files)}
       />
+      {showPerformance && (
+        <PerformanceMonitor
+          doc={doc}
+          history={history.current}
+          onClose={() => setShowPerformance(false)}
+        />
+      )}
+      {persistentSaveError && (
+        <aside className="save-recovery" role="alert">
+          <strong>{t("Your latest work is not saved")}</strong>
+          <p>{t(persistentSaveError)}</p>
+          <p>
+            {t(
+              "Keep this tab open until you save a backup or a separate copy.",
+            )}
+          </p>
+          <div className="find-buttons">
+            <button onClick={() => void persistCurrent(doc)}>
+              {t("Retry save")}
+            </button>
+            <button onClick={localExport}>{t("Export editable backup")}</button>
+            <button
+              onClick={() =>
+                void saveRecoveryCopy(doc)
+                  .then((next) => {
+                    history.current = new History();
+                    setDoc(next);
+                    setSelected([]);
+                    setPersistentSaveError("");
+                  })
+                  .catch((e) => setPersistentSaveError(e.message))
+              }
+            >
+              {t("Save a separate copy")}
+            </button>
+          </div>
+        </aside>
+      )}
       <div className="workspace">
         {!hiddenUI && (
           <nav className="app-rail" aria-label={t("Workspace tools")}>
@@ -3596,7 +3697,7 @@ export default function App() {
               <Scene
                 doc={doc}
                 pageId={page}
-                onNode={pointerDown}
+                onNode={scenePointerDown}
                 outline={outline}
                 editingTextId={
                   editingVector ??
@@ -6033,13 +6134,18 @@ export default function App() {
                         className="file-card"
                         disabled={fileBusy || showTrash}
                         onClick={() => {
-                          void save(doc).then(() => {
-                            setDoc(d);
-                            setPage(d.pages[0].id);
-                            setSelected([]);
-                            history.current = new History();
-                            setModal(null);
-                          });
+                          void save(doc)
+                            .then(async () => {
+                              const latest = await getDocument(d.id);
+                              setDoc(latest);
+                              setPage(latest.pages[0].id);
+                              setSelected([]);
+                              history.current = new History();
+                              setModal(null);
+                            })
+                            .catch((error) =>
+                              setPersistentSaveError((error as Error).message),
+                            );
                         }}
                       >
                         <div className="file-preview" aria-hidden="true">

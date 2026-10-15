@@ -5,10 +5,14 @@ import {
 import { resolvedDesign, type MergeSide } from "./designMerge";
 import { openDB } from "idb";
 import { type Document, validateDocument } from "./core";
+export const storageMetrics = { saveMs: 0, loadMs: 0 };
+const observedRevisions = new Map<string, number>();
 let connection: ReturnType<typeof openDB> | undefined;
 const database = () =>
-  (connection ??= openDB("baizefig", 5, {
+  (connection ??= openDB("baizefig", 6, {
     upgrade(db) {
+      if (!db.objectStoreNames.contains("revisions"))
+        db.createObjectStore("revisions");
       if (!db.objectStoreNames.contains("branches")) {
         const branches = db.createObjectStore("branches", { keyPath: "id" });
         branches.createIndex("mainId", "mainId");
@@ -36,40 +40,93 @@ export interface TrashRecord {
   deletedAt: number;
 }
 export async function save(doc: Document): Promise<boolean> {
+  const started = performance.now();
   const db = await database(),
-    tx = db.transaction(["documents", "settings", "trash"], "readwrite");
+    tx = db.transaction(
+      ["documents", "settings", "trash", "revisions"],
+      "readwrite",
+    );
+  void tx.done.catch(() => {});
   // A delayed autosave from this tab or another tab must never resurrect a deleted file.
   if (await tx.objectStore("trash").get(doc.id)) {
     await tx.done;
     return false;
   }
+  const revision = (await tx.objectStore("revisions").get(doc.id)) ?? 0;
+  const previous = await tx.objectStore("documents").get(doc.id);
+  if (previous && JSON.stringify(previous) === JSON.stringify(doc)) {
+    await tx.objectStore("settings").put(doc.id, "last-document");
+    await tx.done;
+    observedRevisions.set(doc.id, revision);
+    storageMetrics.saveMs = performance.now() - started;
+    return true;
+  }
+  if (
+    observedRevisions.has(doc.id) &&
+    observedRevisions.get(doc.id) !== revision
+  ) {
+    await tx.done;
+    throw Error(
+      "This file changed in another tab. Export your work or save a separate copy.",
+    );
+  }
   await tx.objectStore("documents").put(doc);
+  await tx.objectStore("revisions").put(revision + 1, doc.id);
   await tx.objectStore("settings").put(doc.id, "last-document");
   await tx.done;
+  observedRevisions.set(doc.id, revision + 1);
+  storageMetrics.saveMs = performance.now() - started;
   return true;
 }
 export async function loadLast(): Promise<Document | undefined> {
+  const started = performance.now();
   const db = await database(),
-    key = await db.get("settings", "last-document");
-  const doc = key ? await db.get("documents", key) : undefined;
-  const found = doc ?? (await db.getAll("documents"))[0];
-  if (found) validateDocument(found);
-  return found;
+    tx = db.transaction(["documents", "settings", "revisions"], "readonly"),
+    key = await tx.objectStore("settings").get("last-document");
+  const doc =
+    (key ? await tx.objectStore("documents").get(key) : undefined) ??
+    (await tx.objectStore("documents").getAll())[0];
+  if (doc) {
+    const revision = (await tx.objectStore("revisions").get(doc.id)) ?? 0;
+    await tx.done;
+    validateDocument(doc);
+    observedRevisions.set(doc.id, revision);
+    storageMetrics.loadMs = performance.now() - started;
+    return doc;
+  }
+  await tx.done;
+  return undefined;
 }
 export async function listDocuments(): Promise<Document[]> {
-  return (await database()).getAll("documents");
+  const db = await database(),
+    tx = db.transaction(["documents", "revisions"], "readonly"),
+    docs = await tx.objectStore("documents").getAll();
+  for (const d of docs)
+    if (!observedRevisions.has(d.id))
+      observedRevisions.set(
+        d.id,
+        (await tx.objectStore("revisions").get(d.id)) ?? 0,
+      );
+  await tx.done;
+  return docs;
 }
 export async function listTrash(): Promise<TrashRecord[]> {
   return (await database()).getAll("trash");
 }
 export async function trashDocument(id: string): Promise<void> {
   const db = await database(),
-    tx = db.transaction(["documents", "settings", "trash"], "readwrite"),
+    tx = db.transaction(
+      ["documents", "settings", "trash", "revisions"],
+      "readwrite",
+    ),
     store = tx.objectStore("documents"),
     document = await store.get(id);
+  void tx.done.catch(() => {});
   if (document) {
     await tx.objectStore("trash").put({ document, deletedAt: Date.now() });
     await store.delete(id);
+    const revision = (await tx.objectStore("revisions").get(id)) ?? 0;
+    await tx.objectStore("revisions").put(revision + 1, id);
   }
   if ((await tx.objectStore("settings").get("last-document")) === id) {
     const remaining = await store.getAllKeys();
@@ -81,11 +138,15 @@ export async function trashDocument(id: string): Promise<void> {
 }
 export async function restoreDocument(id: string): Promise<void> {
   const db = await database(),
-    tx = db.transaction(["documents", "trash"], "readwrite"),
+    tx = db.transaction(["documents", "trash", "revisions"], "readwrite"),
     record = (await tx.objectStore("trash").get(id)) as TrashRecord | undefined;
+  void tx.done.catch(() => {});
   if (record) {
     await tx.objectStore("documents").put(record.document);
     await tx.objectStore("trash").delete(id);
+    const revision = (await tx.objectStore("revisions").get(id)) ?? 0;
+    await tx.objectStore("revisions").put(revision + 1, id);
+    observedRevisions.set(id, revision + 1);
   }
   await tx.done;
 }
@@ -144,7 +205,10 @@ export async function restoreVersion(
   versionId: string,
 ): Promise<Document> {
   const db = await database(),
-    tx = db.transaction(["documents", "versions", "trash"], "readwrite");
+    tx = db.transaction(
+      ["documents", "versions", "trash", "revisions"],
+      "readwrite",
+    );
   const version = (await tx.objectStore("versions").get(versionId)) as
     DocumentVersion | undefined;
   if (!version || version.documentId !== current.id) {
@@ -155,8 +219,17 @@ export async function restoreVersion(
     await tx.done;
     throw Error("Restore the file from trash first");
   }
+  const revision = (await tx.objectStore("revisions").get(current.id)) ?? 0;
+  if (
+    observedRevisions.has(current.id) &&
+    observedRevisions.get(current.id) !== revision
+  ) {
+    await tx.done;
+    throw Error("Design changed. Compare again before merging");
+  }
   validateDocument(version.document);
   validateDocument(current);
+  void tx.done.catch(() => {});
   // The recovery checkpoint and restored document commit atomically.
   await tx.objectStore("versions").put({
     id: crypto.randomUUID(),
@@ -166,7 +239,9 @@ export async function restoreVersion(
     document: structuredClone(current),
   } satisfies DocumentVersion);
   await tx.objectStore("documents").put(version.document);
+  await tx.objectStore("revisions").put(revision + 1, current.id);
   await tx.done;
+  observedRevisions.set(current.id, revision + 1);
   return structuredClone(version.document);
 }
 
@@ -230,9 +305,14 @@ export async function branchContext(
   };
 }
 export async function getDocument(documentId: string): Promise<Document> {
-  const doc = await (await database()).get("documents", documentId);
+  const db = await database(),
+    tx = db.transaction(["documents", "revisions"], "readonly"),
+    doc = await tx.objectStore("documents").get(documentId),
+    revision = (await tx.objectStore("revisions").get(documentId)) ?? 0;
+  await tx.done;
   if (!doc) throw Error("Design file is unavailable or in trash");
   validateDocument(doc);
+  observedRevisions.set(documentId, revision);
   return doc;
 }
 export async function createDesignBranch(
@@ -243,7 +323,7 @@ export async function createDesignBranch(
   if (!name.trim()) throw Error("Enter a branch name");
   const db = await database(),
     tx = db.transaction(
-      ["documents", "branches", "trash", "settings"],
+      ["documents", "branches", "trash", "settings", "revisions"],
       "readwrite",
     );
   if (await tx.objectStore("trash").get(current.id)) {
@@ -254,11 +334,20 @@ export async function createDesignBranch(
     await tx.done;
     throw Error("Create branches from the main design");
   }
+  const revision = (await tx.objectStore("revisions").get(current.id)) ?? 0;
+  if (
+    observedRevisions.has(current.id) &&
+    observedRevisions.get(current.id) !== revision
+  ) {
+    await tx.done;
+    throw Error("Design changed. Compare again before merging");
+  }
   const branch = {
     ...structuredClone(current),
     id: crypto.randomUUID(),
     name: current.name + " / " + name.trim(),
   };
+  void tx.done.catch(() => {});
   await tx.objectStore("documents").put(current);
   await tx.objectStore("documents").put(branch);
   await tx.objectStore("branches").put({
@@ -269,7 +358,11 @@ export async function createDesignBranch(
     base: structuredClone(current),
   } satisfies DesignBranch);
   await tx.objectStore("settings").put(branch.id, "last-document");
+  await tx.objectStore("revisions").put(revision + 1, current.id);
+  await tx.objectStore("revisions").put(1, branch.id);
   await tx.done;
+  observedRevisions.set(current.id, revision + 1);
+  observedRevisions.set(branch.id, 1);
   return branch;
 }
 export interface BranchReview {
@@ -310,7 +403,7 @@ export async function mergeDesignBranch(
     ),
     db = await database(),
     tx = db.transaction(
-      ["documents", "versions", "branches", "trash", "settings"],
+      ["documents", "versions", "branches", "trash", "settings", "revisions"],
       "readwrite",
     );
   const main = await tx.objectStore("documents").get(review.main.id),
@@ -324,6 +417,7 @@ export async function mergeDesignBranch(
     await tx.done;
     throw Error("Design changed. Compare again before merging");
   }
+  void tx.done.catch(() => {});
   // Recovery checkpoints and main document update are one atomic transaction.
   for (const d of [main, draft])
     await tx.objectStore("versions").put({
@@ -345,6 +439,24 @@ export async function mergeDesignBranch(
     .objectStore("branches")
     .put({ ...branch, base: structuredClone(merged) });
   await tx.objectStore("settings").put(merged.id, "last-document");
+  const revisions = new Map<string, number>();
+  for (const d of [main, draft]) {
+    const revision = (await tx.objectStore("revisions").get(d.id)) ?? 0;
+    await tx.objectStore("revisions").put(revision + 1, d.id);
+    revisions.set(d.id, revision + 1);
+  }
   await tx.done;
+  for (const [id, revision] of revisions) observedRevisions.set(id, revision);
   return merged;
+}
+
+export async function saveRecoveryCopy(doc: Document): Promise<Document> {
+  const copy = {
+    ...structuredClone(doc),
+    id: crypto.randomUUID(),
+    name: doc.name + " / Recovery",
+  };
+  validateDocument(copy);
+  await save(copy);
+  return copy;
 }

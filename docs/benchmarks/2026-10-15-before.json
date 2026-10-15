@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-15T03:16:59.536Z",
+  "runtime": "v20.19.3",
+  "platform": "darwin",
+  "arch": "arm64",
+  "cpu": "Apple M1 Pro",
+  "ramGiB": 16,
+  "method": "Node SSR; fake-indexeddb, not native disk or browser FPS. 100 snapshots.",
+  "rows": [
+    {
+      "size": 100,
+      "validationMs": 2.106457999999975,
+      "svgMs": 37.548833,
+      "cloneMs": 0.21091699999999491,
+      "saveMs": 4.547750000000008,
+      "loadMs": 1.9926659999999856,
+      "historyMs": 19.711250000000007,
+      "historyEntries": 100,
+      "jsonMiB": 0.037952423095703125,
+      "svgMiB": 0.036864280700683594
+    },
+    {
+      "size": 1000,
+      "validationMs": 14.670749999999998,
+      "svgMs": 188.0160840000001,
+      "cloneMs": 1.8226669999999103,
+      "saveMs": 5.582832999999937,
+      "loadMs": 16.68870800000002,
+      "historyMs": 203.20691699999998,
+      "historyEntries": 100,
+      "jsonMiB": 0.3829793930053711,
+      "svgMiB": 0.34758663177490234
+    },
+    {
+      "size": 5000,
+      "validationMs": 331.67650000000003,
+      "svgMs": 708.085834,
+      "cloneMs": 13.327541999999994,
+      "saveMs": 49.10162500000001,
+      "loadMs": 469.1971249999997,
+      "historyMs": 1435.4392500000004,
+      "historyEntries": 100,
+      "jsonMiB": 1.9281272888183594,
+      "svgMiB": 1.7416810989379883
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { documentIndex } from "./documentIndex";
 import { vectorVisualBounds } from "./vectorGeometry";
 import { networkGeometry, networkStroke } from "./vectorNetwork";
 import { Appearance, EffectDefinitions } from "./appearance";
@@ -586,7 +587,7 @@ export function NodeShape({
     />
   );
 }
-export function Scene({
+export const Scene = React.memo(function Scene({
   doc,
   pageId,
   onNode,
@@ -601,6 +602,7 @@ export function Scene({
   rootId?: string;
   editingTextId?: string;
 }) {
+  const index = documentIndex(doc);
   const prefix = React.useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const renderId = (n: Node) => `${prefix}-${n.id}`;
   function draw(n: Node): React.ReactNode {
@@ -661,8 +663,8 @@ export function Scene({
         >
           {(!n.fidelity?.booleanOperation || outline) &&
             drawSiblings(
-              doc.nodes.filter(
-                (c) => c.parentId === n.id && c.pageId === pageId,
+              (index.children.get(n.id) ?? []).filter(
+                (c) => c.pageId === pageId,
               ),
             )}
         </g>
@@ -670,8 +672,8 @@ export function Scene({
     );
   }
   function drawBoolean(n: Node): React.ReactNode {
-    const children = doc.nodes.filter(
-        (c) => c.parentId === n.id && c.pageId === pageId && c.visible,
+    const children = (index.children.get(n.id) ?? []).filter(
+        (c) => c.pageId === pageId && c.visible,
       ),
       mode = n.fidelity!.booleanOperation,
       base = `boolean-${renderId(n)}`,
@@ -812,8 +814,10 @@ export function Scene({
     );
   }
   const nodes = rootId
-    ? doc.nodes.filter((n) => n.id === rootId)
-    : doc.nodes.filter((n) => n.pageId === pageId && !n.parentId);
+    ? index.byId.has(rootId)
+      ? [index.byId.get(rootId)!]
+      : []
+    : (index.children.get(null) ?? []).filter((n) => n.pageId === pageId);
   function drawSiblings(siblings: Node[]): React.ReactNode[] {
     const output: React.ReactNode[] = [];
     for (let i = 0; i < siblings.length; i++) {
@@ -824,7 +828,7 @@ export function Scene({
       if (blur && !outline && n.visible) {
         const clip = `backdrop-clip-${renderId(n)}`,
           filter = `backdrop-filter-${renderId(n)}`,
-          parent = doc.nodes.find((p) => p.id === n.parentId);
+          parent = n.parentId ? index.byId.get(n.parentId) : undefined;
         output.push(
           <g key={filter} pointerEvents="none">
             <defs>
@@ -913,7 +917,7 @@ export function Scene({
     return output;
   }
   return <>{drawSiblings(nodes)}</>;
-}
+});
 export interface ExportViewport {
   x: number;
   y: number;
@@ -929,8 +933,8 @@ export function exportBounds(
     (n) =>
       n.pageId === pageId &&
       n.visible &&
-      !ancestors(doc, n).some((p) => !p.visible) &&
-      (ids.length ? ids.includes(n.id) : !n.parentId),
+      (ids.length ? ids.includes(n.id) : !n.parentId) &&
+      !ancestors(doc, n).some((p) => !p.visible),
   );
   let result = bounds(doc, included);
   const seen = new Set<string>();

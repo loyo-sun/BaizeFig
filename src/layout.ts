@@ -25,14 +25,22 @@ const bounded = (n: Node, key: "width" | "height", value: number) =>
     ),
   );
 export function applyConstraints(original: Document, doc: Document): void {
-  const visited = new Set<string>();
+  const visited = new Set<string>(),
+    originalById = new Map(original.nodes.map((n) => [n.id, n])),
+    children = new Map<string, Node[]>();
+  for (const n of doc.nodes)
+    if (n.parentId) {
+      const list = children.get(n.parentId) ?? [];
+      list.push(n);
+      children.set(n.parentId, list);
+    }
   function visit(parent: Node) {
     if (visited.has(parent.id)) return;
     visited.add(parent.id);
-    const old = original.nodes.find((n) => n.id === parent.id);
+    const old = originalById.get(parent.id);
     if (!old) return;
-    for (const child of doc.nodes.filter((n) => n.parentId === parent.id)) {
-      const before = original.nodes.find((n) => n.id === child.id);
+    for (const child of children.get(parent.id) ?? []) {
+      const before = originalById.get(child.id);
       if (!before) continue;
       if (
         !parent.layout ||

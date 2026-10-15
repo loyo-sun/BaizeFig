@@ -10,7 +10,8 @@
     "test:ui": "playwright test",
     "preview": "vite preview --host 127.0.0.1",
     "bridge": "node bridge/server.mjs",
-    "format": "prettier --write src bridge scripts tests *.ts *.json *.html"
+    "format": "prettier --write src bridge scripts tests *.ts *.json *.html",
+    "benchmark": "vitest run tests/performance.test.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.0",

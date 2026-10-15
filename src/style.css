@@ -2463,3 +2463,59 @@ html[lang="zh-CN"] .layer-title-input {
   display: grid;
   gap: 8px;
 }
+.save-recovery {
+  position: fixed;
+  right: 24px;
+  bottom: 90px;
+  z-index: 2000;
+  max-width: 430px;
+  padding: 18px;
+  background: #fff5ee;
+  color: #6b270c;
+  border: 1px solid #e9a77c;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px #0002;
+}
+.save-recovery p {
+  font-size: 13px;
+  margin: 8px 0;
+}
+.branch-review fieldset {
+  margin: 12px 0;
+  min-width: 0;
+}
+.branch-review code {
+  overflow-wrap: anywhere;
+}
+.branch-review ul {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.performance-monitor {
+  position: fixed;
+  z-index: 1900;
+  left: 350px;
+  top: 12px;
+  width: 340px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 20px #0002;
+  font-size: 12px;
+  max-height: 75vh;
+  overflow: auto;
+}
+.performance-monitor header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.performance-monitor p {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.performance-monitor button {
+  padding: 5px 8px;
+}
