@@ -1,3 +1,5 @@
+import { LayoutProperties } from "./LayoutProperties";
+import { setDimensionMode } from "./layoutSizing";
 import { CropEditor } from "./CropEditor";
 import { FillProperties } from "./FillProperties";
 import { StrokeProperties } from "./StrokeProperties";
@@ -1155,7 +1157,12 @@ export default function App() {
       };
       setTool("move");
     }
-    if (d.type === "move" || d.type === "resize" || d.type === "rotate") {
+    if (
+      d.type === "draw" ||
+      d.type === "move" ||
+      d.type === "resize" ||
+      d.type === "rotate"
+    ) {
       try {
         next = reflowAfterPointerEdit(d.before, next);
       } catch (error) {
@@ -4155,6 +4162,19 @@ export default function App() {
                       )}
                     </section>
                   )}
+                  <LayoutProperties
+                    key={first.id}
+                    doc={doc}
+                    node={first}
+                    onChange={patch}
+                    onSizing={(axis, mode) => {
+                      try {
+                        change(setDimensionMode(doc, first.id, axis, mode));
+                      } catch (error) {
+                        notify((error as Error).message);
+                      }
+                    }}
+                  />
                   {first.type === "text" && (
                     <section>
                       <div className="section-heading">

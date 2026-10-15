@@ -361,6 +361,18 @@ export function relayout(doc: Document, affected: Set<string>) {
     let changed = false;
     for (const n of [...doc.nodes].reverse()) {
       if (!n.layout || n.layout === "none") continue;
+      if (!affected.has(n.id)) continue;
+      if (!n.importedLayout) {
+        const padding = n.padding ?? 16;
+        n.gap ??= 12;
+        n.importedLayout = {
+          padding: [padding, padding, padding, padding],
+          primary: "hug",
+          counter: "hug",
+          justify: "start",
+          align: "start",
+        };
+      }
       if (n.importedLayout) {
         if (!affected.has(n.id)) continue;
         const family = [n, ...doc.nodes.filter((c) => c.parentId === n.id)],
@@ -378,36 +390,10 @@ export function relayout(doc: Document, affected: Set<string>) {
         });
         continue;
       }
-
-      let pos = n.padding ?? 16;
-      const children = doc.nodes.filter(
-        (a) => a.parentId === n.id && a.visible,
-      );
-      for (const c of children) {
-        if (n.layout === "horizontal") {
-          c.x = pos;
-          c.y = n.padding ?? 16;
-          pos += c.width + (n.gap ?? 12);
-        } else {
-          c.x = n.padding ?? 16;
-          c.y = pos;
-          pos += c.height + (n.gap ?? 12);
-        }
-      }
-      if (children.length) {
-        const end = pos - (n.gap ?? 12) + (n.padding ?? 16);
-        if (n.layout === "horizontal") {
-          n.width = Math.max(1, end);
-          n.height =
-            Math.max(...children.map((c) => c.height)) + 2 * (n.padding ?? 16);
-        } else {
-          n.height = Math.max(1, end);
-          n.width =
-            Math.max(...children.map((c) => c.width)) + 2 * (n.padding ?? 16);
-        }
-      }
     }
     if (!changed) break;
+    if (pass === Math.min(128, doc.nodes.length + 2) - 1)
+      throw Error("Auto layout could not converge; check Hug and Fill sizing");
   }
 }
 export function reflowAfterPointerEdit(
@@ -418,7 +404,29 @@ export function reflowAfterPointerEdit(
     affected = new Set<string>();
   for (const n of doc.nodes) {
     const previous = original.nodes.find((a) => a.id === n.id);
-    if (!previous) continue;
+    if (!previous) {
+      affected.add(n.id);
+      for (const parent of ancestors(doc, n)) affected.add(parent.id);
+      continue;
+    }
+    if (n.width !== previous.width || n.height !== previous.height) {
+      n.layoutItem = {
+        ...n.layoutItem,
+        ...(n.width !== previous.width
+          ? { horizontalSizing: "fixed" as const }
+          : {}),
+        ...(n.height !== previous.height
+          ? { verticalSizing: "fixed" as const }
+          : {}),
+      };
+    }
+    if (
+      n.type === "text" &&
+      n.textFlow &&
+      (n.width !== previous.width || n.height !== previous.height)
+    ) {
+      n.textFlow.autoResize = n.height !== previous.height ? "fixed" : "height";
+    }
     if (
       n.width !== previous.width ||
       n.height !== previous.height ||
@@ -1026,6 +1034,9 @@ export function execute(
         "padding",
         "visible",
         "importedLayout",
+        "layoutItem",
+        "textFlow",
+        "constraints",
       ].includes(k),
     );
   if (geometry) {
@@ -1313,6 +1324,12 @@ export function validateDocument(value: unknown): asserts value is Document {
     if (n.layoutItem) {
       const item = n.layoutItem;
       if (
+        [item.horizontalSizing, item.verticalSizing].some(
+          (v) => v !== undefined && !["fixed", "hug", "fill"].includes(v),
+        )
+      )
+        throw Error("Invalid layout sizing");
+      if (
         (item.absolute !== undefined && typeof item.absolute !== "boolean") ||
         ["row", "column", "rowSpan", "columnSpan"].some((key) => {
           const value = item[key as keyof LayoutItem];
@@ -1335,7 +1352,12 @@ export function validateDocument(value: unknown): asserts value is Document {
       if (
         Object.entries(item).some(
           ([k, v]) =>
-            !["align", "absolute"].includes(k) &&
+            ![
+              "align",
+              "absolute",
+              "horizontalSizing",
+              "verticalSizing",
+            ].includes(k) &&
             v !== undefined &&
             (!Number.isFinite(v) || typeof v !== "number" || v < 0),
         ) ||

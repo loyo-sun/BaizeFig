@@ -61,6 +61,8 @@ BaizeFig 仍在持续开发，以逐步对齐 Figma Design 的创作体验为目
 
 [查看功能进展](https://github.com/loyo-sun/BaizeFig/issues/30) · [反馈问题](https://github.com/loyo-sun/BaizeFig/issues) · [功能支持范围](docs/FIGMA_PARITY.md)
 
+自动布局可直接调整宽高适应／填充、四边内边距、换行、网格轨道与跨行列；从按钮到嵌套界面，内容变化时同步更新尺寸。
+
 ---
 
 想在本地运行或参与开发？请阅读 [开发与接入指南](docs/DEVELOPMENT.md)。[快捷键](docs/SHORTCUTS.md) · [架构说明](docs/ARCHITECTURE.md) · [验证记录](docs/VERIFICATION.md)

@@ -27,7 +27,17 @@ export function TextProperties({
           aria-label={t("Text resizing")}
           value={flow.autoResize}
           onChange={(e) =>
-            change({ autoResize: e.target.value as typeof flow.autoResize })
+            onChange({
+              textFlow: {
+                ...flow,
+                autoResize: e.target.value as typeof flow.autoResize,
+              },
+              layoutItem: {
+                ...node.layoutItem,
+                horizontalSizing: e.target.value === "both" ? "hug" : "fixed",
+                verticalSizing: e.target.value === "fixed" ? "fixed" : "hug",
+              },
+            })
           }
         >
           <option value="fixed">{t("Fixed size")}</option>

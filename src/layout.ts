@@ -2,6 +2,8 @@ import type { Document, Node } from "./core";
 import { reflowText } from "./textLayout";
 export type Track = { kind: "fixed" | "fr" | "hug"; value: number };
 export interface LayoutItem {
+  horizontalSizing?: "fixed" | "hug" | "fill";
+  verticalSizing?: "fixed" | "hug" | "fill";
   grow?: number;
   align?: "start" | "center" | "end" | "stretch" | "baseline";
   absolute?: boolean;
@@ -65,6 +67,38 @@ export function applyConstraints(original: Document, doc: Document): void {
 }
 export function layoutContainer(n: Node, children: Node[]): void {
   const config = n.importedLayout!;
+  const dimension = (axis: "width" | "height") =>
+    n.layoutItem?.[axis === "width" ? "horizontalSizing" : "verticalSizing"];
+  const primaryAxis =
+    n.layout === "horizontal" || n.layout === "grid" ? "width" : "height";
+  if (dimension(primaryAxis))
+    config.primary = dimension(primaryAxis) === "hug" ? "hug" : "fixed";
+  if (dimension(primaryAxis === "width" ? "height" : "width"))
+    config.counter =
+      dimension(primaryAxis === "width" ? "height" : "width") === "hug"
+        ? "hug"
+        : "fixed";
+  for (const child of children) {
+    child.width = bounded(child, "width", child.width);
+    child.height = bounded(child, "height", child.height);
+    if (
+      child.type === "text" &&
+      (child.layoutItem?.horizontalSizing || child.layoutItem?.verticalSizing)
+    ) {
+      const width = child.layoutItem.horizontalSizing,
+        height = child.layoutItem.verticalSizing;
+      child.textFlow = {
+        ...(child.textFlow ?? { verticalAlign: "top", letterSpacing: 0 }),
+        autoResize:
+          width === "hug"
+            ? "both"
+            : height === "fixed" || height === "fill"
+              ? "fixed"
+              : "height",
+      };
+      reflowText(child);
+    }
+  }
   const [top, right, bottom, left] = config.padding;
   const items = children.filter(
     (c) => c.visible && !c.layoutItem?.absolute && !c.importedLayout?.absolute,
@@ -85,12 +119,16 @@ export function layoutContainer(n: Node, children: Node[]): void {
     gap = n.gap ?? 0,
     cGap = config.counterGap ?? gap;
   if (config.primary === "hug" && !config.wrap)
-    n[main] = Math.max(
-      1,
-      before +
-        after +
-        items.reduce((sum, c) => sum + c[main], 0) +
-        Math.max(0, items.length - 1) * gap,
+    n[main] = bounded(
+      n,
+      main,
+      Math.max(
+        1,
+        before +
+          after +
+          items.reduce((sum, c) => sum + c[main], 0) +
+          Math.max(0, items.length - 1) * gap,
+      ),
     );
   const available = Math.max(0, n[main] - before - after),
     lines: Node[][] = [[]];
@@ -106,36 +144,38 @@ export function layoutContainer(n: Node, children: Node[]): void {
       used += need;
     }
   }
+  const sizing = (c: Node, axis: "width" | "height") =>
+    c.layoutItem?.[axis === "width" ? "horizontalSizing" : "verticalSizing"];
+  const grows = (c: Node) =>
+    sizing(c, main) === "fill" ||
+    (sizing(c, main) === undefined && (c.layoutItem?.grow ?? 0) > 0);
+  const weight = (c: Node) =>
+    sizing(c, main) === "fill"
+      ? c.layoutItem?.grow || 1
+      : (c.layoutItem?.grow ?? 0);
   const crossSizes: number[] = [];
   for (const line of lines) {
     const fixed = line
-        .filter((c) => !c.layoutItem?.grow)
+        .filter((c) => !grows(c))
         .reduce((sum, c) => sum + c[main], 0),
-      growing = line.filter((c) => (c.layoutItem?.grow ?? 0) > 0),
+      growing = line.filter(grows),
       room = available - fixed - Math.max(0, line.length - 1) * gap;
     // Freeze constrained items, then redistribute the remaining free space.
     let pending = [...growing],
       remaining = Math.max(0, room);
     while (pending.length) {
-      const weight = pending.reduce(
-        (sum, c) => sum + (c.layoutItem?.grow ?? 0),
-        0,
-      );
+      const totalWeight = pending.reduce((sum, c) => sum + weight(c), 0);
       const frozen = pending.filter((c) => {
-        const share = (remaining * (c.layoutItem?.grow ?? 0)) / weight;
+        const share = (remaining * weight(c)) / totalWeight;
         return bounded(c, main, share) !== share;
       });
       if (!frozen.length) {
         for (const c of pending)
-          c[main] = (remaining * (c.layoutItem?.grow ?? 0)) / weight;
+          c[main] = (remaining * weight(c)) / totalWeight;
         break;
       }
       for (const c of frozen) {
-        c[main] = bounded(
-          c,
-          main,
-          (remaining * (c.layoutItem?.grow ?? 0)) / weight,
-        );
+        c[main] = bounded(c, main, (remaining * weight(c)) / totalWeight);
       }
       remaining = Math.max(
         0,
@@ -147,12 +187,16 @@ export function layoutContainer(n: Node, children: Node[]): void {
     crossSizes.push(Math.max(0, ...line.map((c) => c[cross])));
   }
   if (config.counter === "hug")
-    n[cross] = Math.max(
-      1,
-      cBefore +
-        cAfter +
-        crossSizes.reduce((a, b) => a + b, 0) +
-        Math.max(0, lines.length - 1) * cGap,
+    n[cross] = bounded(
+      n,
+      cross,
+      Math.max(
+        1,
+        cBefore +
+          cAfter +
+          crossSizes.reduce((a, b) => a + b, 0) +
+          Math.max(0, lines.length - 1) * cGap,
+      ),
     );
   if (!config.wrap && config.counter === "fixed")
     crossSizes[0] = Math.max(0, n[cross] - cBefore - cAfter);
@@ -181,7 +225,11 @@ export function layoutContainer(n: Node, children: Node[]): void {
     );
     for (const c of line) {
       const align = c.layoutItem?.align ?? config.align;
-      if (align === "stretch") c[cross] = bounded(c, cross, crossSizes[li]);
+      if (
+        sizing(c, cross) === "fill" ||
+        (sizing(c, cross) === undefined && align === "stretch")
+      )
+        c[cross] = bounded(c, cross, crossSizes[li]);
       if (c.type === "text") reflowText(c);
       const freeCross = crossSizes[li] - c[cross];
       c[mp] = pos;
@@ -262,10 +310,12 @@ function grid(n: Node, items: Node[]) {
     gap: number,
     axis: "width" | "height",
   ) {
+    const hugging =
+      axis === "width" ? config.primary === "hug" : config.counter === "hug";
     const sizes = spec.map((s, i) =>
       s.kind === "fixed"
         ? s.value
-        : s.kind === "hug"
+        : s.kind === "hug" || (hugging && s.kind === "fr")
           ? Math.max(
               0,
               ...placements
@@ -278,6 +328,22 @@ function grid(n: Node, items: Node[]) {
             )
           : 0,
     );
+    for (const p of placements) {
+      const at = axis === "width" ? p.col : p.row,
+        span = axis === "width" ? p.cs : p.rs;
+      if (span < 2) continue;
+      const flex = Array.from({ length: span }, (_, i) => at + i).filter(
+          (i) =>
+            spec[i] &&
+            (spec[i].kind === "hug" || (hugging && spec[i].kind === "fr")),
+        ),
+        existing =
+          sizes.slice(at, at + span).reduce((a, b) => a + b, 0) +
+          gap * (span - 1),
+        extra = p.node[axis] - existing;
+      if (extra > 0 && flex.length)
+        for (const i of flex) sizes[i] += extra / flex.length;
+    }
     const free = Math.max(
         0,
         available -
@@ -286,7 +352,9 @@ function grid(n: Node, items: Node[]) {
       ),
       fr = spec.reduce((sum, s) => sum + (s.kind === "fr" ? s.value : 0), 0);
     return sizes.map((v, i) =>
-      spec[i].kind === "fr" ? (free * spec[i].value) / Math.max(fr, 1) : v,
+      spec[i].kind === "fr" && !hugging
+        ? (free * spec[i].value) / Math.max(fr, 1)
+        : v,
     );
   }
   const widths = tracks(cols, n.width - left - right, g.columnGap, "width"),
@@ -308,20 +376,51 @@ function grid(n: Node, items: Node[]) {
       g.columnGap * col;
     p.node.y =
       top + heights.slice(0, row).reduce((a, b) => a + b, 0) + g.rowGap * row;
-    p.node.width = bounded(p.node, "width", width);
-    p.node.height = bounded(p.node, "height", height);
+    p.node.width = bounded(
+      p.node,
+      "width",
+      ["fixed", "hug"].includes(p.node.layoutItem?.horizontalSizing ?? "")
+        ? p.node.width
+        : width,
+    );
+    p.node.height = bounded(
+      p.node,
+      "height",
+      ["fixed", "hug"].includes(p.node.layoutItem?.verticalSizing ?? "")
+        ? p.node.height
+        : height,
+    );
     if (p.node.type === "text") reflowText(p.node);
+    const align = p.node.layoutItem?.align ?? config.align;
+    p.node.x +=
+      config.justify === "center"
+        ? (width - p.node.width) / 2
+        : config.justify === "end"
+          ? width - p.node.width
+          : 0;
+    p.node.y +=
+      align === "center"
+        ? (height - p.node.height) / 2
+        : align === "end"
+          ? height - p.node.height
+          : 0;
   }
   if (config.primary === "hug")
-    n.width =
+    n.width = bounded(
+      n,
+      "width",
       left +
-      right +
-      widths.reduce((a, b) => a + b, 0) +
-      g.columnGap * (columnCount - 1);
+        right +
+        widths.reduce((a, b) => a + b, 0) +
+        g.columnGap * (columnCount - 1),
+    );
   if (config.counter === "hug")
-    n.height =
+    n.height = bounded(
+      n,
+      "height",
       top +
-      bottom +
-      heights.reduce((a, b) => a + b, 0) +
-      g.rowGap * (rowCount - 1);
+        bottom +
+        heights.reduce((a, b) => a + b, 0) +
+        g.rowGap * (rowCount - 1),
+    );
 }
