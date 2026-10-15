@@ -276,25 +276,22 @@ export const PathDrawingOverlay = forwardRef<
         {paths.map((p, i) => (
           <path key={i} d={p.d} fill="none" stroke="#202a24" strokeWidth={1} />
         ))}
-        {tool === "pen" && last && hover && !dragging.current && (
-          <path
-            d={`M${last.x} ${last.y} C${last.x + last.outgoing.x} ${last.y + last.outgoing.y} ${hover.x} ${hover.y} ${hover.x} ${hover.y}`}
-            fill="none"
-            stroke="#0d99ff"
-            strokeWidth={1 / zoom}
-            strokeDasharray={`${4 / zoom} ${3 / zoom}`}
-          />
-        )}
-        {anchors.current.map((a, i) => (
-          <g key={i}>
-            <line
-              x1={a.x + a.incoming.x}
-              y1={a.y + a.incoming.y}
-              x2={a.x + a.outgoing.x}
-              y2={a.y + a.outgoing.y}
+        {tool === "pen" &&
+          last &&
+          hover &&
+          !dragging.current &&
+          !anchorDrag.current && (
+            <path
+              d={`M${last.x} ${last.y} C${last.x + last.outgoing.x} ${last.y + last.outgoing.y} ${hover.x} ${hover.y} ${hover.x} ${hover.y}`}
+              fill="none"
               stroke="#0d99ff"
               strokeWidth={1 / zoom}
+              strokeDasharray={`${4 / zoom} ${3 / zoom}`}
             />
+          )}
+        {anchors.current.map((a, i) => (
+          <g key={i}>
+            <PenHandleGuides anchor={a} zoom={zoom} />
             {(["incoming", "outgoing"] as const).map(
               (kind) =>
                 Math.hypot(a[kind].x, a[kind].y) > 0.01 && (
@@ -311,6 +308,7 @@ export const PathDrawingOverlay = forwardRef<
                     strokeWidth={1 / zoom}
                     onPointerDown={(e) => {
                       if (temporaryHand) return;
+                      setHover(null);
                       e.preventDefault();
                       e.stopPropagation();
                       if (e.altKey) a.independent = true;
@@ -339,6 +337,7 @@ export const PathDrawingOverlay = forwardRef<
               pointerEvents="all"
               onPointerDown={(e) => {
                 if (temporaryHand) return;
+                setHover(null);
                 e.preventDefault();
                 e.stopPropagation();
                 anchorDrag.current = {
@@ -367,3 +366,31 @@ export const PathDrawingOverlay = forwardRef<
     </g>
   );
 });
+
+export function PenHandleGuides({
+  anchor: a,
+  zoom,
+}: {
+  anchor: PenAnchor;
+  zoom: number;
+}) {
+  return (
+    <>
+      {(["incoming", "outgoing"] as const).map(
+        (kind) =>
+          Math.hypot(a[kind].x, a[kind].y) > 0.01 && (
+            <line
+              key={kind}
+              data-pen-guide={kind}
+              x1={a.x}
+              y1={a.y}
+              x2={a.x + a[kind].x}
+              y2={a.y + a[kind].y}
+              stroke="#0d99ff"
+              strokeWidth={1 / zoom}
+            />
+          ),
+      )}
+    </>
+  );
+}
