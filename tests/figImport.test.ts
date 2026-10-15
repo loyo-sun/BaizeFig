@@ -1,9 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { zipSync, deflateSync, strToU8 } from "fflate";
 import { parseSchema, encodeBinarySchema, compileSchema } from "kiwi-schema";
 import { importFig, decodeFigMessage, readFigArchive } from "../src/figImport";
 import { validateDocument, execute, ancestors } from "../src/core";
+import { svgString } from "../src/Canvas";
+import { commandsPath } from "../src/fidelity";
+import { editableNetwork } from "../src/vectorGeometry";
+import { networkGeometry } from "../src/vectorNetwork";
 import { transitionPrototype } from "../src/prototype";
 
 const schema = parseSchema(`
@@ -13,13 +17,18 @@ struct Transform { float m00; float m01; float m02; float m10; float m11; float 
 message Parent { GUID guid = 1; string position = 2; }
 message Font { string family = 1; string style = 2; }
 message Text { string characters = 1; }
-enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; }
+enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; BRUSH = 7; }
 message SymbolData { GUID symbolID = 1; }
 message Event { string interactionType = 1; }
 message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; Vector extraScrollOffset = 4; string transitionType = 5; float transitionDuration = 6; }
 message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; }
-message Message { Node[] nodeChanges = 1; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; }
+message Blob { byte[] bytes = 1; }
+message Color { float r = 1; float g = 2; float b = 3; float a = 4; }
+message Paint { string type = 1; Color color = 2; float opacity = 3; bool visible = 4; }
+message Geometry { uint commandsBlob = 1; string windingRule = 2; }
+message VectorData { uint vectorNetworkBlob = 1; Vector normalizedSize = 2; }
+message Message { Node[] nodeChanges = 1; Blob[] blobs = 2; }
 `);
 const g = (localID: number) => ({ sessionID: 0, localID });
 const nodes = [
@@ -77,6 +86,86 @@ function stream(message = { nodeChanges: nodes }) {
   return result;
 }
 describe("Figma import", () => {
+  it("imports saved brush outlines rather than replacing them with the brush centerline", async () => {
+    const ops: number[] = [];
+    const command = (op: number, ...values: number[]) => {
+      ops.push(op);
+      for (const value of values) {
+        const bytes = new Uint8Array(4);
+        new DataView(bytes.buffer).setFloat32(0, value, true);
+        ops.push(...bytes);
+      }
+    };
+    command(1, 0, 0);
+    command(4, 35, -8, 65, 22, 100, 0);
+    command(2, 100, 20);
+    command(4, 65, 42, 35, 12, 0, 20);
+    command(0);
+    command(1, 35, 10);
+    command(2, 65, 10);
+    command(2, 50, 16);
+    command(0);
+    const result = importFig(
+      stream({
+        nodeChanges: [
+          nodes[0],
+          nodes[1],
+          {
+            guid: g(20),
+            parentIndex: { guid: g(1), position: "a" },
+            type: "BRUSH",
+            name: "Brush outline",
+            size: { x: 100, y: 30 },
+            fillPaints: [
+              {
+                type: "SOLID",
+                color: { r: 0.15, g: 0.3, b: 0.2, a: 1 },
+                opacity: 1,
+                visible: true,
+              },
+            ],
+            fillGeometry: [{ commandsBlob: 0, windingRule: "ODD" }],
+            vectorData: {
+              vectorNetworkBlob: 1,
+              normalizedSize: { x: 100, y: 30 },
+            },
+          },
+        ] as typeof nodes,
+        blobs: [{ bytes: ops }, { bytes: [0, 0, 0, 0] }],
+      } as any),
+    );
+    const doc = result.document,
+      brush = doc.nodes[0];
+    expect(brush.type).toBe("path");
+    expect(brush.fill).toBe("#264d33ff");
+    expect(brush.fidelity?.network).toBeUndefined();
+    expect(brush.fidelity?.paths?.[0]).toMatchObject({ rule: "evenodd" });
+    expect(brush.fidelity?.paths?.[0].d).toContain("C35 -8 65 22 100 0");
+    const original = brush.fidelity!.paths![0].d;
+    const network = editableNetwork(brush);
+    expect(network.regions[0].loops).toHaveLength(2);
+    network.vertices[0].x += 5;
+    expect(networkGeometry(network)[0].d).not.toBe(original);
+    const renamed = execute(doc, {
+      type: "update",
+      ids: [brush.id],
+      patch: { name: "Edited brush" },
+    }).doc;
+    expect(renamed.nodes[0].fidelity!.paths![0].d).toBe(original);
+    validateDocument(JSON.parse(JSON.stringify(renamed)));
+    const svg = await svgString(renamed, renamed.pages[0].id, [brush.id]);
+    expect(svg).toContain('fill-rule="evenodd"');
+    expect(svg).toContain(original);
+    expect(result.report.warnings).toContain(
+      "Brush strokes use editable outline paths; brush dynamics are not retained.",
+    );
+    if (process.env.BAIZEFIG_BRUSH_FIXTURE)
+      writeFileSync(
+        "/private/tmp/baizefig-brush.baizefig",
+        JSON.stringify(doc),
+      );
+  });
+
   it("retains hidden component state definitions and inherits interactive state actions on instances", () => {
     const message = {
       nodeChanges: [
@@ -307,8 +396,8 @@ it.skipIf(!sample)(
     expect(result.document.pages.map((p) => p.name)).toEqual([
       "REALJET · Precast Plant / Web + Mobile",
     ]);
-    const raw = readFigArchive(new Uint8Array(readFileSync(sample!))).message
-      .nodeChanges as Record<string, any>[];
+    const archive = readFigArchive(new Uint8Array(readFileSync(sample!)));
+    const raw = archive.message.nodeChanges as Record<string, any>[];
     const rawGuid = (g: any) => (g ? `${g.sessionID}:${g.localID}` : "");
     const visiblePages = new Set(
       raw
@@ -320,12 +409,40 @@ it.skipIf(!sample)(
         visiblePages.has(rawGuid(n.parentIndex?.guid)) &&
         n.size &&
         !n.styleType &&
-        !["TEXT_PATH", "BRUSH"].includes(n.type),
+        n.type !== "TEXT_PATH",
     );
     const importedRoots = result.document.nodes.filter((n) => !n.parentId);
     expect(importedRoots.map((n) => n.fidelity?.sourceId).sort()).toEqual(
       expectedRoots.map((n) => rawGuid(n.guid)).sort(),
     );
+    const brushes = raw.filter((n) => n.type === "BRUSH");
+    // The supplied brush nodes belong to an internal hidden page. Exercise
+    // their exact saved geometry in a visible page using our trusted test schema.
+    const brushDocument = importFig(
+      stream({
+        nodeChanges: [
+          nodes[0],
+          nodes[1],
+          ...brushes.map((n) => ({
+            ...n,
+            parentIndex: { guid: g(1), position: "a" },
+          })),
+        ],
+        blobs: archive.message.blobs,
+      } as any),
+    ).document;
+    for (const source of brushes) {
+      const imported = brushDocument.nodes.find(
+        (n) => n.fidelity?.sourceId === rawGuid(source.guid),
+      );
+      expect(imported?.type).toBe("path");
+      expect(imported?.fidelity?.network).toBeUndefined();
+      expect(imported?.fidelity?.paths?.[0].d).toBe(
+        commandsPath(
+          archive.message.blobs[source.fillGeometry[0].commandsBlob].bytes,
+        ),
+      );
+    }
     expect(result.document.nodes.length).toBeGreaterThan(500);
     expect(result.report.images).toBeGreaterThan(15);
     expect(

@@ -417,6 +417,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     STAR: "star",
     REGULAR_POLYGON: "polygon",
     VECTOR: "path",
+    BRUSH: "path",
     BOOLEAN_OPERATION: "group",
     SECTION: "frame",
   };
@@ -667,7 +668,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       )
     )
       fidelity.strokeDash = r.dashPattern;
-    if (r.type === "VECTOR") {
+    if (r.type === "VECTOR" || r.type === "BRUSH") {
       const blob = (i: number) =>
         message.blobs?.[i]?.bytes as Uint8Array | undefined;
       try {
@@ -706,6 +707,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             });
           }
         }
+        if (r.type === "BRUSH" && !paths.length) throw Error();
         fidelity.paths = paths.length
           ? paths
           : networkPaths(
@@ -715,6 +717,10 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
               r.vectorData?.normalizedSize ?? r.size,
             );
         if (!fidelity.paths.length) throw Error();
+        if (r.type === "BRUSH")
+          warnings.add(
+            "Brush strokes use editable outline paths; brush dynamics are not retained.",
+          );
       } catch {
         kind = "rectangle";
         warnings.add(

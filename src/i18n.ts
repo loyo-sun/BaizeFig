@@ -4,8 +4,8 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
- "Text effects panel":"文字效果面板",
- "Text effects":"文字效果",
+  "Text effects panel": "文字效果面板",
+  "Text effects": "文字效果",
   cornerBottomLeft: "左下圆角",
   cornerBottomRight: "右下圆角",
   cornerTopRight: "右上圆角",
@@ -734,6 +734,8 @@ export const zhCN: Record<string, string> = {
   "Figma import timed out": "Figma 导入超时，请尝试较小的文件",
   "Figma instances were imported as editable snapshots.":
     "组件实例已转换为可编辑快照，不保留与主组件的联动。",
+  "Brush strokes use editable outline paths; brush dynamics are not retained.":
+    "画笔笔触已转换为可编辑轮廓路径，暂不保留笔压与画笔动态。",
   "Some unsupported layers were skipped.": "部分不支持的图层已跳过。",
   "Vector networks are represented by bounds; vector paths are not restored.":
     "矢量网络暂以边界矩形表示，尚未还原真实路径。",
