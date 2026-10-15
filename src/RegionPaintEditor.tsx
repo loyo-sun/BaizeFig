@@ -33,18 +33,21 @@ export function RegionPaintEditor({
               });
             }}
           >
-            {(["solid", "linear", "radial", "image"] as const).map((type) => (
-              <option key={type} value={type}>
-                {t(
-                  {
-                    solid: "Solid",
-                    linear: "Linear gradient",
-                    radial: "Radial gradient",
-                    image: "Image",
-                  }[type],
-                )}
-              </option>
-            ))}
+            {(["solid", "linear", "radial", "diamond", "image"] as const).map(
+              (type) => (
+                <option key={type} value={type}>
+                  {t(
+                    {
+                      solid: "Solid",
+                      linear: "Linear gradient",
+                      radial: "Radial gradient",
+                      diamond: "Diamond gradient",
+                      image: "Image",
+                    }[type],
+                  )}
+                </option>
+              ),
+            )}
           </select>
           {p.type === "solid" && (
             <input
@@ -90,7 +93,7 @@ export function RegionPaintEditor({
           >
             ×
           </button>
-          {(p.type === "linear" || p.type === "radial") && (
+          {["linear", "radial", "diamond"].includes(p.type) && (
             <div className="gradient-stops">
               {p.stops?.map((stop, j) => (
                 <label key={j}>

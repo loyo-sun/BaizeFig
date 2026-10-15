@@ -459,7 +459,7 @@ export function validateFidelity(f: Fidelity) {
               ![p.geometry.width, p.geometry.height].every(
                 (v) => Number.isFinite(v) && v > 0,
               ))) ||
-          !["solid", "linear", "radial", "image"].includes(p.type) ||
+          !["solid", "linear", "radial", "diamond", "image"].includes(p.type) ||
           !Number.isFinite(p.opacity) ||
           p.opacity < 0 ||
           p.opacity > 1 ||

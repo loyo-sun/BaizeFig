@@ -670,6 +670,7 @@ export const zhCN: Record<string, string> = {
   Solid: "纯色",
   "Linear gradient": "线性渐变",
   "Radial gradient": "径向渐变",
+  "Diamond gradient": "菱形渐变",
 
   "Edit vector": "编辑矢量",
   Flatten: "拼合路径",

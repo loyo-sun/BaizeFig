@@ -8,7 +8,7 @@ export interface ImportedPaint {
     width: number;
     height: number;
   };
-  type: "solid" | "linear" | "radial" | "image";
+  type: "solid" | "linear" | "radial" | "diamond" | "image";
   color?: string;
   opacity: number;
   stops?: { position: number; color: string }[];
@@ -113,6 +113,13 @@ export function Appearance({
                     />
                   ))}
                 </radialGradient>
+              ) : paint.type === "diamond" ? (
+                <DiamondGradient
+                  id={id}
+                  paint={paint}
+                  width={node.width}
+                  height={node.height}
+                />
               ) : null}
             </defs>
             {paint.type === "image" && node.fidelity?.paths?.length ? (
@@ -273,5 +280,87 @@ export function EffectDefinitions({ node }: { node: Node }) {
         })}
       </filter>
     </defs>
+  );
+}
+
+// Four affine ramps form the L1 distance field, retaining native SVG stops,
+// transparency and hard transitions without rasterizing the gradient.
+export function DiamondGradient({
+  id,
+  paint,
+  width,
+  height,
+}: {
+  id: string;
+  paint: ImportedPaint;
+  width: number;
+  height: number;
+}) {
+  const matrix = paint.transform ?? [1, 0, 0, 1, 0, 0];
+  let inv: number[];
+  try {
+    inv = inverse(matrix);
+  } catch {
+    return null;
+  }
+  const w = paint.space === "user" ? width : 1;
+  const h = paint.space === "user" ? height : 1;
+  const extent =
+    Math.max(
+      1,
+      ...[
+        [0, 0],
+        [w, 0],
+        [0, h],
+        [w, h],
+      ].flatMap(([x, y]) => [
+        Math.abs(matrix[0] * x + matrix[2] * y + matrix[4] - 0.5),
+        Math.abs(matrix[1] * x + matrix[3] * y + matrix[5] - 0.5),
+      ]),
+    ) + 1;
+  if (!Number.isFinite(extent) || !inv.every(Number.isFinite)) return null;
+  const units = paint.space === "user" ? "userSpaceOnUse" : "objectBoundingBox";
+  return (
+    <pattern
+      id={id}
+      patternUnits={units}
+      patternContentUnits={units}
+      width={w}
+      height={h}
+    >
+      <g transform={`matrix(${inv.join(" ")})`}>
+        {(
+          [
+            [-1, -1],
+            [1, -1],
+            [-1, 1],
+            [1, 1],
+          ] as const
+        ).map(([sx, sy], i) => (
+          <React.Fragment key={i}>
+            <linearGradient
+              id={`${id}-quadrant-${i}`}
+              gradientUnits="userSpaceOnUse"
+              x1={0.5}
+              y1={0.5}
+              x2={0.5 + sx * 0.25}
+              y2={0.5 + sy * 0.25}
+              colorInterpolation="sRGB"
+            >
+              {paint.stops?.map((stop, j) => (
+                <stop key={j} offset={stop.position} stopColor={stop.color} />
+              ))}
+            </linearGradient>
+            <rect
+              x={sx < 0 ? 0.5 - extent : 0.5}
+              y={sy < 0 ? 0.5 - extent : 0.5}
+              width={extent}
+              height={extent}
+              fill={`url(#${id}-quadrant-${i})`}
+            />
+          </React.Fragment>
+        ))}
+      </g>
+    </pattern>
   );
 }

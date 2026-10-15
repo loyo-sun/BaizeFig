@@ -46,7 +46,8 @@ message ValueEntry { GUID modeID = 1; VariableData variableData = 2; }
 message Values { ValueEntry[] entries = 1; }
 message Blob { byte[] bytes = 1; }
 message Color { float r = 1; float g = 2; float b = 3; float a = 4; }
-message Paint { string type = 1; Color color = 2; float opacity = 3; bool visible = 4; }
+message Stop { float position = 1; Color color = 2; }
+message Paint { string type = 1; Color color = 2; float opacity = 3; bool visible = 4; Transform transform = 5; Stop[] stops = 6; }
 message Geometry { uint commandsBlob = 1; string windingRule = 2; }
 message VectorData { uint vectorNetworkBlob = 1; Vector normalizedSize = 2; }
 message Message { Node[] nodeChanges = 1; Blob[] blobs = 2; }
@@ -1162,5 +1163,49 @@ it("imports component default and instance variable aliases without freezing res
   validateDocument(JSON.parse(JSON.stringify(doc)));
   expect(result.report.warnings).not.toContain(
     "Some component property variable bindings could not be restored.",
+  );
+});
+
+it("restores diamond gradient stops and transforms from binary paints", async () => {
+  const source = [
+    nodes[0],
+    nodes[1],
+    {
+      guid: g(90),
+      parentIndex: { guid: g(1), position: "a" },
+      type: "ROUNDED_RECTANGLE",
+      name: "Diamond",
+      size: { x: 320, y: 220 },
+      fillPaints: [
+        {
+          type: "GRADIENT_DIAMOND",
+          opacity: 0.75,
+          transform: { m00: 2, m01: 0, m02: -0.5, m10: 0, m11: 2, m12: -0.5 },
+          stops: [
+            { position: 0, color: { r: 1, g: 0, b: 0, a: 1 } },
+            { position: 1, color: { r: 0, g: 0, b: 1, a: 0.5 } },
+          ],
+        },
+      ],
+    },
+  ];
+  const result = await importFig(
+    stream({ nodeChanges: source } as any),
+    "diamond.fig",
+  );
+  const n = result.document.nodes.find((n) => n.name === "Diamond")!;
+  expect(n.fidelity!.paints![0]).toMatchObject({
+    type: "diamond",
+    opacity: 0.75,
+    transform: [2, 0, 0, 2, -0.5, -0.5],
+  });
+  expect(n.fidelity!.paints![0].stops).toHaveLength(2);
+  validateDocument(JSON.parse(JSON.stringify(result.document)));
+  const svg = await svgString(result.document, result.document.pages[0].id);
+  expect(svg).toContain("<pattern");
+  expect(svg).toContain("-quadrant-3");
+  expect(svg).not.toContain("data:image");
+  expect(result.report.warnings).not.toContain(
+    "Some fill types are not supported.",
   );
 });

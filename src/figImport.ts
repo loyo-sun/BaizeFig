@@ -866,14 +866,20 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
                 opacity: clamp(p.opacity ?? 1),
               },
             ];
-          if (p.type === "GRADIENT_LINEAR" || p.type === "GRADIENT_RADIAL") {
+          if (
+            ["GRADIENT_LINEAR", "GRADIENT_RADIAL", "GRADIENT_DIAMOND"].includes(
+              p.type,
+            )
+          ) {
             const t = p.transform ?? {};
             return [
               {
                 type:
                   p.type === "GRADIENT_LINEAR"
                     ? ("linear" as const)
-                    : ("radial" as const),
+                    : p.type === "GRADIENT_RADIAL"
+                      ? ("radial" as const)
+                      : ("diamond" as const),
                 opacity: clamp(p.opacity ?? 1),
                 transform: [
                   t.m00 ?? 1,

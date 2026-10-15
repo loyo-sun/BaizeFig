@@ -2102,7 +2102,17 @@ html[lang="zh-CN"] .layer-title-input {
   border-top: 1px solid #eee;
 }
 .region-paint input[type="number"] {
-  width: 45px;
+  width: 68px;
+  min-width: 68px;
+  flex: none;
+  padding: 5px;
+}
+.region-paint label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
 }
 .region-paint input[type="color"] {
   width: 28px;
