@@ -2253,7 +2253,10 @@ export default function App() {
                           change({ ...doc, pages });
                         }}
                       >
-                        ↑
+                        <ChevronDown
+                          size={11}
+                          style={{ transform: "rotate(180deg)" }}
+                        />
                       </button>
                       <button
                         className="tiny"
@@ -2266,7 +2269,7 @@ export default function App() {
                           change({ ...doc, pages });
                         }}
                       >
-                        ↓
+                        <ChevronDown size={11} />
                       </button>
                     </>
                   )}
