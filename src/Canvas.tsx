@@ -1,6 +1,6 @@
 import { fontSettingsStyle, mergeFontSettings } from "./fontSettings";
 import { renderFontFamily } from "./fontFamily";
-import { bundledFontCss, bundledFontLicense } from "./bundledFonts";
+import { bundledFontCss, bundledFontLicense, preloadEmbeddedFonts } from "./bundledFonts";
 import { textBaselineD } from "./textPath";
 import { documentIndex } from "./documentIndex";
 import { transformedPath, vectorVisualBounds } from "./vectorGeometry";
@@ -285,8 +285,8 @@ function ShapeContent({
             <tspan
               x={line.x}
               y={line.y}
-              direction={line.direction}
-              unicodeBidi={line.direction ? "plaintext" : undefined}
+              direction={line.direction ?? "ltr"}
+              unicodeBidi="isolate"
             >
               {textSpans(n, line.start, line.end, f.text?.spans)}
             </tspan>
@@ -1186,6 +1186,7 @@ export async function raster(
 ): Promise<Blob> {
   if (!Number.isFinite(scale) || scale <= 0 || scale > 32)
     throw Error("Invalid export scale");
+  await preloadEmbeddedFonts(svg);
   const blob = new Blob([svg], { type: "image/svg+xml" }),
     url = URL.createObjectURL(blob);
   let canvas: HTMLCanvasElement | undefined;

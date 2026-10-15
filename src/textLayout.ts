@@ -1,3 +1,4 @@
+import { paragraphDirection } from "./textDirection";
 import {
   fontSettingsStyle,
   mergeFontSettings,
@@ -82,6 +83,7 @@ export type TextMeasure = (
     weight: number;
     italic?: boolean;
     settings?: FontSettings;
+    direction?: "ltr" | "rtl";
   },
 ) => number;
 let context:
@@ -139,6 +141,8 @@ function measureAdvancedFont(
     fontWeight: String(font.weight),
     fontStyle: font.italic ? "italic" : "normal",
     whiteSpace: "pre",
+    direction: font.direction ?? "ltr",
+    unicodeBidi: "isolate",
     fontFeatureSettings: settings.fontFeatureSettings ?? "normal",
     fontVariationSettings: settings.fontVariationSettings ?? "normal",
   });
@@ -161,6 +165,7 @@ export const browserMeasure: TextMeasure = (text, font) => {
   if (advanced !== undefined) return advanced;
   if (context) {
     context.font = `${font.italic ? "italic " : ""}${font.weight} ${font.size}px ${renderFontFamily(font.family)}`;
+    context.direction = font.direction ?? "ltr";
     return context.measureText(text).width;
   }
   // Non-browser tests inject metrics. This fallback is never presented as exact font shaping.
@@ -190,6 +195,7 @@ export function layoutText(
       weight: run?.fontWeight ?? node.fontWeight,
       italic: run?.italic,
       settings: mergeFontSettings(flow?.fontSettings, run?.fontSettings),
+      direction,
     };
   };
   // Measure complete style runs so browser shaping retains kerning and ligatures.
@@ -257,14 +263,7 @@ export function layoutText(
     const p = flow?.paragraphs?.find((p) => p.start === paragraphStart);
     indent = p ? (p.level + 1) * node.fontSize * 1.5 : 0;
     marker = markers.get(paragraphStart);
-    direction =
-      flow?.direction === "rtl" ||
-      (flow?.direction !== "ltr" &&
-        /^[^A-Za-z\p{Script=Han}]*[\p{Script=Hebrew}\p{Script=Arabic}]/u.test(
-          paragraph,
-        ))
-        ? "rtl"
-        : "ltr";
+    direction = paragraphDirection(paragraph, flow?.direction);
     const chars = graphemes(paragraph);
     let start = paragraphStart,
       lastBreak = -1;

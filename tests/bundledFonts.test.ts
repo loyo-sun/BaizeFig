@@ -7,7 +7,7 @@ import {
   renderFontFamily,
   usesBundledInter,
 } from "../src/fontFamily";
-import { bundledFontCss } from "../src/bundledFonts";
+import { bundledFontCss, preloadEmbeddedFonts } from "../src/bundledFonts";
 
 it("keeps the installed font first and inserts the bundled fallback only for Inter", () => {
   expect(fontFamilies(renderFontFamily('"Inter", Arial, sans-serif'))).toEqual([
@@ -97,6 +97,54 @@ it("exports valid SVG XML with embedded fonts and the complete redistribution li
     expect(
       xml.getElementsByTagName("text")[0].getAttribute("font-family"),
     ).toContain("Inter Variable");
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+it("waits for embedded font readiness and retries failed font loads before rasterizing", async () => {
+  let resolve!: () => void,
+    attempt = 0;
+  const loaded = vi.fn(() => {
+    attempt++;
+    return attempt === 1
+      ? Promise.reject(Error("font decoding failed"))
+      : new Promise<void>((r) => {
+          resolve = r;
+        });
+  });
+  const ctor = vi.fn();
+  vi.stubGlobal(
+    "FontFace",
+    class {
+      constructor(...args: unknown[]) {
+        ctor(...args);
+      }
+      load() {
+        return loaded();
+      }
+    },
+  );
+  const css = `<svg><style>@font-face {font-family:'Inter Variable';font-style:normal;font-weight:100 900;src:url(data:font/woff2;base64,d09GMgA=);unicode-range:U+0000-00FF;}</style></svg>`;
+  try {
+    await expect(preloadEmbeddedFonts(css)).rejects.toThrow(
+      "Could not load a bundled font for export",
+    );
+    let ready = false;
+    const pending = preloadEmbeddedFonts(css).then(() => {
+      ready = true;
+    });
+    await Promise.resolve();
+    expect(ready).toBe(false);
+    resolve();
+    await pending;
+    expect(ready).toBe(true);
+    expect(ctor.mock.calls[0][2]).toMatchObject({
+      weight: "100 900",
+      unicodeRange: "U+0000-00FF",
+    });
+    await preloadEmbeddedFonts(css);
+    expect(loaded).toHaveBeenCalledTimes(2);
   } finally {
     vi.unstubAllGlobals();
   }

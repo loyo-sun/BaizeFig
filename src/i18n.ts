@@ -538,6 +538,7 @@ export const zhCN: Record<string, string> = {
     "SVG 和 HTML 保留矢量并嵌入内置 Inter 回退字体；其他字体仍需在接收设备安装。",
   "Could not load a bundled font for export":
     "无法加载导出所需的内置字体，请重试。",
+  "Bundled font rendering is unavailable in this browser": "当前浏览器无法渲染内置字体，请使用较新的浏览器或导出 SVG。",
   "Invalid bundled font": "内置字体文件无效。",
   On: "开启",
   Off: "关闭",

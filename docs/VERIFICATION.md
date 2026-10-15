@@ -394,3 +394,16 @@ SVG画布、可编辑范围、导出和排版测量共用font-feature-settings/f
 304项测试（61文件，含当前REALJET）通过。可信自有Kiwi样本覆盖二进制字段→局部覆盖→输入编辑→撤销→原生重载→SVG，真实REALJET联合回归通过。IAB在75%缩放下，111111/000000原宽87.86/136.27px，开启tnum后均140.06px；wght400→800实际改变字形和宽度；650→撤销800→重做650、刷新保持。直接文字编辑器使用同一特性，实际SVG下载包含tnum1/wght650及内置字体数据。此项不代表完整RTL/OpenType脚本塑形或跨版本像素等价。
 
 实现参考：[CSS font-feature-settings](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-feature-settings)、[CSS font-variation-settings](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-variation-settings)。
+
+
+## Unicode 段落方向与首次字体导出
+
+自动段落方向按Unicode 17.0.0的Bidi_Class与UAX #9 P2/P3判定首个强方向字符，跳过隔离内容，尊重LRM/RLM与显式方向，不能再用“是否出现阿拉伯/希伯来文字”替代。每个段落独立判定，换行后的tspan使用isolate保留段落基方向；编辑器每个段落使用dir=auto/显式方向，测量使用同一基方向。后续字形塑形和重排序由浏览器执行，不声称实现完整独立UBA。
+
+Unicode官方BidiCharacterTest的91,707条指定段落方向通过（其中28条auto），另BidiTest中234,099条可区分自动方向的场景通过；不使用结果在LTR/RTL均相同的mask7作为方向正确的证据。生成器保存Unicode版本/源校验值，许可证随发布分发。
+
+本项最终309项测试（62文件，REALJET和两份官方Unicode数据均启用）与生产构建通过。IAB希腊文开头的混排段落LTR，希伯来文段落及其纯英文续行保持RTL；每段编辑器dir=auto，宽度修改、撤销重做、重载、实际SVG/PNG下载通过。
+
+实际PNG验收发现WebKit在SVG解码完成时嵌入字体仍可能阻塞文字显示。导出前使用FontFace.load等待确切data URL字体就绪，再decode SVG并绘制；失败明确报错，缓存有界并允许重试。此前未导出过的西里尔扩展字体子集首次PNG即正常，希腊/希伯来混排PNG随后也清晰显示。SVG许可元数据仍保留，未用固定等待时间掩盖问题。
+
+参考：[Unicode段落规则](https://www.unicode.org/reports/tr9/#P2)、[Unicode 17数据](https://www.unicode.org/Public/17.0.0/ucd/extracted/DerivedBidiClass.txt)、[WebKit字体解码问题](https://bugs.webkit.org/show_bug.cgi?id=219770)、[FontFace.load](https://developer.mozilla.org/en-US/docs/Web/API/FontFace/load)。

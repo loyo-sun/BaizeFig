@@ -135,6 +135,7 @@ export function CanvasTextEditor({
       row.style.position = "relative";
       if (p)
         row.style.paddingInlineStart = `${(p.level + 1) * node.fontSize * 1.5}px`;
+      row.dir = node.textFlow?.direction ?? "auto";
       row.style.minHeight = `${node.fontSize * node.lineHeight}px`;
       row.style.marginBottom = `${end < text.length ? (node.textFlow?.paragraphSpacing ?? 0) : 0}px`;
       const cuts = [
