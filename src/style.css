@@ -2387,3 +2387,55 @@ html[lang="zh-CN"] .layer-title-input {
 .crop-controls .find-buttons {
   flex-wrap: wrap;
 }
+.command-menu-root {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+}
+.command-menu-panel {
+  position: fixed;
+  pointer-events: auto;
+  width: min(290px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  background: #202020;
+  color: #fff;
+  border: 1px solid #444;
+  border-radius: 14px;
+  padding: 8px;
+  box-shadow: 0 8px 28px #0004;
+}
+.command-menu-panel button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+.command-menu-panel button:hover,
+.command-menu-panel button:focus,
+.command-menu-panel button.active {
+  background: #098fe5;
+  outline: none;
+}
+.command-menu-panel button[aria-disabled="true"] {
+  color: #888;
+}
+.command-menu-panel kbd {
+  margin-left: auto;
+  color: #aaa;
+  white-space: nowrap;
+  font-size: 10px;
+}
+.menu-check {
+  width: 12px;
+  flex-shrink: 0;
+}

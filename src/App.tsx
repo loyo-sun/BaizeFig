@@ -1,3 +1,14 @@
+import { CommandMenu, type MenuItem } from "./CommandMenu";
+import {
+  shortcutRegistry,
+  shortcutMatches,
+  shortcutLabel,
+  readKeyboardLayout,
+  type KeyboardLayout,
+} from "./shortcuts";
+import { copyCss } from "./copyCss";
+import { styleTextRange, safeTextLink, type TextStyle } from "./richText";
+import { setParagraphList } from "./textParagraphs";
 import { LayoutProperties } from "./LayoutProperties";
 import { setDimensionMode } from "./layoutSizing";
 import { CropEditor } from "./CropEditor";
@@ -213,45 +224,6 @@ const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "star", label: "Star", key: "", icon: Star },
   { id: "polygon", label: "Polygon", key: "", icon: Triangle },
 ];
-const shortcuts = [
-  ["Tools", "Move", "V"],
-  ["Tools", "Frame", "F / A"],
-  ["Tools", "Rectangle", "R"],
-  ["Tools", "Ellipse", "O"],
-  ["Tools", "Line", "L"],
-  ["Tools", "Pen (polyline)", "P"],
-  ["Tools", "Pencil", "Shift P"],
-  ["Tools", "Text", "T"],
-  ["Tools", "Hand", "H / hold Space"],
-  ["Edit", "Find and replace", "⌘ / Ctrl F"],
-  ["Edit", "Find next / previous", "Enter / Shift Enter"],
-  ["Edit", "Undo", "⌘ / Ctrl Z"],
-  ["Edit", "Redo", "⌘ / Ctrl Shift Z"],
-  ["Edit", "Copy / Cut / Paste", "⌘ / Ctrl C / X / V"],
-  ["Edit", "Duplicate", "⌘ / Ctrl D / Alt drag"],
-  ["Edit", "Delete", "Backspace / Delete"],
-  ["Edit", "Group / Ungroup", "⌘ / Ctrl G / Shift G"],
-  ["Edit", "Frame selection", "⌘ / Ctrl Alt G"],
-  ["Edit", "Create component", "⌘ / Ctrl Alt K"],
-  ["Edit", "Auto layout", "Shift A"],
-  ["Edit", "Remove auto layout", "Alt Shift A"],
-  ["Edit", "Select all", "⌘ / Ctrl A"],
-  ["Edit", "Nudge / large nudge", "Arrow / Shift Arrow"],
-  ["Edit", "Forward / backward", "] / ["],
-  ["Edit", "Front / back", "⌘ / Ctrl ] / ["],
-  ["View", "Zoom in / out", "+ / −"],
-  ["View", "Actual size", "Shift 0"],
-  ["View", "Zoom to fit", "Shift 1"],
-  ["View", "Zoom to selection", "Shift 2"],
-  ["View", "Pixel grid", "Shift G"],
-  ["View", "Layer outlines", "Shift O"],
-  ["View", "Show / hide UI", "⌘ / Ctrl \\"],
-  ["File", "Save local copy", "⌘ / Ctrl S"],
-  ["File", "Open / import", "⌘ / Ctrl O"],
-  ["Help", "Actions", "⌘ / Ctrl K"],
-  ["Help", "Shortcuts", "?"],
-  ["Prototype", "Present", "Shift Space"],
-];
 const clone = <T,>(value: T): T => structuredClone(value);
 function readCanvasAids() {
   try {
@@ -326,6 +298,13 @@ export default function App() {
     id: string;
     position: "before" | "inside" | "after";
   } | null>(null);
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
+  const [keyboardLayout, setKeyboardLayout] =
+    useState<KeyboardLayout>(readKeyboardLayout);
+  const [keyboardError, setKeyboardError] = useState(false);
+  const platform = /Mac|iPhone|iPad/.test(navigator.platform)
+    ? ("mac" as const)
+    : ("other" as const);
   const [ready, setReady] = useState(false);
   const [snapOptions, setSnapOptions] = useState<SnapOptions>(() => {
     try {
@@ -1261,9 +1240,14 @@ export default function App() {
       notify((error as Error).message);
     }
   }
-  async function copyAs(format: "SVG" | "PNG") {
+  async function copyAs(format: "SVG" | "PNG" | "CSS") {
     if (!selected.length) return;
     try {
+      if (format === "CSS") {
+        await navigator.clipboard.writeText(copyCss(doc, selected));
+        notify("Copied as CSS");
+        return;
+      }
       const data = await svgString(doc, page, selected);
       if (format === "SVG") {
         await navigator.clipboard.writeText(data);
@@ -1621,6 +1605,117 @@ export default function App() {
         notify((error as Error).message);
     }
   }
+  const editableSelection = doc.nodes.filter(
+    (n) =>
+      selected.includes(n.id) &&
+      !n.locked &&
+      !ancestors(doc, n).some((p) => p.locked),
+  );
+  const textSelection = editableSelection.filter((n) => n.type === "text");
+  function textUpdate(make: (n: Node) => Partial<Node>) {
+    let next = doc;
+    for (const n of textSelection)
+      next = execute(next, { type: "update", ids: [n.id], patch: make(n) }).doc;
+    if (next !== doc) change(next);
+  }
+  function textStyle(style: TextStyle) {
+    textUpdate((n) => ({
+      textFlow: {
+        autoResize: "height",
+        verticalAlign: "top",
+        letterSpacing: 0,
+        ...n.textFlow,
+        runs: styleTextRange(
+          n.text,
+          n.textFlow?.runs ?? n.fidelity?.text?.spans ?? [],
+          0,
+          n.text.length,
+          style,
+        ),
+      },
+    }));
+  }
+  function listStyle(kind: "bullet" | "number") {
+    textUpdate((n) => ({
+      textFlow: {
+        autoResize: "height",
+        verticalAlign: "top",
+        letterSpacing: 0,
+        ...n.textFlow,
+        paragraphs: setParagraphList(
+          n.text,
+          n.textFlow?.paragraphs ?? [],
+          0,
+          n.text.length,
+          kind,
+        ),
+      },
+    }));
+  }
+  const selectionActions = new Set([
+    "Copy",
+    "Cut",
+    "Copy as SVG",
+    "Copy as PNG",
+    "Copy as CSS",
+    "Delete",
+    "Duplicate selection",
+    "Group selection",
+    "Ungroup selection",
+    "Frame selection",
+    "Create component",
+    "Edit vector",
+    "Flatten",
+    "Outline stroke",
+    "Split vector into layers",
+    "Add auto layout",
+    "Remove auto layout",
+    "Bring to front",
+    "Bring forward",
+    "Send backward",
+    "Send to back",
+    "Flip horizontal",
+    "Flip vertical",
+    "Rotate 90° left",
+    "Rotate 90° right",
+    "Rotate 180°",
+    "Copy properties",
+    "Paste properties",
+    "Set default properties",
+    "Pick color",
+    "Pick screen color",
+    "Show/Hide selection",
+    "Lock/Unlock selection",
+  ]);
+  const textActionNames = new Set([
+    "Bold",
+    "Italic",
+    "Underline",
+    "Strikethrough",
+    "Create link",
+    "Bulleted list",
+    "Numbered list",
+    "UPPERCASE",
+    "lowercase",
+    "Title Case",
+    "Text align left",
+    "Text align center",
+    "Text align right",
+    "Text align top",
+    "Text align middle",
+    "Text align bottom",
+    "Left to right",
+    "Right to left",
+    "Automatic direction",
+    "Browser spell check",
+    "Increase font size",
+    "Decrease font size",
+    "Increase letter spacing",
+    "Decrease letter spacing",
+    "Auto width and height",
+    "Auto height",
+    "Fixed size",
+  ]);
   const actions = [
     {
       name: "Paste over selection",
@@ -1642,6 +1737,7 @@ export default function App() {
       run: () => setModal("fonts"),
     },
     { name: "Version history", key: "", run: () => setModal("versions") },
+    { name: "Save to version history", run: () => setModal("versions") },
     { name: "Copy properties", key: "⌥ ⌘ / Ctrl Alt C", run: copyStyle },
     { name: "Paste properties", key: "⌥ ⌘ / Ctrl Alt V", run: pasteStyle },
     { name: "Set default properties", key: "", run: saveDefaultStyle },
@@ -1745,7 +1841,15 @@ export default function App() {
       key: "⌥ ⌘ K",
       run: () => run({ type: "group", ids: selected, kind: "component" }),
     },
-    { name: "Edit vector", key: "Enter", run: () => editVector() },
+    {
+      name: "Edit vector",
+      key: "Enter",
+      run: () => {
+        if (first?.type === "text")
+          setEditingText({ id: first.id, documentId: doc.id, selectAll: true });
+        else editVector();
+      },
+    },
     { name: "Flatten", key: "⌥ ⇧ F", run: () => vectorOperation("flatten") },
     {
       name: "Outline stroke",
@@ -1759,65 +1863,700 @@ export default function App() {
     { name: "AI design engine", key: "", run: () => setModal("ai") },
     { name: "MCP connection", key: "", run: () => setModal("bridge") },
     { name: "Keyboard shortcuts", key: "?", run: () => setModal("shortcuts") },
+    {
+      name: "Actions",
+      run: () => {
+        setQuery("");
+        setModal("commands");
+      },
+    },
+    { name: "Copy", run: () => copy() },
+    { name: "Cut", run: () => copy(true) },
+    { name: "Paste", run: () => void paste() },
+    { name: "Copy as CSS", run: () => void copyAs("CSS") },
+    { name: "Delete", run: () => run({ type: "delete", ids: selected }) },
+    {
+      name: "Select all",
+      run: () =>
+        setSelected(
+          doc.nodes
+            .filter(
+              (n) => n.pageId === page && !n.parentId && n.visible && !n.locked,
+            )
+            .map((n) => n.id),
+        ),
+    },
+    { name: "Select none", run: () => setSelected([]) },
+    { name: "Find", run: () => setFindOpen(true) },
+    ...(
+      [
+        ["Select all text", "text"],
+        ["Select all frames", "frame"],
+        ["Select all images", "image"],
+      ] as const
+    ).map(([name, type]) => ({
+      name,
+      run: () =>
+        setSelected(
+          doc.nodes
+            .filter(
+              (n) =>
+                n.pageId === page &&
+                n.type === type &&
+                n.visible &&
+                !n.locked &&
+                !ancestors(doc, n).some((p) => p.locked || !p.visible),
+            )
+            .map((n) => n.id),
+        ),
+    })),
+
+    {
+      name: "Select inverse",
+      run: () =>
+        setSelected(
+          doc.nodes
+            .filter(
+              (n) =>
+                n.pageId === page &&
+                !n.parentId &&
+                n.visible &&
+                !n.locked &&
+                !selected.includes(n.id),
+            )
+            .map((n) => n.id),
+        ),
+    },
+    { name: "Place image", run: () => fileInput.current?.click() },
+    { name: "Import Figma (.fig)", run: () => figInput.current?.click() },
+    { name: "Export", run: () => void exportAsset() },
+    { name: "Remove auto layout", run: () => autoLayout(true) },
+    ...(
+      [
+        ["Bring to front", "front"],
+        ["Bring forward", "forward"],
+        ["Send backward", "backward"],
+        ["Send to back", "back"],
+      ] as const
+    ).map(([name, direction]) => ({
+      name,
+      run: () => run({ type: "order", ids: selected, direction }),
+    })),
+    {
+      name: "Show/Hide selection",
+      run: () => patch({ visible: !first?.visible }),
+    },
+    {
+      name: "Lock/Unlock selection",
+      run: () => patch({ locked: !first?.locked }),
+    },
+    { name: "Pixel grid", checked: grid, run: () => setGrid((v) => !v) },
+    {
+      name: "Layout guides",
+      checked: layoutGrid,
+      run: () => setLayoutGrid((v) => !v),
+    },
+    { name: "Rulers", checked: rulers, run: () => setRulers((v) => !v) },
+    {
+      name: "Layer outlines",
+      checked: outline,
+      run: () => setOutline((v) => !v),
+    },
+    {
+      name: "Show/Hide UI",
+      checked: !hiddenUI,
+      run: () => setHiddenUI((v) => !v),
+    },
+    {
+      name: "Zoom in",
+      run: () => setView((v) => ({ ...v, zoom: Math.min(8, v.zoom * 1.25) })),
+    },
+    {
+      name: "Zoom out",
+      run: () => setView((v) => ({ ...v, zoom: Math.max(0.05, v.zoom * 0.8) })),
+    },
+    { name: "Zoom to 100%", run: () => setView((v) => ({ ...v, zoom: 1 })) },
+    { name: "Present", run: presentStart },
+    ...(["objects", "geometry", "pixel"] as const).map((key) => ({
+      name:
+        key === "objects"
+          ? "Snap to objects"
+          : key === "geometry"
+            ? "Snap to geometry"
+            : "Snap to pixel grid",
+      checked: snapOptions[key],
+      run: () => setSnapOptions((v) => ({ ...v, [key]: !v[key] })),
+    })),
+    {
+      name: "Bold",
+      run: () =>
+        textStyle({
+          fontWeight:
+            (first?.textFlow?.runs?.[0]?.fontWeight ?? first?.fontWeight) ===
+            700
+              ? 400
+              : 700,
+        }),
+    },
+    {
+      name: "Italic",
+      run: () => textStyle({ italic: !first?.textFlow?.runs?.[0]?.italic }),
+    },
+    {
+      name: "Underline",
+      run: () =>
+        textStyle({ underline: !first?.textFlow?.runs?.[0]?.underline }),
+    },
+    {
+      name: "Strikethrough",
+      run: () =>
+        textStyle({
+          strikethrough: !first?.textFlow?.runs?.[0]?.strikethrough,
+        }),
+    },
+    {
+      name: "Create link",
+      run: () => {
+        const value = window.prompt(t("Link URL (empty to remove)"), "");
+        if (value !== null) {
+          try {
+            textStyle({ href: safeTextLink(value) ?? "" });
+          } catch (error) {
+            notify((error as Error).message);
+          }
+        }
+      },
+    },
+    { name: "Bulleted list", run: () => listStyle("bullet") },
+    { name: "Numbered list", run: () => listStyle("number") },
+    ...(["upper", "lower", "title"] as const).map((mode) => ({
+      name:
+        mode === "upper"
+          ? "UPPERCASE"
+          : mode === "lower"
+            ? "lowercase"
+            : "Title Case",
+      run: () => change(changeDocumentTextCase(doc, selected, mode)),
+    })),
+    ...(["left", "center", "right"] as const).map((v) => ({
+      name: `Text align ${v}`,
+      run: () => textUpdate(() => ({ textAlign: v })),
+    })),
+    ...(["top", "center", "bottom"] as const).map((v) => ({
+      name: `Text align ${v === "center" ? "middle" : v}`,
+      run: () =>
+        textUpdate((n) => ({
+          textFlow: {
+            autoResize: "fixed",
+            letterSpacing: 0,
+            ...n.textFlow,
+            verticalAlign: v,
+          },
+        })),
+    })),
+    ...(["auto", "ltr", "rtl"] as const).map((v) => ({
+      name:
+        v === "auto"
+          ? "Automatic direction"
+          : v === "ltr"
+            ? "Left to right"
+            : "Right to left",
+      run: () =>
+        textUpdate((n) => ({
+          textFlow: {
+            autoResize: "height",
+            verticalAlign: "top",
+            letterSpacing: 0,
+            ...n.textFlow,
+            direction: v,
+          },
+        })),
+    })),
+    {
+      name: "Browser spell check",
+      checked: first?.textFlow?.spellCheck ?? false,
+      run: () =>
+        textUpdate((n) => ({
+          textFlow: {
+            autoResize: "height",
+            verticalAlign: "top",
+            letterSpacing: 0,
+            ...n.textFlow,
+            spellCheck: !n.textFlow?.spellCheck,
+          },
+        })),
+    },
+    ...([-1, 1] as const).flatMap((delta) => [
+      {
+        name: delta > 0 ? "Increase font size" : "Decrease font size",
+        run: () =>
+          textUpdate((n) => ({ fontSize: Math.max(1, n.fontSize + delta) })),
+      },
+      {
+        name: delta > 0 ? "Increase letter spacing" : "Decrease letter spacing",
+        run: () =>
+          textUpdate((n) => ({
+            textFlow: {
+              autoResize: "height",
+              verticalAlign: "top",
+              ...n.textFlow,
+              letterSpacing: (n.textFlow?.letterSpacing ?? 0) + delta,
+            },
+          })),
+      },
+    ]),
+    ...(["both", "height", "fixed"] as const).map((v) => ({
+      name:
+        v === "both"
+          ? "Auto width and height"
+          : v === "height"
+            ? "Auto height"
+            : "Fixed size",
+      run: () =>
+        textUpdate((n) => ({
+          layoutItem: {
+            ...n.layoutItem,
+            horizontalSizing: v === "both" ? "hug" : "fixed",
+            verticalSizing: v === "fixed" ? "fixed" : "hug",
+          },
+          textFlow: {
+            verticalAlign: "top",
+            letterSpacing: 0,
+            ...n.textFlow,
+            autoResize: v,
+          },
+        })),
+    })),
+    ...(
+      [
+        ["left", "Align left"],
+        ["center", "Align horizontal centers"],
+        ["right", "Align right"],
+        ["top", "Align top"],
+        ["middle", "Align vertical centers"],
+        ["bottom", "Align bottom"],
+      ] as const
+    ).map(([axis, name]) => ({
+      name,
+      disabled: editableSelection.length < 2,
+      run: () => run({ type: "align", ids: selected, axis }),
+    })),
+    ...(["union", "subtract", "intersect", "exclude", "mask"] as const).map(
+      (mode) => ({
+        name: {
+          union: "Union",
+          subtract: "Subtract",
+          intersect: "Intersect",
+          exclude: "Exclude",
+          mask: "Use as mask",
+        }[mode],
+        disabled: editableSelection.length < 2,
+        run: () => {
+          try {
+            const result = combineShapes(doc, selected, mode);
+            change(result.doc, [result.id]);
+          } catch (error) {
+            notify((error as Error).message);
+          }
+        },
+      }),
+    ),
+    {
+      name: "Reset instance",
+      disabled: !first?.componentId,
+      run: () => {
+        if (first) change(resetComponentInstance(doc, first.id), [first.id]);
+      },
+    },
+    {
+      name: "Detach instance",
+      disabled: !first?.componentId,
+      run: () => {
+        if (first) change(detachComponentInstance(doc, first.id), [first.id]);
+      },
+    },
+    {
+      name: "Go to main component",
+      disabled: !doc.nodes.some(
+        (n) => n.type === "component" && n.id === first?.componentId,
+      ),
+      run: () => {
+        const main = doc.nodes.find(
+          (n) => n.type === "component" && n.id === first?.componentId,
+        );
+        if (main) {
+          setPage(main.pageId);
+          setSelected([main.id]);
+        }
+      },
+    },
+    {
+      name: "Remove fill",
+      disabled: !editableSelection.length,
+      run: () => {
+        let next = doc;
+        for (const n of editableSelection)
+          next = execute(next, {
+            type: "update",
+            ids: [n.id],
+            patch: {
+              fill: "none",
+              fidelity: n.fidelity ? { ...n.fidelity, paints: [] } : undefined,
+            },
+          }).doc;
+        change(next);
+      },
+    },
+    {
+      name: "Remove stroke",
+      disabled: !editableSelection.length,
+      run: () => patch({ stroke: "none", strokeWidth: 0 }),
+    },
+    {
+      name: "Swap fill and stroke",
+      disabled: !editableSelection.length,
+      run: () => {
+        let next = doc;
+        for (const n of editableSelection)
+          next = execute(next, {
+            type: "update",
+            ids: [n.id],
+            patch: {
+              fill: n.stroke,
+              stroke: n.fill,
+              strokeWidth: n.strokeWidth || 1,
+            },
+          }).doc;
+        change(next);
+      },
+    },
+    {
+      name: "Remove interactions",
+      disabled: !editableSelection.length,
+      run: () => patch({ interactions: [], targetId: undefined }),
+    },
+    {
+      name: "Collapse layers",
+      run: () =>
+        setCollapsed(new Set(doc.nodes.filter(container).map((n) => n.id))),
+    },
+    {
+      name: "Previous page",
+      disabled: doc.pages.findIndex((p) => p.id === page) === 0,
+      run: () => {
+        setPage(
+          doc.pages[Math.max(0, doc.pages.findIndex((p) => p.id === page) - 1)]
+            .id,
+        );
+        setSelected([]);
+      },
+    },
+    {
+      name: "Next page",
+      disabled:
+        doc.pages.findIndex((p) => p.id === page) === doc.pages.length - 1,
+      run: () => {
+        setPage(
+          doc.pages[
+            Math.min(
+              doc.pages.length - 1,
+              doc.pages.findIndex((p) => p.id === page) + 1,
+            )
+          ].id,
+        );
+        setSelected([]);
+      },
+    },
+    { name: "Keyboard layout", run: () => setModal("settings") },
+    { name: "Libraries", run: () => setModal("assets") },
+    ...(
+      [
+        ["", "Automatic spelling language"],
+        ["en", "Spell check: English"],
+        ["zh-CN", "Spell check: 简体中文"],
+      ] as const
+    ).map(([language, name]) => ({
+      name,
+      disabled: !textSelection.length,
+      checked: (first?.textFlow?.language ?? "") === language,
+      run: () =>
+        textUpdate((n) => ({
+          textFlow: {
+            autoResize: "height",
+            verticalAlign: "top",
+            letterSpacing: 0,
+            ...n.textFlow,
+            language: language || undefined,
+          },
+        })),
+    })),
+    ...tools.map((tool) => ({
+      name: tool.label,
+      run: () => {
+        pathDrawing.current?.finish();
+        setTool(tool.id);
+      },
+    })),
+  ].map((a) => ({
+    ...a,
+    key: shortcutLabel(a.name, platform),
+    disabled:
+      ("disabled" in a && a.disabled) ||
+      (selectionActions.has(a.name) && !selected.length) ||
+      (selectionActions.has(a.name) &&
+        ![
+          "Copy",
+          "Copy as SVG",
+          "Copy as PNG",
+          "Copy as CSS",
+          "Copy properties",
+          "Lock/Unlock selection",
+        ].includes(a.name) &&
+        !editableSelection.length) ||
+      (textActionNames.has(a.name) && !textSelection.length) ||
+      (a.name === "Ungroup selection" && !editableSelection.some(container)) ||
+      (["Reset instance", "Detach instance", "Go to main component"].includes(
+        a.name,
+      ) &&
+        !editableSelection.length) ||
+      (a.name === "Paste properties" && !styleClipboard.current),
+    checked: "checked" in a ? Boolean(a.checked) : undefined,
+  }));
+  const actionItem = (name: string): MenuItem =>
+    actions.find((a) => a.name === name) ?? {
+      name,
+      disabled: true,
+      reason: "Research in progress",
+    };
+  const sub = (name: string, names: (string | MenuItem)[]): MenuItem => ({
+    name,
+    children: names.map((n) => (typeof n === "string" ? actionItem(n) : n)),
+  });
+  const menuItems: MenuItem[] = [
+    { ...actionItem("Open file browser"), name: "Back to files" },
+    actionItem("Actions"),
+    sub("File", [
+      "New design file",
+      sub("New", ["New design file"]),
+      "Import file or image",
+      "Import Figma (.fig)",
+      "Place image",
+      "Duplicate file",
+      "Save local copy",
+      "Save to version history",
+      "Version history",
+      "Export",
+      "Export frames to PDF",
+      "Create branch",
+    ]),
+    sub("Edit", [
+      "Undo",
+      "Redo",
+      "Cut",
+      "Copy",
+      "Paste",
+      sub("Copy as", ["Copy as CSS", "Copy as SVG", "Copy as PNG"]),
+      "Paste over selection",
+      "Paste to replace",
+      "Duplicate selection",
+      "Delete",
+      "Find",
+      "Find next",
+      "Find previous",
+      "Find and replace",
+      "Set default properties",
+      "Copy properties",
+      "Paste properties",
+      "Pick color",
+      "Select all",
+      "Select none",
+      "Select inverse",
+      "Select matching layers",
+      sub("Select all with", [
+        "Select all text",
+        "Select all frames",
+        "Select all images",
+      ]),
+    ]),
+    sub("View", [
+      "Pixel grid",
+      "Layout guides",
+      "Rulers",
+      "Show slices",
+      "Comments",
+      "Annotations",
+      sub("Outlines", ["Layer outlines", "Mask outlines", "Frame outlines"]),
+      "Pixel preview",
+      "Memory usage",
+      "Additional labels",
+      "Minimize left navigation bar",
+      "Minimize UI",
+      "Show/Hide UI",
+      "Multiplayer cursors",
+      "Switch to Draw",
+      "Switch to Dev Mode",
+      sub("Panels", ["General settings", "Keyboard shortcuts"]),
+      "Zoom in",
+      "Zoom out",
+      "Zoom to 100%",
+      "Zoom to fit",
+      "Zoom to selection",
+      "Previous page",
+      "Next page",
+      "Zoom to previous frame",
+    ]),
+    sub("Object", [
+      "Frame selection",
+      "Group selection",
+      "Ungroup selection",
+      "Wrap in new section",
+      "Convert to section",
+      "Convert to frame",
+      "Restore default thumbnail",
+      "Use as mask",
+      "Add auto layout",
+      sub("More layout options", ["Remove auto layout", "General settings"]),
+      "Create component",
+      sub("Slots", ["Manage slots"]),
+      "Reset instance",
+      "Detach instance",
+      sub("Main component", ["Go to main component"]),
+      "Bring to front",
+      "Bring forward",
+      "Send backward",
+      "Send to back",
+      "Flip horizontal",
+      "Flip vertical",
+      "Rotate 180°",
+      "Rotate 90° left",
+      "Rotate 90° right",
+      "Flatten",
+      "Outline stroke",
+      sub("Boolean groups", ["Union", "Subtract", "Intersect", "Exclude"]),
+      "Show/Hide selection",
+      "Lock/Unlock selection",
+      "Hide other layers",
+      "Collapse layers",
+      "Remove fill",
+      "Remove stroke",
+      "Swap fill and stroke",
+      "Remove interactions",
+      "Delete contents",
+    ]),
+    sub("Text", [
+      "Bold",
+      "Italic",
+      "Underline",
+      "Strikethrough",
+      "Create link",
+      "Bulleted list",
+      "Numbered list",
+      sub("Alignment", [
+        "Text align left",
+        "Text align center",
+        "Text align right",
+        "Text align top",
+        "Text align middle",
+        "Text align bottom",
+      ]),
+      sub("Adjust", [
+        "Increase font size",
+        "Decrease font size",
+        "Increase letter spacing",
+        "Decrease letter spacing",
+        "Auto width and height",
+        "Auto height",
+        "Fixed size",
+      ]),
+      sub("Case", ["UPPERCASE", "lowercase", "Title Case"]),
+      sub("Text direction", [
+        "Automatic direction",
+        "Left to right",
+        "Right to left",
+      ]),
+      sub("Spell check", [
+        "Browser spell check",
+        "Automatic spelling language",
+        "Spell check: English",
+        "Spell check: 简体中文",
+      ]),
+    ]),
+    sub("Arrange", [
+      ...arrangeCommands.map((c) => c.name),
+      "Align left",
+      "Align horizontal centers",
+      "Align right",
+      "Align top",
+      "Align vertical centers",
+      "Align bottom",
+    ]),
+    sub("Vector", [
+      "Edit vector",
+      "Split vector into layers",
+      "Join selection",
+      "Smooth join selection",
+      "Delete and heal selection",
+      "Split vector",
+      "Simplify vector",
+      "Offset vector",
+    ]),
+    sub("Plugins", ["Run last plugin", "Manage plugins"]),
+    sub("Widgets", ["Manage widgets", "Select all widgets"]),
+    sub("Preferences", [
+      "Snap to geometry",
+      "Snap to objects",
+      "Snap to pixel grid",
+      "Keep tool selected after use",
+      "Highlight layers on hover",
+      "Rename duplicated layers",
+      "Show dimensions on objects",
+      "Hide canvas UI during changes",
+      "Use smart quotes/symbols",
+      "Flip objects while resizing",
+      "Keyboard zooms into selection",
+      "Invert zoom direction",
+      "Ctrl+click opens right click menus",
+      "Use number keys for opacity",
+      "Use old shortcuts for outlines",
+      "Use ⌘⌥↑/↓ to rotate layers",
+      "Play audio notifications in AI chat",
+      "Open links in desktop app",
+      "Show Agents on canvas",
+      "Use scroll wheel zoom",
+      "Right-click and drag to pan",
+      "Theme",
+      "Color profile",
+      "Keyboard layout",
+      "Accessibility settings",
+      "Permissions and helpers",
+      "Nudge amount",
+      "General settings",
+    ]),
+    actionItem("Libraries"),
+    actionItem("Open in desktop app"),
+    sub("AI balance", ["AI design engine"]),
+    sub("Help and account", [
+      "Keyboard shortcuts",
+      "MCP connection",
+      "General settings",
+    ]),
   ];
+
   useEffect(() => {
     function down(e: KeyboardEvent) {
-      if (importInFlight.current) return;
+      if (importInFlight.current || e.defaultPrevented) return;
       const el = e.target as HTMLElement;
       if (
+        el.closest('[role="menu"]') ||
         ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) ||
         el.isContentEditable
       )
         return;
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === "Quote") {
-        e.preventDefault();
-        setSnapOptions((v) => ({ ...v, pixel: !v.pixel }));
-        return;
-      }
-      if (e.altKey && e.ctrlKey && ["KeyT", "KeyH", "KeyV"].includes(e.code)) {
-        e.preventDefault();
-        arrangeSelection(
-          e.code === "KeyT"
-            ? "tidy"
-            : e.code === "KeyH"
-              ? "space-x"
-              : "space-y",
-        );
-        return;
-      }
-      if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-        const align = (
-          {
-            KeyA: "left",
-            KeyH: "center",
-            KeyD: "right",
-            KeyW: "top",
-            KeyV: "middle",
-            KeyS: "bottom",
-          } as const
-        )[e.code as "KeyA"];
-        if (align) {
-          e.preventDefault();
-          run({ type: "align", ids: selected, axis: align });
+      if (e.key === "Escape") {
+        if (menuAnchor) {
+          setMenuAnchor(null);
           return;
         }
-      }
-      if (e.key === "Enter" && first && !modal && !present) {
-        e.preventDefault();
-        editVector();
-        return;
-      }
-      if (e.altKey && e.shiftKey && e.code === "KeyF") {
-        e.preventDefault();
-        vectorOperation("flatten");
-        return;
-      }
-      if (e.altKey && (e.metaKey || e.ctrlKey) && e.code === "KeyO") {
-        e.preventDefault();
-        vectorOperation("outline");
-        return;
-      }
-      if (e.key === "Escape") {
         if (colorPicking) {
           setColorPicking(false);
           return;
@@ -1836,215 +2575,80 @@ export default function App() {
         setTool("move");
         return;
       }
-      if (modal || present) return;
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
-        e.preventDefault();
-        setFindOpen(true);
-        return;
-      }
-      const mod = e.metaKey || e.ctrlKey,
-        k = e.key.toLowerCase();
-      if (k === " " && !e.shiftKey) {
+      if (modal || present || menuAnchor || editingCrop) return;
+      if (
+        e.key === " " &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey
+      ) {
         space.current = true;
         setSpaceHeld(true);
         e.preventDefault();
         return;
       }
-      if (mod) {
-        if (k === "z") {
-          e.preventDefault();
-          e.shiftKey ? redo() : undo();
-          return;
-        }
-        if (k === "y") {
-          e.preventDefault();
-          redo();
-          return;
-        }
-        if (k === "a") {
-          e.preventDefault();
-          setSelected(
-            doc.nodes
-              .filter(
-                (n) =>
-                  n.pageId === page && !n.parentId && n.visible && !n.locked,
-              )
-              .map((n) => n.id),
-          );
-          return;
-        }
-        if (k === "s") {
-          e.preventDefault();
-          localExport();
-          return;
-        }
-        if (k === "o") {
-          e.preventDefault();
-          fileInput.current?.click();
-          return;
-        }
-        if (k === "r" && e.shiftKey) {
-          e.preventDefault();
-          void paste("replace");
-          return;
-        }
-        if (k === "d") {
-          e.preventDefault();
-          run({ type: "duplicate", ids: selected });
-          return;
-        }
-        if (k === "g") {
-          e.preventDefault();
-          run(
-            e.shiftKey
-              ? { type: "ungroup", ids: selected }
-              : {
-                  type: "group",
-                  ids: selected,
-                  kind: e.altKey ? "frame" : "group",
-                },
-          );
-          return;
-        }
-        if (k === "k") {
-          e.preventDefault();
-          if (e.altKey)
-            run({ type: "group", ids: selected, kind: "component" });
-          else {
-            setQuery("");
-            setModal("commands");
-          }
-          return;
-        }
-        if (k === "c") {
-          e.preventDefault();
-          e.altKey ? copyStyle() : copy();
-          return;
-        }
-        if (k === "x") {
-          e.preventDefault();
-          copy(true);
-          return;
-        }
-        if (k === "v") {
-          if (!e.altKey && !e.shiftKey) return; // Native paste supplies external clipboard data without a permission prompt.
-          e.preventDefault();
-          if (e.altKey) pasteStyle();
-          else void paste("over");
-          return;
-        }
-        if (k === "\\") {
-          e.preventDefault();
-          setHiddenUI((v) => !v);
-          return;
-        }
-        if (k === "[" || k === "]") {
-          e.preventDefault();
-          run({
-            type: "order",
-            ids: selected,
-            direction: k === "]" ? "front" : "back",
-          });
-          return;
-        }
-      }
-      if (e.key === "Delete" || e.key === "Backspace") {
-        e.preventDefault();
-        run({ type: "delete", ids: selected });
-        return;
-      }
-      if (k === "a" && e.shiftKey) {
-        e.preventDefault();
-        autoLayout(e.altKey);
-        return;
-      }
-      if (k === "g" && e.shiftKey) {
-        setGrid((v) => !v);
-        return;
-      }
-      if (k === "o" && e.shiftKey) {
-        setOutline((v) => !v);
-        return;
-      }
-      if (k === " " && e.shiftKey) {
-        e.preventDefault();
-        presentStart();
-        return;
-      }
-      if (e.key.startsWith("Arrow")) {
+      if (e.key.startsWith("Arrow") && !e.altKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         const amount = e.shiftKey ? 10 : 1;
-        const ns = roots(doc, selected).filter(
-          (n) => !n.locked && !ancestors(doc, n).some((p) => p.locked),
-        );
         let next = doc;
-        for (const n of ns)
+        for (const n of roots(doc, selected).filter(
+          (n) => !n.locked && !ancestors(doc, n).some((p) => p.locked),
+        ))
           next = execute(next, {
             type: "update",
             ids: [n.id],
             patch: {
               x:
                 n.x +
-                (k === "arrowright" ? amount : k === "arrowleft" ? -amount : 0),
+                (e.key === "ArrowRight"
+                  ? amount
+                  : e.key === "ArrowLeft"
+                    ? -amount
+                    : 0),
               y:
                 n.y +
-                (k === "arrowdown" ? amount : k === "arrowup" ? -amount : 0),
+                (e.key === "ArrowDown"
+                  ? amount
+                  : e.key === "ArrowUp"
+                    ? -amount
+                    : 0),
             },
           }).doc;
-        if (ns.length) change(next);
+        if (next !== doc) change(next);
         return;
       }
-      if (k === "[" || k === "]") {
-        e.preventDefault();
-        run({
-          type: "order",
-          ids: selected,
-          direction: k === "]" ? "forward" : "backward",
-        });
-        return;
-      }
-      if (e.shiftKey && e.code === "Digit1") {
-        e.preventDefault();
-        fit();
-        return;
-      }
-      if (e.shiftKey && e.code === "Digit2") {
-        e.preventDefault();
-        fit(true);
-        return;
-      }
-      if (e.shiftKey && e.code === "Digit0") {
-        setView((v) => ({ ...v, zoom: 1 }));
-        return;
-      }
-      if (k === "+" || k === "=" || k === "-") {
-        e.preventDefault();
-        setView((v) => ({
-          ...v,
-          zoom: Math.min(8, Math.max(0.05, v.zoom * (k === "-" ? 0.8 : 1.25))),
-        }));
-        return;
-      }
-      if (e.key === "?") {
-        setModal("shortcuts");
-        return;
-      }
-      const mapping: Record<string, Tool> = {
-        v: "move",
-        k: "scale",
-        f: "frame",
-        a: "frame",
-        r: "rectangle",
-        o: "ellipse",
-        l: "line",
-        p: e.shiftKey ? "pencil" : "pen",
-        t: "text",
-        h: "hand",
-      };
-      if (mapping[k] && !mod) {
-        pathDrawing.current?.finish();
-        setTool(mapping[k]);
-      }
+      let command = shortcutRegistry.find((s) =>
+        shortcutMatches(e, s, keyboardLayout, platform),
+      );
+      // Explicit legacy aliases; every canonical key comes from the registry.
+      if (
+        !command &&
+        ((e.code === "Delete" &&
+          !e.shiftKey &&
+          !e.metaKey &&
+          !e.ctrlKey &&
+          !e.altKey) ||
+          (e.code === "KeyY" && e.ctrlKey && !e.shiftKey && !e.altKey) ||
+          (e.code === "KeyG" &&
+            (e.metaKey || e.ctrlKey) &&
+            e.shiftKey &&
+            !e.altKey))
+      )
+        command = shortcutRegistry.find(
+          (s) =>
+            s.name ===
+            (e.code === "Delete"
+              ? "Delete"
+              : e.code === "KeyY"
+                ? "Redo"
+                : "Ungroup selection"),
+        );
+      if (!command) return;
+      if (command.native) return;
+      e.preventDefault();
+      const action = actions.find((a) => a.name === command!.name);
+      if (action && !action.disabled) action.run();
     }
     const up = (e: KeyboardEvent) => {
       if (e.key === "Alt") setMeasure(null);
@@ -2566,7 +3170,11 @@ export default function App() {
                 <button
                   className="tiny"
                   aria-label={t("File menu")}
-                  onClick={() => void openFiles()}
+                  aria-haspopup="menu"
+                  aria-expanded={!!menuAnchor}
+                  onClick={(e) =>
+                    setMenuAnchor(menuAnchor ? null : e.currentTarget)
+                  }
                 >
                   <ChevronDown size={12} />
                 </button>
@@ -3252,7 +3860,7 @@ export default function App() {
                 className={effectiveTool === item.id ? "active" : ""}
                 aria-pressed={effectiveTool === item.id}
                 aria-label={t(item.label)}
-                title={`${t(item.label)}${item.key ? " · " + item.key : ""}`}
+                title={`${t(item.label)}${shortcutLabel(item.label, platform) ? " · " + shortcutLabel(item.label, platform) : ""}`}
                 onClick={() => {
                   pathDrawing.current?.finish();
                   if (item.id !== "move" && item.id !== "hand")
@@ -3373,7 +3981,7 @@ export default function App() {
                     }}
                   >
                     {t("Zoom to fit")}
-                    <kbd>Shift 1</kbd>
+                    <kbd>{shortcutLabel("Zoom to fit", platform)}</kbd>
                   </button>
                   <button
                     onClick={() => {
@@ -3382,7 +3990,7 @@ export default function App() {
                     }}
                   >
                     {t("Zoom to selection")}
-                    <kbd>Shift 2</kbd>
+                    <kbd>{shortcutLabel("Zoom to selection", platform)}</kbd>
                   </button>
                 </div>
               )}
@@ -4503,140 +5111,44 @@ export default function App() {
           </aside>
         )}
       </div>
-      {context && (
-        <div
-          className="context-menu"
-          style={{
-            left: Math.min(context.x, window.innerWidth - 240),
-            top: Math.max(8, Math.min(context.y, window.innerHeight - 608)),
-          }}
-        >
-          {actions
-            .filter((a) =>
-              [
-                "Duplicate selection",
-                "Group selection",
-                "Ungroup selection",
-                "Frame selection",
-                "Create component",
-                "Add auto layout",
-              ].includes(a.name),
-            )
-            .map((a) => (
-              <button
-                key={a.name}
-                disabled={a.disabled}
-                onClick={() => {
-                  a.run();
-                  setContext(null);
-                }}
-              >
-                {t(a.name)}
-                <kbd>{a.key}</kbd>
-              </button>
-            ))}
-          <hr />
-          <button
-            onClick={() => {
-              copy();
-              setContext(null);
-            }}
-          >
-            {t("Copy")}
-            <kbd>⌘ C</kbd>
-          </button>
-          <button
-            onClick={() => {
-              void paste();
-              setContext(null);
-            }}
-          >
-            {t("Paste")}
-            <kbd>⌘ V</kbd>
-          </button>
-          <button
-            disabled={!selected.length}
-            onClick={() => {
-              void paste("over");
-              setContext(null);
-            }}
-          >
-            {t("Paste over selection")}
-          </button>
-          <button
-            disabled={!selected.length}
-            onClick={() => {
-              void paste("replace");
-              setContext(null);
-            }}
-          >
-            {t("Paste to replace")}
-          </button>
-          <button
-            disabled={!selected.length}
-            onClick={() => {
-              void copyAs("SVG");
-              setContext(null);
-            }}
-          >
-            {t("Copy as SVG")}
-          </button>
-          <button
-            disabled={!selected.length}
-            onClick={() => {
-              void copyAs("PNG");
-              setContext(null);
-            }}
-          >
-            {t("Copy as PNG")}
-          </button>
-          <button
-            disabled={!first}
-            onClick={() => {
-              copyStyle();
-              setContext(null);
-            }}
-          >
-            {t("Copy properties")}
-          </button>
-          <button
-            disabled={!styleClipboard.current || !selected.length}
-            onClick={() => {
-              pasteStyle();
-              setContext(null);
-            }}
-          >
-            {t("Paste properties")}
-          </button>
-          <button
-            disabled={!first}
-            onClick={() => {
-              saveDefaultStyle();
-              setContext(null);
-            }}
-          >
-            {t("Set default properties")}
-          </button>
-          <button
-            disabled={!first}
-            onClick={() => {
-              setColorPicking(true);
-              notify("Click the canvas to pick a color; Escape cancels");
-              setContext(null);
-            }}
-          >
-            {t("Pick color")}
-          </button>
-          <button
-            onClick={() => {
-              run({ type: "delete", ids: selected });
-              setContext(null);
-            }}
-          >
-            {t("Delete")}
-            <kbd>⌫</kbd>
-          </button>
-        </div>
+      {menuAnchor && (
+        <CommandMenu
+          items={menuItems}
+          anchor={menuAnchor}
+          onClose={() => setMenuAnchor(null)}
+        />
+      )}
+      {context && svg.current && (
+        <CommandMenu
+          label="Context menu"
+          items={[
+            ...[
+              "Undo",
+              "Redo",
+              "Cut",
+              "Copy",
+              "Paste",
+              "Paste over selection",
+              "Paste to replace",
+            ].map(actionItem),
+            sub("Copy as", ["Copy as CSS", "Copy as SVG", "Copy as PNG"]),
+            ...[
+              "Duplicate selection",
+              "Delete",
+              "Group selection",
+              "Ungroup selection",
+              "Frame selection",
+              "Create component",
+              "Add auto layout",
+              "Copy properties",
+              "Paste properties",
+              "Pick color",
+            ].map(actionItem),
+          ]}
+          anchor={svg.current as unknown as HTMLElement}
+          point={context}
+          onClose={() => setContext(null)}
+        />
       )}
       {findOpen && (
         <FindPanel
@@ -4780,6 +5292,36 @@ export default function App() {
                     {t(
                       "Your language preference could not be saved. It will apply for this session only.",
                     )}
+                  </p>
+                )}
+                <label className="setting-row">
+                  {t("Keyboard layout")}
+                  <select
+                    aria-label={t("Keyboard layout")}
+                    value={keyboardLayout}
+                    onChange={(e) => {
+                      const layout = e.target.value as KeyboardLayout;
+                      setKeyboardLayout(layout);
+                      try {
+                        localStorage.setItem(
+                          "baizefig-keyboard-layout",
+                          layout,
+                        );
+                        setKeyboardError(false);
+                      } catch {
+                        setKeyboardError(true);
+                      }
+                    }}
+                  >
+                    <option value="physical">
+                      {t("Physical keys (QWERTY positions)")}
+                    </option>
+                    <option value="character">{t("Typed characters")}</option>
+                  </select>
+                </label>
+                {keyboardError && (
+                  <p role="alert">
+                    {t("Keyboard preference applies for this session only.")}
                   </p>
                 )}
                 <h3>{t("Canvas aids")}</h3>
@@ -5234,11 +5776,11 @@ export default function App() {
                   )}
                 </p>
                 <div className="shortcut-list">
-                  {shortcuts.map(([group, name, key]) => (
+                  {shortcutRegistry.map(({ name }) => (
                     <div key={name}>
-                      <span className="shortcut-group">{t(group)}</span>
+                      <span className="shortcut-group">{t("Shortcut")}</span>
                       <span>{t(name)}</span>
-                      <kbd>{t(key)}</kbd>
+                      <kbd>{shortcutLabel(name, platform)}</kbd>
                     </div>
                   ))}
                 </div>

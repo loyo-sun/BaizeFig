@@ -164,3 +164,9 @@
 
 ### 自动布局面板补齐（2026-10-15）
 宽高 Fixed/Hug/Fill、嵌套文字尺寸联动、min/max/权重、四边内边距、换行/行距、主交叉轴对齐、网格固定/hug/fr 轨道与跨行列、绝对定位及父级约束均可直接编辑。启用子项 Fill 时自动固定对应 Hug 父轴，防止循环依赖。组件属性与 Slots 仍由 #14 后续项跟踪。
+
+### 主菜单与快捷键（2026-10-15）
+多级主菜单、右键与搜索共用命令状态；键位、帮助和生成文档共用 src/shortcuts.ts。截图中未实现功能明确灰态，并继续由原 Issue 跟踪，不把菜单展示计作功能完成。菜单支持悬停、键盘、屏幕边界翻转/滚动。
+Mac 层级顺序、取消组合、像素网格与缩放按用户截图修正；Windows/Linux Ctrl 键位冲突单独映射。真实 Windows/Linux 浏览器和全部保留键行为仍需平台复验；不因纯函数测试通过就声称三平台原生行为等价。
+[复制格式官方依据](https://www.figma.com/best-practices/tips-on-developer-handoff/)：CSS/SVG/PNG。CSS仅交付基础属性，复杂路径/分层填充/效果请用SVG。
+[文字属性依据](https://help.figma.com/hc/en-us/articles/360039956634-Explore-text-properties)、[RTL](https://help.figma.com/hc/en-us/articles/4972283635863-Add-right-to-left-text)、[拼写检查](https://help.figma.com/hc/en-us/articles/27323589692055-Use-spell-check)：本产品菜单覆盖对齐、字号/字距/尺寸、大小写、方向和浏览器拼写检查及语言；小型大写、复杂OpenType等仍归#34，不声称截图未展开子菜单逐字等价。
