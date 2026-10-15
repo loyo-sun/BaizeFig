@@ -184,6 +184,8 @@ export const zhCN: Record<string, string> = {
   "Component properties": "组件属性",
   "Combine selected components as variants": "将选中组件合并为变体集",
   "Variant {name}": "变体：{name}",
+  "Property variable {name}": "属性变量：{name}",
+  "Fixed property value": "固定属性值",
   "Property name {name}": "属性名称：{name}",
   "Component text {name}": "组件文本：{name}",
   "Component visibility {name}": "组件显示：{name}",
@@ -538,13 +540,15 @@ export const zhCN: Record<string, string> = {
     "SVG 和 HTML 保留矢量并嵌入内置 Inter 回退字体；其他字体仍需在接收设备安装。",
   "Could not load a bundled font for export":
     "无法加载导出所需的内置字体，请重试。",
-  "Bundled font rendering is unavailable in this browser": "当前浏览器无法渲染内置字体，请使用较新的浏览器或导出 SVG。",
+  "Bundled font rendering is unavailable in this browser":
+    "当前浏览器无法渲染内置字体，请使用较新的浏览器或导出 SVG。",
   "Invalid bundled font": "内置字体文件无效。",
   On: "开启",
   Off: "关闭",
   Reset: "重置",
   "Advanced typography": "高级字体设置",
-  "Typography features depend on the selected font. Changes apply to this text layer.": "效果取决于所选字体是否支持，修改应用于整个文字图层。",
+  "Typography features depend on the selected font. Changes apply to this text layer.":
+    "效果取决于所选字体是否支持，修改应用于整个文字图层。",
   "Common ligatures": "标准连字",
   "Contextual alternates": "上下文替换",
   "Tabular numbers": "等宽数字",
@@ -556,10 +560,12 @@ export const zhCN: Record<string, string> = {
   "Add font axis": "添加字体轴",
   "Add axis": "添加轴",
   "Optical size": "光学尺寸",
-  "Slant": "倾斜",
-  "Saved glyph outlines preserve unchanged text where available; editing uses available fonts.": "可用的保存字形保留未编辑文字的外观；修改文字后使用当前可用字体。",
+  Slant: "倾斜",
+  "Saved glyph outlines preserve unchanged text where available; editing uses available fonts.":
+    "可用的保存字形保留未编辑文字的外观；修改文字后使用当前可用字体。",
   "Invalid saved glyph cache": "保存的字形数据无效",
-  "Some saved text outlines are unavailable; the available font is used.": "部分保存的文字轮廓不可用，已使用当前可用字体。",
+  "Some saved text outlines are unavailable; the available font is used.":
+    "部分保存的文字轮廓不可用，已使用当前可用字体。",
   "Invalid font settings": "字体高级设置无效",
   "Not detected": "未检测到",
   Available: "可用",

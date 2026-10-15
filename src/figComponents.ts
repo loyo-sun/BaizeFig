@@ -33,20 +33,6 @@ export function restoreFigComponentModels(
   warnings: Set<string>,
 ) {
   const index = new Map(source.map((n) => [guid(n.guid), n]));
-  if (
-    source.some(
-      (n) =>
-        (n.componentPropDefs ?? []).some(
-          (p: Raw) => p.varValue !== undefined,
-        ) ||
-        (n.componentPropAssignments ?? []).some(
-          (p: Raw) => p.varValue !== undefined,
-        ),
-    )
-  )
-    warnings.add(
-      "Some component property preferences or variable bindings were not restored.",
-    );
   const resolved = figPropertyResolver(source);
   const pools = [
     ...(doc.componentLibrary ?? []).map((c) => c.nodes),
@@ -173,6 +159,14 @@ export function restoreFigComponentModels(
         const targets = propertyPaths(p)
           .map((path) => family.get(path))
           .filter((n): n is Node => !!n);
+        const boundField =
+          p.type === "text"
+            ? "text"
+            : p.type === "boolean"
+              ? "visible"
+              : undefined;
+        if (boundField && targets.some((n) => n.bindings?.[boundField]))
+          continue;
         const current = targets.map((n) => value(p.type, n));
         const inferred =
           current.length && current.every((v) => v === current[0])

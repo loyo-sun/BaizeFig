@@ -1,3 +1,4 @@
+import { applyTypedBindings } from "./typedVariables";
 import { relayout, validateDocument, ancestors } from "./core";
 import { applyConstraints } from "./layout";
 import { reflowText } from "./textLayout";
@@ -9,6 +10,7 @@ import {
 import type { Document, Node } from "./core";
 
 function finalized(original: Document, doc: Document) {
+  applyTypedBindings(doc);
   const affected = new Set<string>();
   for (const n of doc.nodes) {
     const old = original.nodes.find((p) => p.id === n.id);
@@ -182,6 +184,12 @@ function expanded(
         !Object.hasOwn(values, property.id) &&
         (Object.hasOwn(overrides[path] ?? {}, field) ||
           Object.hasOwn(nestedOverrides[nestedPath] ?? {}, field))
+      )
+        continue;
+      if (
+        (field === "text" || field === "visible") &&
+        node.bindings?.[field] &&
+        !Object.hasOwn(values, property.id)
       )
         continue;
       const value = values[property.id] ?? property.defaultValue;
@@ -862,6 +870,17 @@ export function setComponentProperty(
   if (property) {
     for (const targetPath of propertyPaths(property)) {
       const target = paths(def.nodes, def.root).get(targetPath)!;
+      const previous = def.root.componentProperties?.find(
+        (p) => p.id === property.id,
+      );
+      if (
+        previous &&
+        previous.defaultValue !== property.defaultValue &&
+        target.bindings
+      ) {
+        if (property.type === "text") delete target.bindings.text;
+        if (property.type === "boolean") delete target.bindings.visible;
+      }
       if (
         property.type === "text" &&
         typeof property.defaultValue === "string"
@@ -1092,5 +1111,113 @@ export function propagatePropertiesToVariants(
       });
     }
   }
+  return finalized(original, doc);
+}
+
+export function componentPropertyState(
+  doc: Document,
+  reference: string,
+  property: ComponentProperty,
+  instanceId?: string,
+) {
+  const nodes = instanceId
+    ? doc.nodes.filter(
+        (n) =>
+          n.componentOwner === instanceId &&
+          propertyPaths(property).includes(n.componentPath ?? ""),
+      )
+    : componentTargets(doc, reference)
+        .filter((t) => propertyPaths(property).includes(t.path))
+        .map((t) => t.node);
+  const field =
+    property.type === "text"
+      ? "text"
+      : property.type === "boolean"
+        ? "visible"
+        : undefined;
+  const variableId =
+    field &&
+    nodes.length &&
+    nodes.every((n) => n.bindings?.[field] === nodes[0].bindings?.[field])
+      ? nodes[0].bindings?.[field]
+      : undefined;
+  const owner = instanceId
+    ? doc.nodes.find((n) => n.id === instanceId)
+    : undefined;
+  const value =
+    variableId && field
+      ? nodes[0][field]
+      : (owner?.componentValues?.[property.id] ?? property.defaultValue);
+  return { value, variableId };
+}
+export function bindComponentProperty(
+  original: Document,
+  reference: string,
+  propertyId: string,
+  variableId: string | undefined,
+  instanceId?: string,
+): Document {
+  const doc = structuredClone(original),
+    def = definition(doc, reference);
+  const property = def?.root.componentProperties?.find(
+    (p) => p.id === propertyId,
+  );
+  if (!def || !property || !["text", "boolean"].includes(property.type))
+    throw Error("Invalid component property binding");
+  const owner = instanceId
+    ? doc.nodes.find(
+        (n) =>
+          n.id === instanceId &&
+          n.type === "instance" &&
+          n.componentId === reference,
+      )
+    : undefined;
+  if (instanceId && !owner) throw Error("Missing component instance");
+  assertWritable(doc, owner ?? def.root);
+  const field = property.type === "text" ? "text" : "visible";
+  const variable = doc.typedVariables?.find((v) => v.id === variableId);
+  if (
+    variableId &&
+    variable?.type !== (field === "text" ? "string" : "boolean")
+  )
+    throw Error("Invalid component property binding");
+  if (!variableId && owner)
+    return setComponentValue(
+      original,
+      owner.id,
+      propertyId,
+      componentPropertyState(doc, reference, property, owner.id).value,
+    );
+  const targets = owner
+    ? doc.nodes.filter(
+        (n) =>
+          n.componentOwner === owner.id &&
+          propertyPaths(property).includes(n.componentPath ?? ""),
+      )
+    : componentTargets(doc, reference)
+        .filter((t) => propertyPaths(property).includes(t.path))
+        .map((t) => t.node);
+  if (targets.length !== propertyPaths(property).length)
+    throw Error("Missing property target");
+  for (const target of targets) {
+    target.bindings = { ...target.bindings };
+    if (variableId) target.bindings[field] = variableId;
+    else delete target.bindings[field];
+    if (owner) {
+      owner.componentOverrides ??= {};
+      const path = target.componentPath ?? "";
+      owner.componentOverrides[path] = {
+        ...owner.componentOverrides[path],
+        bindings: structuredClone(target.bindings),
+      };
+    }
+  }
+  if (owner) delete owner.componentValues?.[property.id];
+  else {
+    if (!variableId && targets.length)
+      property.defaultValue = targets[0][field];
+    updateLibraryFromMain(doc, [def.root.id]);
+  }
+  synchronizeInstances(doc);
   return finalized(original, doc);
 }

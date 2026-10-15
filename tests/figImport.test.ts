@@ -5,6 +5,7 @@ import { parseSchema, encodeBinarySchema, compileSchema } from "kiwi-schema";
 import { importFig, decodeFigMessage, readFigArchive } from "../src/figImport";
 import { validateDocument, execute, ancestors } from "../src/core";
 import { svgString } from "../src/Canvas";
+import { setVariableMode } from "../src/variables";
 import { setComponentValue } from "../src/components";
 import { commandsPath } from "../src/fidelity";
 import { editableNetwork } from "../src/vectorGeometry";
@@ -18,14 +19,14 @@ struct Transform { float m00; float m01; float m02; float m10; float m11; float 
 message Parent { GUID guid = 1; string position = 2; }
 message Font { string family = 1; string style = 2; }
 message Text { string characters = 1; }
-enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; BRUSH = 7; TEXT_PATH = 8; }
+enum Type { DOCUMENT = 0; CANVAS = 1; FRAME = 2; TEXT = 3; ROUNDED_RECTANGLE = 4; SYMBOL = 5; INSTANCE = 6; BRUSH = 7; TEXT_PATH = 8; VARIABLE = 9; VARIABLE_SET = 10; }
 message GUIDPath { GUID[] guids = 1; }
 message SymbolOverride { GUIDPath guidPath = 1; float fontSize = 2; }
 message SymbolData { GUID symbolID = 1; SymbolOverride[] symbolOverrides = 2; }
 message Event { string interactionType = 1; }
 message Action { GUID transitionNodeID = 1; string connectionType = 2; string navigationType = 3; Vector extraScrollOffset = 4; string transitionType = 5; float transitionDuration = 6; }
 message Interaction { Event event = 1; Action[] actions = 2; bool isDeleted = 3; }
-message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; DerivedText derivedTextData = 20; TextPathStart textPathStart = 21; StyleRef styleIdForText = 22; string styleType = 23; string key = 24; LineHeight lineHeight = 25; string textDecoration = 26; }
+message Node { GUID guid = 1; Parent parentIndex = 2; Type type = 3; string name = 4; bool visible = 5; Vector size = 6; Transform transform = 7; Text textData = 8; float fontSize = 9; Font fontName = 10; Interaction[] prototypeInteractions = 11; string scrollDirection = 12; SymbolData symbolData = 13; Geometry[] fillGeometry = 14; VectorData vectorData = 15; Paint[] fillPaints = 16; PropertyDef[] componentPropDefs = 17; PropertyRef[] componentPropRefs = 18; Assignment[] componentPropAssignments = 19; DerivedText derivedTextData = 20; TextPathStart textPathStart = 21; StyleRef styleIdForText = 22; string styleType = 23; string key = 24; LineHeight lineHeight = 25; string textDecoration = 26; string variableResolvedType = 27; StyleRef variableSetID = 28; Mode[] variableSetModes = 29; Values variableDataValues = 30; }
 message AssetRef { string key = 1; }
 message StyleRef { GUID guid = 1; AssetRef assetRef = 2; }
 message LineHeight { string units = 1; float value = 2; }
@@ -35,9 +36,14 @@ struct Rect { float x; float y; float w; float h; }
 message Decoration { Rect[] rects = 1; uint styleID = 2; }
 message TextPathStart { float tValue = 1; bool forward = 2; }
 message PropertyValue { Text textValue = 1; bool boolValue = 2; GUID guidValue = 3; }
-message PropertyDef { GUID id = 1; string name = 2; string type = 3; PropertyValue initialValue = 4; GUID parentPropDefId = 5; }
+message PropertyDef { GUID id = 1; string name = 2; string type = 3; PropertyValue initialValue = 4; GUID parentPropDefId = 5; VariableData varValue = 6; }
 message PropertyRef { GUID defID = 1; string componentPropNodeField = 2; }
-message Assignment { GUID defID = 1; PropertyValue value = 2; }
+message Assignment { GUID defID = 1; PropertyValue value = 2; VariableData varValue = 3; }
+message Mode { GUID id = 1; string name = 2; }
+message AnyValue { string textValue = 1; bool boolValue = 2; StyleRef alias = 3; }
+message VariableData { AnyValue value = 1; }
+message ValueEntry { GUID modeID = 1; VariableData variableData = 2; }
+message Values { ValueEntry[] entries = 1; }
 message Blob { byte[] bytes = 1; }
 message Color { float r = 1; float g = 2; float b = 3; float a = 4; }
 message Paint { string type = 1; Color color = 2; float opacity = 3; bool visible = 4; }
@@ -1052,4 +1058,109 @@ it("retains solid saved decoration geometry with font-independent glyphs in bina
       "/private/tmp/baizefig-saved-decoration.baizefig",
       JSON.stringify(imported),
     );
+});
+
+it("imports component default and instance variable aliases without freezing resolved values", () => {
+  const variable = (id: number, en: string, zh: string) => ({
+    guid: g(id),
+    type: "VARIABLE",
+    name: "Label " + id,
+    variableResolvedType: "STRING",
+    variableSetID: { guid: g(70) },
+    variableDataValues: {
+      entries: [
+        { modeID: g(71), variableData: { value: { textValue: en } } },
+        { modeID: g(72), variableData: { value: { textValue: zh } } },
+      ],
+    },
+  });
+  const source: any[] = [
+    nodes[0],
+    nodes[1],
+    {
+      guid: g(70),
+      type: "VARIABLE_SET",
+      name: "Language",
+      variableSetModes: [
+        { id: g(71), name: "English" },
+        { id: g(72), name: "中文" },
+      ],
+    },
+    variable(60, "Hello", "你好"),
+    variable(61, "World", "世界"),
+    {
+      guid: g(30),
+      type: "SYMBOL",
+      parentIndex: { guid: g(1), position: "a" },
+      name: "Variable main",
+      size: { x: 200, y: 100 },
+      componentPropDefs: [
+        {
+          id: g(100),
+          name: "Label",
+          type: "TEXT",
+          initialValue: { textValue: { characters: "Saved" } },
+          varValue: { value: { alias: { guid: g(60) } } },
+        },
+      ],
+    },
+    ...[31, 32].map((id) => ({
+      guid: g(id),
+      type: "TEXT",
+      parentIndex: { guid: g(30), position: String(id) },
+      name: "Label",
+      size: { x: 100, y: 30 },
+      fontSize: 20,
+      textData: { characters: "Saved" },
+      componentPropRefs: [
+        { defID: g(100), componentPropNodeField: "TEXT_DATA" },
+      ],
+    })),
+    {
+      guid: g(40),
+      type: "INSTANCE",
+      parentIndex: { guid: g(1), position: "b" },
+      name: "Bound instance",
+      size: { x: 200, y: 100 },
+      symbolData: { symbolID: g(30) },
+      componentPropAssignments: [
+        { defID: g(100), varValue: { value: { alias: { guid: g(61) } } } },
+      ],
+    },
+    {
+      guid: g(41),
+      type: "INSTANCE",
+      parentIndex: { guid: g(1), position: "c" },
+      name: "Fixed instance",
+      size: { x: 200, y: 100 },
+      symbolData: { symbolID: g(30) },
+      componentPropAssignments: [
+        { defID: g(100), value: { textValue: { characters: "Fixed" } } },
+      ],
+    },
+  ];
+  const result = importFig(stream({ nodeChanges: source } as any));
+  let doc = result.document;
+  const root = doc.nodes.find((n) => n.name === "Bound instance")!,
+    fixed = doc.nodes.find((n) => n.name === "Fixed instance")!;
+  const children = (id: string) =>
+    doc.nodes.filter((n) => n.componentOwner === id && n.type === "text");
+  expect(children(root.id).map((n) => n.text)).toEqual(["World", "World"]);
+  expect(
+    children(root.id).every((n) => n.bindings?.text === "figvar:0:61"),
+  ).toBe(true);
+  expect(root.componentValues?.["figprop:0:100"]).toBeUndefined();
+  doc = setVariableMode(doc, "figset:0:70", "0:72");
+  expect(children(root.id).map((n) => n.text)).toEqual(["世界", "世界"]);
+  expect(children(fixed.id).map((n) => n.text)).toEqual(["Fixed", "Fixed"]);
+  doc = execute(doc, {
+    type: "update",
+    ids: [root.id],
+    patch: { name: "Renamed bound instance" },
+  }).doc;
+  expect(children(root.id).map((n) => n.text)).toEqual(["世界", "世界"]);
+  validateDocument(JSON.parse(JSON.stringify(doc)));
+  expect(result.report.warnings).not.toContain(
+    "Some component property variable bindings could not be restored.",
+  );
 });

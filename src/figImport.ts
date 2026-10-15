@@ -1,3 +1,4 @@
+import { reflowText } from "./textLayout";
 import { readFigGlyphCache, readFigDecorations } from "./figGlyphCache";
 import { figFontSettings } from "./fontSettings";
 import {
@@ -1371,6 +1372,47 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       warnings.add(
         "Saved text line positions are restored; fonts, mixed styles and reflow may differ.",
       );
+    for (const ref of r.componentPropRefs ?? []) {
+      if (ref.isDeleted) continue;
+      const property = resolveProperty(guid(ref.defID));
+      const assignment = [...assignments]
+        .reverse()
+        .find((a) => propertyId(a.defID) === propertyId(ref.defID));
+      const data = assignment ? assignment.varValue : property?.varValue;
+      const field =
+        ref.componentPropNodeField === "TEXT_DATA" && kind === "text"
+          ? "text"
+          : ref.componentPropNodeField === "VISIBLE"
+            ? "visible"
+            : undefined;
+      if (data === undefined) {
+        if (field && assignment?.value) delete node.bindings?.[field];
+        continue;
+      }
+      const alias = rawRef(data.value?.alias),
+        variable =
+          alias && doc.typedVariables?.find((v) => v.id === variableId(alias));
+      if (field && variable?.type === bindingTypes[field]) {
+        node.bindings = { ...node.bindings, [field]: variable.id };
+      } else if (
+        field &&
+        typeof (field === "text"
+          ? data.value?.textValue
+          : data.value?.boolValue) === bindingTypes[field]
+      ) {
+        const value =
+          field === "text" ? data.value.textValue : data.value.boolValue;
+        delete node.bindings?.[field];
+        if (field === "text" && node.text !== value) {
+          node.text = value;
+          reflowText(node);
+        }
+        if (field === "visible") node.visible = value;
+      } else
+        warnings.add(
+          "Some component property variable bindings could not be restored.",
+        );
+    }
     doc.nodes.push(node);
     const ownChildren = children.get(key) ?? [];
     const defs =

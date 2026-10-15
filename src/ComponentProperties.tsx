@@ -2,6 +2,8 @@ import { useState } from "react";
 import { ancestors, id, type Document, type Node } from "./core";
 import {
   componentTargets,
+  componentPropertyState,
+  bindComponentProperty,
   componentDefinitions,
   setComponentProperty,
   setComponentValue,
@@ -121,8 +123,12 @@ export function ComponentProperties({
               </label>
             ))}
           {(definition.root.componentProperties ?? []).map((property) => {
-            const value =
-              owner?.componentValues?.[property.id] ?? property.defaultValue;
+            const { value, variableId } = componentPropertyState(
+              doc,
+              reference!,
+              property,
+              main ? undefined : owner?.id,
+            );
             return (
               <div className="property-definition" key={property.id}>
                 {main ? (
@@ -139,6 +145,38 @@ export function ComponentProperties({
                   />
                 ) : (
                   <strong>{property.name}</strong>
+                )}
+                {["text", "boolean"].includes(property.type) && (
+                  <select
+                    aria-label={t("Property variable {name}", {
+                      name: property.name,
+                    })}
+                    value={variableId ?? ""}
+                    onChange={(e) =>
+                      act(() =>
+                        bindComponentProperty(
+                          doc,
+                          reference!,
+                          property.id,
+                          e.target.value || undefined,
+                          main ? undefined : owner?.id,
+                        ),
+                      )
+                    }
+                  >
+                    <option value="">{t("Fixed property value")}</option>
+                    {(doc.typedVariables ?? [])
+                      .filter(
+                        (v) =>
+                          v.type ===
+                          (property.type === "text" ? "string" : "boolean"),
+                      )
+                      .map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.name}
+                        </option>
+                      ))}
+                  </select>
                 )}
                 {property.type === "text" && (
                   <input
