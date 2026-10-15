@@ -1,3 +1,4 @@
+import { hasSavedTextOutlines } from "./glyphCache";
 export { default as bundledFontLicense } from "@fontsource-variable/inter/LICENSE?raw";
 import normalCss from "@fontsource-variable/inter/wght.css?raw";
 import italicCss from "@fontsource-variable/inter/wght-italic.css?raw";
@@ -118,10 +119,7 @@ export async function bundledFontCss(
       !n.visible ||
       (n.fidelity?.text?.characters === n.text &&
         ((n.fidelity.textPath && n.fidelity.text.glyphs) ||
-          (n.fidelity.text.glyphCache &&
-            !(n.textFlow?.runs ?? n.fidelity.text.spans)?.some(
-              (s) => s.underline || s.strikethrough,
-            ))))
+          hasSavedTextOutlines(n)))
     )
       continue;
     if (usesBundledInter(n.fontFamily))

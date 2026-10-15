@@ -1,4 +1,4 @@
-import { savedTextGlyphs } from "./glyphCache";
+import { savedTextGlyphs, hasSavedTextOutlines } from "./glyphCache";
 import { fontSettingsStyle, mergeFontSettings } from "./fontSettings";
 import { renderFontFamily } from "./fontFamily";
 import {
@@ -264,14 +264,7 @@ function ShapeContent({
       </g>
     );
   }
-  if (
-    n.type === "text" &&
-    f?.text?.characters === n.text &&
-    f.text.glyphCache &&
-    !(n.textFlow?.runs ?? f.text.spans)?.some(
-      (s) => s.underline || s.strikethrough,
-    )
-  )
+  if (f?.text && hasSavedTextOutlines(n))
     return (
       <g
         aria-label={n.text}
@@ -298,6 +291,17 @@ function ShapeContent({
             path
           );
         })}
+        {f.text.decorations?.map((r, i) => (
+          <rect
+            key={`decoration-${i}`}
+            x={r.x}
+            y={r.y}
+            width={r.width}
+            height={r.height}
+            fill={outline ? "none" : (r.fill ?? n.fill)}
+            stroke={outline ? "#78909c" : undefined}
+          />
+        ))}
       </g>
     );
   if (n.type === "text" && f?.text && f.text.characters === n.text)

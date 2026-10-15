@@ -668,7 +668,11 @@ export function execute(
               ].includes(k),
             ) &&
             (patch.textFlow === undefined ||
-              sameTextLayout(n.textFlow, patch.textFlow as Node["textFlow"]));
+              sameTextLayout(
+                n.textFlow,
+                patch.textFlow as Node["textFlow"],
+                !!n.fidelity?.text?.decorations?.length,
+              ));
           Object.assign(n, patch);
           if (keepSavedGlyphs && n.fidelity?.text && patch.textFlow) {
             n.fidelity = structuredClone(n.fidelity);
@@ -1852,12 +1856,18 @@ export function demoDocument(): Document {
 
 // Paint and link ranges do not affect shaping. Compare coalesced shaping runs so
 // splitting a range to recolor it does not discard the source outlines.
-function sameTextLayout(a: Node["textFlow"], b: Node["textFlow"]) {
+function sameTextLayout(
+  a: Node["textFlow"],
+  b: Node["textFlow"],
+  includeFill = false,
+) {
   const shaping = (flow: Node["textFlow"]) => {
     if (!flow) return flow;
     const runs: TextRun[] = [];
     for (const { fill: _fill, href: _href, ...run } of flow.runs ?? []) {
       const { start, end, ...style } = run;
+      if (includeFill && _fill !== undefined)
+        Object.assign(style, { fill: _fill });
       if (!Object.values(style).some((v) => v !== undefined)) continue;
       const last = runs.at(-1);
       if (last && last.end === start) {

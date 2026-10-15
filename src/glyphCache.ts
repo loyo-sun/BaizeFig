@@ -1,3 +1,4 @@
+import type { Node } from "./core";
 import { deflateSync, Inflate, strFromU8, strToU8 } from "fflate";
 import type { SavedGlyph } from "./textPath";
 const MAX_RAW = 4 * 1024 * 1024,
@@ -160,5 +161,18 @@ export function savedTextGlyphs(text?: {
     (text?.glyphCache
       ? decodeGlyphCache(text.glyphCache, text.characters.length)
       : undefined)
+  );
+}
+
+export function hasSavedTextOutlines(n: Node) {
+  const text = n.fidelity?.text;
+  return (
+    n.type === "text" &&
+    text?.characters === n.text &&
+    !!text.glyphCache &&
+    (!!text.decorations?.length ||
+      !(n.textFlow?.runs ?? text.spans)?.some(
+        (s) => s.underline || s.strikethrough,
+      ))
   );
 }

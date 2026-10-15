@@ -1,4 +1,4 @@
-import { readFigGlyphCache } from "./figGlyphCache";
+import { readFigGlyphCache, readFigDecorations } from "./figGlyphCache";
 import { figFontSettings } from "./fontSettings";
 import {
   resolveFigTypography,
@@ -988,6 +988,9 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
         "fontSize",
         "fontVariations",
         "styleIdForText",
+        "textDecoration",
+        "textDecorationStyle",
+        "textDecorationFillPaints",
       ].some((field) => explicitFields.has(field)) ||
         explicitFields.has("derivedTextData"))
     ) {
@@ -998,8 +1001,12 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
           (index) => message.blobs?.[index]?.bytes,
           glyphContourCache,
         );
+        const decorations = readFigDecorations(r, (p) =>
+          color(p.color, p.opacity ?? 1),
+        );
         if (
           fidelity.text ||
+          decorations ||
           !importedRuns.some((s) => s.underline || s.strikethrough)
         ) {
           fidelity.text ??= {
@@ -1009,6 +1016,7 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
             spans: importedRuns,
           };
           fidelity.text.glyphCache = glyphCache;
+          fidelity.text.decorations = decorations;
           warnings.add(
             "Saved glyph outlines preserve unchanged text where available; editing uses available fonts.",
           );

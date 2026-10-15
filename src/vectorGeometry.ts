@@ -1,4 +1,4 @@
-import { savedTextGlyphs } from "./glyphCache";
+import { savedTextGlyphs, hasSavedTextOutlines } from "./glyphCache";
 import type { SavedGlyph } from "./textPath";
 import type { TextRun } from "./textLayout";
 import { textBaselineD } from "./textPath";
@@ -643,11 +643,7 @@ export function vectorVisualBounds(
   const savedGlyphs =
     n.type === "text" &&
     n.fidelity?.text?.characters === n.text &&
-    (n.fidelity.textPath ||
-      (n.fidelity.text.glyphCache &&
-        !(n.textFlow?.runs ?? n.fidelity.text.spans)?.some(
-          (s) => s.underline || s.strikethrough,
-        )))
+    (n.fidelity.textPath || hasSavedTextOutlines(n))
       ? savedTextGlyphs(n.fidelity.text)
       : undefined;
   if (n.type === "text" && (n.fidelity?.textPath || savedGlyphs?.length)) {
@@ -657,6 +653,13 @@ export function vectorVisualBounds(
         d: p.d,
         rule: "nonzero" as const,
       }));
+      for (const r of f.text?.decorations ?? []) {
+        if (r.fill === "none") continue;
+        paths.push({
+          d: `M${r.x} ${r.y}h${r.width}v${r.height}h${-r.width}Z`,
+          rule: "nonzero",
+        });
+      }
       return vectorVisualBounds(doc, {
         ...n,
         type: "path",

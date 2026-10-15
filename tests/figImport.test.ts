@@ -30,7 +30,9 @@ message AssetRef { string key = 1; }
 message StyleRef { GUID guid = 1; AssetRef assetRef = 2; }
 message LineHeight { string units = 1; float value = 2; }
 message Glyph { uint commandsBlob = 1; Vector position = 2; float fontSize = 3; uint firstCharacter = 4; float advance = 5; float rotation = 6; }
-message DerivedText { Glyph[] glyphs = 1; }
+message DerivedText { Glyph[] glyphs = 1; Decoration[] decorations = 2; }
+struct Rect { float x; float y; float w; float h; }
+message Decoration { Rect[] rects = 1; uint styleID = 2; }
 message TextPathStart { float tValue = 1; bool forward = 2; }
 message PropertyValue { Text textValue = 1; bool boolValue = 2; GUID guidValue = 3; }
 message PropertyDef { GUID id = 1; string name = 2; string type = 3; PropertyValue initialValue = 4; GUID parentPropDefId = 5; }
@@ -973,3 +975,81 @@ it.skipIf(!sample)(
   },
   15000,
 );
+
+it("retains solid saved decoration geometry with font-independent glyphs in binary imports", async () => {
+  const glyph = new Uint8Array(37),
+    view = new DataView(glyph.buffer);
+  let p = 0;
+  for (const [op, x, y] of [
+    [1, 0, 0],
+    [2, 0.5, 0],
+    [2, 0.5, 1],
+    [2, 0, 1],
+  ]) {
+    glyph[p++] = op;
+    view.setFloat32(p, x, true);
+    p += 4;
+    view.setFloat32(p, y, true);
+    p += 4;
+  }
+  const imported = importFig(
+    stream({
+      nodeChanges: [
+        nodes[0],
+        nodes[1],
+        {
+          guid: g(33),
+          parentIndex: { guid: g(1), position: "a" },
+          type: "TEXT",
+          name: "Saved decoration",
+          size: { x: 200, y: 60 },
+          textData: { characters: "ABC" },
+          fontSize: 40,
+          fontName: { family: "Unavailable decoration font", style: "Regular" },
+          textDecoration: "UNDERLINE",
+          fillPaints: [
+            { type: "SOLID", color: { r: 0.1, g: 0.3, b: 0.2, a: 1 } },
+          ],
+          derivedTextData: {
+            glyphs: [0, 1, 2].map((i) => ({
+              commandsBlob: 0,
+              position: { x: i * 30, y: 40 },
+              fontSize: 40,
+              firstCharacter: i,
+            })),
+            decorations: [
+              {
+                styleID: 0,
+                rects: [
+                  { x: 0, y: 44, w: 80, h: 3 },
+                  { x: 0, y: 20, w: 80, h: 2 },
+                ],
+              },
+            ],
+          },
+        },
+      ],
+      blobs: [{ bytes: [...glyph] }],
+    } as any),
+  ).document;
+  const n = imported.nodes[0];
+  expect(n.fidelity?.text?.decorations).toEqual([
+    { x: 0, y: 44, width: 80, height: 3 },
+    { x: 0, y: 20, width: 80, height: 2 },
+  ]);
+  validateDocument(JSON.parse(JSON.stringify(imported)));
+  const svg = await svgString(imported, imported.pages[0].id);
+  expect(svg).not.toContain("<text ");
+  expect(svg).toContain('y="44" width="80" height="3"');
+  const changed = execute(imported, {
+    type: "update",
+    ids: [n.id],
+    patch: { text: "EDIT" },
+  }).doc;
+  expect(changed.nodes[0].fidelity?.text?.decorations).toBeUndefined();
+  if (process.env.BAIZEFIG_DECORATION_FIXTURE)
+    writeFileSync(
+      "/private/tmp/baizefig-saved-decoration.baizefig",
+      JSON.stringify(imported),
+    );
+});

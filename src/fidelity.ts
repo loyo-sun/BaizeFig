@@ -1,4 +1,4 @@
-import {decodeGlyphCache} from "./glyphCache";
+import { decodeGlyphCache } from "./glyphCache";
 import { validFontSettings, type FontSettings } from "./fontSettings";
 import { baselineTrail, type PathText, type SavedGlyph } from "./textPath";
 import type { TextLine } from "./textLayout";
@@ -38,6 +38,13 @@ export interface Fidelity {
   text?: {
     glyphs?: SavedGlyph[];
     glyphCache?: string;
+    decorations?: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      fill?: string;
+    }[];
     characters: string;
     lines: TextLine[];
     letterSpacing: number;
@@ -344,9 +351,25 @@ export function validateFidelity(f: Fidelity) {
     )
       throw Error("Invalid text baseline");
   }
-  if(f.text?.glyphCache!==undefined){
-    if(typeof f.text.characters!=='string')throw Error('Invalid saved glyph cache');
-    decodeGlyphCache(f.text.glyphCache,f.text.characters.length);
+  if (
+    f.text?.decorations !== undefined &&
+    (!Array.isArray(f.text.decorations) ||
+      f.text.decorations.length > 20000 ||
+      f.text.decorations.some(
+        (r) =>
+          ![r.x, r.y, r.width, r.height].every(Number.isFinite) ||
+          r.width < 0 ||
+          r.height < 0 ||
+          (r.fill !== undefined &&
+            r.fill !== "none" &&
+            !/^#[\da-f]{3,8}$/i.test(r.fill)),
+      ))
+  )
+    throw Error("Invalid saved text decorations");
+  if (f.text?.glyphCache !== undefined) {
+    if (typeof f.text.characters !== "string")
+      throw Error("Invalid saved glyph cache");
+    decodeGlyphCache(f.text.glyphCache, f.text.characters.length);
   }
   if (
     f.text?.glyphs &&
