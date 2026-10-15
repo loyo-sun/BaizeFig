@@ -1,3 +1,5 @@
+import { FindPanel } from "./FindPanel";
+import { replaceMatches, type FindMatch } from "./findReplace";
 import { FrameGrid } from "./FrameGrid";
 import { CanvasAids, MeasureOverlay, type Box } from "./CanvasAids";
 import { arrangeNodes, type ArrangeMode } from "./arrange";
@@ -200,6 +202,8 @@ const shortcuts = [
   ["Tools", "Pencil", "Shift P"],
   ["Tools", "Text", "T"],
   ["Tools", "Hand", "H / hold Space"],
+  ["Edit", "Find and replace", "⌘ / Ctrl F"],
+  ["Edit", "Find next / previous", "Enter / Shift Enter"],
   ["Edit", "Undo", "⌘ / Ctrl Z"],
   ["Edit", "Redo", "⌘ / Ctrl Shift Z"],
   ["Edit", "Copy / Cut / Paste", "⌘ / Ctrl C / X / V"],
@@ -254,6 +258,7 @@ export default function App() {
   const latestDocument = useRef(doc);
   latestDocument.current = doc;
   const figInput = useRef<HTMLInputElement>(null);
+  const [findOpen, setFindOpen] = useState(false);
   const [arrangeGap, setArrangeGap] = useState(16);
   const [rulers, setRulers] = useState(() => readCanvasAids().rulers),
     [layoutGrid, setLayoutGrid] = useState(() => readCanvasAids().grid),
@@ -1469,6 +1474,11 @@ export default function App() {
     }
   }
   const actions = [
+    {
+      name: "Find and replace",
+      key: "⌘ / Ctrl F",
+      run: () => setFindOpen(true),
+    },
     ...[
       { kind: "flip-x", name: "Flip horizontal" },
       { kind: "flip-y", name: "Flip vertical" },
@@ -1630,6 +1640,11 @@ export default function App() {
         return;
       }
       if (modal || present) return;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        setFindOpen(true);
+        return;
+      }
       const mod = e.metaKey || e.ctrlKey,
         k = e.key.toLowerCase();
       if (k === " " && !e.shiftKey) {
@@ -2186,6 +2201,25 @@ export default function App() {
       });
   }
   const selectionBox = chosen.length ? bounds(doc, roots(doc, selected)) : null;
+  function locateMatch(match: FindMatch) {
+    const node = doc.nodes.find((n) => n.id === match.nodeId);
+    if (!node) return;
+    setPage(match.pageId);
+    setSelected([node.id]);
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      for (const p of ancestors(doc, node)) next.delete(p.id);
+      return next;
+    });
+    const b = bounds(doc, [node]),
+      rect = svg.current?.getBoundingClientRect();
+    if (rect)
+      setView((v) => ({
+        ...v,
+        x: rect.width / 2 - (b.x + b.width / 2) * v.zoom,
+        y: rect.height / 2 - (b.y + b.height / 2) * v.zoom,
+      }));
+  }
   const title =
     modal === "fig-report"
       ? "Figma import result"
@@ -2320,8 +2354,8 @@ export default function App() {
               <span>{t("Pages")}</span>
               <button
                 className="tiny page-search"
-                aria-label={t("Search layers")}
-                onClick={() => setShowLayerSearch((v) => !v)}
+                aria-label={t("Find and replace")}
+                onClick={() => setFindOpen((v) => !v)}
               >
                 <Search size={16} />
               </button>
@@ -4205,6 +4239,30 @@ export default function App() {
             <kbd>⌫</kbd>
           </button>
         </div>
+      )}
+      {findOpen && (
+        <FindPanel
+          key={doc.id}
+          doc={doc}
+          pageId={page}
+          onClose={() => setFindOpen(false)}
+          onLocate={locateMatch}
+          onReplace={(matches, value) => {
+            try {
+              const result = replaceMatches(doc, matches, value);
+              if (JSON.stringify(result.doc) !== JSON.stringify(doc))
+                change(result.doc);
+              notify(
+                t(
+                  "Replaced {count} matches; skipped {skipped} locked matches.",
+                  { count: result.count, skipped: result.skipped },
+                ),
+              );
+            } catch (error) {
+              notify((error as Error).message);
+            }
+          }}
+        />
       )}
       {importBusy && (
         <div

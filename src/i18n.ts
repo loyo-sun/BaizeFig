@@ -4,6 +4,25 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Find next / previous": "查找下一个 / 上一个",
+  "Find and replace": "查找与替换",
+  "Find text": "查找内容",
+  "Replace with": "替换为",
+  "Search scope": "搜索范围",
+  "Text content": "文本内容",
+  "Layer names": "图层名称",
+  "Text and layer names": "文本和图层名称",
+  "Match case": "区分大小写",
+  "All pages": "所有页面",
+  "Find previous": "上一个匹配",
+  "Find next": "下一个匹配",
+  Replace: "替换",
+  "Replace all": "全部替换",
+  "Locked layers are searchable but will not be replaced.":
+    "锁定图层可以搜索，但不会被替换。",
+  "Replaced {count} matches; skipped {skipped} locked matches.":
+    "已替换 {count} 处，跳过 {skipped} 处锁定匹配。",
+
   "Split vector into layers": "拆分矢量图层",
   "Select at least one vector layer": "请至少选择一个矢量图层",
   "Smooth join selection": "平滑连接",
@@ -414,7 +433,6 @@ export const zhCN: Record<string, string> = {
   Typography: "文字排版",
   "Font family": "字体",
   "Text alignment": "文本对齐",
-  "Text content": "文本内容",
   Fill: "填充",
   "Reset fill": "切换填充",
   "Fill color": "填充颜色",
