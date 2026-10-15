@@ -4,6 +4,21 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Color picked": "已取色",
+  "Design changed; pick the color again": "设计已更改，请重新取色",
+  "Click the canvas to pick a color; Escape cancels":
+    "点击画布取色，按 Escape 取消",
+  "Pick screen color": "屏幕取色",
+  "Select an unlocked destination first": "请先选择未锁定的目标图层",
+  "Invalid clipboard data": "剪贴板数据无效",
+  "PNG clipboard unavailable; exported a file instead":
+    "此浏览器无法复制 PNG，已导出为文件",
+  "Copied as PNG": "已复制为 PNG",
+  "Copied as SVG": "已复制为 SVG",
+  "Copy as PNG": "复制为 PNG",
+  "Copy as SVG": "复制为 SVG",
+  "Paste to replace": "粘贴替换",
+  "Paste over selection": "覆盖选区粘贴",
   "Component library definitions keep their source fonts; detached and document text layers can be replaced here.":
     "组件库定义保留来源字体，此处替换文档内文本及已分离实例的字体。",
   "Updated {count} text layers; skipped {skipped} locked layers.":

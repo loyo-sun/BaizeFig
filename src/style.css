@@ -2321,3 +2321,8 @@ html[lang="zh-CN"] .layer-title-input {
   border-radius: 6px;
   margin-left: 10px;
 }
+
+.context-menu {
+  max-height: min(600px, calc(100vh - 16px));
+  overflow-y: auto;
+}

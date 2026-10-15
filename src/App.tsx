@@ -1,3 +1,5 @@
+import { sampleSvgColor } from "./colorPicker";
+import { pasteNodes, type NodeClipboard, type PasteMode } from "./clipboard";
 import { FontManager } from "./FontManager";
 import { VersionHistory } from "./VersionHistory";
 import {
@@ -272,6 +274,7 @@ export default function App() {
   const figInput = useRef<HTMLInputElement>(null);
   const styleClipboard = useRef<StyleProperties | null>(null);
   const [defaultStyles, setDefaultStyles] = useState(readDefaultStyles);
+  const [colorPicking, setColorPicking] = useState(false);
   const [findOpen, setFindOpen] = useState(false);
   const [arrangeGap, setArrangeGap] = useState(16);
   const [rulers, setRulers] = useState(() => readCanvasAids().rulers),
@@ -388,7 +391,7 @@ export default function App() {
   const history = useRef(new History()),
     svg = useRef<SVGSVGElement>(null),
     fileInput = useRef<HTMLInputElement>(null),
-    clipboard = useRef<{ nodes: Node[] } | null>(null),
+    clipboard = useRef<NodeClipboard | null>(null),
     space = useRef(false),
     socket = useRef<WebSocket | null>(null),
     abort = useRef<AbortController | null>(null);
@@ -746,8 +749,30 @@ export default function App() {
   }
   function pointerDown(e: RPointer, id?: string, handle?: string) {
     if (editingText) return;
+    if (colorPicking && e.button === 0) {
+      e.preventDefault();
+      e.stopPropagation();
+      setColorPicking(false);
+      const at = point(e),
+        before = doc,
+        destination = [...selected];
+      void svgString(before, page)
+        .then((source) => sampleSvgColor(source, at, before.background))
+        .then((color) => {
+          if (latestDocument.current === before) {
+            run({ type: "update", ids: destination, patch: color });
+            notify("Color picked");
+          } else notify("Design changed; pick the color again");
+        })
+        .catch((error) => notify((error as Error).message));
+      return;
+    }
     lastPointerHit.current = id;
-    if (e.button === 2) return;
+    if (e.button === 2) {
+      e.stopPropagation();
+      if (id && !selected.includes(id)) setSelected([id]);
+      return;
+    }
     if (e.button !== 0 && e.button !== 1) return;
     setContext(null);
     e.stopPropagation();
@@ -1136,6 +1161,7 @@ export default function App() {
     }
   }
   function copy(cut = false) {
+    if (!selected.length) return;
     const nodes = roots(doc, selected);
     const all = descendants(
       doc,
@@ -1167,35 +1193,62 @@ export default function App() {
             })()
           : clone(n),
       );
-    clipboard.current = { nodes: data };
+    clipboard.current = { nodes: data, documentId: doc.id };
     navigator.clipboard
-      ?.writeText(JSON.stringify({ format: "baizefig-clipboard", nodes: data }))
+      ?.writeText(
+        JSON.stringify({
+          format: "baizefig-clipboard",
+          nodes: data,
+          documentId: doc.id,
+        }),
+      )
       .catch(() => {});
     if (cut) run({ type: "delete", ids: selected });
     else notify("Copied");
   }
-  async function paste() {
-    let data = clipboard.current;
+  async function paste(mode: PasteMode = "normal", provided?: NodeClipboard) {
+    let data = provided ?? clipboard.current;
     try {
-      const raw = await navigator.clipboard.readText();
-      const parsed = JSON.parse(raw);
-      if (parsed.format === "baizefig-clipboard" && Array.isArray(parsed.nodes))
-        data = parsed;
+      if (!data?.nodes.length) {
+        const raw = await navigator.clipboard.readText();
+        const parsed = JSON.parse(raw);
+        if (
+          parsed.format === "baizefig-clipboard" &&
+          Array.isArray(parsed.nodes)
+        )
+          data = parsed;
+      }
     } catch {
       /* Browser clipboard permission may be unavailable; use session clipboard. */
     }
-    if (!data) return;
-    const map = new Map(data.nodes.map((n) => [n.id, id()]));
-    const nodes = data.nodes.map((n) => ({
-      ...clone(n),
-      id: map.get(n.id)!,
-      pageId: page,
-      parentId: n.parentId ? (map.get(n.parentId) ?? null) : null,
-      x: n.x + (n.parentId ? 0 : 20),
-      y: n.y + (n.parentId ? 0 : 20),
-      targetId: n.targetId ? map.get(n.targetId) : undefined,
-    }));
-    run({ type: "create", nodes });
+    if (!data || latestDocument.current.id !== doc.id) return;
+    try {
+      const result = pasteNodes(doc, page, data, selected, mode);
+      if (JSON.stringify(result.doc) !== JSON.stringify(doc))
+        change(result.doc, result.selection);
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
+  async function copyAs(format: "SVG" | "PNG") {
+    if (!selected.length) return;
+    try {
+      const data = await svgString(doc, page, selected);
+      if (format === "SVG") {
+        await navigator.clipboard.writeText(data);
+        notify("Copied as SVG");
+      } else if (typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([
+          new ClipboardItem({ "image/png": await raster(data) }),
+        ]);
+        notify("Copied as PNG");
+      } else {
+        download(await raster(data), "BaizeFig.png");
+        notify("PNG clipboard unavailable; exported a file instead");
+      }
+    } catch (error) {
+      notify((error as Error).message);
+    }
   }
   function autoLayout(remove = false) {
     if (!first) return;
@@ -1516,7 +1569,7 @@ export default function App() {
       notify("Could not save default properties");
     }
   }
-  async function pickColor() {
+  async function pickScreenColor() {
     if (!first) return;
     const EyeDropper = (
       window as unknown as {
@@ -1539,6 +1592,20 @@ export default function App() {
   }
   const actions = [
     {
+      name: "Paste over selection",
+      disabled: !selected.length,
+      key: "⇧ ⌘ / Ctrl Shift V",
+      run: () => void paste("over"),
+    },
+    {
+      name: "Paste to replace",
+      disabled: !selected.length,
+      key: "⇧ ⌘ / Ctrl Shift R",
+      run: () => void paste("replace"),
+    },
+    { name: "Copy as SVG", key: "", run: () => void copyAs("SVG") },
+    { name: "Copy as PNG", key: "", run: () => void copyAs("PNG") },
+    {
       name: "Font availability and replacement",
       key: "",
       run: () => setModal("fonts"),
@@ -1547,7 +1614,17 @@ export default function App() {
     { name: "Copy properties", key: "⌥ ⌘ / Ctrl Alt C", run: copyStyle },
     { name: "Paste properties", key: "⌥ ⌘ / Ctrl Alt V", run: pasteStyle },
     { name: "Set default properties", key: "", run: saveDefaultStyle },
-    { name: "Pick color", key: "", run: () => void pickColor() },
+    {
+      name: "Pick color",
+      key: "",
+      run: () => {
+        if (first) {
+          setColorPicking(true);
+          notify("Click the canvas to pick a color; Escape cancels");
+        }
+      },
+    },
+    { name: "Pick screen color", key: "", run: () => void pickScreenColor() },
     {
       name: "Find and replace",
       key: "⌘ / Ctrl F",
@@ -1599,10 +1676,21 @@ export default function App() {
       run: () => fileInput.current?.click(),
     },
     { name: "Save local copy", key: "⌘ S", run: localExport },
-    { name: "Undo", key: "⌘ Z", run: undo },
-    { name: "Redo", key: "⇧ ⌘ Z", run: redo },
+    {
+      name: "Undo",
+      key: "⌘ Z",
+      run: undo,
+      disabled: !history.current.past.length,
+    },
+    {
+      name: "Redo",
+      key: "⇧ ⌘ Z",
+      run: redo,
+      disabled: !history.current.future.length,
+    },
     {
       name: "Duplicate selection",
+      disabled: !selected.length,
       key: "⌘ D",
       run: () => run({ type: "duplicate", ids: selected }),
     },
@@ -1699,6 +1787,10 @@ export default function App() {
         return;
       }
       if (e.key === "Escape") {
+        if (colorPicking) {
+          setColorPicking(false);
+          return;
+        }
         if (present) {
           setPresent(null);
           return;
@@ -1760,6 +1852,11 @@ export default function App() {
           fileInput.current?.click();
           return;
         }
+        if (k === "r" && e.shiftKey) {
+          e.preventDefault();
+          void paste("replace");
+          return;
+        }
         if (k === "d") {
           e.preventDefault();
           run({ type: "duplicate", ids: selected });
@@ -1799,9 +1896,10 @@ export default function App() {
           return;
         }
         if (k === "v") {
+          if (!e.altKey && !e.shiftKey) return; // Native paste supplies external clipboard data without a permission prompt.
           e.preventDefault();
           if (e.altKey) pasteStyle();
-          else void paste();
+          else void paste("over");
           return;
         }
         if (k === "\\") {
@@ -1934,10 +2032,36 @@ export default function App() {
       setSpaceHeld(false);
       cancelDrag();
     };
+    const pasteEvent = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        modal ||
+        present ||
+        importInFlight.current ||
+        target.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
+      )
+        return;
+      try {
+        const parsed = JSON.parse(e.clipboardData?.getData("text/plain") ?? "");
+        if (
+          parsed.format === "baizefig-clipboard" &&
+          Array.isArray(parsed.nodes)
+        ) {
+          e.preventDefault();
+          clipboard.current = parsed;
+          void paste("normal", parsed);
+        }
+      } catch {
+        /* Plain text remains available in the canvas text editor. */
+      }
+    };
+    window.addEventListener("paste", pasteEvent);
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
     window.addEventListener("blur", blur);
     return () => {
+      window.removeEventListener("paste", pasteEvent);
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
@@ -2699,6 +2823,7 @@ export default function App() {
             onPointerUp={pointerUp}
             onPointerCancel={cancelDrag}
             onContextMenu={(e) => {
+              if (editingText) return;
               e.preventDefault();
               setContext({ x: e.clientX, y: e.clientY });
             }}
@@ -2734,7 +2859,9 @@ export default function App() {
             }}
             style={{
               background: doc.background,
-              cursor: canvasCursor(tool, spaceHeld, isPanning),
+              cursor: colorPicking
+                ? "crosshair"
+                : canvasCursor(tool, spaceHeld, isPanning),
             }}
           >
             <defs>
@@ -4285,7 +4412,7 @@ export default function App() {
           className="context-menu"
           style={{
             left: Math.min(context.x, window.innerWidth - 240),
-            top: Math.min(context.y, window.innerHeight - 400),
+            top: Math.max(8, Math.min(context.y, window.innerHeight - 608)),
           }}
         >
           {actions
@@ -4302,6 +4429,7 @@ export default function App() {
             .map((a) => (
               <button
                 key={a.name}
+                disabled={a.disabled}
                 onClick={() => {
                   a.run();
                   setContext(null);
@@ -4329,6 +4457,42 @@ export default function App() {
           >
             {t("Paste")}
             <kbd>⌘ V</kbd>
+          </button>
+          <button
+            disabled={!selected.length}
+            onClick={() => {
+              void paste("over");
+              setContext(null);
+            }}
+          >
+            {t("Paste over selection")}
+          </button>
+          <button
+            disabled={!selected.length}
+            onClick={() => {
+              void paste("replace");
+              setContext(null);
+            }}
+          >
+            {t("Paste to replace")}
+          </button>
+          <button
+            disabled={!selected.length}
+            onClick={() => {
+              void copyAs("SVG");
+              setContext(null);
+            }}
+          >
+            {t("Copy as SVG")}
+          </button>
+          <button
+            disabled={!selected.length}
+            onClick={() => {
+              void copyAs("PNG");
+              setContext(null);
+            }}
+          >
+            {t("Copy as PNG")}
           </button>
           <button
             disabled={!first}
@@ -4360,7 +4524,8 @@ export default function App() {
           <button
             disabled={!first}
             onClick={() => {
-              void pickColor();
+              setColorPicking(true);
+              notify("Click the canvas to pick a color; Escape cancels");
               setContext(null);
             }}
           >
@@ -5005,6 +5170,7 @@ export default function App() {
                     .map((a) => (
                       <button
                         key={a.name}
+                        disabled={a.disabled}
                         onClick={() => {
                           setModal(null);
                           a.run();
