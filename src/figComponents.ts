@@ -185,16 +185,22 @@ export function restoreFigComponentModels(
       }
     }
   const sets: ComponentSet[] = [];
+  const symbolsByParent = new Map<string, Raw[]>();
+  for (const n of source)
+    if (n.type === "SYMBOL") {
+      const parent = guid(n.parentIndex?.guid);
+      if (!symbolsByParent.has(parent)) symbolsByParent.set(parent, []);
+      symbolsByParent.get(parent)!.push(n);
+    }
   for (const group of source.filter((n) => n.isStateGroup)) {
+    const children = symbolsByParent.get(guid(group.guid)) ?? [];
+    if (!children.some((n) => nativeRefs.has(guid(n.guid)))) continue;
     const axes = (group.componentPropDefs ?? [])
       .map((p: Raw) => resolved(guid(p.id)))
       .filter((p: Raw | undefined) => p?.type === "VARIANT");
     if (!axes.length) continue;
     const variants: ComponentSet["variants"] = [];
-    for (const child of source.filter(
-      (n) =>
-        n.type === "SYMBOL" && guid(n.parentIndex?.guid) === guid(group.guid),
-    )) {
+    for (const child of children) {
       const specs = new Map<string, string>(
         (child.variantPropSpecs ?? []).map((s: Raw) => [
           resolved(guid(s.propDefId))?.canonical,

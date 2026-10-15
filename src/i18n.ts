@@ -669,6 +669,13 @@ export const zhCN: Record<string, string> = {
   "Add fill": "添加填充",
   Solid: "纯色",
   "Linear gradient": "线性渐变",
+  "Choose Figma pages": "选择要导入的 Figma 页面",
+  "This large file can be imported by page. Referenced components are included automatically.": "此文件较大，可按页面导入。所选页面引用的组件会自动保留。",
+  "Source layer counts exclude expanded instances. Import fewer pages if the result exceeds the processing limit.": "原始图层数不含组件实例展开后的图层。如超出处理上限，请减少所选页面。",
+  "{count} source layers": "{count} 个原始图层",
+  "Choose fewer pages": "请选择更少的页面",
+  "Import selected pages": "导入所选页面",
+  "Choose pages to import this large Figma file": "请按页面导入此大型 Figma 文件",
   "Radial gradient": "径向渐变",
   "Diamond gradient": "菱形渐变",
 

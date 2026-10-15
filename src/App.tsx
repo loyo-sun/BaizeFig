@@ -1,3 +1,5 @@
+import { FigPagePicker } from "./FigPagePicker";
+import type { FigPageSummary } from "./figImport";
 import { PerformanceMonitor } from "./PerformanceMonitor";
 import { ExportDialog } from "./ExportDialog";
 import type { ExportFormat, ExportScope } from "./exportPlan";
@@ -268,6 +270,7 @@ export default function App() {
     null,
   );
   const [importBusy, setImportBusy] = useState(false);
+  const [figPages, setFigPages] = useState<{pages:FigPageSummary[];resolve:(ids:string[])=>void} | null>(null);
   const importInFlight = useRef(false);
   const latestDocument = useRef(doc);
   latestDocument.current = doc;
@@ -1422,7 +1425,9 @@ export default function App() {
         }
         if (/\.fig$/i.test(file.name)) {
           setImportBusy(true);
-          const imported = await importFigFile(file);
+          const imported = await importFigFile(file, pages => new Promise(resolve => {
+            setModal(null); setFigPages({pages,resolve});
+          }));
           await save(latestDocument.current);
           await save(imported.document);
           history.current = new History();
@@ -1509,7 +1514,7 @@ export default function App() {
         setModal("svg-report");
       } else notify("Assets imported");
     } catch (e) {
-      notify((e as Error).message);
+      if ((e as Error).name !== "AbortError") notify((e as Error).message);
     } finally {
       importInFlight.current = false;
       setImportBusy(false);
@@ -5362,7 +5367,10 @@ export default function App() {
           }}
         />
       )}
-      {importBusy && (
+      {figPages && <FigPagePicker pages={figPages.pages} onChoose={ids=>{
+        figPages.resolve(ids); setFigPages(null);
+      }}/>}
+      {importBusy && !figPages && (
         <div
           className="modal-backdrop import-progress"
           role="alert"

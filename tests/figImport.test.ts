@@ -2,7 +2,13 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
 import { zipSync, deflateSync, strToU8 } from "fflate";
 import { parseSchema, encodeBinarySchema, compileSchema } from "kiwi-schema";
-import { importFig, decodeFigMessage, readFigArchive } from "../src/figImport";
+import {
+  importFig,
+  decodeFigMessage,
+  readFigArchive,
+  importFigArchive,
+  figPageSummaries,
+} from "../src/figImport";
 import { validateDocument, execute, ancestors } from "../src/core";
 import { svgString } from "../src/Canvas";
 import { setVariableMode } from "../src/variables";
@@ -1259,4 +1265,72 @@ it("restores layered stroke paints on saved outline geometry without painting th
   const svg = await svgString(result.document, result.document.pages[0].id);
   expect(svg).toContain("<linearGradient");
   expect(svg.split(`d="${path.d}"`).length - 1).toBe(2);
+});
+
+it("imports selected pages with referenced components, excluding unrelated component libraries", () => {
+  const source = [
+    nodes[0],
+    nodes[1],
+    {
+      guid: g(90),
+      type: "CANVAS",
+      parentIndex: { guid: g(0), position: "z" },
+      name: "Other",
+    },
+    {
+      guid: g(10),
+      type: "SYMBOL",
+      parentIndex: { guid: g(90), position: "a" },
+      size: { x: 100, y: 100 },
+      name: "Needed",
+    },
+    {
+      guid: g(11),
+      type: "TEXT",
+      parentIndex: { guid: g(10), position: "a" },
+      size: { x: 80, y: 20 },
+      textData: { characters: "shared" },
+    },
+    {
+      guid: g(12),
+      type: "SYMBOL",
+      parentIndex: { guid: g(90), position: "b" },
+      size: { x: 100, y: 100 },
+      name: "Unused",
+    },
+    {
+      guid: g(20),
+      type: "INSTANCE",
+      parentIndex: { guid: g(1), position: "a" },
+      size: { x: 100, y: 100 },
+      symbolData: { symbolID: g(10) },
+    },
+  ];
+  const archive = readFigArchive(stream({ nodeChanges: source } as any));
+  expect(figPageSummaries(archive).map((p) => p.layers)).toEqual([1, 3]);
+  const result = importFigArchive(archive, "selected.fig", ["0:1"]);
+  expect(result.document.pages).toHaveLength(1);
+  expect(
+    result.document.componentLibrary?.some((c) => c.sourceId === "0:10"),
+  ).toBe(true);
+  expect(
+    result.document.componentLibrary?.some((c) => c.sourceId === "0:12"),
+  ).toBe(false);
+  expect(result.document.nodes.some((n) => n.text === "shared")).toBe(true);
+  expect(() => importFigArchive(archive, "selected.fig", [])).toThrow(
+    "No supported pages",
+  );
+  expect(() => importFigArchive(archive, "selected.fig", ["missing"])).toThrow(
+    "No supported pages",
+  );
+  validateDocument(result.document);
+});
+it("decodes a large message with the bounded two-pass expansion path", () => {
+  const large = "x".repeat(17 * 1024 * 1024);
+  const archive = readFigArchive(
+    stream({
+      nodeChanges: [{ guid: g(0), type: "DOCUMENT", name: large }],
+    } as any),
+  );
+  expect(archive.message.nodeChanges[0].name.length).toBe(large.length);
 });

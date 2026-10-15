@@ -37,6 +37,9 @@ import {
 } from "./core";
 
 const LIMIT = 64 * 1024 * 1024;
+// Separate archive/image and design-message ceilings. A moderately compressed
+// design can exceed the archive size while its embedded images remain small.
+const MESSAGE_LIMIT = 128 * 1024 * 1024;
 type Raw = Record<string, any>;
 export interface FigImportResult {
   document: Document;
@@ -49,30 +52,53 @@ export interface FigImportResult {
   };
 }
 const fail = () => Error("Invalid or unsupported Figma file");
-function unpack(data: Uint8Array, zstd = false): Uint8Array {
-  const parts: Uint8Array[] = [];
-  let size = 0;
-  const receive = (part: Uint8Array) => {
-    size += part.length;
-    if (size > LIMIT) throw Error("Figma file exceeds import limits");
-    parts.push(part.slice());
+function unpack(data: Uint8Array, zstd = false, limit = LIMIT): Uint8Array {
+  let parts: Uint8Array[] = [],
+    size = 0,
+    replay = false;
+  const run = (receive: (part: Uint8Array) => void) => {
+    const stream = zstd ? new Decompress(receive) : new Inflate(receive);
+    for (let p = 0; p < data.length; p += 4096)
+      stream.push(data.subarray(p, p + 4096), p + 4096 >= data.length);
   };
-  const stream = zstd ? new Decompress(receive) : new Inflate(receive);
-  for (let p = 0; p < data.length; p += 4096)
-    stream.push(data.subarray(p, p + 4096), p + 4096 >= data.length);
+  run((part) => {
+    size += part.length;
+    if (size > limit) throw Error("Figma file exceeds import limits");
+    // Small inputs stay single-pass. For large messages retain only the count,
+    // then decode into the exact buffer, avoiding two full expanded copies.
+    if (size > 16 * 1024 * 1024) {
+      replay = true;
+      parts = [];
+    }
+    if (!replay) parts.push(part.slice());
+  });
   const out = new Uint8Array(size);
-  let p = 0;
-  for (const part of parts) {
-    out.set(part, p);
-    p += part.length;
-  }
+  let offset = 0;
+  const append = (part: Uint8Array) => {
+    if (offset + part.length > size) throw fail();
+    out.set(part, offset);
+    offset += part.length;
+  };
+  if (replay) run(append);
+  else parts.forEach(append);
+  if (offset !== size) throw fail();
   return out;
 }
 // Interpret the embedded schema as data. Never generate/execute code from file contents.
 export function decodeFigMessage(schema: Schema, data: Uint8Array): Raw {
   const defs = new Map(schema.definitions.map((d) => [d.name, d]));
+  const taggedFields = new Map(
+    schema.definitions.map((d) => [
+      d.name,
+      new Map(d.fields.map((f) => [f.value, f])),
+    ]),
+  );
   const bb = new ByteBuffer(data);
-  let budget = 3000000;
+  let budget = Math.min(48000000, Math.max(3000000, data.length * 2));
+  let objectBudget = Math.min(
+    6500000,
+    Math.max(1000000, Math.floor(data.length / 10)),
+  );
   function read(type: string, depth: number): any {
     if (--budget < 0 || depth > 100)
       throw Error("Figma file exceeds import limits");
@@ -100,7 +126,9 @@ export function decodeFigMessage(schema: Schema, data: Uint8Array): Raw {
       const value = bb.readVarUint();
       return def.fields.find((f) => f.value === value)?.name;
     }
-    const result = Object.create(null);
+    if (--objectBudget < 0) throw Error("Figma file exceeds import limits");
+    // Retain null-prototype records without eagerly choosing dictionary storage.
+    const result: Raw = Object.setPrototypeOf({}, null);
     const field = (f: (typeof def.fields)[number]) => {
       if (!f.type) throw fail();
       let value: any;
@@ -117,7 +145,7 @@ export function decodeFigMessage(schema: Schema, data: Uint8Array): Raw {
     };
     if (def.kind === "STRUCT") def.fields.forEach(field);
     else {
-      const fields = new Map(def.fields.map((f) => [f.value, f]));
+      const fields = taggedFields.get(type)!;
       for (;;) {
         if (--budget < 0) throw Error("Figma file exceeds import limits");
         const tag = bb.readVarUint();
@@ -169,7 +197,7 @@ export function importFig(
   filename = "Untitled.fig",
 ): FigImportResult {
   try {
-    return parseFig(input, filename);
+    return importFigArchive(readFigArchive(input), filename);
   } catch (e) {
     if (
       e instanceof Error &&
@@ -226,9 +254,12 @@ export function readFigArchive(input: Uint8Array) {
   const payload = chunks[1];
   const message = decodeFigMessage(
     schema,
-    unpack(payload, payload[0] === 0x28 && payload[1] === 0xb5),
+    unpack(payload, payload[0] === 0x28 && payload[1] === 0xb5, MESSAGE_LIMIT),
   );
-  if (!Array.isArray(message.nodeChanges) || message.nodeChanges.length > 20000)
+  if (
+    !Array.isArray(message.nodeChanges) ||
+    message.nodeChanges.length > 150000
+  )
     throw fail();
   let meta: Raw = {};
   if (files["meta.json"]) {
@@ -240,8 +271,54 @@ export function readFigArchive(input: Uint8Array) {
   }
   return { files, bytes, chunks, schema, message, meta };
 }
-function parseFig(input: Uint8Array, filename: string): FigImportResult {
-  const { files, message, meta } = readFigArchive(input);
+export interface FigPageSummary {
+  id: string;
+  name: string;
+  layers: number;
+}
+export function figPageSummaries(
+  archive: ReturnType<typeof readFigArchive>,
+): FigPageSummary[] {
+  const source: Raw[] = archive.message.nodeChanges;
+  const index = new Map(source.map((n) => [guid(n.guid), n]));
+  const pages = new Map(
+    source
+      .filter((n) => n.type === "CANVAS" && n.visible !== false)
+      .map((n) => [
+        guid(n.guid),
+        { id: guid(n.guid), name: n.name ?? "Page", layers: 0 },
+      ]),
+  );
+  const owners = new Map<string, string | undefined>();
+  function owner(id: string, seen = new Set<string>()): string | undefined {
+    if (owners.has(id)) return owners.get(id);
+    if (pages.has(id)) return id;
+    if (!id || seen.has(id) || seen.size > 100) return;
+    seen.add(id);
+    const n = index.get(id);
+    const value = n && owner(guid(n.parentIndex?.guid), seen);
+    owners.set(id, value);
+    return value;
+  }
+  for (const n of source) {
+    if (n.type === "CANVAS" || !n.size) continue;
+    const id = owner(guid(n.guid));
+    if (id) pages.get(id)!.layers++;
+  }
+  return [...pages.values()];
+}
+export function importFigArchive(
+  archive: ReturnType<typeof readFigArchive>,
+  filename = "Untitled.fig",
+  pageIds?: string[],
+): FigImportResult {
+  const { files, message, meta } = archive;
+  if (
+    pageIds &&
+    (!pageIds.length ||
+      pageIds.some((id) => !figPageSummaries(archive).some((p) => p.id === id)))
+  )
+    throw Error("No supported pages in Figma file");
   const source: Raw[] = message.nodeChanges;
   const index = new Map(source.map((n) => [guid(n.guid), n]));
   const resolveProperty = figPropertyResolver(source);
@@ -1455,7 +1532,10 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
       warnings.add("Some component definitions are unavailable.");
   }
   for (const page of source.filter(
-    (n) => n.type === "CANVAS" && n.visible !== false,
+    (n) =>
+      n.type === "CANVAS" &&
+      n.visible !== false &&
+      (!pageIds || pageIds.includes(guid(n.guid))),
   )) {
     const pageId = crypto.randomUUID();
     doc.pages.push({ id: pageId, name: page.name ?? "Page" });
@@ -1466,18 +1546,42 @@ function parseFig(input: Uint8Array, filename: string): FigImportResult {
     const originalImages = images,
       originalInstances = instances;
     doc.componentLibrary = [];
-    for (const definition of source.filter(
-      (n) => n.type === "SYMBOL" && n.size,
-    )) {
+    const definitions = new Map(
+      source
+        .filter((n) => n.type === "SYMBOL" && n.size)
+        .map((n) => [guid(n.guid), n]),
+    );
+    const pending = new Set<string>(
+      pageIds
+        ? doc.nodes.flatMap((n) =>
+            n.fidelity?.componentSourceId ? [n.fidelity.componentSourceId] : [],
+          )
+        : definitions.keys(),
+    );
+    for (const id of pending) {
+      const definition = definitions.get(id);
+      if (!definition) continue;
+      if (
+        pageIds &&
+        index.get(guid(definition.parentIndex?.guid))?.isStateGroup
+      )
+        for (const sibling of children.get(
+          guid(definition.parentIndex?.guid),
+        ) ?? [])
+          if (sibling.type === "SYMBOL") pending.add(guid(sibling.guid));
       const start = doc.nodes.length;
       add(definition, doc.pages[0].id, null, new Set());
       const nodes = doc.nodes.splice(start);
-      if (nodes.length)
+      if (nodes.length) {
         doc.componentLibrary.push({
-          sourceId: guid(definition.guid),
+          sourceId: id,
           name: definition.name ?? "Component",
           nodes,
         });
+        for (const n of nodes)
+          if (n.fidelity?.componentSourceId)
+            pending.add(n.fidelity.componentSourceId);
+      }
     }
     images = originalImages;
     instances = originalInstances;
