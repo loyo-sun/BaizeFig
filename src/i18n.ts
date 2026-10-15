@@ -4,6 +4,45 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Export scope": "导出范围",
+  "Current selection": "当前选区",
+  "Current page": "当前页面",
+  "Multiple frames": "多个画板",
+  "Export dialog format": "导出格式选择",
+  "PDF (visual images)": "PDF（保真图像）",
+  "PDF image resolution": "PDF 图像清晰度",
+  "Export dialog scale": "导出采样倍率",
+  "Export background": "导出背景",
+  Transparent: "透明",
+  White: "白色",
+  "JPG uses white behind transparent areas.": "JPG 的透明区域使用白色背景。",
+  "PDF preserves the current appearance as page images. Text is not selectable and paths are not editable in the PDF. Image resolution changes clarity, not page size: 1 design unit equals 1 pt.":
+    "PDF 将当前外观保存为分页图像，文件中的文字不可选中、路径不可编辑。清晰度只影响图像精度，页面尺寸保持不变：1 设计单位对应 1 pt。",
+  "SVG and HTML keep vector geometry and font references at 1x. The receiving device needs the same fonts.":
+    "SVG 和 HTML 以 1x 保留矢量几何及字体引用，接收设备需要安装相同字体。",
+  "Include all pages": "包含所有页面",
+  "Frames start in page and layer order. Reorder below to set PDF page order. Each frame is cropped to its transformed canvas bounds.":
+    "画板默认按页面和图层顺序排列，可调整顺序作为 PDF 页序；各画板按画布变换后的边界裁切。",
+  "Move export frame up {name}": "上移导出画板：{name}",
+  "Move export frame down {name}": "下移导出画板：{name}",
+  "Download PDF": "下载 PDF",
+  "Download ZIP": "下载 ZIP",
+  "Download export": "下载导出文件",
+  "Cancel export": "取消导出",
+  "Exporting {current} of {total}": "正在导出 {current}/{total}",
+  "Export cancelled": "已取消导出",
+  "Choose content to export": "请选择要导出的内容",
+  "Export at most 100 frames at once": "单次最多导出 100 个画板",
+  "Invalid export scale": "导出倍率无效",
+  "Cannot export zero-size content": "无法导出零尺寸内容",
+  "Export exceeds 16384 pixels per side. Reduce scale.":
+    "导出单边超过 16384 像素，请降低倍率。",
+  "Batch export exceeds 200 megapixels. Export fewer frames.":
+    "批量导出超过 2 亿像素，请减少画板数量。",
+  "A selected export frame is missing": "找不到已选择的导出画板",
+  "Export files exceed 200 MiB": "导出文件总大小超过 200 MiB",
+  "Invalid export dimensions": "导出尺寸无效",
+  "Invalid export background": "导出背景无效",
   Cached: "缓存",
   "Insert library component {name}": "插入库组件：{name}",
   "Component library exceeds 50000 layers": "组件库超过 50000 图层限制",

@@ -1,3 +1,5 @@
+import { ExportDialog } from "./ExportDialog";
+import type { ExportFormat, ExportScope } from "./exportPlan";
 import { LibraryManager } from "./LibraryManager";
 import { availableLibraryEntries } from "./componentLibraries";
 import { ComponentProperties } from "./ComponentProperties";
@@ -200,6 +202,7 @@ type Tool =
   | "star"
   | "polygon";
 type Modal =
+  | "export"
   | "files"
   | "shortcuts"
   | "commands"
@@ -307,6 +310,10 @@ export default function App() {
     id: string;
     position: "before" | "inside" | "after";
   } | null>(null);
+  const [exportRequest, setExportRequest] = useState<{
+    format: ExportFormat;
+    scope: ExportScope;
+  }>({ format: "PNG", scope: "page" });
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [keyboardLayout, setKeyboardLayout] =
     useState<KeyboardLayout>(readKeyboardLayout);
@@ -1449,30 +1456,12 @@ export default function App() {
       if (fileInput.current) fileInput.current.value = "";
     }
   }
-  async function exportAsset() {
-    try {
-      const data = await svgString(doc, page, selected);
-      if (exportType === "SVG")
-        download(data, `${first?.name ?? doc.name}.svg`, "image/svg+xml");
-      else if (exportType === "HTML")
-        download(
-          `<!doctype html><html><meta charset="utf-8"><title>BaizeFig export</title><body style="margin:0">${data.replace(/^<\?xml[^>]*>/, "")}</body></html>`,
-          `${doc.name}.html`,
-          "text/html",
-        );
-      else
-        download(
-          await raster(
-            data,
-            exportScale,
-            exportType === "JPG" ? "image/jpeg" : "image/png",
-          ),
-          `${first?.name ?? doc.name}.${exportType.toLowerCase()}`,
-        );
-      notify("Export complete");
-    } catch (e) {
-      notify((e as Error).message);
-    }
+  function exportAsset() {
+    setExportRequest({
+      format: exportType as ExportFormat,
+      scope: selected.length ? "selection" : "page",
+    });
+    setModal("export");
   }
   function addPage() {
     const p = {
@@ -1944,6 +1933,16 @@ export default function App() {
     { name: "Place image", run: () => fileInput.current?.click() },
     { name: "Import Figma (.fig)", run: () => figInput.current?.click() },
     { name: "Export", run: () => void exportAsset() },
+    {
+      name: "Export frames to PDF",
+      disabled: !doc.nodes.some(
+        (n) => n.type === "frame" && !n.parentId && n.visible,
+      ),
+      run: () => {
+        setExportRequest({ format: "PDF", scope: "frames" });
+        setModal("export");
+      },
+    },
     { name: "Remove auto layout", run: () => autoLayout(true) },
     {
       name: "Layout rules",
@@ -3095,33 +3094,35 @@ export default function App() {
       }));
   }
   const title =
-    modal === "svg-report"
-      ? "Editable SVG import"
-      : modal === "fonts"
-        ? "Font availability and replacement"
-        : modal === "versions"
-          ? "Version history"
-          : modal === "fig-report"
-            ? "Figma import result"
-            : modal === "settings"
-              ? "General settings"
-              : modal === "share"
-                ? "Share this design"
-                : modal === "variables"
-                  ? "Local color variables"
-                  : modal === "assets"
-                    ? "Components & assets"
-                    : modal === "files"
-                      ? "Your local workspace"
-                      : modal === "shortcuts"
-                        ? "Keyboard shortcuts"
-                        : modal === "commands"
-                          ? "Actions"
-                          : modal === "ai"
-                            ? "Create with Baize"
-                            : modal === "bridge"
-                              ? "Connect external AI"
-                              : "Rename layer";
+    modal === "export"
+      ? "Export"
+      : modal === "svg-report"
+        ? "Editable SVG import"
+        : modal === "fonts"
+          ? "Font availability and replacement"
+          : modal === "versions"
+            ? "Version history"
+            : modal === "fig-report"
+              ? "Figma import result"
+              : modal === "settings"
+                ? "General settings"
+                : modal === "share"
+                  ? "Share this design"
+                  : modal === "variables"
+                    ? "Local color variables"
+                    : modal === "assets"
+                      ? "Components & assets"
+                      : modal === "files"
+                        ? "Your local workspace"
+                        : modal === "shortcuts"
+                          ? "Keyboard shortcuts"
+                          : modal === "commands"
+                            ? "Actions"
+                            : modal === "ai"
+                              ? "Create with Baize"
+                              : modal === "bridge"
+                                ? "Connect external AI"
+                                : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -5143,7 +5144,7 @@ export default function App() {
                     value={exportType}
                     onChange={(e) => setExportType(e.target.value)}
                   >
-                    {["PNG", "JPG", "SVG", "HTML"].map((t) => (
+                    {["PNG", "JPG", "SVG", "HTML", "PDF"].map((t) => (
                       <option key={t}>{t}</option>
                     ))}
                   </select>
@@ -5536,11 +5537,11 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => {
-                      setExportType("PNG");
-                      setModal(null);
-                      notify(
-                        "Choose PNG in Export, then export the current page or selection.",
-                      );
+                      setExportRequest({
+                        format: "PNG",
+                        scope: selected.length ? "selection" : "page",
+                      });
+                      setModal("export");
                     }}
                   >
                     <Square size={20} />
@@ -5792,6 +5793,16 @@ export default function App() {
                   )}
                 </p>
               </>
+            )}
+            {modal === "export" && (
+              <ExportDialog
+                doc={doc}
+                pageId={page}
+                selected={selected}
+                initialFormat={exportRequest.format}
+                initialScope={exportRequest.scope}
+                initialScale={exportScale}
+              />
             )}
             {modal === "assets" && (
               <>

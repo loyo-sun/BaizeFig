@@ -2,12 +2,13 @@ import { vectorVisualBounds } from "./vectorGeometry";
 import { networkGeometry, networkStroke } from "./vectorNetwork";
 import { Appearance, EffectDefinitions } from "./appearance";
 import { layoutText } from "./textLayout";
-import { inverse, multiply } from "./fidelity";
+import { inverse, multiply, transformPoint } from "./fidelity";
 import React from "react";
 import {
   type Document,
   type Node,
   bounds,
+  ancestors,
   localTransform,
   worldTransform,
 } from "./core";
@@ -913,35 +914,96 @@ export function Scene({
   }
   return <>{drawSiblings(nodes)}</>;
 }
-export async function svgString(
+export interface ExportViewport {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+export function exportBounds(
   doc: Document,
   pageId: string,
   ids: string[] = [],
-) {
-  const { renderToStaticMarkup } = await import("react-dom/server");
-  const included = ids.length
-    ? doc.nodes.filter((n) => ids.includes(n.id))
-    : doc.nodes.filter((n) => n.pageId === pageId && !n.parentId && n.visible);
-  let b = bounds(doc, included);
-  function expand(node: Node) {
-    const actual = vectorVisualBounds(doc, node);
-    if (actual) {
-      const x = Math.min(b.x, actual.x),
-        y = Math.min(b.y, actual.y);
-      b = {
-        x,
-        y,
-        width: Math.max(b.x + b.width, actual.x + actual.width) - x,
-        height: Math.max(b.y + b.height, actual.y + actual.height) - y,
-      };
+): ExportViewport {
+  const included = doc.nodes.filter(
+    (n) =>
+      n.pageId === pageId &&
+      n.visible &&
+      !ancestors(doc, n).some((p) => !p.visible) &&
+      (ids.length ? ids.includes(n.id) : !n.parentId),
+  );
+  let result = bounds(doc, included);
+  const seen = new Set<string>();
+  const union = (a: ExportViewport, b: ExportViewport) => {
+    const x = Math.min(a.x, b.x),
+      y = Math.min(a.y, b.y);
+    return {
+      x,
+      y,
+      width: Math.max(a.x + a.width, b.x + b.width) - x,
+      height: Math.max(a.y + a.height, b.y + b.height) - y,
+    };
+  };
+  function expand(n: Node) {
+    if (seen.has(n.id)) return;
+    seen.add(n.id);
+    let visual = vectorVisualBounds(doc, n) ?? bounds(doc, [n]);
+    const m = worldTransform(doc, n),
+      scale = Math.max(Math.hypot(m[0], m[1]), Math.hypot(m[2], m[3]));
+    for (const e of n.fidelity?.effects ?? []) {
+      if (!e.visible) continue;
+      if (e.type === "blur") {
+        const pad = e.radius * 2 * scale;
+        visual = {
+          x: visual.x - pad,
+          y: visual.y - pad,
+          width: visual.width + 2 * pad,
+          height: visual.height + 2 * pad,
+        };
+      } else if (e.type === "drop-shadow") {
+        const pad = e.radius * 2 + Math.max(0, e.spread),
+          points = [
+            [-pad + e.x, -pad + e.y],
+            [n.width + pad + e.x, -pad + e.y],
+            [-pad + e.x, n.height + pad + e.y],
+            [n.width + pad + e.x, n.height + pad + e.y],
+          ].map(([x, y]) => transformPoint(m, x, y)),
+          x = Math.min(...points.map((p) => p.x)),
+          y = Math.min(...points.map((p) => p.y));
+        visual = union(visual, {
+          x,
+          y,
+          width: Math.max(...points.map((p) => p.x)) - x,
+          height: Math.max(...points.map((p) => p.y)) - y,
+        });
+      }
     }
-    if (node.type !== "frame" || node.fidelity?.clipsContent === false)
+    result = union(result, visual);
+    if (n.type !== "frame" || n.fidelity?.clipsContent === false)
       for (const child of doc.nodes.filter(
-        (n) => n.parentId === node.id && n.visible,
+        (c) => c.parentId === n.id && c.visible,
       ))
         expand(child);
   }
   included.forEach(expand);
+  return result;
+}
+export async function svgString(
+  doc: Document,
+  pageId: string,
+  ids: string[] = [],
+  options: { viewport?: ExportViewport; background?: string } = {},
+) {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const b = options.viewport ?? exportBounds(doc, pageId, ids);
+  if (
+    ![b.x, b.y, b.width, b.height].every(Number.isFinite) ||
+    b.width <= 0 ||
+    b.height <= 0
+  )
+    throw Error("Invalid export dimensions");
+  if (options.background && !/^#[\da-f]{3,8}$/i.test(options.background))
+    throw Error("Invalid export background");
   let exportDoc = doc;
   if (ids.length) {
     const selected = new Set(ids);
@@ -990,10 +1052,20 @@ export async function svgString(
     renderToStaticMarkup(
       <svg
         xmlns="http://www.w3.org/2000/svg"
+        overflow="hidden"
         width={Math.max(1, b.width)}
         height={Math.max(1, b.height)}
         viewBox={`${b.x} ${b.y} ${Math.max(1, b.width)} ${Math.max(1, b.height)}`}
       >
+        {options.background && (
+          <rect
+            x={b.x}
+            y={b.y}
+            width={b.width}
+            height={b.height}
+            fill={options.background}
+          />
+        )}
         <Scene doc={exportDoc} pageId={pageId} />
       </svg>,
     )
@@ -1004,17 +1076,28 @@ export async function raster(
   scale = 1,
   type = "image/png",
 ): Promise<Blob> {
+  if (!Number.isFinite(scale) || scale <= 0 || scale > 32)
+    throw Error("Invalid export scale");
   const blob = new Blob([svg], { type: "image/svg+xml" }),
     url = URL.createObjectURL(blob);
+  let canvas: HTMLCanvasElement | undefined;
   try {
     const image = new Image();
     image.src = url;
     await image.decode();
-    if (image.width * image.height * scale * scale > 40000000)
+    const width = Number(
+        svg.match(/<svg[^>]*\bwidth="([\d.eE+-]+)"/)?.[1] ?? image.width,
+      ),
+      height = Number(
+        svg.match(/<svg[^>]*\bheight="([\d.eE+-]+)"/)?.[1] ?? image.height,
+      );
+    if (Math.ceil(width * scale) > 16384 || Math.ceil(height * scale) > 16384)
+      throw Error("Export exceeds 16384 pixels per side. Reduce scale.");
+    if (Math.ceil(width * scale) * Math.ceil(height * scale) > 40000000)
       throw Error("Export is too large. Reduce selection or scale.");
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, image.width * scale);
-    canvas.height = Math.max(1, image.height * scale);
+    canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.ceil(width * scale));
+    canvas.height = Math.max(1, Math.ceil(height * scale));
     const ctx = canvas.getContext("2d")!;
     if (type === "image/jpeg") {
       ctx.fillStyle = "#fff";
@@ -1022,12 +1105,16 @@ export async function raster(
     }
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
     return await new Promise((resolve, reject) =>
-      canvas.toBlob(
+      canvas!.toBlob(
         (b) => (b ? resolve(b) : reject(Error("Export failed"))),
         type,
       ),
     );
   } finally {
+    if (canvas) {
+      canvas.width = 1;
+      canvas.height = 1;
+    }
     URL.revokeObjectURL(url);
   }
 }
