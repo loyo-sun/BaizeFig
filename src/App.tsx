@@ -1,3 +1,4 @@
+import { FontManager } from "./FontManager";
 import { VersionHistory } from "./VersionHistory";
 import {
   copyProperties,
@@ -187,6 +188,7 @@ type Modal =
   | "fig-report"
   | "settings"
   | "versions"
+  | "fonts"
   | null;
 const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "move", label: "Move", key: "V", icon: MousePointer2 },
@@ -1536,6 +1538,11 @@ export default function App() {
     }
   }
   const actions = [
+    {
+      name: "Font availability and replacement",
+      key: "",
+      run: () => setModal("fonts"),
+    },
     { name: "Version history", key: "", run: () => setModal("versions") },
     { name: "Copy properties", key: "⌥ ⌘ / Ctrl Alt C", run: copyStyle },
     { name: "Paste properties", key: "⌥ ⌘ / Ctrl Alt V", run: pasteStyle },
@@ -2289,29 +2296,31 @@ export default function App() {
       }));
   }
   const title =
-    modal === "versions"
-      ? "Version history"
-      : modal === "fig-report"
-        ? "Figma import result"
-        : modal === "settings"
-          ? "General settings"
-          : modal === "share"
-            ? "Share this design"
-            : modal === "variables"
-              ? "Local color variables"
-              : modal === "assets"
-                ? "Components & assets"
-                : modal === "files"
-                  ? "Your local workspace"
-                  : modal === "shortcuts"
-                    ? "Keyboard shortcuts"
-                    : modal === "commands"
-                      ? "Actions"
-                      : modal === "ai"
-                        ? "Create with Baize"
-                        : modal === "bridge"
-                          ? "Connect external AI"
-                          : "Rename layer";
+    modal === "fonts"
+      ? "Font availability and replacement"
+      : modal === "versions"
+        ? "Version history"
+        : modal === "fig-report"
+          ? "Figma import result"
+          : modal === "settings"
+            ? "General settings"
+            : modal === "share"
+              ? "Share this design"
+              : modal === "variables"
+                ? "Local color variables"
+                : modal === "assets"
+                  ? "Components & assets"
+                  : modal === "files"
+                    ? "Your local workspace"
+                    : modal === "shortcuts"
+                      ? "Keyboard shortcuts"
+                      : modal === "commands"
+                        ? "Actions"
+                        : modal === "ai"
+                          ? "Create with Baize"
+                          : modal === "bridge"
+                            ? "Connect external AI"
+                            : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -2817,13 +2826,27 @@ export default function App() {
                       node={node}
                       session={editingText}
                       onCancel={() => setEditingText(null)}
-                      onCommit={(text) => {
+                      onCommit={(text, runs) => {
                         setEditingText(null);
-                        if (text !== node.text)
+                        if (
+                          text !== node.text ||
+                          JSON.stringify(runs) !==
+                            JSON.stringify(node.textFlow?.runs ?? [])
+                        )
                           run({
                             type: "update",
                             ids: [node.id],
-                            patch: { text },
+                            patch: {
+                              text,
+                              textFlow: {
+                                ...(node.textFlow ?? {
+                                  autoResize: "height",
+                                  verticalAlign: "top",
+                                  letterSpacing: 0,
+                                }),
+                                runs,
+                              },
+                            },
                           });
                       }}
                     />
@@ -3960,6 +3983,9 @@ export default function App() {
                   {first.type === "text" && (
                     <section>
                       <div className="section-heading">
+                        <button onClick={() => setModal("fonts")}>
+                          {t("Font availability and replacement")}
+                        </button>
                         {t("Typography")}
                         <Type size={14} />
                       </div>
@@ -4413,6 +4439,15 @@ export default function App() {
                 <X size={19} />
               </button>
             </div>
+            {modal === "fonts" && (
+              <FontManager
+                doc={doc}
+                onReplace={(next) => {
+                  if (JSON.stringify(next) !== JSON.stringify(doc))
+                    change(next);
+                }}
+              />
+            )}
             {modal === "versions" && (
               <VersionHistory
                 doc={doc}

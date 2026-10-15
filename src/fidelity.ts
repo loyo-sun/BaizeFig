@@ -42,6 +42,9 @@ export interface Fidelity {
       fontSize?: number;
       fontWeight?: number;
       italic?: boolean;
+      underline?: boolean;
+      strikethrough?: boolean;
+      href?: string;
     }[];
   };
   clipsContent?: boolean;
@@ -359,6 +362,14 @@ export function validateFidelity(f: Fidelity) {
           s.start < 0 ||
           s.end < s.start ||
           s.end > f.text!.characters.length ||
+          (s.href !== undefined &&
+            (typeof s.href !== "string" ||
+              !/^(https?:|mailto:)/i.test(s.href))) ||
+          ["italic", "underline", "strikethrough"].some(
+            (k) =>
+              (s as unknown as Record<string, unknown>)[k] !== undefined &&
+              typeof (s as unknown as Record<string, unknown>)[k] !== "boolean",
+          ) ||
           (s.fill !== undefined && !/^#[\da-f]{3,8}$/i.test(s.fill)) ||
           (s.fontFamily !== undefined && typeof s.fontFamily !== "string") ||
           (s.fontSize !== undefined &&

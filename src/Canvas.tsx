@@ -439,7 +439,7 @@ function textSpans(
   return cuts.slice(0, -1).map((a, i) => {
     const b = cuts[i + 1],
       style = spans.find((s) => s.start <= a && s.end >= b);
-    return (
+    const span = (
       <tspan
         key={a}
         fill={style?.fill}
@@ -447,9 +447,24 @@ function textSpans(
         fontSize={style?.fontSize}
         fontWeight={style?.fontWeight}
         fontStyle={style?.italic ? "italic" : undefined}
+        textDecoration={
+          [
+            style?.underline ? "underline" : "",
+            style?.strikethrough ? "line-through" : "",
+          ]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
       >
         {n.text.slice(a, b).replace(/\n$/, "")}
       </tspan>
+    );
+    return style?.href ? (
+      <a key={a} href={style.href} onClick={(e) => e.preventDefault()}>
+        {span}
+      </a>
+    ) : (
+      span
     );
   });
 }

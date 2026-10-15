@@ -4,6 +4,28 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Component library definitions keep their source fonts; detached and document text layers can be replaced here.":
+    "组件库定义保留来源字体，此处替换文档内文本及已分离实例的字体。",
+  "Updated {count} text layers; skipped {skipped} locked layers.":
+    "已更新 {count} 个文本图层，跳过 {skipped} 个锁定图层。",
+  "Enter a font family": "请输入字体名称",
+  "Replace font in document": "替换文档字体",
+  "Replacement font": "替代字体",
+  "Not detected": "未检测到",
+  Available: "可用",
+  "Checking fonts\u2026": "正在检测字体…",
+  "Font detection uses browser rendering. Install the original fonts for matching typography; fallback fonts can change line breaks.":
+    "通过浏览器渲染检测字体。安装原字体有助于还原排版，替代字体可能改变换行。",
+  "Font availability and replacement": "字体检测与替换",
+  "Use an http, https or mailto link": "请输入 http、https 或 mailto 链接",
+  "Link URL (empty to remove)": "链接地址（留空移除）",
+  "Create link": "创建链接",
+  "Text selection color": "文字选区颜色（#RRGGBB）",
+  Strikethrough: "删除线",
+  Underline: "下划线",
+  Italic: "斜体",
+  Bold: "粗体",
+  "Text selection styles": "文字选区样式",
   "Named snapshots are stored in this browser. Restoring creates a recovery checkpoint and can be undone.":
     "命名版本保存在当前浏览器。恢复前会自动备份当前内容，也可通过撤销返回。",
   "Restore the file from trash first": "请先从回收站恢复文件",

@@ -2270,3 +2270,54 @@ html[lang="zh-CN"] .layer-title-input {
 .version-row button {
   flex-shrink: 0;
 }
+
+.text-range-toolbar {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  display: flex;
+  gap: 2px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  padding: 4px;
+  box-shadow: 0 3px 12px #0002;
+  white-space: nowrap;
+}
+.text-range-toolbar button {
+  min-width: 28px;
+  height: 28px;
+  padding: 4px;
+  font: 14px Arial;
+  color: #222;
+}
+.text-range-toolbar button:hover {
+  background: #e5f3ff;
+}
+
+.font-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.font-list {
+  max-height: 280px;
+  overflow: auto;
+}
+.font-list label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+.font-list small {
+  margin-left: auto;
+  color: #777;
+}
+.font-manager input:not([type="radio"]) {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-left: 10px;
+}

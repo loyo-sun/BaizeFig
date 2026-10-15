@@ -1196,6 +1196,16 @@ export function validateDocument(value: unknown): asserts value is Document {
                   (!Number.isFinite(r.fontSize) || r.fontSize <= 0)) ||
                 (r.fontWeight !== undefined &&
                   !Number.isFinite(r.fontWeight)) ||
+                (r.href !== undefined &&
+                  (typeof r.href !== "string" ||
+                    !/^(https?:|mailto:)/i.test(r.href))) ||
+                ["italic", "underline", "strikethrough"].some(
+                  (k) =>
+                    (r as unknown as Record<string, unknown>)[k] !==
+                      undefined &&
+                    typeof (r as unknown as Record<string, unknown>)[k] !==
+                      "boolean",
+                ) ||
                 (r.fill !== undefined && !/^#[\da-f]{3,8}$/i.test(r.fill)),
             )))
       )

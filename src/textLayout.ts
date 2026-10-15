@@ -7,6 +7,9 @@ export interface TextRun {
   fontWeight?: number;
   fill?: string;
   italic?: boolean;
+  underline?: boolean;
+  strikethrough?: boolean;
+  href?: string;
 }
 export function remapTextRuns(
   before: string,
