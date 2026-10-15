@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { PenTool, Pencil } from "lucide-react";
 export type CanvasTool =
+  | "scale"
   | "move"
   | "hand"
   | "frame"
@@ -44,5 +45,5 @@ export function canvasCursor(
   if (tool === "pen") return pen;
   if (tool === "pencil") return pencil;
   if (tool === "text") return "text";
-  return tool === "move" ? "default" : "crosshair";
+  return tool === "move" || tool === "scale" ? "default" : "crosshair";
 }

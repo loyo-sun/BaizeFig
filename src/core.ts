@@ -135,6 +135,13 @@ export interface Document {
   typedVariables?: TypedVariable[];
 }
 export type Command =
+  | {
+      type: "reparent";
+      ids: string[];
+      parentId: string | null;
+      targetId?: string;
+      after?: boolean;
+    }
   | { type: "create"; nodes: Node[] }
   | { type: "update"; ids: string[]; patch: Partial<Node> }
   | { type: "delete"; ids: string[] }
@@ -434,9 +441,15 @@ export function execute(
   const writable = (n: Node) =>
     !n.locked && !ancestors(doc, n).some((p) => p.locked);
   if (
-    ["create", "delete", "group", "ungroup", "duplicate", "order"].includes(
-      command.type,
-    )
+    [
+      "create",
+      "delete",
+      "group",
+      "ungroup",
+      "duplicate",
+      "order",
+      "reparent",
+    ].includes(command.type)
   ) {
     const ids =
       command.type === "create"
@@ -776,6 +789,70 @@ export function execute(
       }
       break;
     }
+    case "reparent": {
+      const nodes = roots(doc, command.ids);
+      if (
+        !nodes.length ||
+        nodes.some(
+          (n) =>
+            !writable(n) ||
+            !n.visible ||
+            ancestors(doc, n).some((a) => !a.visible),
+        )
+      )
+        throw Error("Select unlocked visible layers");
+      const parent = command.parentId
+        ? doc.nodes.find((n) => n.id === command.parentId)
+        : undefined;
+      if (
+        command.parentId &&
+        (!parent || !container(parent) || !writable(parent) || !parent.visible)
+      )
+        throw Error("Invalid drop target");
+      if (parent?.componentOwner || parent?.type === "instance")
+        throw Error("Detach instance before changing its layer structure");
+      const ids = new Set(
+        descendants(
+          doc,
+          nodes.map((n) => n.id),
+        ),
+      );
+      if (parent && ids.has(parent.id))
+        throw Error("Cannot move layers into their descendants");
+      if (nodes.some((n) => n.pageId !== (parent?.pageId ?? nodes[0].pageId)))
+        throw Error("Layers must belong to the same page");
+      const target = command.targetId
+        ? doc.nodes.find((n) => n.id === command.targetId)
+        : undefined;
+      if (
+        command.targetId &&
+        (!target ||
+          target.parentId !== command.parentId ||
+          target.pageId !== nodes[0].pageId ||
+          ids.has(target.id))
+      )
+        throw Error("Invalid drop target");
+      const transforms = nodes.map((n) => worldTransform(doc, n));
+      const block = doc.nodes.filter((n) => ids.has(n.id));
+      doc.nodes = doc.nodes.filter((n) => !ids.has(n.id));
+      nodes.forEach((n, i) => {
+        n.parentId = command.parentId;
+        setWorldTransform(doc, n, transforms[i]);
+      });
+      let index = doc.nodes.length;
+      if (target) {
+        index = doc.nodes.indexOf(target);
+        if (command.after) {
+          const family = new Set(descendants(doc, [target.id]));
+          index =
+            Math.max(...doc.nodes.map((n, i) => (family.has(n.id) ? i : -1))) +
+            1;
+        }
+      }
+      doc.nodes.splice(index, 0, ...block);
+      selection = nodes.map((n) => n.id);
+      break;
+    }
     case "align": {
       const nodes = roots(doc, command.ids).filter(writable);
       if (nodes.length < 2) break;
@@ -881,6 +958,9 @@ export function execute(
   }
   applyTypedBindings(doc);
   const affected = new Set<string>();
+  if (command.type === "reparent")
+    for (const n of original.nodes.filter((n) => command.ids.includes(n.id)))
+      for (const p of ancestors(original, n)) affected.add(p.id);
   for (const node of doc.nodes) {
     const old = original.nodes.find((n) => n.id === node.id);
     if (

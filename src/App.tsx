@@ -23,7 +23,12 @@ import { BooleanIcon } from "./BooleanIcon";
 import { CanvasTextEditor, type TextEditSession } from "./CanvasTextEditor";
 import { combineShapes } from "./combine";
 import { editTypedVariable, bindingTypes } from "./typedVariables";
-import { resizeInWorld } from "./geometry";
+import {
+  resizeInWorld,
+  resizeSelection,
+  rotateSelection,
+  flipSelection,
+} from "./geometry";
 import { inverse, transformPoint } from "./fidelity";
 import { PrototypePlayer } from "./PrototypePlayer";
 import type { PrototypeAction, PrototypeInteraction } from "./prototype";
@@ -142,6 +147,7 @@ import { useI18n } from "./LanguageProvider";
 import type { Language } from "./i18n";
 
 type Tool =
+  | "scale"
   | "move"
   | "hand"
   | "frame"
@@ -168,6 +174,7 @@ type Modal =
   | null;
 const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "move", label: "Move", key: "V", icon: MousePointer2 },
+  { id: "scale", label: "Scale", key: "K", icon: Maximize },
   { id: "frame", label: "Frame", key: "F", icon: Frame },
   { id: "rectangle", label: "Rectangle", key: "R", icon: Square },
   { id: "ellipse", label: "Ellipse", key: "O", icon: Circle },
@@ -229,6 +236,12 @@ export default function App() {
   latestDocument.current = doc;
   const figInput = useRef<HTMLInputElement>(null);
   const [arrangeGap, setArrangeGap] = useState(16);
+  const layerDrag = useRef<string[]>([]),
+    pageDrag = useRef<string | null>(null);
+  const [layerDrop, setLayerDrop] = useState<{
+    id: string;
+    position: "before" | "inside" | "after";
+  } | null>(null);
   const [ready, setReady] = useState(false);
   const [snapOptions, setSnapOptions] = useState<SnapOptions>(() => {
     try {
@@ -325,7 +338,7 @@ export default function App() {
   }, [doc.id]);
   const lastPointerHit = useRef<string | undefined>(undefined);
   const drag = useRef<{
-    type: "move" | "resize" | "draw" | "pan" | "marquee";
+    type: "move" | "resize" | "rotate" | "draw" | "pan" | "marquee";
     start: { x: number; y: number };
     screen: { x: number; y: number };
     before: Document;
@@ -658,8 +671,14 @@ export default function App() {
       return;
     }
     if (tool === "pen" || tool === "pencil") return;
-    if (handle && id && tool === "move") {
-      drag.current = { ...base, type: "resize", ids: [id], nodeId: id, handle };
+    if (handle && id && (tool === "move" || tool === "scale")) {
+      drag.current = {
+        ...base,
+        type: handle === "rotate" ? "rotate" : "resize",
+        ids: selected.includes(id) ? selected : [id],
+        nodeId: id,
+        handle,
+      };
       return;
     }
     if (id && tool === "move" && !handle && !e.metaKey && !e.ctrlKey) {
@@ -680,7 +699,7 @@ export default function App() {
           id = undefined;
       }
     }
-    if (tool !== "move") {
+    if (tool !== "move" && tool !== "scale") {
       const kind: Kind = tool;
       const parent = kind === "frame" ? undefined : parentFor(p);
       const origin = parent
@@ -775,6 +794,7 @@ export default function App() {
       return;
     }
     if (d.type === "marquee") {
+      (d as typeof d & { crossing?: boolean }).crossing = dx < 0;
       setMarquee({
         x: Math.min(p.x, d.start.x),
         y: Math.min(p.y, d.start.y),
@@ -819,10 +839,36 @@ export default function App() {
       });
       return;
     }
+    if (d.type === "rotate") {
+      const b = bounds(d.before, roots(d.before, d.ids)),
+        cx = b.x + b.width / 2,
+        cy = b.y + b.height / 2;
+      let angle =
+        Math.atan2(p.y - cy, p.x - cx) -
+        Math.atan2(d.start.y - cy, d.start.x - cx);
+      if (e.shiftKey)
+        angle = (Math.round(angle / (Math.PI / 12)) * Math.PI) / 12;
+      try {
+        setDoc(rotateSelection(d.before, d.ids, angle));
+      } catch (error) {
+        notify((error as Error).message);
+        cancelDrag();
+      }
+      return;
+    }
     if (d.type === "resize") {
       try {
         setDoc(
-          resizeInWorld(d.before, d.nodeId!, d.handle!, dx, dy, e.shiftKey),
+          d.ids.length > 1 || tool === "scale"
+            ? resizeSelection(
+                d.before,
+                d.ids,
+                d.handle!,
+                dx,
+                dy,
+                tool === "scale" || e.shiftKey,
+              )
+            : resizeInWorld(d.before, d.nodeId!, d.handle!, dx, dy, e.shiftKey),
         );
       } catch (error) {
         setDoc(d.before);
@@ -891,12 +937,17 @@ export default function App() {
           )
           .filter((n) => {
             const p = bounds(doc, [n]);
-            return (
-              p.x >= marquee.x &&
-              p.y >= marquee.y &&
-              p.x + p.width <= marquee.x + marquee.width &&
-              p.y + p.height <= marquee.y + marquee.height
-            );
+            const crossing = !!(d as typeof d & { crossing?: boolean })
+              .crossing;
+            return crossing
+              ? p.x <= marquee.x + marquee.width &&
+                  p.y <= marquee.y + marquee.height &&
+                  p.x + p.width >= marquee.x &&
+                  p.y + p.height >= marquee.y
+              : p.x >= marquee.x &&
+                  p.y >= marquee.y &&
+                  p.x + p.width <= marquee.x + marquee.width &&
+                  p.y + p.height <= marquee.y + marquee.height;
           });
         setSelected([...new Set([...d.ids, ...hits.map((n) => n.id)])]);
       }
@@ -927,7 +978,7 @@ export default function App() {
       };
       setTool("move");
     }
-    if (d.type === "move" || d.type === "resize") {
+    if (d.type === "move" || d.type === "resize" || d.type === "rotate") {
       try {
         next = reflowAfterPointerEdit(d.before, next);
       } catch (error) {
@@ -1288,7 +1339,39 @@ export default function App() {
       notify((error as Error).message);
     }
   }
+  function transformCommand(
+    kind: "flip-x" | "flip-y" | "left" | "right" | "half",
+  ) {
+    try {
+      change(
+        kind.startsWith("flip")
+          ? flipSelection(doc, selected, kind === "flip-x" ? "x" : "y")
+          : rotateSelection(
+              doc,
+              selected,
+              kind === "half"
+                ? Math.PI
+                : kind === "left"
+                  ? -Math.PI / 2
+                  : Math.PI / 2,
+            ),
+      );
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
   const actions = [
+    ...[
+      { kind: "flip-x", name: "Flip horizontal" },
+      { kind: "flip-y", name: "Flip vertical" },
+      { kind: "left", name: "Rotate 90° left" },
+      { kind: "right", name: "Rotate 90° right" },
+      { kind: "half", name: "Rotate 180°" },
+    ].map((c) => ({
+      name: c.name,
+      key: "",
+      run: () => transformCommand(c.kind as "flip-x"),
+    })),
     ...arrangeCommands.map((c) => ({
       name: c.name,
       key: "",
@@ -1408,7 +1491,6 @@ export default function App() {
           return;
         }
       }
-      if (editingVector) return;
       if (e.key === "Enter" && first && !modal && !present) {
         e.preventDefault();
         editVector();
@@ -1622,6 +1704,7 @@ export default function App() {
       }
       const mapping: Record<string, Tool> = {
         v: "move",
+        k: "scale",
         f: "frame",
         a: "frame",
         r: "rectangle",
@@ -1823,6 +1906,53 @@ export default function App() {
             <div
               className={`layer ${selected.includes(n.id) ? "selected" : ""} ${!n.visible ? "dim" : ""}`}
               style={{ paddingLeft: 12 + depth * 14 }}
+              draggable={!n.locked && !ancestors(doc, n).some((p) => p.locked)}
+              aria-label={t("Layer {name}", { name: n.name })}
+              onDragStart={(e) => {
+                e.stopPropagation();
+                layerDrag.current = selected.includes(n.id) ? selected : [n.id];
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", n.id);
+              }}
+              onDragEnd={() => {
+                layerDrag.current = [];
+                setLayerDrop(null);
+              }}
+              onDragOver={(e) => {
+                if (!layerDrag.current.length) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const r = e.currentTarget.getBoundingClientRect(),
+                  ratio = (e.clientY - r.top) / r.height;
+                setLayerDrop({
+                  id: n.id,
+                  position:
+                    container(n) && ratio > 0.25 && ratio < 0.75
+                      ? "inside"
+                      : ratio < 0.5
+                        ? "before"
+                        : "after",
+                });
+              }}
+              onDrop={(e) => {
+                if (!layerDrag.current.length) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const target = layerDrop;
+                if (target?.id === n.id)
+                  run({
+                    type: "reparent",
+                    ids: layerDrag.current,
+                    parentId: target.position === "inside" ? n.id : n.parentId,
+                    targetId: target.position === "inside" ? undefined : n.id,
+                    after: target.position === "before",
+                  });
+                setLayerDrop(null);
+                layerDrag.current = [];
+              }}
+              data-drop-position={
+                layerDrop?.id === n.id ? layerDrop.position : undefined
+              }
               onClick={(e) =>
                 setSelected(
                   e.shiftKey
@@ -2053,6 +2183,33 @@ export default function App() {
                 <div
                   className={`page ${p.id === page ? "active" : ""}`}
                   key={p.id}
+                  draggable
+                  onDragStart={(e) => {
+                    pageDrag.current = p.id;
+                    e.dataTransfer.setData("text/plain", p.id);
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragEnd={() => (pageDrag.current = null)}
+                  onDragOver={(e) => {
+                    if (pageDrag.current) e.preventDefault();
+                  }}
+                  onDrop={(e) => {
+                    if (!pageDrag.current) return;
+                    e.preventDefault();
+                    const pages = doc.pages.filter(
+                        (a) => a.id !== pageDrag.current,
+                      ),
+                      moving = doc.pages.find((a) => a.id === pageDrag.current);
+                    if (moving && moving.id !== p.id) {
+                      pages.splice(
+                        pages.findIndex((a) => a.id === p.id),
+                        0,
+                        moving,
+                      );
+                      change({ ...doc, pages });
+                    }
+                    pageDrag.current = null;
+                  }}
                 >
                   <button
                     onClick={() => {
@@ -2083,6 +2240,36 @@ export default function App() {
                       {p.name}
                     </span>
                   </button>
+                  {p.id === page && (
+                    <>
+                      <button
+                        className="tiny"
+                        aria-label={t("Move page up")}
+                        disabled={doc.pages.indexOf(p) === 0}
+                        onClick={() => {
+                          const pages = [...doc.pages],
+                            i = pages.indexOf(p);
+                          [pages[i - 1], pages[i]] = [pages[i], pages[i - 1]];
+                          change({ ...doc, pages });
+                        }}
+                      >
+                        ↑
+                      </button>
+                      <button
+                        className="tiny"
+                        aria-label={t("Move page down")}
+                        disabled={doc.pages.indexOf(p) === doc.pages.length - 1}
+                        onClick={() => {
+                          const pages = [...doc.pages],
+                            i = pages.indexOf(p);
+                          [pages[i + 1], pages[i]] = [pages[i], pages[i + 1]];
+                          change({ ...doc, pages });
+                        }}
+                      >
+                        ↓
+                      </button>
+                    </>
+                  )}
                   {p.id === page && (
                     <button
                       className="tiny"
@@ -2120,6 +2307,37 @@ export default function App() {
             )}
             <div className="layer-tree">
               {tree(null)}
+              <div
+                className="layer-root-drop"
+                role="button"
+                tabIndex={0}
+                onClick={() =>
+                  run({ type: "reparent", ids: selected, parentId: null })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    run({ type: "reparent", ids: selected, parentId: null });
+                  }
+                }}
+                aria-label={t("Move to page root")}
+                onDragOver={(e) => {
+                  if (layerDrag.current.length) e.preventDefault();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (layerDrag.current.length)
+                    run({
+                      type: "reparent",
+                      ids: layerDrag.current,
+                      parentId: null,
+                    });
+                  layerDrag.current = [];
+                  setLayerDrop(null);
+                }}
+              >
+                {t("Drop here to move to page root")}
+              </div>
               {!doc.nodes.some((n) => n.pageId === page) && (
                 <div className="empty-layers">
                   <Square size={24} />
@@ -2346,7 +2564,7 @@ export default function App() {
                 })()}
               {selectionBox &&
                 !editingVector &&
-                (tool === "move" || tool === "hand") && (
+                (tool === "move" || tool === "hand" || tool === "scale") && (
                   <g className="selection-overlay">
                     <rect
                       x={selectionBox.x}
@@ -2360,12 +2578,22 @@ export default function App() {
                       strokeWidth={1 / view.zoom}
                       pointerEvents="none"
                     />
-                    {chosen.length === 1 &&
-                      !first.locked &&
+                    {chosen.length >= 1 &&
+                      !chosen.some(
+                        (n) =>
+                          n.locked || ancestors(doc, n).some((a) => a.locked),
+                      ) &&
                       ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((h) => {
-                        const localBox = nodeSelectionBounds(first),
+                        const localBox =
+                            chosen.length === 1 && tool !== "scale"
+                              ? nodeSelectionBounds(first)
+                              : selectionBox,
+                          m =
+                            chosen.length === 1 && tool !== "scale"
+                              ? worldTransform(doc, first)
+                              : ([1, 0, 0, 1, 0, 0] as const),
                           handlePoint = transformPoint(
-                            worldTransform(doc, first),
+                            [...m],
                             h.includes("e")
                               ? localBox.x + localBox.width
                               : h.includes("w")
@@ -2397,6 +2625,24 @@ export default function App() {
                           />
                         );
                       })}
+                    {!chosen.some(
+                      (n) =>
+                        n.locked || ancestors(doc, n).some((a) => a.locked),
+                    ) && (
+                      <circle
+                        aria-label={t("Rotate selection")}
+                        cx={selectionBox.x + selectionBox.width / 2}
+                        cy={selectionBox.y - 22 / view.zoom}
+                        r={5 / view.zoom}
+                        fill="white"
+                        stroke="#2487ff"
+                        strokeWidth={1 / view.zoom}
+                        style={{ cursor: "crosshair" }}
+                        onPointerDown={(e) =>
+                          pointerDown(e, first.id, "rotate")
+                        }
+                      />
+                    )}
                     <g pointerEvents="none">
                       <rect
                         x={
@@ -3042,6 +3288,73 @@ export default function App() {
                     )}
                     <details className="arrange-tools">
                       <summary>{t("Arrange and distribute")}</summary>
+                      <div className="arrange-grid">
+                        <button onClick={() => transformCommand("flip-x")}>
+                          {t("Flip horizontal")}
+                        </button>
+                        <button onClick={() => transformCommand("flip-y")}>
+                          {t("Flip vertical")}
+                        </button>
+                        <button onClick={() => transformCommand("left")}>
+                          {t("Rotate 90° left")}
+                        </button>
+                        <button onClick={() => transformCommand("right")}>
+                          {t("Rotate 90° right")}
+                        </button>
+                      </div>
+                      <label className="setting-row">
+                        {t("Parent container")}
+                        <select
+                          aria-label={t("Parent container")}
+                          value={first.parentId ?? ""}
+                          onChange={(e) =>
+                            run({
+                              type: "reparent",
+                              ids: selected,
+                              parentId: e.target.value || null,
+                            })
+                          }
+                        >
+                          <option value="">{t("Page root")}</option>
+                          {doc.nodes
+                            .filter(
+                              (n) =>
+                                n.pageId === page &&
+                                container(n) &&
+                                !descendants(doc, selected).includes(n.id) &&
+                                !n.locked,
+                            )
+                            .map((n) => (
+                              <option key={n.id} value={n.id}>
+                                {n.name}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                      <div className="arrange-grid">
+                        <button
+                          onClick={() =>
+                            run({
+                              type: "order",
+                              ids: selected,
+                              direction: "forward",
+                            })
+                          }
+                        >
+                          {t("Bring forward")}
+                        </button>
+                        <button
+                          onClick={() =>
+                            run({
+                              type: "order",
+                              ids: selected,
+                              direction: "backward",
+                            })
+                          }
+                        >
+                          {t("Send backward")}
+                        </button>
+                      </div>
                       <NumberField
                         label="Spacing"
                         value={arrangeGap}

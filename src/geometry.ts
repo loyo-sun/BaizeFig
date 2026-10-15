@@ -1,5 +1,13 @@
-import { type Document, worldTransform, setWorldTransform } from "./core";
-import { inverse, transformPoint } from "./fidelity";
+import {
+  type Document,
+  worldTransform,
+  setWorldTransform,
+  roots,
+  ancestors,
+  bounds,
+  reflowAfterPointerEdit,
+} from "./core";
+import { inverse, transformPoint, multiply } from "./fidelity";
 import { nodeSelectionBounds } from "./pathBounds";
 export function resizeInWorld(
   original: Document,
@@ -60,4 +68,114 @@ export function resizeInWorld(
     origin.y,
   ]);
   return next;
+}
+
+// Affine transforms keep the complete selected subtree (including text, strokes and effects) together.
+export function transformSelection(
+  original: Document,
+  ids: string[],
+  matrix: import("./fidelity").Matrix,
+) {
+  if (
+    matrix.some((x) => !Number.isFinite(x)) ||
+    Math.abs(matrix[0] * matrix[3] - matrix[1] * matrix[2]) < 1e-8
+  )
+    throw Error("Invalid transform");
+  const next = structuredClone(original),
+    nodes = roots(next, ids);
+  if (
+    !nodes.length ||
+    nodes.some((n) => n.locked || ancestors(next, n).some((a) => a.locked))
+  )
+    throw Error("Select unlocked layers");
+  if (
+    nodes.some((n) =>
+      ancestors(next, n).some(
+        (a) => a.layout && a.layout !== "none" && !n.layoutItem?.absolute,
+      ),
+    )
+  )
+    throw Error(
+      "Transform layers outside auto layout, or use absolute positioning",
+    );
+  const worlds = nodes.map((n) => multiply(matrix, worldTransform(next, n)));
+  nodes.forEach((n, i) => setWorldTransform(next, n, worlds[i]));
+  return reflowAfterPointerEdit(original, next);
+}
+export function resizeSelection(
+  original: Document,
+  ids: string[],
+  handle: string,
+  dx: number,
+  dy: number,
+  uniform = false,
+) {
+  const b = bounds(original, roots(original, ids));
+  if (b.width < 1e-6 || b.height < 1e-6)
+    throw Error("Cannot scale a zero-size selection");
+  let w = Math.max(
+      1,
+      b.width + (handle.includes("e") ? dx : handle.includes("w") ? -dx : 0),
+    ),
+    h = Math.max(
+      1,
+      b.height + (handle.includes("s") ? dy : handle.includes("n") ? -dy : 0),
+    );
+  if (uniform) {
+    if (handle === "n" || handle === "s") w = (h * b.width) / b.height;
+    else h = (w * b.height) / b.width;
+  }
+  const x = handle.includes("w")
+      ? b.x + b.width - w
+      : uniform && (handle === "n" || handle === "s")
+        ? b.x + (b.width - w) / 2
+        : b.x,
+    y = handle.includes("n")
+      ? b.y + b.height - h
+      : uniform && (handle === "e" || handle === "w")
+        ? b.y + (b.height - h) / 2
+        : b.y,
+    sx = w / b.width,
+    sy = h / b.height;
+  return transformSelection(original, ids, [
+    sx,
+    0,
+    0,
+    sy,
+    x - sx * b.x,
+    y - sy * b.y,
+  ]);
+}
+export function rotateSelection(
+  original: Document,
+  ids: string[],
+  radians: number,
+) {
+  const b = bounds(original, roots(original, ids)),
+    x = b.x + b.width / 2,
+    y = b.y + b.height / 2,
+    c = Math.cos(radians),
+    s = Math.sin(radians);
+  return transformSelection(original, ids, [
+    c,
+    s,
+    -s,
+    c,
+    x - c * x + s * y,
+    y - s * x - c * y,
+  ]);
+}
+export function flipSelection(
+  original: Document,
+  ids: string[],
+  axis: "x" | "y",
+) {
+  const b = bounds(original, roots(original, ids));
+  return transformSelection(
+    original,
+    ids,
+    axis === "x"
+      ? [-1, 0, 0, 1, 2 * b.x + b.width, 0]
+      : [1, 0, 0, -1, 0, 2 * b.y + b.height],
+  );
 }
