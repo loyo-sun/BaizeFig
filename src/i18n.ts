@@ -4,6 +4,42 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Compare version": "比较版本",
+  "Comparing saved version with current design":
+    "以下为此保存版本与当前设计的字段差异。",
+  "Design branches": "设计分支",
+  "Branch name": "分支名称",
+  "Create and open branch": "创建并打开分支",
+  "Open main design": "打开主设计",
+  "No design branches yet": "尚无设计分支",
+  "Current branch": "当前分支",
+  "Open branch": "打开分支",
+  "Compare and merge": "比较与合并",
+  "Compare branch": "比较分支",
+  "Non-conflicting changes": "无冲突改动",
+  Conflicts: "冲突",
+  "Changed fields": "变更字段",
+  "Main design": "主设计",
+  "Branch design": "分支设计",
+  "Both designs": "两侧一致",
+  "Base value": "基线值",
+  "Resolve conflict": "解决冲突",
+  "Choose a side": "选择保留内容",
+  "Merge into main design": "合并到主设计",
+  Deleted: "已删除",
+  "Design branches stay in this browser. They are separate design files, unrelated to Git branches. Compare and merge into the main design; recovery snapshots are saved automatically.":
+    "设计分支保存在当前浏览器，是独立的设计文件，与 Git 代码分支无关。可以比较并合并到主设计，合并前自动保存恢复备份。",
+  "The main file name is retained. Deleted parents or changed references must form a valid document after resolving conflicts. Merging saves checkpoints for both files and rebases the branch.":
+    "保留主文件名称。解决冲突后，父子层级和引用须保持有效；合并为两个文件保存备份，并更新分支基线。",
+  "Resolve every merge conflict first": "请先解决每一处合并冲突",
+  "Design changed. Compare again before merging":
+    "文件已变化，请重新比较后合并",
+  "Enter a branch name": "请输入分支名称",
+  "Create branches from the main design": "请从主设计创建设计分支",
+  "Design branch not found": "未找到设计分支",
+  "Design file is unavailable or in trash": "设计文件不可用或已在回收站",
+  "Before merge": "合并前备份",
+
   "Export scope": "导出范围",
   "Current selection": "当前选区",
   "Current page": "当前页面",

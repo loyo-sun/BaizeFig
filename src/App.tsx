@@ -24,6 +24,7 @@ import { changeDocumentTextCase } from "./textCase";
 import { sampleSvgColor } from "./colorPicker";
 import { pasteNodes, type NodeClipboard, type PasteMode } from "./clipboard";
 import { FontManager } from "./FontManager";
+import { DesignBranches } from "./DesignBranches";
 import { VersionHistory } from "./VersionHistory";
 import {
   copyProperties,
@@ -215,6 +216,7 @@ type Modal =
   | "fig-report"
   | "svg-report"
   | "settings"
+  | "branches"
   | "versions"
   | "fonts"
   | null;
@@ -1739,6 +1741,7 @@ export default function App() {
       key: "",
       run: () => setModal("fonts"),
     },
+    { name: "Create branch", run: () => setModal("branches") },
     { name: "Version history", key: "", run: () => setModal("versions") },
     { name: "Save to version history", run: () => setModal("versions") },
     { name: "Copy properties", key: "⌥ ⌘ / Ctrl Alt C", run: copyStyle },
@@ -3100,29 +3103,31 @@ export default function App() {
         ? "Editable SVG import"
         : modal === "fonts"
           ? "Font availability and replacement"
-          : modal === "versions"
-            ? "Version history"
-            : modal === "fig-report"
-              ? "Figma import result"
-              : modal === "settings"
-                ? "General settings"
-                : modal === "share"
-                  ? "Share this design"
-                  : modal === "variables"
-                    ? "Local color variables"
-                    : modal === "assets"
-                      ? "Components & assets"
-                      : modal === "files"
-                        ? "Your local workspace"
-                        : modal === "shortcuts"
-                          ? "Keyboard shortcuts"
-                          : modal === "commands"
-                            ? "Actions"
-                            : modal === "ai"
-                              ? "Create with Baize"
-                              : modal === "bridge"
-                                ? "Connect external AI"
-                                : "Rename layer";
+          : modal === "branches"
+            ? "Design branches"
+            : modal === "versions"
+              ? "Version history"
+              : modal === "fig-report"
+                ? "Figma import result"
+                : modal === "settings"
+                  ? "General settings"
+                  : modal === "share"
+                    ? "Share this design"
+                    : modal === "variables"
+                      ? "Local color variables"
+                      : modal === "assets"
+                        ? "Components & assets"
+                        : modal === "files"
+                          ? "Your local workspace"
+                          : modal === "shortcuts"
+                            ? "Keyboard shortcuts"
+                            : modal === "commands"
+                              ? "Actions"
+                              : modal === "ai"
+                                ? "Create with Baize"
+                                : modal === "bridge"
+                                  ? "Connect external AI"
+                                  : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -5285,6 +5290,19 @@ export default function App() {
                 onReplace={(next) => {
                   if (JSON.stringify(next) !== JSON.stringify(doc))
                     change(next);
+                }}
+              />
+            )}
+            {modal === "branches" && (
+              <DesignBranches
+                doc={doc}
+                onOpen={(next) => {
+                  history.current = new History();
+                  setDoc(next);
+                  setPage(next.pages[0].id);
+                  setSelected([]);
+                  setCollapsed(new Set());
+                  setModal(null);
                 }}
               />
             )}

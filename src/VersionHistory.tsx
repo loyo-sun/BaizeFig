@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { compareSnapshots } from "./designMerge";
 import type { Document } from "./core";
 import {
   listVersions,
@@ -17,6 +18,7 @@ export function VersionHistory({
   const { t, language } = useI18n(),
     [versions, setVersions] = useState<DocumentVersion[]>([]),
     [name, setName] = useState(""),
+    [comparison, setComparison] = useState<DocumentVersion | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   useEffect(() => {
@@ -77,11 +79,37 @@ export function VersionHistory({
       </div>
       {error && <p role="alert">{t(error)}</p>}
       {!versions.length && <p>{t("No saved versions yet")}</p>}
+      {comparison && (
+        <section>
+          <h3>
+            {t("Changed fields")} · {t(comparison.name)}
+          </h3>
+          <p>{t("Comparing saved version with current design")}</p>
+          <ul>
+            {compareSnapshots(comparison.document, doc).map((c, i) => (
+              <li key={i}>
+                {c.path
+                  .map((part, index) =>
+                    index === 1 && c.path[0] === "nodes"
+                      ? ((
+                          doc.nodes.find((n) => n.id === part) ??
+                          comparison.document.nodes.find((n) => n.id === part)
+                        )?.name ?? part)
+                      : t(part),
+                  )
+                  .join(" › ")}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {versions.map((v) => (
         <article key={v.id} className="version-row">
           <div>
             <strong>
-              {v.name === "Before restore" ? t("Before restore") : v.name}
+              {["Before restore", "Before merge"].includes(v.name)
+                ? t(v.name)
+                : v.name}
             </strong>
             <p>
               {new Date(v.createdAt).toLocaleString(language)} ·{" "}
@@ -89,6 +117,9 @@ export function VersionHistory({
               {t("Layers")}
             </p>
           </div>
+          <button disabled={busy} onClick={() => setComparison(v)}>
+            {t("Compare version")}
+          </button>
           <button
             disabled={busy}
             onClick={() =>
