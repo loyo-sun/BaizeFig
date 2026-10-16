@@ -763,7 +763,7 @@ export function importFigArchive(
               ? "drop-shadow"
               : e.type === "INNER_SHADOW"
                 ? "inner-shadow"
-                : e.type === "LAYER_BLUR"
+                : (e.type === "LAYER_BLUR" || e.type === "FOREGROUND_BLUR")
                   ? "blur"
                   : e.type === "BACKGROUND_BLUR"
                     ? "background-blur"

@@ -1447,3 +1447,16 @@ it("keeps an empty vector empty instead of inventing a rectangle", () => {
   );
   validateDocument(result.document);
 });
+
+it("imports foreground blur with its radius and preserves export and reload", async () => {
+  const archive = readFigArchive(stream());
+  const target = archive.message.nodeChanges.find((n: any) => n.type === "FRAME");
+  target.effects = [{type: "FOREGROUND_BLUR", radius: 300, visible: true}];
+  const result = importFigArchive(archive);
+  const node = result.document.nodes.find(n => n.fidelity?.sourceId === `0:${target.guid.localID}`)!;
+  expect(node.fidelity?.effects).toMatchObject([{type: "blur", radius: 300}]);
+  expect(result.report.warnings).not.toContain("Some effect types are not supported.");
+  const reloaded = JSON.parse(JSON.stringify(result.document));
+  validateDocument(reloaded);
+  expect(await svgString(reloaded, reloaded.pages[0].id)).toContain('stdDeviation="150"');
+});
