@@ -993,6 +993,8 @@ export function switchVariant(
   const current = set.variants.find(
     (v) => v.componentId === instance.componentId,
   )!;
+  // Preserve the current component identity when values are ambiguous.
+  if (current.values[axis] === value) return original;
   const candidates = set.variants
     .filter((v) => v.values[axis] === value)
     .sort(

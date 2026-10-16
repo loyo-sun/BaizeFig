@@ -11,6 +11,7 @@ import {
   createComponentInstance,
   setComponentValue,
   switchVariant,
+  swapComponentInstance,
   componentTargets,
   setComponentProperty,
 } from "../src/components";
@@ -179,16 +180,19 @@ it("edits all targets and validates duplicate or absent additional target paths"
   const targets = componentTargets(doc, "0:11");
   expect(targets).toHaveLength(3);
 });
-it("reports a cyclic definition and invalid variant combination without inventing a mapping", () => {
-  const { doc, source } = fixture();
-  source[0].componentPropDefs[0].parentPropDefId = g(111);
-  for (const n of source.filter((n) => n.type === "SYMBOL"))
-    n.variantPropSpecs[0].value = "Duplicate";
+it("preserves ambiguous variant identities, overrides and stable same-value selection", () => {
+  const {doc, source, id} = fixture();
+  for (const n of source.filter(n => n.type === "SYMBOL")) n.variantPropSpecs[0].value = "Duplicate";
   const warnings = new Set<string>();
   restoreFigComponentModels(doc, source, warnings);
-  expect(warnings.has("Some component variants could not be restored.")).toBe(
-    true,
-  );
+  expect(warnings.has("Some component variants could not be restored.")).toBe(false);
+  expect(doc.componentSets![0].variants).toHaveLength(2);
+  if (process.env.BAIZEFIG_FIG_COMPONENT_FIXTURE) writeFileSync("/private/tmp/baizefig-ambiguous-components.baizefig", JSON.stringify(doc));
+  let changed = setComponentValue(doc, id, "figprop:0:1", "Retained");
+  changed = swapComponentInstance(changed, id, "0:21");
+  expect(switchVariant(changed, id, "State", "Duplicate")).toBe(changed);
+  validateDocument(JSON.parse(JSON.stringify(changed)));
+  expect(changed.nodes.filter(n => n.componentOwner === id && n.type === "text").map(n => n.text)).toEqual(["Retained", "Retained"]);
 });
 
 it("restores omitted variant values from explicit empty defaults and preserves switching", () => {

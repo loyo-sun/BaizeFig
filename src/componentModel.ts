@@ -51,7 +51,6 @@ export function validateComponentModels(doc: Document) {
           new Set(values).size !== values.length
         )
           throw Error("Invalid variant axis");
-      const combinations = new Set<string>();
       const refs = new Set<string>();
       for (const variant of set.variants) {
         if (
@@ -65,14 +64,7 @@ export function validateComponentModels(doc: Document) {
         )
           throw Error("Invalid component variant");
         refs.add(variant.componentId);
-        const combination = JSON.stringify(
-          Object.keys(set.axes)
-            .sort()
-            .map((k) => variant.values[k]),
-        );
-        if (combinations.has(combination))
-          throw Error("Duplicate variant combination");
-        combinations.add(combination);
+
       }
     }
   }

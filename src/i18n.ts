@@ -673,6 +673,7 @@ export const zhCN: Record<string, string> = {
   "Choose fewer pages or individual frames": "请选择更少的页面，或展开选择单个画板/分区",
   "Only selected top-level layers were imported; other content remains in the original file.": "此次仅导入选定的顶层图层；其余内容仍保留在原始文件中。",
   "Some vector networks retain editable path contours instead of shared topology.": "部分矢量网络已保留为可编辑路径轮廓，尚未恢复共享节点结构。",
+  "Specific variant": "指定变体",
   "Empty value": "空值",
   "An unspecified wrapping gap uses zero; saved layer positions are preserved until layout changes.": "未指定的换行间距暂按零处理；修改布局前保留已保存的图层位置。",
   "Choose Figma pages": "选择要导入的 Figma 页面",

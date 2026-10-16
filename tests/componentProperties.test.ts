@@ -332,7 +332,7 @@ it("keeps slot node IDs stable across edits and isolates customization between i
   expect(edited.nodes.find((n) => n.id === "stable")?.text).toBe("Four");
   validateDocument(edited);
 });
-it("rejects duplicate variant combinations and recursive slot snapshots", () => {
+it("preserves duplicate values but rejects duplicate identities and recursive slot snapshots", () => {
   const d = fixture();
   d.componentSets = [
     {
@@ -345,7 +345,9 @@ it("rejects duplicate variant combinations and recursive slot snapshots", () => 
       ],
     },
   ];
-  expect(() => validateDocument(d)).toThrow("Duplicate");
+  validateDocument(d);
+  d.componentSets[0].variants[1].componentId = "main";
+  expect(() => validateDocument(d)).toThrow("Invalid component variant");
   delete d.componentSets;
   const n = d.nodes[0];
   n.componentSlots = { x: [n] };

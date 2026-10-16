@@ -229,16 +229,8 @@ export function restoreFigComponentModels(
         [...new Set(variants.map((v) => v.values[p.name]))],
       ]),
     );
-    const keys = variants.map((v) =>
-      JSON.stringify(
-        Object.keys(dimensions)
-          .sort()
-          .map((k) => v.values[k]),
-      ),
-    );
     if (
       !variants.length ||
-      new Set(keys).size !== keys.length ||
       Object.keys(dimensions).length !== axes.length
     ) {
       warnings.add("Some component variants could not be restored.");

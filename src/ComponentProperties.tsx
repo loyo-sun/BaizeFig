@@ -10,6 +10,7 @@ import {
   resetComponentSlot,
   setComponentSet,
   switchVariant,
+  swapComponentInstance,
   propagatePropertiesToVariants,
 } from "./components";
 import type { ComponentProperty, ComponentSet } from "./componentModel";
@@ -124,6 +125,18 @@ export function ComponentProperties({
                 </select>
               </label>
             ))}
+          {set && variant && owner && set.variants.some((a, i) =>
+            set.variants.slice(i + 1).some(b => Object.keys(set.axes).every(k => a.values[k] === b.values[k]))) && (
+            <label>
+              {t("Specific variant")}
+              <select aria-label={t("Specific variant")} value={owner.componentId}
+                onChange={e => act(() => swapComponentInstance(doc, owner.id, e.target.value))}>
+                {set.variants.map((v, i) => <option key={v.componentId} value={v.componentId}>
+                  {`${i + 1}. ${definitions.find(d => d.reference === v.componentId)?.root.name ?? v.componentId}`}
+                </option>)}
+              </select>
+            </label>
+          )}
           {(definition.root.componentProperties ?? []).map((property) => {
             const { value, variableId } = componentPropertyState(
               doc,
