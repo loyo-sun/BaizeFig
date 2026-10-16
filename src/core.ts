@@ -1,3 +1,4 @@
+import { clearVectorFillOverrides } from "./vectorFill";
 import { validFontSettings, type FontSettings } from "./fontSettings";
 import { equalData } from "./equalData";
 import type { LibrarySubscription } from "./componentLibraries";
@@ -699,6 +700,9 @@ export function execute(
               !(patch.fidelity as Node["fidelity"])?.paints
             )
               delete n.fidelity.paints;
+            // A layer-level fill replaces per-region fills too. Explicit fidelity
+            // edits remain authoritative for the advanced region paint editor.
+            if (!patch.fidelity) clearVectorFillOverrides(n);
           }
         }
       break;

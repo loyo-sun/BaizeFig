@@ -1,3 +1,4 @@
+import { clearVectorFillOverrides } from "./vectorFill";
 import { applyTypedBindings } from "./typedVariables";
 import { relayout, validateDocument, ancestors } from "./core";
 import { applyConstraints } from "./layout";
@@ -146,6 +147,14 @@ function expanded(
       if (field === "fidelity.paints" && node.fidelity)
         delete node.fidelity.paints;
     }
+    const override = overrides[path];
+    if (
+      override &&
+      "fill" in override &&
+      !override.fidelity &&
+      !("variableId" in override)
+    )
+      clearVectorFillOverrides(node);
     return node;
   }
   function walk(
