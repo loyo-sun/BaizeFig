@@ -4,6 +4,24 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Blend mode": "混合模式",
+  "Blend normal": "正常",
+  "Blend multiply": "正片叠底",
+  "Blend screen": "滤色",
+  "Blend overlay": "叠加",
+  "Blend darken": "变暗",
+  "Blend lighten": "变亮",
+  "Blend color-dodge": "颜色减淡",
+  "Blend color-burn": "颜色加深",
+  "Blend hard-light": "强光",
+  "Blend soft-light": "柔光",
+  "Blend difference": "差值",
+  "Blend exclusion": "排除",
+  "Blend hue": "色相",
+  "Blend saturation": "饱和度",
+  "Blend color": "颜色",
+  "Blend luminosity": "明度",
+
   "Remove gradient stop": "删除渐变色标",
   Effects: "效果",
   "Add effect": "添加效果",

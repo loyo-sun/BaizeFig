@@ -73,3 +73,33 @@ it("expands small-shape filter bounds for large shadows and chained blur", () =>
     renderToStaticMarkup(React.createElement(EffectDefinitions, { node })),
   ).toBe("");
 });
+
+it("edits ordinary fills without resurrecting a removed last fill", async () => {
+  const { editableFills, fillStackPatch } =
+    await import("../src/FillProperties");
+  const { execute } = await import("../src/core");
+  const d = emptyDocument(),
+    p = d.pages[0].id;
+  const n = makeNode("rectangle", p, { id: "fill", fill: "#ff0000" });
+  d.nodes = [n];
+  expect(editableFills(n)).toEqual([
+    { type: "solid", color: "#ff0000", opacity: 1 },
+  ]);
+  const deleted = execute(d, {
+    type: "update",
+    ids: [n.id],
+    patch: fillStackPatch(n, []),
+  }).doc;
+  expect(deleted.nodes[0].fill).toBe("none");
+  expect(editableFills(deleted.nodes[0])).toEqual([]);
+  const loaded = JSON.parse(JSON.stringify(deleted));
+  validateDocument(loaded);
+  expect(await svgString(loaded, p)).not.toContain("#ff0000");
+  const blended = execute(d, {
+    type: "update",
+    ids: [n.id],
+    patch: { fidelity: { size: [n.width, n.height], blendMode: "multiply" } },
+  }).doc;
+  validateDocument(blended);
+  expect(await svgString(blended, p)).toContain("mix-blend-mode:multiply");
+});

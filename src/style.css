@@ -2664,3 +2664,15 @@ html[lang="zh-CN"] .layer-title-input {
   min-width: 26px;
   min-height: 26px;
 }
+.blend-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.blend-field select {
+  min-width: 0;
+  max-width: 140px;
+}

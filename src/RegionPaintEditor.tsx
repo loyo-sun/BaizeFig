@@ -312,7 +312,7 @@ export function RegionPaintEditor({
         title={t("Add fill")}
         aria-label={t("Add fill")}
         onClick={() =>
-          onChange([...paints, { type: "solid", opacity: 1, color: "#0d99ff" }])
+          onChange([{ type: "solid", opacity: 1, color: "#0d99ff" }, ...paints])
         }
       >
         <Plus size={14} />
