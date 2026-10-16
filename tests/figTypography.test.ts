@@ -116,3 +116,29 @@ it("restores safe whole-layer and range links while retaining explicit link remo
     ),
   ).toEqual([]);
 });
+
+it("treats the detached-style sentinel as explicit local typography", () => {
+  const node = {
+    styleIdForText: { guid: { sessionID: 0xffffffff, localID: 0xffffffff } },
+    fontName: { family: "Local font", style: "Medium" },
+    fontSize: 18,
+    derivedTextData: {
+      fontMetaData: [{ key: { family: "Previous font", style: "Regular" } }],
+      glyphs: [{ fontSize: 12 }],
+    },
+  };
+  const warnings = new Set<string>();
+  expect(resolveFigTypography(node, () => undefined, warnings)).toBe(node);
+  expect(warnings.size).toBe(0);
+  expect(
+    resolveFigTypography(
+      {
+        ...node,
+        styleIdForText: { guid: { sessionID: 0xffffffff, localID: 9 } },
+      },
+      () => undefined,
+      warnings,
+    ).fontSize,
+  ).toBe(12);
+  expect(warnings.size).toBe(1);
+});

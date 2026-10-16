@@ -56,7 +56,14 @@ export function resolveFigTypography(
   explicitFields = new Set<string>(),
 ): Raw {
   const reference = node.styleIdForText;
-  if (!reference) return node;
+  // All-ones GUID explicitly detaches a linked style in instance overrides.
+  // Its local typography is authoritative, not a missing-library fallback.
+  if (
+    !reference ||
+    (reference.guid?.sessionID === 0xffffffff &&
+      reference.guid?.localID === 0xffffffff)
+  )
+    return node;
   const style = find(reference),
     result = { ...node };
   if (style?.styleType === "TEXT") {
