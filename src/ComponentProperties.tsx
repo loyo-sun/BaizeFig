@@ -125,18 +125,37 @@ export function ComponentProperties({
                 </select>
               </label>
             ))}
-          {set && variant && owner && set.variants.some((a, i) =>
-            set.variants.slice(i + 1).some(b => Object.keys(set.axes).every(k => a.values[k] === b.values[k]))) && (
-            <label>
-              {t("Specific variant")}
-              <select aria-label={t("Specific variant")} value={owner.componentId}
-                onChange={e => act(() => swapComponentInstance(doc, owner.id, e.target.value))}>
-                {set.variants.map((v, i) => <option key={v.componentId} value={v.componentId}>
-                  {`${i + 1}. ${definitions.find(d => d.reference === v.componentId)?.root.name ?? v.componentId}`}
-                </option>)}
-              </select>
-            </label>
-          )}
+          {set &&
+            variant &&
+            owner &&
+            set.variants.some((a, i) =>
+              set.variants
+                .slice(i + 1)
+                .some((b) =>
+                  Object.keys(set.axes).every(
+                    (k) => a.values[k] === b.values[k],
+                  ),
+                ),
+            ) && (
+              <label>
+                {t("Specific variant")}
+                <select
+                  aria-label={t("Specific variant")}
+                  value={owner.componentId}
+                  onChange={(e) =>
+                    act(() =>
+                      swapComponentInstance(doc, owner.id, e.target.value),
+                    )
+                  }
+                >
+                  {set.variants.map((v, i) => (
+                    <option key={v.componentId} value={v.componentId}>
+                      {`${i + 1}. ${definitions.find((d) => d.reference === v.componentId)?.root.name ?? v.componentId}`}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
           {(definition.root.componentProperties ?? []).map((property) => {
             const { value, variableId } = componentPropertyState(
               doc,
@@ -451,6 +470,25 @@ export function ComponentProperties({
                     ))}
                 </select>
               </label>
+              {!targets.some(({ node: n, path }) =>
+                propertyType === "text"
+                  ? n.type === "text"
+                  : propertyType === "instance"
+                    ? n.type === "instance"
+                    : propertyType === "slot"
+                      ? ["frame", "group"].includes(n.type) && path !== ""
+                      : true,
+              ) && (
+                <p role="status" className="muted">
+                  {t(
+                    propertyType === "text"
+                      ? "Add a text layer inside this component before creating a text property."
+                      : propertyType === "instance"
+                        ? "Add a nested instance before creating an instance swap property."
+                        : "Add a frame or group inside this component before creating a slot.",
+                  )}
+                </p>
+              )}
               <input
                 aria-label={t("New property name")}
                 value={name}

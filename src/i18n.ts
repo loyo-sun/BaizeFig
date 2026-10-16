@@ -966,6 +966,20 @@ export const zhCN: Record<string, string> = {
   "BaizeFig local files": "BaizeFig 本地文件",
   File: "文件",
   Agents: "智能体",
+  "Local components": "本地组件",
+  "Search components": "搜索组件",
+  "No matching components": "没有匹配的组件",
+  "Insert instance of {name}": "插入 {name} 的实例",
+  "Drag a component onto the canvas, or click to insert an instance.":
+    "拖到画布创建实例，也可以点击插入。",
+  "Create a main component to see it here. Components from every page in this file appear automatically.":
+    "创建主组件后会自动显示在这里，包含当前文件所有页面的组件。",
+  "Add a text layer inside this component before creating a text property.":
+    "组件内还没有文字图层，请先添加文字，再创建文本属性。",
+  "Add a nested instance before creating an instance swap property.":
+    "组件内还没有嵌套实例，请先添加实例，再创建实例交换属性。",
+  "Add a frame or group inside this component before creating a slot.":
+    "请先在组件内添加画板或组，再创建插槽。",
   Assets: "资源",
   Tools: "工具",
   Variables: "变量",

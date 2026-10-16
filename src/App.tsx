@@ -55,6 +55,7 @@ import {
   type SnapGuide,
 } from "./snapping";
 import { SnapOverlay } from "./SnapOverlay";
+import { LocalAssets } from "./LocalAssets";
 import { LayerThumbnail } from "./LayerThumbnail";
 import { splitVectorLayers } from "./vectorSplit";
 import { canvasCursor, prepareToolCursors } from "./toolCursor";
@@ -113,6 +114,7 @@ import {
   FlipHorizontal2,
   FlipVertical2,
   RotateCcw,
+  Unlink,
   RotateCw,
   BringToFront,
   SendToBack,
@@ -278,6 +280,7 @@ function readCanvasAids() {
 export default function App() {
   const { language, setLanguage, persistenceError, t } = useI18n();
   const [doc, setDoc] = useState<Document>(() => demoDocument());
+  const [leftTab, setLeftTab] = useState<"file" | "assets">("file");
   const [svgReport, setSvgReport] = useState<{
     layers: number;
     warnings: string[];
@@ -3167,6 +3170,23 @@ export default function App() {
                 )}
               </button>
               <LayerThumbnail doc={doc} node={n} />
+              {(n.type === "component" || n.type === "instance") && (
+                <span
+                  className="component-badge"
+                  title={t(
+                    n.type === "component" ? "Main component" : "Instance",
+                  )}
+                  aria-label={t(
+                    n.type === "component" ? "Main component" : "Instance",
+                  )}
+                >
+                  {n.type === "component" ? (
+                    <Component size={13} />
+                  ) : (
+                    <span aria-hidden="true">◇</span>
+                  )}
+                </span>
+              )}
               <span className="layer-name">{n.name}</span>
               <button
                 className="tiny layer-action"
@@ -3324,15 +3344,31 @@ export default function App() {
               <img src="/baize.svg" alt="BaizeFig" />
             </button>
             <span className="rail-separator" />
-            <button className="rail-item active" onClick={() => setModal(null)}>
+            <button
+              className={`rail-item ${leftTab === "file" ? "active" : ""}`}
+              onClick={() => {
+                setLeftTab("file");
+                setModal(null);
+              }}
+            >
               <span>
                 <File size={19} />
               </span>
               {t("File")}
             </button>
+            <button
+              className={`rail-item ${leftTab === "assets" ? "active" : ""}`}
+              onClick={() => setLeftTab("assets")}
+              aria-label={t("Assets")}
+            >
+              <span>
+                <Component size={19} />
+              </span>
+              {t("Assets")}
+            </button>
             {[
               { label: "Agents", Icon: Sparkles },
-              { label: "Assets", Icon: Plus },
+
               { label: "Tools", Icon: BriefcaseBusiness },
               { label: "Variables", Icon: Hexagon },
             ].map(({ label, Icon }) => (
@@ -3408,235 +3444,293 @@ export default function App() {
                 <span className="save-state">{t(saved)}</span>
               </div>
             </div>
-            <div className="page-heading">
-              <span>{t("Pages")}</span>
-              <button
-                className="tiny page-search"
-                aria-label={t("Find and replace")}
-                onClick={() => setFindOpen((v) => !v)}
-              >
-                <Search size={16} />
-              </button>
-              <button
-                className="tiny"
-                aria-label={t("Add page")}
-                onClick={addPage}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-            <div className="pages">
-              {doc.pages.map((p) => (
-                <div
-                  className={`page ${p.id === page ? "active" : ""}`}
-                  key={p.id}
-                  data-page-id={p.id}
-                  data-page-drop={
-                    pageDrop?.id === p.id
-                      ? pageDrop.after
-                        ? "after"
-                        : "before"
-                      : undefined
-                  }
-                  style={{ touchAction: "none" }}
-                  onPointerDown={(e) => {
-                    suppressPageClick.current = false;
-                    if (
-                      e.button !== 0 ||
-                      (e.target as Element).closest(".tiny")
-                    )
-                      return;
-                    pagePointer.current = {
-                      id: p.id,
-                      x: e.clientX,
-                      y: e.clientY,
-                      active: false,
-                    };
-                    e.currentTarget.setPointerCapture(e.pointerId);
-                  }}
-                  onPointerMove={(e) => {
-                    const d = pagePointer.current;
-                    if (!d) return;
-                    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) {
-                      d.active = true;
-                      const row = document
-                        .elementFromPoint(e.clientX, e.clientY)
-                        ?.closest<HTMLElement>("[data-page-id]");
-                      d.target = row?.dataset.pageId;
-                      d.after =
-                        !!row &&
-                        e.clientY >
-                          row.getBoundingClientRect().top +
-                            row.getBoundingClientRect().height / 2;
-                      setPageDrop(
-                        d.target ? { id: d.target, after: !!d.after } : null,
-                      );
-                    }
-                  }}
-                  onPointerUp={(e) => {
-                    const d = pagePointer.current;
-                    pagePointer.current = null;
-                    setPageDrop(null);
-                    if (!d?.active) return;
-                    e.preventDefault();
-                    e.stopPropagation();
-                    suppressPageClick.current = true;
-                    if (d.target && d.target !== d.id) {
-                      const pages = doc.pages.filter((a) => a.id !== d.id),
-                        moving = doc.pages.find((a) => a.id === d.id);
-                      if (moving) {
-                        pages.splice(
-                          pages.findIndex((a) => a.id === d.target) +
-                            (d.after ? 1 : 0),
-                          0,
-                          moving,
-                        );
-                        change({ ...doc, pages });
-                      }
-                    }
-                  }}
-                  onPointerCancel={() => {
-                    pagePointer.current = null;
-                    setPageDrop(null);
-                  }}
-                  onClickCapture={(e) => {
-                    if (suppressPageClick.current) {
-                      suppressPageClick.current = false;
-                      e.stopPropagation();
-                    } else if (
-                      (e.target as Element).closest(".page") &&
-                      !(e.target as Element).closest(".tiny")
-                    ) {
-                      setPage(p.id);
-                      setSelected([]);
-                    }
-                  }}
-                  draggable={false}
-                >
-                  <button
-                    onClick={() => {
-                      setPage(p.id);
-                      setSelected([]);
-                    }}
-                  >
-                    <span>
-                      {p.id === page ? (
-                        <Check size={12} />
-                      ) : (
-                        <span className="spacer" />
-                      )}
-                    </span>
-                    <span
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        const name = window.prompt(t("Page name"), p.name);
-                        if (name?.trim())
-                          change({
-                            ...doc,
-                            pages: doc.pages.map((a) =>
-                              a.id === p.id ? { ...a, name: name.trim() } : a,
-                            ),
-                          });
-                      }}
-                    >
-                      {p.name}
-                    </span>
-                  </button>
-                  {p.id === page && (
-                    <>
-                      <button
-                        className="tiny"
-                        aria-label={t("Move page up")}
-                        disabled={doc.pages.indexOf(p) === 0}
-                        onClick={() => {
-                          const pages = [...doc.pages],
-                            i = pages.indexOf(p);
-                          [pages[i - 1], pages[i]] = [pages[i], pages[i - 1]];
-                          change({ ...doc, pages });
-                        }}
-                      >
-                        <ChevronDown
-                          size={11}
-                          style={{ transform: "rotate(180deg)" }}
-                        />
-                      </button>
-                      <button
-                        className="tiny"
-                        aria-label={t("Move page down")}
-                        disabled={doc.pages.indexOf(p) === doc.pages.length - 1}
-                        onClick={() => {
-                          const pages = [...doc.pages],
-                            i = pages.indexOf(p);
-                          [pages[i + 1], pages[i]] = [pages[i], pages[i + 1]];
-                          change({ ...doc, pages });
-                        }}
-                      >
-                        <ChevronDown size={11} />
-                      </button>
-                    </>
-                  )}
-                  {p.id === page && (
-                    <button
-                      className="tiny"
-                      aria-label={t("Delete current page")}
-                      onClick={deletePage}
-                    >
-                      <X size={11} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="layer-heading">
-              {t("Layers")}{" "}
-              <span>{doc.nodes.filter((n) => n.pageId === page).length}</span>
-              <button
-                className="tiny"
-                aria-label={t("Import assets")}
-                onClick={() => fileInput.current?.click()}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-            {showLayerSearch && (
-              <div className="layer-search">
-                <Search size={14} />
-                <input
-                  autoFocus
-                  aria-label={t("Filter layers")}
-                  value={layerFilter}
-                  onChange={(e) => setLayerFilter(e.target.value)}
-                  placeholder={t("Search layers…")}
-                />
-              </div>
-            )}
-            <div className="layer-tree">
-              {tree(null)}
-              <div
-                className="layer-root-drop"
-                role="button"
-                tabIndex={0}
-                onClick={() =>
-                  run({ type: "reparent", ids: selected, parentId: null })
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    run({ type: "reparent", ids: selected, parentId: null });
+            {leftTab === "assets" ? (
+              <LocalAssets
+                doc={doc}
+                onInsert={(node, client) => {
+                  const rect = svg.current?.getBoundingClientRect();
+                  if (!rect) return;
+                  if (
+                    client &&
+                    (client.x < rect.left ||
+                      client.x > rect.right ||
+                      client.y < rect.top ||
+                      client.y > rect.bottom)
+                  )
+                    return;
+                  const pos = point({
+                    clientX: client?.x ?? rect.left + rect.width / 2,
+                    clientY: client?.y ?? rect.top + rect.height / 2,
+                  });
+                  try {
+                    const next = createComponentInstance(
+                      doc,
+                      node.id,
+                      page,
+                      pos.x,
+                      pos.y,
+                    );
+                    setEditingText(null);
+                    setEditingVector(null);
+                    setSelectionScope(null);
+                    setTool("move");
+                    change(next.doc, [next.id]);
+                  } catch (error) {
+                    notify((error as Error).message);
                   }
                 }}
-                aria-label={t("Move to page root")}
-              >
-                {t("Drop here to move to page root")}
-              </div>
-              {!doc.nodes.some((n) => n.pageId === page) && (
-                <div className="empty-layers">
-                  <Square size={24} />
-                  <p>{t("Your next idea starts here.")}</p>
-                  <span>{t("Choose a tool and draw on the canvas.")}</span>
+              />
+            ) : (
+              <>
+                <div className="page-heading">
+                  <span>{t("Pages")}</span>
+                  <button
+                    className="tiny page-search"
+                    aria-label={t("Find and replace")}
+                    onClick={() => setFindOpen((v) => !v)}
+                  >
+                    <Search size={16} />
+                  </button>
+                  <button
+                    className="tiny"
+                    aria-label={t("Add page")}
+                    onClick={addPage}
+                  >
+                    <Plus size={14} />
+                  </button>
                 </div>
-              )}
-            </div>
+                <div className="pages">
+                  {doc.pages.map((p) => (
+                    <div
+                      className={`page ${p.id === page ? "active" : ""}`}
+                      key={p.id}
+                      data-page-id={p.id}
+                      data-page-drop={
+                        pageDrop?.id === p.id
+                          ? pageDrop.after
+                            ? "after"
+                            : "before"
+                          : undefined
+                      }
+                      style={{ touchAction: "none" }}
+                      onPointerDown={(e) => {
+                        suppressPageClick.current = false;
+                        if (
+                          e.button !== 0 ||
+                          (e.target as Element).closest(".tiny")
+                        )
+                          return;
+                        pagePointer.current = {
+                          id: p.id,
+                          x: e.clientX,
+                          y: e.clientY,
+                          active: false,
+                        };
+                        e.currentTarget.setPointerCapture(e.pointerId);
+                      }}
+                      onPointerMove={(e) => {
+                        const d = pagePointer.current;
+                        if (!d) return;
+                        if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 4) {
+                          d.active = true;
+                          const row = document
+                            .elementFromPoint(e.clientX, e.clientY)
+                            ?.closest<HTMLElement>("[data-page-id]");
+                          d.target = row?.dataset.pageId;
+                          d.after =
+                            !!row &&
+                            e.clientY >
+                              row.getBoundingClientRect().top +
+                                row.getBoundingClientRect().height / 2;
+                          setPageDrop(
+                            d.target
+                              ? { id: d.target, after: !!d.after }
+                              : null,
+                          );
+                        }
+                      }}
+                      onPointerUp={(e) => {
+                        const d = pagePointer.current;
+                        pagePointer.current = null;
+                        setPageDrop(null);
+                        if (!d?.active) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        suppressPageClick.current = true;
+                        if (d.target && d.target !== d.id) {
+                          const pages = doc.pages.filter((a) => a.id !== d.id),
+                            moving = doc.pages.find((a) => a.id === d.id);
+                          if (moving) {
+                            pages.splice(
+                              pages.findIndex((a) => a.id === d.target) +
+                                (d.after ? 1 : 0),
+                              0,
+                              moving,
+                            );
+                            change({ ...doc, pages });
+                          }
+                        }
+                      }}
+                      onPointerCancel={() => {
+                        pagePointer.current = null;
+                        setPageDrop(null);
+                      }}
+                      onClickCapture={(e) => {
+                        if (suppressPageClick.current) {
+                          suppressPageClick.current = false;
+                          e.stopPropagation();
+                        } else if (
+                          (e.target as Element).closest(".page") &&
+                          !(e.target as Element).closest(".tiny")
+                        ) {
+                          setPage(p.id);
+                          setSelected([]);
+                        }
+                      }}
+                      draggable={false}
+                    >
+                      <button
+                        onClick={() => {
+                          setPage(p.id);
+                          setSelected([]);
+                        }}
+                      >
+                        <span>
+                          {p.id === page ? (
+                            <Check size={12} />
+                          ) : (
+                            <span className="spacer" />
+                          )}
+                        </span>
+                        <span
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            const name = window.prompt(t("Page name"), p.name);
+                            if (name?.trim())
+                              change({
+                                ...doc,
+                                pages: doc.pages.map((a) =>
+                                  a.id === p.id
+                                    ? { ...a, name: name.trim() }
+                                    : a,
+                                ),
+                              });
+                          }}
+                        >
+                          {p.name}
+                        </span>
+                      </button>
+                      {p.id === page && (
+                        <>
+                          <button
+                            className="tiny"
+                            aria-label={t("Move page up")}
+                            disabled={doc.pages.indexOf(p) === 0}
+                            onClick={() => {
+                              const pages = [...doc.pages],
+                                i = pages.indexOf(p);
+                              [pages[i - 1], pages[i]] = [
+                                pages[i],
+                                pages[i - 1],
+                              ];
+                              change({ ...doc, pages });
+                            }}
+                          >
+                            <ChevronDown
+                              size={11}
+                              style={{ transform: "rotate(180deg)" }}
+                            />
+                          </button>
+                          <button
+                            className="tiny"
+                            aria-label={t("Move page down")}
+                            disabled={
+                              doc.pages.indexOf(p) === doc.pages.length - 1
+                            }
+                            onClick={() => {
+                              const pages = [...doc.pages],
+                                i = pages.indexOf(p);
+                              [pages[i + 1], pages[i]] = [
+                                pages[i],
+                                pages[i + 1],
+                              ];
+                              change({ ...doc, pages });
+                            }}
+                          >
+                            <ChevronDown size={11} />
+                          </button>
+                        </>
+                      )}
+                      {p.id === page && (
+                        <button
+                          className="tiny"
+                          aria-label={t("Delete current page")}
+                          onClick={deletePage}
+                        >
+                          <X size={11} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="layer-heading">
+                  {t("Layers")}{" "}
+                  <span>
+                    {doc.nodes.filter((n) => n.pageId === page).length}
+                  </span>
+                  <button
+                    className="tiny"
+                    aria-label={t("Import assets")}
+                    onClick={() => fileInput.current?.click()}
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+                {showLayerSearch && (
+                  <div className="layer-search">
+                    <Search size={14} />
+                    <input
+                      autoFocus
+                      aria-label={t("Filter layers")}
+                      value={layerFilter}
+                      onChange={(e) => setLayerFilter(e.target.value)}
+                      placeholder={t("Search layers…")}
+                    />
+                  </div>
+                )}
+                <div className="layer-tree">
+                  {tree(null)}
+                  <div
+                    className="layer-root-drop"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      run({ type: "reparent", ids: selected, parentId: null })
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        run({
+                          type: "reparent",
+                          ids: selected,
+                          parentId: null,
+                        });
+                      }
+                    }}
+                    aria-label={t("Move to page root")}
+                  >
+                    {t("Drop here to move to page root")}
+                  </div>
+                  {!doc.nodes.some((n) => n.pageId === page) && (
+                    <div className="empty-layers">
+                      <Square size={24} />
+                      <p>{t("Your next idea starts here.")}</p>
+                      <span>{t("Choose a tool and draw on the canvas.")}</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
             <div className="left-footer">
               <div className="brand-caption">{t("白泽 · 通万物、识万象")}</div>
               <div>
@@ -4608,6 +4702,127 @@ export default function App() {
                           patch({ name: e.target.value });
                       }}
                     />
+                    <div className="component-actions">
+                      <div className="section-heading">
+                        {t("Component")}
+                        <Component size={14} />
+                      </div>
+                      {first.type === "component" ? (
+                        <button
+                          className="resource"
+                          onClick={() => createInstance(first)}
+                        >
+                          <Copy size={14} />
+                          {t("Create instance copy")}
+                        </button>
+                      ) : first.type !== "instance" && !first.componentOwner ? (
+                        <button
+                          className="resource"
+                          onClick={() =>
+                            run({
+                              type: "group",
+                              ids: selected,
+                              kind: "component",
+                            })
+                          }
+                        >
+                          <Component size={14} />
+                          {t("Create component")}
+                        </button>
+                      ) : null}
+                      {first.type === "instance" && (
+                        <>
+                          <p className="muted">
+                            {t(
+                              "Instances follow their main component while preserving local overrides.",
+                            )}
+                          </p>
+                          <button
+                            onClick={openMainComponent}
+                            title={t("Edit main component")}
+                            aria-label={t("Edit main component")}
+                          >
+                            <Component size={16} />
+                          </button>
+                          <label>
+                            {t("Swap component")}
+                            <select
+                              aria-label={t("Swap component")}
+                              value={first.componentId ?? ""}
+                              onChange={(e) => {
+                                try {
+                                  change(
+                                    swapComponentInstance(
+                                      doc,
+                                      first.id,
+                                      e.target.value,
+                                    ),
+                                    [first.id],
+                                  );
+                                } catch (error) {
+                                  notify((error as Error).message);
+                                }
+                              }}
+                            >
+                              {first.componentId &&
+                                !availableLibraryEntries(doc).some(
+                                  (c) => c.sourceId === first.componentId,
+                                ) &&
+                                doc.componentLibrary?.some(
+                                  (c) => c.sourceId === first.componentId,
+                                ) && (
+                                  <option value={first.componentId} disabled>
+                                    {
+                                      doc.componentLibrary.find(
+                                        (c) => c.sourceId === first.componentId,
+                                      )?.name
+                                    }{" "}
+                                    · {t("Cached")}
+                                  </option>
+                                )}
+                              {availableLibraryEntries(doc).map((c) => (
+                                <option key={c.sourceId} value={c.sourceId}>
+                                  {c.name}
+                                </option>
+                              ))}
+                              {doc.nodes
+                                .filter((n) => n.type === "component")
+                                .map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.name}
+                                  </option>
+                                ))}
+                            </select>
+                          </label>
+                          <button
+                            title={t("Reset instance overrides")}
+                            aria-label={t("Reset instance overrides")}
+                            onClick={() => {
+                              try {
+                                change(resetComponentInstance(doc, first.id), [
+                                  first.id,
+                                ]);
+                              } catch (error) {
+                                notify((error as Error).message);
+                              }
+                            }}
+                          >
+                            <RotateCcw size={16} />
+                          </button>
+                          <button
+                            title={t("Detach instance")}
+                            aria-label={t("Detach instance")}
+                            onClick={() =>
+                              change(detachComponentInstance(doc, first.id), [
+                                first.id,
+                              ])
+                            }
+                          >
+                            <Unlink size={16} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                     <div className="alignment">
                       {[
                         { axis: "left", icon: AlignLeft },
@@ -5386,119 +5601,6 @@ export default function App() {
                     )}
                   </section>
                   <EffectsProperties node={first} onChange={patch} />
-                  <section>
-                    <div className="section-heading">
-                      {t("Component")}
-                      <Component size={14} />
-                    </div>
-                    {first.type === "component" ? (
-                      <button
-                        className="resource"
-                        onClick={() => createInstance(first)}
-                      >
-                        <Copy size={14} />
-                        {t("Create instance copy")}
-                      </button>
-                    ) : first.type !== "instance" && !first.componentOwner ? (
-                      <button
-                        className="resource"
-                        onClick={() =>
-                          run({
-                            type: "group",
-                            ids: selected,
-                            kind: "component",
-                          })
-                        }
-                      >
-                        <Component size={14} />
-                        {t("Create component")}
-                      </button>
-                    ) : null}
-                    {first.type === "instance" && (
-                      <>
-                        <p className="muted">
-                          {t(
-                            "Instances follow their main component while preserving local overrides.",
-                          )}
-                        </p>
-                        <button onClick={openMainComponent}>
-                          {t("Edit main component")}
-                        </button>
-                        <label>
-                          {t("Swap component")}
-                          <select
-                            aria-label={t("Swap component")}
-                            value={first.componentId ?? ""}
-                            onChange={(e) => {
-                              try {
-                                change(
-                                  swapComponentInstance(
-                                    doc,
-                                    first.id,
-                                    e.target.value,
-                                  ),
-                                  [first.id],
-                                );
-                              } catch (error) {
-                                notify((error as Error).message);
-                              }
-                            }}
-                          >
-                            {first.componentId &&
-                              !availableLibraryEntries(doc).some(
-                                (c) => c.sourceId === first.componentId,
-                              ) &&
-                              doc.componentLibrary?.some(
-                                (c) => c.sourceId === first.componentId,
-                              ) && (
-                                <option value={first.componentId} disabled>
-                                  {
-                                    doc.componentLibrary.find(
-                                      (c) => c.sourceId === first.componentId,
-                                    )?.name
-                                  }{" "}
-                                  · {t("Cached")}
-                                </option>
-                              )}
-                            {availableLibraryEntries(doc).map((c) => (
-                              <option key={c.sourceId} value={c.sourceId}>
-                                {c.name}
-                              </option>
-                            ))}
-                            {doc.nodes
-                              .filter((n) => n.type === "component")
-                              .map((c) => (
-                                <option key={c.id} value={c.id}>
-                                  {c.name}
-                                </option>
-                              ))}
-                          </select>
-                        </label>
-                        <button
-                          onClick={() => {
-                            try {
-                              change(resetComponentInstance(doc, first.id), [
-                                first.id,
-                              ]);
-                            } catch (error) {
-                              notify((error as Error).message);
-                            }
-                          }}
-                        >
-                          {t("Reset instance overrides")}
-                        </button>
-                        <button
-                          onClick={() =>
-                            change(detachComponentInstance(doc, first.id), [
-                              first.id,
-                            ])
-                          }
-                        >
-                          {t("Detach instance")}
-                        </button>
-                      </>
-                    )}
-                  </section>
                 </>
               )}
               <section>
