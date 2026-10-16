@@ -292,15 +292,15 @@ GitHub：[#14](https://github.com/loyo-sun/BaizeFig/issues/14)
 
 GitHub：[#15](https://github.com/loyo-sun/BaizeFig/issues/15)
 
-状态：Todo（待办）
+状态：Done（2026-10-16 审计补录，#15 已关闭）
 
 来源：截图 04–05
 
-当前基线：有基础排列和旋转数值渲染；缺少翻转、旋转命令和完整仿射坐标语义。
+当前：层级排列、翻转、90°/180°旋转及嵌套仿射变换已交付。证据见 0107efc、4cb94f2、472ef4c 与 docs/VERIFICATION.md。
 
-- [ ] Bring to front、Bring forward、Send backward、Send to back 的命令/快捷键校准。
-- [ ] Flip horizontal、Flip vertical、Rotate 180°、Rotate 90° left/right。
-- [ ] 对齐多选、嵌套旋转、镜像后的文本/路径/子节点坐标与尺寸手柄。
+- [x] Bring to front、Bring forward、Send backward、Send to back 的命令/快捷键校准。
+- [x] Flip horizontal、Flip vertical、Rotate 180°、Rotate 90° left/right。
+- [x] 对齐多选、嵌套旋转、镜像后的文本/路径/子节点坐标与尺寸手柄。
 
 验收：
 
@@ -308,6 +308,8 @@ GitHub：[#15](https://github.com/loyo-sun/BaizeFig/issues/15)
 - 顺序变更保持子树完整，不跨父节点意外重排。
 
 依赖：BZ-MENU-11
+
+审计复跑六组34项测试通过，无功能代码修改。原生跨平台键盘验收仍独立跟踪 #12。
 
 ## BZ-MENU-15 · Object：Flatten、描边轮廓与布尔组
 
