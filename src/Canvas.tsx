@@ -170,7 +170,9 @@ function ShapeContent({
   const dynamic =
     n.type === "text" &&
     n.textFlow &&
-    (!n.fidelity?.text || n.fidelity.text.characters !== n.text)
+    (!n.fidelity?.text ||
+      n.fidelity.text.characters !== n.text ||
+      (n.textFlow.truncation === "ending" && !hasSavedTextOutlines(n)))
       ? layoutText(n)
       : undefined;
   const f = dynamic
@@ -338,6 +340,17 @@ function ShapeContent({
               unicodeBidi="isolate"
             >
               {textSpans(n, line.start, line.end, f.text?.spans)}
+              {line.ellipsis &&
+                textSpans(
+                  {
+                    ...n,
+                    text:
+                      n.text.slice(0, Math.max(line.start, line.end - 1)) + "…",
+                  },
+                  Math.max(line.start, line.end - 1),
+                  Math.max(line.start, line.end - 1) + 1,
+                  f.text?.spans,
+                )}
             </tspan>
           </React.Fragment>
         ))}
@@ -1082,7 +1095,9 @@ export function exportBounds(
     (n) =>
       n.pageId === pageId &&
       n.visible &&
-      (ids.length ? ids.includes(n.id) : !n.parentId && !n.fidelity?.exportRegion) &&
+      (ids.length
+        ? ids.includes(n.id)
+        : !n.parentId && !n.fidelity?.exportRegion) &&
       !ancestors(doc, n).some((p) => !p.visible),
   );
   let result = bounds(doc, included);
@@ -1148,8 +1163,16 @@ export async function svgString(
   options: { viewport?: ExportViewport; background?: string } = {},
 ) {
   if (ids.length === 1) {
-    const region = doc.nodes.find(n => n.id === ids[0] && n.fidelity?.exportRegion);
-    if (region) { options = {...options, viewport: options.viewport ?? bounds(doc, [region])}; ids = []; }
+    const region = doc.nodes.find(
+      (n) => n.id === ids[0] && n.fidelity?.exportRegion,
+    );
+    if (region) {
+      options = {
+        ...options,
+        viewport: options.viewport ?? bounds(doc, [region]),
+      };
+      ids = [];
+    }
   }
   const { renderToStaticMarkup } = await import("react-dom/server");
   const b = options.viewport ?? exportBounds(doc, pageId, ids);

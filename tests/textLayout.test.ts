@@ -91,3 +91,47 @@ it("measures shaped strings together and honors rich text, tracking, alignment a
   expect(r.lines[0]).toMatchObject({ x: 70, y: 100 });
   expect(r.height).toBe(100);
 });
+
+it("truncates fixed-height overflow without removing editable text or splitting graphemes", () => {
+  const n = node("A👩‍💻BCDEF", 40);
+  n.height = 10;
+  n.textFlow = { ...n.textFlow!, autoResize: "fixed", truncation: "ending" };
+  const result = layoutText(n, measure);
+  expect(result.lines).toHaveLength(1);
+  expect(result.lines[0].ellipsis).toBe(true);
+  expect(n.text.slice(0, result.lines[0].end)).toBe("A👩‍💻");
+  expect(n.text).toBe("A👩‍💻BCDEF");
+  n.height = 30;
+  expect(layoutText(n, measure).lines.every((l) => !l.ellipsis)).toBe(true);
+});
+it("retains truncated mixed-style RTL text through native reload and SVG rendering", async () => {
+  const { validateDocument } = await import("../src/core");
+  const { svgString } = await import("../src/Canvas");
+  const d = emptyDocument(),
+    n = node("אבגדהוזחט", 40);
+  n.pageId = d.pages[0].id;
+  n.height = 10;
+  n.textFlow = {
+    ...n.textFlow!,
+    autoResize: "fixed",
+    truncation: "ending",
+    direction: "rtl",
+    runs: [{ start: 0, end: 9, fill: "#ff0000" }],
+  };
+  const result = layoutText(n, measure);
+  expect(result.lines[0]).toMatchObject({
+    direction: "rtl",
+    ellipsis: true,
+    end: 3,
+  });
+  expect(result.lines[0].x).toBe(40);
+  reflowText(n, measure);
+  d.nodes = [n];
+  const restored = JSON.parse(JSON.stringify(d));
+  validateDocument(restored);
+  expect(restored.nodes[0].text).toBe(n.text);
+  const svg = await svgString(restored, n.pageId);
+  expect(svg).toContain("…");
+  expect(svg).toContain('direction="rtl"');
+  expect(svg).toContain("#ff0000");
+});

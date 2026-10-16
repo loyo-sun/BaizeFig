@@ -81,6 +81,7 @@ export interface Node {
   textFlow?: {
     fontSettings?: FontSettings;
     autoResize: "fixed" | "height" | "both";
+    truncation?: "ending";
     verticalAlign: "top" | "center" | "bottom";
     letterSpacing: number;
     runs?: TextRun[];
@@ -1381,6 +1382,7 @@ export function validateDocument(
       if (!validFontSettings(f.fontSettings))
         throw Error("Invalid font settings");
       if (
+        (f.truncation !== undefined && f.truncation !== "ending") ||
         (f.direction !== undefined &&
           !["auto", "ltr", "rtl"].includes(f.direction)) ||
         (f.paragraphSpacing !== undefined &&

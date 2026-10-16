@@ -67,6 +67,7 @@ export function remapTextRuns(
     .sort((a, b) => a.start - b.start);
 }
 export interface TextLine {
+  ellipsis?: boolean;
   start: number;
   end: number;
   x: number;
@@ -233,6 +234,7 @@ export function layoutText(
       indent: number;
       marker?: string;
       paragraphEnd?: boolean;
+      ellipsis?: boolean;
       direction: "ltr" | "rtl";
     }[] = [];
   let indent = 0,
@@ -287,6 +289,39 @@ export function layoutText(
     lines.at(-1)!.paragraphEnd = true;
     paragraphStart += paragraph.length + 1;
   }
+  if (flow?.truncation === "ending" && flow.autoResize === "fixed") {
+    let used = 0,
+      visible = 0;
+    for (const line of lines) {
+      if (visible && used + line.height > node.height + 0.001) break;
+      used +=
+        line.height + (line.paragraphEnd ? (flow.paragraphSpacing ?? 0) : 0);
+      visible++;
+    }
+    if (visible < lines.length) {
+      lines.splice(visible);
+      const last = lines.at(-1)!;
+      direction = last.direction;
+      const ends = graphemes(node.text.slice(last.start, last.end)).map(
+        (g) => last.start + g.index,
+      );
+      let end = last.end;
+      const ellipsisWidth = () =>
+        measure("…", metrics(Math.max(last.start, end - 1)));
+      while (
+        end > last.start &&
+        width(last.start, end) + spacing + ellipsisWidth() > limit - last.indent
+      )
+        end = ends.pop()!;
+      last.end = end;
+      last.width =
+        width(last.start, end) +
+        (end > last.start ? spacing : 0) +
+        ellipsisWidth();
+      last.ellipsis = true;
+      last.paragraphEnd = false;
+    }
+  }
   const height = lines.reduce(
       (sum, l, i) =>
         sum +
@@ -317,6 +352,7 @@ export function layoutText(
     const y = top + l.ascent;
     top += l.height + (l.paragraphEnd ? (flow?.paragraphSpacing ?? 0) : 0);
     return {
+      ...(l.ellipsis ? { ellipsis: true } : {}),
       start: l.start,
       end: l.end,
       x: l.direction === "rtl" ? x + l.width : x,

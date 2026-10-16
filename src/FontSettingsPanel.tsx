@@ -47,6 +47,23 @@ export function FontSettingsPanel({
   return (
     <details className="font-settings">
       <summary>{t("Advanced typography")}</summary>
+      <label>
+        {t("Truncate overflow text")}
+        <input
+          type="checkbox"
+          aria-label={t("Truncate overflow text")}
+          checked={flow.truncation === "ending"}
+          onChange={(e) =>
+            onChange({
+              textFlow: {
+                ...flow,
+                truncation: e.target.checked ? "ending" : undefined,
+                ...(e.target.checked ? { autoResize: "fixed" as const } : {}),
+              },
+            })
+          }
+        />
+      </label>
       <p className="muted">
         {t(
           "Typography features depend on the selected font. Changes apply to this text layer.",

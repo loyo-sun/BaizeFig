@@ -359,7 +359,9 @@ export function importFigArchive(
   );
   const source: Raw[] = message.nodeChanges;
   const index = new Map(source.map((n) => [guid(n.guid), n]));
-  const derivedOverrides = new WeakSet<Raw>(source.flatMap(n => n.derivedSymbolData ?? []));
+  const derivedOverrides = new WeakSet<Raw>(
+    source.flatMap((n) => n.derivedSymbolData ?? []),
+  );
   const resolveProperty = figPropertyResolver(source);
   const propertyId = (value: Raw) =>
     resolveProperty(guid(value))?.canonical ?? guid(value);
@@ -767,7 +769,7 @@ export function importFigArchive(
               ? "drop-shadow"
               : e.type === "INNER_SHADOW"
                 ? "inner-shadow"
-                : (e.type === "LAYER_BLUR" || e.type === "FOREGROUND_BLUR")
+                : e.type === "LAYER_BLUR" || e.type === "FOREGROUND_BLUR"
                   ? "blur"
                   : e.type === "BACKGROUND_BLUR"
                     ? "background-blur"
@@ -1146,7 +1148,12 @@ export function importFigArchive(
           };
           fidelity.text.glyphCache = glyphCache;
           const glyphLimit = r.derivedTextData.truncationStartIndex;
-          if (r.textTruncation === "ENDING" && Number.isInteger(glyphLimit) && glyphLimit >= 0 && glyphLimit <= r.derivedTextData.glyphs.length)
+          if (
+            r.textTruncation === "ENDING" &&
+            Number.isInteger(glyphLimit) &&
+            glyphLimit >= 0 &&
+            glyphLimit <= r.derivedTextData.glyphs.length
+          )
             fidelity.text.glyphLimit = glyphLimit;
           fidelity.text.decorations = decorations;
           warnings.add(
@@ -1422,6 +1429,9 @@ export function importFigArchive(
         ? {
             textFlow: {
               fontSettings: figFontSettings(r),
+              ...(r.textTruncation === "ENDING"
+                ? { truncation: "ending" as const }
+                : {}),
               autoResize:
                 r.textAutoResize === "WIDTH_AND_HEIGHT"
                   ? "both"
@@ -1574,7 +1584,12 @@ export function importFigArchive(
       for (const override of overrides) {
         const guids = override.guidPath?.guids ?? [];
         if (guids.length === 1 && guid(guids[0]) === childKey) {
-          copy = mergeFigOverride(copy, override, derivedOverrides.has(override), warnings);
+          copy = mergeFigOverride(
+            copy,
+            override,
+            derivedOverrides.has(override),
+            warnings,
+          );
           for (const key of Object.keys(override)) explicit.add(key);
         }
       }
@@ -1585,7 +1600,10 @@ export function importFigArchive(
             guid(o.guidPath.guids[0]) === childKey,
         )
         .map((o) => {
-          const nested = { ...o, guidPath: { guids: o.guidPath.guids.slice(1) } };
+          const nested = {
+            ...o,
+            guidPath: { guids: o.guidPath.guids.slice(1) },
+          };
           if (derivedOverrides.has(o)) derivedOverrides.add(nested);
           return nested;
         });

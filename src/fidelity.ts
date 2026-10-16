@@ -499,6 +499,7 @@ export function validateFidelity(f: Fidelity) {
       f.text.lines.length > 20000 ||
       f.text.lines.some(
         (l) =>
+          (l.ellipsis !== undefined && typeof l.ellipsis !== "boolean") ||
           ![l.start, l.end, l.x, l.y].every(Number.isFinite) ||
           !Number.isInteger(l.start) ||
           !Number.isInteger(l.end) ||

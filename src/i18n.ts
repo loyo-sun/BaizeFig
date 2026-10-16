@@ -546,6 +546,7 @@ export const zhCN: Record<string, string> = {
   On: "开启",
   Off: "关闭",
   Reset: "重置",
+  "Truncate overflow text": "超出文本显示省略号",
   "Advanced typography": "高级字体设置",
   "Typography features depend on the selected font. Changes apply to this text layer.":
     "效果取决于所选字体是否支持，修改应用于整个文字图层。",
@@ -670,19 +671,26 @@ export const zhCN: Record<string, string> = {
   Solid: "纯色",
   "Linear gradient": "线性渐变",
   "Choose frames or sections in {page}": "选择 {page} 中的画板或分区",
-  "Choose fewer pages or individual frames": "请选择更少的页面，或展开选择单个画板/分区",
-  "Only selected top-level layers were imported; other content remains in the original file.": "此次仅导入选定的顶层图层；其余内容仍保留在原始文件中。",
-  "Some vector networks retain editable path contours instead of shared topology.": "部分矢量网络已保留为可编辑路径轮廓，尚未恢复共享节点结构。",
+  "Choose fewer pages or individual frames":
+    "请选择更少的页面，或展开选择单个画板/分区",
+  "Only selected top-level layers were imported; other content remains in the original file.":
+    "此次仅导入选定的顶层图层；其余内容仍保留在原始文件中。",
+  "Some vector networks retain editable path contours instead of shared topology.":
+    "部分矢量网络已保留为可编辑路径轮廓，尚未恢复共享节点结构。",
   "Specific variant": "指定变体",
   "Empty value": "空值",
-  "An unspecified wrapping gap uses zero; saved layer positions are preserved until layout changes.": "未指定的换行间距暂按零处理；修改布局前保留已保存的图层位置。",
+  "An unspecified wrapping gap uses zero; saved layer positions are preserved until layout changes.":
+    "未指定的换行间距暂按零处理；修改布局前保留已保存的图层位置。",
   "Choose Figma pages": "选择要导入的 Figma 页面",
-  "This large file can be imported by page. Referenced components are included automatically.": "此文件较大，可按页面导入。所选页面引用的组件会自动保留。",
-  "Source layer counts exclude expanded instances. Import fewer pages if the result exceeds the processing limit.": "原始图层数不含组件实例展开后的图层。如超出处理上限，请减少所选页面。",
+  "This large file can be imported by page. Referenced components are included automatically.":
+    "此文件较大，可按页面导入。所选页面引用的组件会自动保留。",
+  "Source layer counts exclude expanded instances. Import fewer pages if the result exceeds the processing limit.":
+    "原始图层数不含组件实例展开后的图层。如超出处理上限，请减少所选页面。",
   "{count} source layers": "{count} 个原始图层",
   "Choose fewer pages": "请选择更少的页面",
   "Import selected pages": "导入所选页面",
-  "Choose pages to import this large Figma file": "请按页面导入此大型 Figma 文件",
+  "Choose pages to import this large Figma file":
+    "请按页面导入此大型 Figma 文件",
   "Radial gradient": "径向渐变",
   "Diamond gradient": "菱形渐变",
 
@@ -780,8 +788,10 @@ export const zhCN: Record<string, string> = {
     "正在本地解码图层及内嵌图片。",
   "Figma file imported": "Figma 文件已导入",
   "Invalid or unsupported Figma file": "Figma 文件无效或格式暂不支持",
-  "Some derived component geometry was unavailable; source geometry is retained.": "部分组件计算位置或尺寸无效，已保留主组件中的有效几何信息。",
-  "Figma component library exceeds import limits": "所选内容依赖的组件过多，请减少选中的画板后分批导入",
+  "Some derived component geometry was unavailable; source geometry is retained.":
+    "部分组件计算位置或尺寸无效，已保留主组件中的有效几何信息。",
+  "Figma component library exceeds import limits":
+    "所选内容依赖的组件过多，请减少选中的画板后分批导入",
   "Figma file exceeds import limits": "Figma 文件超过导入处理限制",
   "No supported pages in Figma file": "Figma 文件中没有可导入的页面",
   "Figma import timed out": "Figma 导入超时，请尝试较小的文件",
