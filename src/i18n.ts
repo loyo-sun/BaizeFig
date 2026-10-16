@@ -547,6 +547,10 @@ export const zhCN: Record<string, string> = {
   Off: "关闭",
   Reset: "重置",
   "Truncate overflow text": "超出文本显示省略号",
+  "Original fonts unavailable": "未检测到原始字体",
+  "Choose replacement fonts before editing for consistent layout.": "请先选择替换字体，避免编辑后排版变化。",
+  "Replace missing fonts": "替换缺失字体",
+  "Replacement font was not detected. Choose an installed font.": "未检测到替换字体，请选择已安装的字体。",
   "Advanced typography": "高级字体设置",
   "Typography features depend on the selected font. Changes apply to this text layer.":
     "效果取决于所选字体是否支持，修改应用于整个文字图层。",

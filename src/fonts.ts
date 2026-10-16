@@ -1,3 +1,4 @@
+import { usesBundledInter } from "./fontFamily";
 import { fontFamilies } from "./fontFamily";
 export { fontFamilies } from "./fontFamily";
 import { ancestors, execute, type Document } from "./core";
@@ -93,4 +94,57 @@ export function replaceFont(doc: Document, from: string, to: string) {
     count++;
   }
   return { doc: next, count, skipped };
+}
+
+export type FontAvailability = "system" | "bundled" | "missing";
+export function fontAvailability(
+  names: string[],
+  measure: FontProbe,
+): Record<string, FontAvailability> {
+  return Object.fromEntries(
+    names.map((name) => [
+      name,
+      hasFont(name, measure)
+        ? "system"
+        : usesBundledInter(name) && hasFont("Inter Variable", measure)
+          ? "bundled"
+          : "missing",
+    ]),
+  );
+}
+export function requiredDocumentFonts(doc: Document): string[] {
+  const names = new Set<string>();
+  for (const n of [
+    ...doc.nodes,
+    ...(doc.componentLibrary ?? []).flatMap((c) => c.nodes),
+  ]) {
+    if (n.type !== "text") continue;
+    for (const value of [
+      n.fontFamily,
+      ...(n.textFlow?.runs ?? n.fidelity?.text?.spans ?? []).map(
+        (r) => r.fontFamily ?? "",
+      ),
+    ]) {
+      const first = fontFamilies(value)[0];
+      if (first) names.add(first);
+    }
+  }
+  return [...names].sort((a, b) => a.localeCompare(b));
+}
+
+export function unavailableOriginalFonts(
+  doc: Document,
+  status: Record<string, FontAvailability>,
+): string[] {
+  const all = requiredDocumentFonts({ ...doc, componentLibrary: [] });
+  const imported = requiredDocumentFonts({
+    ...doc,
+    nodes: doc.nodes.filter((n) => !!n.fidelity?.sourceId),
+    componentLibrary: [],
+  });
+  return all.filter(
+    (n) =>
+      status[n] === "missing" ||
+      (status[n] === "bundled" && imported.includes(n)),
+  );
 }

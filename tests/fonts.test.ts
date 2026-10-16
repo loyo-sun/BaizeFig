@@ -62,3 +62,40 @@ it("replaces base and mixed fonts without losing rich styles and skips locked te
   validateDocument(r.doc);
   expect(() => replaceFont(d, "Missing", "")).toThrow();
 });
+it("alerts on missing primary fonts, distinguishes bundled fallback, and excludes unused fallback families", async () => {
+  const { requiredDocumentFonts, fontAvailability } =
+    await import("../src/fonts");
+  const d = emptyDocument();
+  d.nodes = [
+    makeNode("text", d.pages[0].id, {
+      fontFamily: "Missing, Arial, sans-serif",
+      textFlow: {
+        autoResize: "fixed",
+        verticalAlign: "top",
+        letterSpacing: 0,
+        runs: [{ start: 0, end: 1, fontFamily: "Inter, serif" }],
+      },
+    }),
+  ];
+  expect(requiredDocumentFonts(d)).toEqual(["Inter", "Missing"]);
+  const probe = (family: string) =>
+    family.startsWith('"Inter Variable"')
+      ? 30
+      : family.includes("monospace")
+        ? 10
+        : 20;
+  expect(fontAvailability(requiredDocumentFonts(d), probe)).toEqual({
+    Inter: "bundled",
+    Missing: "missing",
+  });
+});
+
+it("does not warn on the native built-in font but warns on imported original-font fallback", async () => {
+  const { unavailableOriginalFonts } = await import("../src/fonts");
+  const d = emptyDocument();
+  const n = makeNode("text", d.pages[0].id, { fontFamily: "Inter" });
+  d.nodes = [n];
+  expect(unavailableOriginalFonts(d, { Inter: "bundled" })).toEqual([]);
+  n.fidelity = { size: [n.width, n.height], sourceId: "source" };
+  expect(unavailableOriginalFonts(d, { Inter: "bundled" })).toEqual(["Inter"]);
+});

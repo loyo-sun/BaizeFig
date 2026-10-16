@@ -26,6 +26,7 @@ import { TextProperties } from "./TextProperties";
 import { changeDocumentTextCase } from "./textCase";
 import { sampleSvgColor } from "./colorPicker";
 import { pasteNodes, type NodeClipboard, type PasteMode } from "./clipboard";
+import { FontNotice } from "./FontNotice";
 import { FontManager } from "./FontManager";
 import { DesignBranches } from "./DesignBranches";
 import { VersionHistory } from "./VersionHistory";
@@ -4154,6 +4155,7 @@ export default function App() {
               )}
             </div>
             <div className="properties">
+              <FontNotice doc={doc} onReplace={()=>setModal("fonts")} />
               {!first ? (
                 <>
                   <section>

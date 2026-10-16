@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Document } from "./core";
-import { usesBundledInter } from "./fontFamily";
-import { documentFonts, hasFont, replaceFont } from "./fonts";
+import { useFontAvailability } from "./useFontAvailability";
+import { hasFont, replaceFont } from "./fonts";
 import { useI18n } from "./LanguageContext";
 export function FontManager({
   doc,
@@ -11,40 +11,17 @@ export function FontManager({
   onReplace: (d: Document) => void;
 }) {
   const { t } = useI18n(),
-    [status, setStatus] = useState<
-      Record<string, "system" | "bundled" | "missing">
-    >({}),
     [from, setFrom] = useState(""),
     [to, setTo] = useState("Arial"),
     [message, setMessage] = useState("");
-  const names = documentFonts(doc);
+  const { names, status } = useFontAvailability(doc);
   useEffect(() => {
-    let active = true;
-    void document.fonts.ready.then(() => {
-      if (!active) return;
-      const ctx = document.createElement("canvas").getContext("2d");
-      if (!ctx) return;
-      const probe = (family: string, sample: string) => {
-        ctx.font = `72px ${family}`;
-        return ctx.measureText(sample).width;
-      };
-      setStatus(
-        Object.fromEntries(
-          names.map((name) => [
-            name,
-            hasFont(name, probe)
-              ? "system"
-              : usesBundledInter(name) && hasFont("Inter Variable", probe)
-                ? "bundled"
-                : "missing",
-          ]),
-        ),
+    if (!from)
+      setFrom(
+        names.find((n) => status[n] === "missing" || status[n] === "bundled") ??
+          "",
       );
-    });
-    return () => {
-      active = false;
-    };
-  }, [doc]);
+  }, [names, status, from]);
   return (
     <section className="font-manager">
       <p className="muted">
@@ -87,6 +64,21 @@ export function FontManager({
         disabled={!from || !to.trim()}
         onClick={() => {
           try {
+            const ctx = document.createElement("canvas").getContext("2d");
+            if (
+              !ctx ||
+              !hasFont(to.trim(), (family, sample) => {
+                ctx.font = `72px ${family}`;
+                return ctx.measureText(sample).width;
+              })
+            ) {
+              setMessage(
+                t(
+                  "Replacement font was not detected. Choose an installed font.",
+                ),
+              );
+              return;
+            }
             const r = replaceFont(doc, from, to);
             onReplace(r.doc);
             setMessage(
