@@ -1,3 +1,4 @@
+import { ArrowUp, Crop, Plus, Trash2 } from "lucide-react";
 import type { ImportedPaint } from "./appearance";
 import { useI18n } from "./LanguageContext";
 export function RegionPaintEditor({
@@ -77,6 +78,7 @@ export function RegionPaintEditor({
             %
           </label>
           <button
+            title={t("Move fill up")}
             aria-label={t("Move fill up")}
             disabled={i === 0}
             onClick={() => {
@@ -85,13 +87,14 @@ export function RegionPaintEditor({
               onChange(n);
             }}
           >
-            ↑
+            <ArrowUp size={14} />
           </button>
           <button
+            title={t("Remove fill")}
             aria-label={t("Remove fill")}
             onClick={() => onChange(paints.filter((_, j) => i !== j))}
           >
-            ×
+            <Trash2 size={14} />
           </button>
           {["linear", "radial", "diamond"].includes(p.type) && (
             <div className="gradient-stops">
@@ -138,16 +141,20 @@ export function RegionPaintEditor({
                     }
                   />
                   <button
+                    title={t("Remove gradient stop")}
+                    aria-label={t("Remove gradient stop")}
                     disabled={(p.stops?.length ?? 0) <= 2}
                     onClick={() =>
                       patch(i, { stops: p.stops!.filter((_, k) => k !== j) })
                     }
                   >
-                    ×
+                    <Trash2 size={14} />
                   </button>
                 </label>
               ))}
               <button
+                title={t("Add stop")}
+                aria-label={t("Add stop")}
                 onClick={() =>
                   patch(i, {
                     stops: [
@@ -157,7 +164,7 @@ export function RegionPaintEditor({
                   })
                 }
               >
-                {t("Add stop")}
+                <Plus size={14} />
               </button>
               <label>
                 {t("Paint transform")}
@@ -183,8 +190,12 @@ export function RegionPaintEditor({
           {p.type === "image" && (
             <>
               {onCrop && p.image && (
-                <button onClick={() => onCrop(i)}>
-                  {t("Crop image visually")}
+                <button
+                  title={t("Crop image visually")}
+                  aria-label={t("Crop image visually")}
+                  onClick={() => onCrop(i)}
+                >
+                  <Crop size={14} />
                 </button>
               )}
               <label>
@@ -298,11 +309,13 @@ export function RegionPaintEditor({
         </div>
       ))}
       <button
+        title={t("Add fill")}
+        aria-label={t("Add fill")}
         onClick={() =>
           onChange([...paints, { type: "solid", opacity: 1, color: "#0d99ff" }])
         }
       >
-        {t("Add fill")}
+        <Plus size={14} />
       </button>
     </div>
   );

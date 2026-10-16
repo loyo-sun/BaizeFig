@@ -1,3 +1,4 @@
+import { Plus, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import type { Node } from "./core";
 import type { FontSettings } from "./fontSettings";
@@ -122,10 +123,11 @@ export function FontSettingsPanel({
             }}
           />
           <button
+            title={`${t("Reset font axis")} ${tag}`}
             aria-label={`${t("Reset font axis")} ${tag}`}
             onClick={() => change("variations", tag)}
           >
-            {t("Reset")}
+            <RotateCcw size={14} />
           </button>
         </label>
       ))}
@@ -148,6 +150,8 @@ export function FontSettingsPanel({
           ))}
         </select>
         <button
+          title={t("Add axis")}
+          aria-label={t("Add axis")}
           disabled={settings.variations?.[axis] !== undefined}
           onClick={() =>
             change(
@@ -163,7 +167,7 @@ export function FontSettingsPanel({
             )
           }
         >
-          {t("Add axis")}
+          <Plus size={14} />
         </button>
       </div>
     </details>

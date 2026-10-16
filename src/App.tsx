@@ -108,6 +108,10 @@ import {
 } from "react";
 import {
   MousePointer2,
+  Ungroup,
+  Spline,
+  ScanLine,
+  Combine,
   Frame,
   Square,
   Circle,
@@ -4672,10 +4676,16 @@ export default function App() {
                       </div>
                     </details>
                     <div className="vector-actions">
-                      <button onClick={splitVectorSelection}>
-                        {t("Split vector into layers")}
+                      <button
+                        title={t("Split vector into layers")}
+                        aria-label={t("Split vector into layers")}
+                        onClick={splitVectorSelection}
+                      >
+                        <Ungroup size={16} />
                       </button>
                       <button
+                        title={t("Edit vector")}
+                        aria-label={t("Edit vector")}
                         onClick={() => editVector()}
                         disabled={
                           ![
@@ -4688,13 +4698,21 @@ export default function App() {
                           ].includes(first.type)
                         }
                       >
-                        {t("Edit vector")}
+                        <Spline size={16} />
                       </button>
-                      <button onClick={() => vectorOperation("outline")}>
-                        {t("Outline stroke")}
+                      <button
+                        title={t("Outline stroke")}
+                        aria-label={t("Outline stroke")}
+                        onClick={() => vectorOperation("outline")}
+                      >
+                        <ScanLine size={16} />
                       </button>
-                      <button onClick={() => vectorOperation("flatten")}>
-                        {t("Flatten")}
+                      <button
+                        title={t("Flatten")}
+                        aria-label={t("Flatten")}
+                        onClick={() => vectorOperation("flatten")}
+                      >
+                        <Combine size={16} />
                       </button>
                     </div>
                     {container(first) && (

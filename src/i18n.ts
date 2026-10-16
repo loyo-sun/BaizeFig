@@ -4,6 +4,7 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Remove gradient stop": "删除渐变色标",
   Effects: "效果",
   "Add effect": "添加效果",
   "Effect type": "效果类型",

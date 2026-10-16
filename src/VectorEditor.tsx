@@ -1,4 +1,18 @@
 import {
+  CornerUpRight,
+  Spline,
+  Link2,
+  Cable,
+  PenLine,
+  Unlink,
+  Eraser,
+  Ungroup,
+  Check,
+  ListFilter,
+  Expand,
+  PaintBucket,
+} from "lucide-react";
+import {
   offsetNetwork,
   offsetNodePatch,
   type OffsetJoin,
@@ -593,16 +607,20 @@ export function VectorEditor({
           )}
           <strong>{t("Edit vector")}</strong>
           <button
+            title={t("Corner")}
+            aria-label={t("Corner")}
             onClick={() => handleStyle("corner")}
             disabled={!picked.length}
           >
-            {t("Corner")}
+            <CornerUpRight size={16} />
           </button>
           <button
+            title={t("Smooth")}
+            aria-label={t("Smooth")}
             onClick={() => handleStyle("smooth")}
             disabled={!picked.length}
           >
-            {t("Smooth")}
+            <Spline size={16} />
           </button>
           <select
             aria-label={t("Handle mode")}
@@ -614,14 +632,18 @@ export function VectorEditor({
             <option value="mirrored">{t("Mirrored handles")}</option>
           </select>
           <button
+            title={t("Join nodes")}
+            aria-label={t("Join nodes")}
             disabled={picked.length !== 2}
             onClick={() =>
               action(() => save(joinVertices(network, picked[0], picked[1])))
             }
           >
-            {t("Join nodes")}
+            <Link2 size={16} />
           </button>
           <button
+            title={t("Smooth join selection")}
+            aria-label={t("Smooth join selection")}
             disabled={picked.length !== 2}
             onClick={() =>
               action(() =>
@@ -629,12 +651,19 @@ export function VectorEditor({
               )
             }
           >
-            {t("Smooth join selection")}
-          </button>
-          <button onClick={() => setConnect(!connect)} aria-pressed={connect}>
-            {t("Draw connections")}
+            <Cable size={16} />
           </button>
           <button
+            title={t("Draw connections")}
+            aria-label={t("Draw connections")}
+            onClick={() => setConnect(!connect)}
+            aria-pressed={connect}
+          >
+            <PenLine size={16} />
+          </button>
+          <button
+            title={t("Split vector")}
+            aria-label={t("Split vector")}
             disabled={!picked.length}
             onClick={() => {
               const n = structuredClone(network),
@@ -658,13 +687,26 @@ export function VectorEditor({
               setPicked([]);
             }}
           >
-            {t("Split vector")}
+            <Unlink size={16} />
           </button>
-          <button disabled={!picked.length} onClick={() => remove(true)}>
-            {t("Delete and heal")}
+          <button
+            title={t("Delete and heal")}
+            aria-label={t("Delete and heal")}
+            disabled={!picked.length}
+            onClick={() => remove(true)}
+          >
+            <Eraser size={16} />
           </button>
-          <button onClick={onSplit}>{t("Split vector into layers")}</button>
-          <button onClick={onClose}>{t("Done")}</button>
+          <button
+            title={t("Split vector into layers")}
+            aria-label={t("Split vector into layers")}
+            onClick={onSplit}
+          >
+            <Ungroup size={16} />
+          </button>
+          <button title={t("Done")} aria-label={t("Done")} onClick={onClose}>
+            <Check size={16} />
+          </button>
           <label>
             {t("Simplify tolerance")}
             <input
@@ -678,6 +720,8 @@ export function VectorEditor({
             />
           </label>
           <button
+            title={t("Simplify vector")}
+            aria-label={t("Simplify vector")}
             onClick={() =>
               action(() => {
                 const next = simplifyNetwork(network, simplifyTolerance);
@@ -688,7 +732,7 @@ export function VectorEditor({
               })
             }
           >
-            {t("Simplify vector")}
+            <ListFilter size={16} />
           </button>
           <label>
             {t("Offset distance")}
@@ -711,6 +755,8 @@ export function VectorEditor({
             <option value="square">{t("Square joins")}</option>
           </select>
           <button
+            title={t("Offset vector")}
+            aria-label={t("Offset vector")}
             disabled={offsetDistance === 0}
             onClick={() =>
               action(() => {
@@ -728,7 +774,7 @@ export function VectorEditor({
               })
             }
           >
-            {t("Offset vector")}
+            <Expand size={16} />
           </button>
           <div className="vector-region-style">
             <span>{t("Region")}</span>
@@ -780,8 +826,12 @@ export function VectorEditor({
               )}
             </small>
             {network.regions[region] && (
-              <button onClick={() => setPaintPanel(!paintPanel)}>
-                {t("Region fills")}
+              <button
+                title={t("Region fills")}
+                aria-label={t("Region fills")}
+                onClick={() => setPaintPanel(!paintPanel)}
+              >
+                <PaintBucket size={16} />
               </button>
             )}
           </div>
