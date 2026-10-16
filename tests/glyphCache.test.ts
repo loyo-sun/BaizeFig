@@ -249,15 +249,72 @@ it("retains font-independent outlines when only local color or links change, wit
 
 it("preserves synthetic ellipsis contours and explicit styles without changing text", async () => {
   const { readFigGlyphCache } = await import("../src/figGlyphCache");
-  const bytes = new Uint8Array(9); bytes[0] = 1;
-  const source = [{commandsBlob: 0, position: {x: 20, y: 12}, fontSize: 12, styleID: 0}];
+  const bytes = new Uint8Array(9);
+  bytes[0] = 1;
+  const source = [
+    { commandsBlob: 0, position: { x: 20, y: 12 }, fontSize: 12, styleID: 0 },
+  ];
   const encoded = readFigGlyphCache("abc", source, () => bytes);
-  expect(decodeGlyphCache(encoded, 3)[0]).toMatchObject({start: -1, x: 20, y: 12, size: 12});
-  expect(decodeGlyphCache(readFigGlyphCache("abc", [{...source[0], styleID: 7}], () => bytes, new Map(), [0,7,7]),3)[0].start).toBe(1);
-  expect(() => readFigGlyphCache("abc", [{...source[0], styleID: undefined}], () => bytes)).toThrow();
-  expect(() => readFigGlyphCache("abc", [{...source[0], styleID: 7}], () => bytes)).toThrow();
-  const doc = fixture(); doc.nodes[0].fidelity!.text!.glyphCache = encodeGlyphCache([{...glyph, start: -1}], 5);
-  const loaded = JSON.parse(JSON.stringify(doc)); validateDocument(loaded);
-  expect(await svgString(loaded, loaded.pages[0].id)).toContain('aria-label="CACHE"');
+  expect(decodeGlyphCache(encoded, 3)[0]).toMatchObject({
+    start: -1,
+    x: 20,
+    y: 12,
+    size: 12,
+  });
+  expect(
+    decodeGlyphCache(
+      readFigGlyphCache(
+        "abc",
+        [{ ...source[0], styleID: 7 }],
+        () => bytes,
+        new Map(),
+        [0, 7, 7],
+      ),
+      3,
+    )[0].start,
+  ).toBe(1);
+  expect(() =>
+    readFigGlyphCache(
+      "abc",
+      [{ ...source[0], styleID: undefined }],
+      () => bytes,
+    ),
+  ).toThrow();
+  expect(() =>
+    readFigGlyphCache("abc", [{ ...source[0], styleID: 7 }], () => bytes),
+  ).toThrow();
+  const doc = fixture();
+  doc.nodes[0].fidelity!.text!.glyphCache = encodeGlyphCache(
+    [{ ...glyph, start: -1 }],
+    5,
+  );
+  const loaded = JSON.parse(JSON.stringify(doc));
+  validateDocument(loaded);
+  expect(await svgString(loaded, loaded.pages[0].id)).toContain(
+    'aria-label="CACHE"',
+  );
   expect(loaded.nodes[0].text).toBe("CACHE");
+});
+
+it("renders the visible glyph prefix including ellipsis, leaving hidden text editable", async () => {
+  const doc = fixture(),
+    n = doc.nodes[0];
+  n.fidelity!.text!.glyphCache = encodeGlyphCache(
+    [
+      { ...glyph, x: 0 },
+      { ...glyph, x: 20, start: -1 },
+      { ...glyph, x: 200, start: 3 },
+      { ...glyph, x: 0, y: 100, start: 4 },
+    ],
+    5,
+  );
+  n.fidelity!.text!.glyphLimit = 2;
+  const loaded = JSON.parse(JSON.stringify(doc));
+  validateDocument(loaded);
+  expect(vectorVisualBounds(loaded, loaded.nodes[0])?.width).toBe(40);
+  const svg = await svgString(loaded, loaded.pages[0].id);
+  expect(svg).toContain('aria-label="CACHE"');
+  expect(loaded.nodes[0].text).toBe("CACHE");
+  loaded.nodes[0].fidelity.text.glyphLimit = 5;
+  expect(() => validateDocument(loaded)).toThrow("Invalid glyph truncation");
 });

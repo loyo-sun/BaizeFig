@@ -1145,6 +1145,9 @@ export function importFigArchive(
             spans: importedRuns,
           };
           fidelity.text.glyphCache = glyphCache;
+          const glyphLimit = r.derivedTextData.truncationStartIndex;
+          if (r.textTruncation === "ENDING" && Number.isInteger(glyphLimit) && glyphLimit >= 0 && glyphLimit <= r.derivedTextData.glyphs.length)
+            fidelity.text.glyphLimit = glyphLimit;
           fidelity.text.decorations = decorations;
           warnings.add(
             "Saved glyph outlines preserve unchanged text where available; editing uses available fonts.",

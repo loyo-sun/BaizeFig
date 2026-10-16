@@ -151,17 +151,24 @@ export function decodeGlyphCache(
     throw invalid();
   }
 }
+const truncatedGlyphs = new WeakMap<SavedGlyph[], Map<number, SavedGlyph[]>>();
 export function savedTextGlyphs(text?: {
   characters: string;
   glyphs?: SavedGlyph[];
   glyphCache?: string;
+  glyphLimit?: number;
 }) {
-  return (
+  const glyphs =
     text?.glyphs ??
     (text?.glyphCache
       ? decodeGlyphCache(text.glyphCache, text.characters.length)
-      : undefined)
-  );
+      : undefined);
+  if (!glyphs || text?.glyphLimit === undefined) return glyphs;
+  let limits = truncatedGlyphs.get(glyphs);
+  if (!limits) truncatedGlyphs.set(glyphs, (limits = new Map()));
+  if (!limits.has(text.glyphLimit))
+    limits.set(text.glyphLimit, glyphs.slice(0, text.glyphLimit));
+  return limits.get(text.glyphLimit)!;
 }
 
 export function hasSavedTextOutlines(n: Node) {

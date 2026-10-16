@@ -40,6 +40,7 @@ export interface Fidelity {
   text?: {
     glyphs?: SavedGlyph[];
     glyphCache?: string;
+    glyphLimit?: number;
     decorations?: {
       x: number;
       y: number;
@@ -344,7 +345,8 @@ export function networkPaths(
   return result;
 }
 export function validateFidelity(f: Fidelity) {
-  if (f.exportRegion !== undefined && typeof f.exportRegion !== "boolean") throw Error("Invalid export region");
+  if (f.exportRegion !== undefined && typeof f.exportRegion !== "boolean")
+    throw Error("Invalid export region");
   if (
     (f.strokeAlign &&
       !["center", "inside", "outside"].includes(f.strokeAlign)) ||
@@ -441,10 +443,22 @@ export function validateFidelity(f: Fidelity) {
       ))
   )
     throw Error("Invalid saved text decorations");
+  if (f.text?.glyphLimit !== undefined && f.text.glyphCache === undefined)
+    throw Error("Invalid glyph truncation");
   if (f.text?.glyphCache !== undefined) {
     if (typeof f.text.characters !== "string")
       throw Error("Invalid saved glyph cache");
-    decodeGlyphCache(f.text.glyphCache, f.text.characters.length);
+    const glyphs = decodeGlyphCache(
+      f.text.glyphCache,
+      f.text.characters.length,
+    );
+    if (
+      f.text.glyphLimit !== undefined &&
+      (!Number.isInteger(f.text.glyphLimit) ||
+        f.text.glyphLimit < 0 ||
+        f.text.glyphLimit > glyphs.length)
+    )
+      throw Error("Invalid glyph truncation");
   }
   if (
     f.text?.glyphs &&
