@@ -190,3 +190,28 @@ it("reports a cyclic definition and invalid variant combination without inventin
     true,
   );
 });
+
+it("restores omitted variant values from explicit empty defaults and preserves switching", () => {
+  const { doc, source } = fixture();
+  source[0].componentPropDefs.push({
+    id: g(999),
+    name: "Optional",
+    type: "VARIANT",
+    initialValue: { textValue: { characters: "" } },
+  });
+  const warnings = new Set<string>();
+  restoreFigComponentModels(doc, source, warnings);
+  const set = doc.componentSets![0];
+  expect(set.axes.Optional).toEqual([""]);
+  expect(set.variants.every((v) => v.values.Optional === "")).toBe(true);
+  expect(warnings.has("Some component variants could not be restored.")).toBe(
+    false,
+  );
+  validateDocument(doc);
+  const instance = doc.nodes.find((n) => n.type === "instance")!;
+  const switched = switchVariant(doc, instance.id, "State", "Hover");
+  expect(switched.nodes.find((n) => n.id === instance.id)?.componentId).toBe(
+    "0:21",
+  );
+  validateDocument(JSON.parse(JSON.stringify(switched)));
+});

@@ -1384,3 +1384,38 @@ it("imports a selected top-level frame with its children and stable local geomet
   expect(all.document.nodes).toHaveLength(3);
   validateDocument(document);
 });
+
+it("normalizes float-sized zero geometry and unused nonfinite wrap spacing without weakening native validation", () => {
+  const archive = readFigArchive(
+    stream({
+      nodeChanges: [
+        nodes[0],
+        nodes[1],
+        {
+          guid: g(91),
+          type: "FRAME",
+          size: { x: 100, y: 100 },
+          parentIndex: { guid: g(1), position: "a" },
+        },
+      ],
+    } as any),
+  );
+  const raw = archive.message.nodeChanges[2];
+  Object.assign(raw, {
+    stackMode: "HORIZONTAL",
+    stackCounterSpacing: NaN,
+    size: { x: -0.000002675, y: 34 },
+  });
+  const result = importFigArchive(archive);
+  expect(result.document.nodes[0].fidelity?.size).toEqual([0, 34]);
+  expect(result.document.nodes[0].importedLayout?.counterGap).toBe(0);
+  validateDocument(result.document);
+  raw.stackWrap = "WRAP";
+  expect(importFigArchive(archive).report.warnings).toContain(
+    "An unspecified wrapping gap uses zero; saved layer positions are preserved until layout changes.",
+  );
+  raw.size.x = -2;
+  expect(() => importFigArchive(archive)).toThrow(
+    "Invalid imported design data",
+  );
+});

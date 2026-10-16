@@ -117,7 +117,9 @@ export function ComponentProperties({
                   }
                 >
                   {values.map((v) => (
-                    <option key={v}>{v}</option>
+                    <option key={v} value={v}>
+                      {v || t("Empty value")}
+                    </option>
                   ))}
                 </select>
               </label>

@@ -47,7 +47,7 @@ export function validateComponentModels(doc: Document) {
           !Array.isArray(values) ||
           !values.length ||
           values.length > 2000 ||
-          values.some((v) => typeof v !== "string" || !v) ||
+          values.some((v) => typeof v !== "string") ||
           new Set(values).size !== values.length
         )
           throw Error("Invalid variant axis");

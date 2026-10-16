@@ -209,8 +209,10 @@ export function restoreFigComponentModels(
       );
       const values: Record<string, string> = {};
       for (const p of axes) {
-        const v = specs.get(p.canonical);
-        if (typeof v === "string" && v) values[p.name] = v;
+        const v = specs.has(p.canonical)
+          ? specs.get(p.canonical)
+          : p.initialValue?.textValue?.characters;
+        if (typeof v === "string") values[p.name] = v;
       }
       if (
         Object.keys(values).length !== axes.length ||

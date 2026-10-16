@@ -684,8 +684,12 @@ export function importFigArchive(
       )
         text = assignment.value.textValue.characters;
     }
+    // Serialized float geometry can undershoot zero by a few millionths.
+    // Normalize only that tolerance, never accept materially negative sizes.
+    const dimension = (v: number | undefined) =>
+      v !== undefined && v < 0 && v >= -0.0001 ? 0 : (v ?? 0);
     const fidelity: Fidelity = {
-      size: [r.size.x ?? 0, r.size.y ?? 0],
+      size: [dimension(r.size.x), dimension(r.size.y)],
       linear: [
         transform.m00 ?? 1,
         transform.m10 ?? 0,
@@ -1222,6 +1226,15 @@ export function importFigArchive(
         : value === "MAX"
           ? ("end" as const)
           : ("start" as const);
+    if (
+      supportedLayout &&
+      r.stackWrap === "WRAP" &&
+      r.stackCounterSpacing !== undefined &&
+      !Number.isFinite(r.stackCounterSpacing)
+    )
+      warnings.add(
+        "An unspecified wrapping gap uses zero; saved layer positions are preserved until layout changes.",
+      );
     const layoutConfig = supportedLayout
       ? {
           padding: [
@@ -1253,7 +1266,9 @@ export function importFigArchive(
               ? ("baseline" as const)
               : align(r.stackCounterAlignItems),
           wrap: r.stackWrap === "WRAP",
-          counterGap: Math.max(0, r.stackCounterSpacing ?? 0),
+          counterGap: Number.isFinite(r.stackCounterSpacing)
+            ? Math.max(0, r.stackCounterSpacing)
+            : 0,
           ...(r.stackMode === "GRID"
             ? {
                 grid: {
