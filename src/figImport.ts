@@ -1124,6 +1124,7 @@ export function importFigArchive(
           r.derivedTextData.glyphs,
           (index) => message.blobs?.[index]?.bytes,
           glyphContourCache,
+          r.textData?.characterStyleIDs,
         );
         const decorations = readFigDecorations(r, (p) =>
           color(p.color, p.opacity ?? 1),

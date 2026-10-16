@@ -5,6 +5,7 @@ export function readFigGlyphCache(
   source: Record<string, any>[],
   blob: (index: number) => Uint8Array | undefined,
   contours = new Map<number, string>(),
+  characterStyles: number[] = [],
 ) {
   if (source.length > 20000) throw Error("Invalid saved glyph cache");
   const glyphs = source.map((g) => {
@@ -15,13 +16,19 @@ export function readFigGlyphCache(
       d = commandsPath(bytes);
       contours.set(g.commandsBlob, d);
     }
+    // Synthetic glyphs (for example ellipses) carry a style, not a text
+    // character. -1 means the layer's base style; never insert text for them.
+    const start = g.firstCharacter ?? (g.styleID === 0 ? -1 :
+      Number.isInteger(g.styleID) ? characterStyles.indexOf(g.styleID) : undefined);
+    if (start === undefined || (g.styleID !== 0 && g.firstCharacter === undefined && start === -1))
+      throw Error("Invalid saved glyph cache");
     return {
       d,
       x: g.position?.x,
       y: g.position?.y,
       size: g.fontSize,
       rotation: g.rotation ?? 0,
-      start: g.firstCharacter,
+      start,
     };
   });
   return encodeGlyphCache(glyphs, text.length);

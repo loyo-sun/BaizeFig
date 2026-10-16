@@ -128,7 +128,7 @@ export function decodeGlyphCache(
         row[0] >= contours.length ||
         row[3] <= 0 ||
         !Number.isInteger(row[5]) ||
-        row[5] < 0 ||
+        row[5] < -1 ||
         row[5] >= textLength
       )
         throw invalid();
