@@ -1619,7 +1619,14 @@ export default function App() {
   }
   function createInstance(n: Node) {
     try {
-      const next = createComponentInstance(doc, n.id, page, n.x + 40, n.y + 40);
+      const b = bounds(doc, [n]);
+      const next = createComponentInstance(
+        doc,
+        n.id,
+        page,
+        b.x + b.width + 40,
+        b.y,
+      );
       change(next.doc, [next.id]);
     } catch (error) {
       notify((error as Error).message);
@@ -4559,8 +4566,12 @@ export default function App() {
                       <span>
                         {selected.length > 1
                           ? t("{count} selected", { count: selected.length })
-                          : first.type.charAt(0).toUpperCase() +
-                            first.type.slice(1)}
+                          : first.type === "component"
+                            ? t("Main component")
+                            : t(
+                                first.type.charAt(0).toUpperCase() +
+                                  first.type.slice(1),
+                              )}
                       </span>
                       <div className="inline">
                         <button
@@ -5388,7 +5399,7 @@ export default function App() {
                         <Copy size={14} />
                         {t("Create instance copy")}
                       </button>
-                    ) : (
+                    ) : first.type !== "instance" && !first.componentOwner ? (
                       <button
                         className="resource"
                         onClick={() =>
@@ -5402,7 +5413,7 @@ export default function App() {
                         <Component size={14} />
                         {t("Create component")}
                       </button>
-                    )}
+                    ) : null}
                     {first.type === "instance" && (
                       <>
                         <p className="muted">
