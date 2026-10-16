@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import {
   CornerUpRight,
   Spline,
@@ -24,7 +25,11 @@ import type { Document, Node } from "./core";
 import { NodeShape } from "./Canvas";
 import { worldTransform } from "./core";
 import { multiply, inverse, transformPoint } from "./fidelity";
-import { editableNetwork, networkPatch } from "./vectorGeometry";
+import {
+  editableNetwork,
+  networkPatch,
+  vectorCoordinateSize,
+} from "./vectorGeometry";
 import {
   joinVertices,
   smoothJoinVertices,
@@ -40,7 +45,7 @@ export function VectorEditor({
   node,
   zoom,
   view,
-  width,
+  panelTarget,
   onCommit,
   onClose,
   onUndo,
@@ -58,7 +63,7 @@ export function VectorEditor({
   doc: Document;
   node: Node;
   zoom: number;
-  width: number;
+  panelTarget: HTMLElement | null;
   view: { x: number; y: number };
   onCommit: (patch: Partial<Node>) => void;
   onClose: () => void;
@@ -98,10 +103,14 @@ export function VectorEditor({
     group = useRef<SVGGElement>(null),
     panKey = useRef(false);
   const m = multiply(worldTransform(doc, node), [
-    node.fidelity?.size[0] ? node.width / node.fidelity.size[0] : 1,
+    vectorCoordinateSize(node)[0]
+      ? node.width / vectorCoordinateSize(node)[0]
+      : 1,
     0,
     0,
-    node.fidelity?.size[1] ? node.height / node.fidelity.size[1] : 1,
+    vectorCoordinateSize(node)[1]
+      ? node.height / vectorCoordinateSize(node)[1]
+      : 1,
     0,
     0,
   ]);
@@ -448,8 +457,8 @@ export function VectorEditor({
             node={{
               ...node,
               ...networkPatch(node, network),
-              width: node.fidelity?.size[0] ?? node.width,
-              height: node.fidelity?.size[1] ?? node.height,
+              width: vectorCoordinateSize(node)[0],
+              height: vectorCoordinateSize(node)[1],
             }}
           />
         </g>
@@ -582,282 +591,293 @@ export function VectorEditor({
           />
         ))}
       </g>
-      <foreignObject
-        x={(16 - view.x) / zoom}
-        y={(16 - view.y) / zoom}
-        width={width / zoom}
-        height={300 / zoom}
-        style={{ overflow: "visible", pointerEvents: "none" }}
-        onPointerDown={(e) => e.stopPropagation()}
-        onDoubleClick={(e) => e.stopPropagation()}
-      >
-        <div
-          className="vector-toolbar"
-          style={{
-            width,
-            pointerEvents: "auto",
-            transform: `scale(${1 / zoom})`,
-            transformOrigin: "top left",
-          }}
-        >
-          {operationError && (
-            <div className="vector-operation-error" role="alert">
-              {operationError}
+      {panelTarget &&
+        createPortal(
+          <div
+            className="vector-toolbar vector-inspector"
+            onPointerDown={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+          >
+            {operationError && (
+              <div className="vector-operation-error" role="alert">
+                {operationError}
+              </div>
+            )}
+            <div className="vector-inspector-heading">
+              <strong>{t("Edit vector")}</strong>
+              <button
+                title={t("Done")}
+                aria-label={t("Done")}
+                onClick={onClose}
+              >
+                <Check size={16} />
+              </button>
             </div>
-          )}
-          <strong>{t("Edit vector")}</strong>
-          <button
-            title={t("Corner")}
-            aria-label={t("Corner")}
-            onClick={() => handleStyle("corner")}
-            disabled={!picked.length}
-          >
-            <CornerUpRight size={16} />
-          </button>
-          <button
-            title={t("Smooth")}
-            aria-label={t("Smooth")}
-            onClick={() => handleStyle("smooth")}
-            disabled={!picked.length}
-          >
-            <Spline size={16} />
-          </button>
-          <select
-            aria-label={t("Handle mode")}
-            value={mode}
-            onChange={(e) => setMode(e.target.value as typeof mode)}
-          >
-            <option value="free">{t("Free handles")}</option>
-            <option value="aligned">{t("Aligned handles")}</option>
-            <option value="mirrored">{t("Mirrored handles")}</option>
-          </select>
-          <button
-            title={t("Join nodes")}
-            aria-label={t("Join nodes")}
-            disabled={picked.length !== 2}
-            onClick={() =>
-              action(() => save(joinVertices(network, picked[0], picked[1])))
-            }
-          >
-            <Link2 size={16} />
-          </button>
-          <button
-            title={t("Smooth join selection")}
-            aria-label={t("Smooth join selection")}
-            disabled={picked.length !== 2}
-            onClick={() =>
-              action(() =>
-                save(smoothJoinVertices(network, picked[0], picked[1])),
-              )
-            }
-          >
-            <Cable size={16} />
-          </button>
-          <button
-            title={t("Draw connections")}
-            aria-label={t("Draw connections")}
-            onClick={() => setConnect(!connect)}
-            aria-pressed={connect}
-          >
-            <PenLine size={16} />
-          </button>
-          <button
-            title={t("Split vector")}
-            aria-label={t("Split vector")}
-            disabled={!picked.length}
-            onClick={() => {
-              const n = structuredClone(network),
-                affected = new Set<number>();
-              for (const v of picked) {
-                const incident = n.segments.flatMap((s, i) =>
-                  s.a === v || s.b === v ? [i] : [],
-                );
-                incident.forEach((i) => affected.add(i));
-                for (const i of incident.slice(1)) {
-                  const s = n.segments[i],
-                    copy = n.vertices.push({ ...n.vertices[v] }) - 1;
-                  if (s.a === v) s.a = copy;
-                  else s.b = copy;
+            <div className="vector-node-actions">
+              <button
+                title={t("Corner")}
+                aria-label={t("Corner")}
+                onClick={() => handleStyle("corner")}
+                disabled={!picked.length}
+              >
+                <CornerUpRight size={16} />
+              </button>
+              <button
+                title={t("Smooth")}
+                aria-label={t("Smooth")}
+                onClick={() => handleStyle("smooth")}
+                disabled={!picked.length}
+              >
+                <Spline size={16} />
+              </button>
+              <select
+                aria-label={t("Handle mode")}
+                value={mode}
+                onChange={(e) => setMode(e.target.value as typeof mode)}
+              >
+                <option value="free">{t("Free handles")}</option>
+                <option value="aligned">{t("Aligned handles")}</option>
+                <option value="mirrored">{t("Mirrored handles")}</option>
+              </select>
+              <button
+                title={t("Join nodes")}
+                aria-label={t("Join nodes")}
+                disabled={picked.length !== 2}
+                onClick={() =>
+                  action(() =>
+                    save(joinVertices(network, picked[0], picked[1])),
+                  )
                 }
-              }
-              n.regions = n.regions.filter((r) =>
-                r.loops.every((l) => l.every((e) => !affected.has(e.segment))),
-              );
-              save(n);
-              setPicked([]);
-            }}
-          >
-            <Unlink size={16} />
-          </button>
-          <button
-            title={t("Delete and heal")}
-            aria-label={t("Delete and heal")}
-            disabled={!picked.length}
-            onClick={() => remove(true)}
-          >
-            <Eraser size={16} />
-          </button>
-          <button
-            title={t("Split vector into layers")}
-            aria-label={t("Split vector into layers")}
-            onClick={onSplit}
-          >
-            <Ungroup size={16} />
-          </button>
-          <button title={t("Done")} aria-label={t("Done")} onClick={onClose}>
-            <Check size={16} />
-          </button>
-          <label>
-            {t("Simplify tolerance")}
-            <input
-              aria-label={t("Simplify tolerance")}
-              type="number"
-              min={0.001}
-              max={100}
-              step={0.1}
-              value={simplifyTolerance}
-              onChange={(e) => setSimplifyTolerance(Number(e.target.value))}
-            />
-          </label>
-          <button
-            title={t("Simplify vector")}
-            aria-label={t("Simplify vector")}
-            onClick={() =>
-              action(() => {
-                const next = simplifyNetwork(network, simplifyTolerance);
-                if (next.vertices.length !== network.vertices.length) {
-                  save(next);
-                  setPicked([]);
+              >
+                <Link2 size={16} />
+              </button>
+              <button
+                title={t("Smooth join selection")}
+                aria-label={t("Smooth join selection")}
+                disabled={picked.length !== 2}
+                onClick={() =>
+                  action(() =>
+                    save(smoothJoinVertices(network, picked[0], picked[1])),
+                  )
                 }
-              })
-            }
-          >
-            <ListFilter size={16} />
-          </button>
-          <label>
-            {t("Offset distance")}
-            <input
-              aria-label={t("Offset distance")}
-              type="number"
-              min={-10000}
-              max={10000}
-              value={offsetDistance}
-              onChange={(e) => setOffsetDistance(Number(e.target.value))}
-            />
-          </label>
-          <select
-            aria-label={t("Offset joins")}
-            value={offsetJoin}
-            onChange={(e) => setOffsetJoin(e.target.value as OffsetJoin)}
-          >
-            <option value="miter">{t("Miter joins")}</option>
-            <option value="round">{t("Round joins")}</option>
-            <option value="square">{t("Square joins")}</option>
-          </select>
-          <button
-            title={t("Offset vector")}
-            aria-label={t("Offset vector")}
-            disabled={offsetDistance === 0}
-            onClick={() =>
-              action(() => {
-                const next = offsetNetwork(network, offsetDistance, {
-                  join: offsetJoin,
-                });
-                if (!next.segments.length)
-                  throw Error(
-                    "Offset removes all geometry. Choose a smaller distance.",
-                  );
-                onCommit(offsetNodePatch(node, next));
-                setDraft(null);
-                setPicked([]);
-                setRegion(0);
-              })
-            }
-          >
-            <Expand size={16} />
-          </button>
-          <div className="vector-region-style">
-            <span>{t("Region")}</span>
-            <select
-              aria-label={t("Region")}
-              value={region}
-              onChange={(e) => setRegion(Number(e.target.value))}
-            >
-              {network.regions.map((_, i) => (
-                <option key={i} value={i}>
-                  {i + 1}
-                </option>
-              ))}
-            </select>
-            {network.regions[region] && (
-              <>
-                <input
-                  type="color"
-                  aria-label={t("Region color")}
-                  value={
-                    network.regions[region].color?.slice(0, 7) ??
-                    node.fill.slice(0, 7)
+              >
+                <Cable size={16} />
+              </button>
+              <button
+                title={t("Draw connections")}
+                aria-label={t("Draw connections")}
+                onClick={() => setConnect(!connect)}
+                aria-pressed={connect}
+              >
+                <PenLine size={16} />
+              </button>
+              <button
+                title={t("Split vector")}
+                aria-label={t("Split vector")}
+                disabled={!picked.length}
+                onClick={() => {
+                  const n = structuredClone(network),
+                    affected = new Set<number>();
+                  for (const v of picked) {
+                    const incident = n.segments.flatMap((s, i) =>
+                      s.a === v || s.b === v ? [i] : [],
+                    );
+                    incident.forEach((i) => affected.add(i));
+                    for (const i of incident.slice(1)) {
+                      const s = n.segments[i],
+                        copy = n.vertices.push({ ...n.vertices[v] }) - 1;
+                      if (s.a === v) s.a = copy;
+                      else s.b = copy;
+                    }
                   }
-                  onChange={(e) => {
+                  n.regions = n.regions.filter((r) =>
+                    r.loops.every((l) =>
+                      l.every((e) => !affected.has(e.segment)),
+                    ),
+                  );
+                  save(n);
+                  setPicked([]);
+                }}
+              >
+                <Unlink size={16} />
+              </button>
+              <button
+                title={t("Delete and heal")}
+                aria-label={t("Delete and heal")}
+                disabled={!picked.length}
+                onClick={() => remove(true)}
+              >
+                <Eraser size={16} />
+              </button>
+              <button
+                title={t("Split vector into layers")}
+                aria-label={t("Split vector into layers")}
+                onClick={onSplit}
+              >
+                <Ungroup size={16} />
+              </button>
+            </div>
+            <details className="vector-advanced">
+              <summary>{t("Path refinement")}</summary>
+              <label>
+                {t("Simplify tolerance")}
+                <input
+                  aria-label={t("Simplify tolerance")}
+                  type="number"
+                  min={0.001}
+                  max={100}
+                  step={0.1}
+                  value={simplifyTolerance}
+                  onChange={(e) => setSimplifyTolerance(Number(e.target.value))}
+                />
+              </label>
+              <button
+                title={t("Simplify vector")}
+                aria-label={t("Simplify vector")}
+                onClick={() =>
+                  action(() => {
+                    const next = simplifyNetwork(network, simplifyTolerance);
+                    if (next.vertices.length !== network.vertices.length) {
+                      save(next);
+                      setPicked([]);
+                    }
+                  })
+                }
+              >
+                <ListFilter size={16} />
+              </button>
+              <label>
+                {t("Offset distance")}
+                <input
+                  aria-label={t("Offset distance")}
+                  type="number"
+                  min={-10000}
+                  max={10000}
+                  value={offsetDistance}
+                  onChange={(e) => setOffsetDistance(Number(e.target.value))}
+                />
+              </label>
+              <select
+                aria-label={t("Offset joins")}
+                value={offsetJoin}
+                onChange={(e) => setOffsetJoin(e.target.value as OffsetJoin)}
+              >
+                <option value="miter">{t("Miter joins")}</option>
+                <option value="round">{t("Round joins")}</option>
+                <option value="square">{t("Square joins")}</option>
+              </select>
+              <button
+                title={t("Offset vector")}
+                aria-label={t("Offset vector")}
+                disabled={offsetDistance === 0}
+                onClick={() =>
+                  action(() => {
+                    const next = offsetNetwork(network, offsetDistance, {
+                      join: offsetJoin,
+                    });
+                    if (!next.segments.length)
+                      throw Error(
+                        "Offset removes all geometry. Choose a smaller distance.",
+                      );
+                    onCommit(offsetNodePatch(node, next));
+                    setDraft(null);
+                    setPicked([]);
+                    setRegion(0);
+                  })
+                }
+              >
+                <Expand size={16} />
+              </button>
+            </details>
+            <details className="vector-regions">
+              <summary>{t("Region styles")}</summary>
+              <div className="vector-region-style">
+                <span>{t("Region")}</span>
+                <select
+                  aria-label={t("Region")}
+                  value={region}
+                  onChange={(e) => setRegion(Number(e.target.value))}
+                >
+                  {network.regions.map((_, i) => (
+                    <option key={i} value={i}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </select>
+                {network.regions[region] && (
+                  <>
+                    <input
+                      type="color"
+                      aria-label={t("Region color")}
+                      value={
+                        network.regions[region].color?.slice(0, 7) ??
+                        node.fill.slice(0, 7)
+                      }
+                      onChange={(e) => {
+                        const n = structuredClone(network);
+                        n.regions[region].color = e.target.value;
+                        n.regions[region].paints = undefined;
+                        save(n);
+                      }}
+                    />
+                    <select
+                      aria-label={t("Winding rule")}
+                      value={network.regions[region].rule}
+                      onChange={(e) => {
+                        const n = structuredClone(network);
+                        n.regions[region].rule = e.target.value as
+                          "nonzero" | "evenodd";
+                        save(n);
+                      }}
+                    >
+                      <option value="nonzero">{t("Nonzero")}</option>
+                      <option value="evenodd">{t("Even odd")}</option>
+                    </select>
+                  </>
+                )}
+                {network.regions[region] && (
+                  <button
+                    title={t("Region fills")}
+                    aria-label={t("Region fills")}
+                    onClick={() => setPaintPanel(!paintPanel)}
+                  >
+                    <PaintBucket size={16} />
+                  </button>
+                )}
+              </div>
+              {paintPanel && network.regions[region] && (
+                <RegionPaintEditor
+                  paints={
+                    network.regions[region].paints ?? [
+                      {
+                        type: "solid",
+                        opacity: 1,
+                        color: network.regions[region].color ?? node.fill,
+                      },
+                    ]
+                  }
+                  onChange={(paints) => {
                     const n = structuredClone(network);
-                    n.regions[region].color = e.target.value;
-                    n.regions[region].paints = undefined;
+                    n.regions[region].paints = paints.length
+                      ? paints
+                      : [{ type: "solid", color: "#000000", opacity: 0 }];
+                    n.regions[region].color = undefined;
                     save(n);
                   }}
                 />
-                <select
-                  aria-label={t("Winding rule")}
-                  value={network.regions[region].rule}
-                  onChange={(e) => {
-                    const n = structuredClone(network);
-                    n.regions[region].rule = e.target.value as
-                      "nonzero" | "evenodd";
-                    save(n);
-                  }}
-                >
-                  <option value="nonzero">{t("Nonzero")}</option>
-                  <option value="evenodd">{t("Even odd")}</option>
-                </select>
-              </>
-            )}
-            <small>
-              {t(
-                "Double-click a segment to add a node. Alt-drag a handle to break symmetry.",
               )}
-            </small>
-            {network.regions[region] && (
-              <button
-                title={t("Region fills")}
-                aria-label={t("Region fills")}
-                onClick={() => setPaintPanel(!paintPanel)}
-              >
-                <PaintBucket size={16} />
-              </button>
-            )}
-          </div>
-          {paintPanel && network.regions[region] && (
-            <RegionPaintEditor
-              paints={
-                network.regions[region].paints ?? [
-                  {
-                    type: "solid",
-                    opacity: 1,
-                    color: network.regions[region].color ?? node.fill,
-                  },
-                ]
-              }
-              onChange={(paints) => {
-                const n = structuredClone(network);
-                n.regions[region].paints = paints.length
-                  ? paints
-                  : [{ type: "solid", color: "#000000", opacity: 0 }];
-                n.regions[region].color = undefined;
-                save(n);
-              }}
-            />
-          )}
-        </div>
-      </foreignObject>
+            </details>
+            <details className="vector-help">
+              <summary>{t("Editing tips")}</summary>
+              <p>
+                {t(
+                  "Double-click a segment to add a node. Alt-drag a handle to break symmetry.",
+                )}
+              </p>
+            </details>
+          </div>,
+          panelTarget,
+        )}
     </>
   );
 }

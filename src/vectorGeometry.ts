@@ -125,13 +125,19 @@ export function editableNetwork(n: Node): VectorNetwork {
   if (!result.vertices.length) throw Error("No editable vector nodes");
   return result;
 }
+// Style-only fidelity metadata does not define a shape's path coordinate space.
+export function vectorCoordinateSize(n: Node): [number, number] {
+  return (n.fidelity?.network || n.fidelity?.paths) && n.fidelity?.size
+    ? n.fidelity.size
+    : [n.width, n.height];
+}
 export function networkPatch(n: Node, network: VectorNetwork): Partial<Node> {
   return {
     type: "path",
     points: undefined,
     fidelity: {
       ...n.fidelity,
-      size: n.fidelity?.size ?? [n.width, n.height],
+      size: vectorCoordinateSize(n),
       network,
       paths: networkGeometry(network),
       booleanOperation: undefined,

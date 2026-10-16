@@ -11,6 +11,8 @@ import {
 import {
   parsePaths,
   editableNetwork,
+  networkPatch,
+  vectorCoordinateSize,
   convertToPaths,
   strokeOutline,
   transformedPath,
@@ -487,4 +489,19 @@ it("flattens boolean operations on groups from their child silhouettes instead o
   expect(Math.abs(area(r.doc.nodes[0].fidelity!.paths![0].d).area)).toBeCloseTo(
     200,
   );
+});
+
+it("keeps styled primitive coordinates when entering vector editing", () => {
+  const n = makeNode("rectangle", "page", {
+    width: 266,
+    height: 120,
+    fidelity: { size: [1, 1], fills: [] },
+  });
+  const network = editableNetwork(n);
+  expect(vectorCoordinateSize(n)).toEqual([266, 120]);
+  const edited = { ...n, ...networkPatch(n, network) };
+  expect(edited.fidelity?.size).toEqual([266, 120]);
+  expect(Math.max(...network.vertices.map((v) => v.x))).toBe(266);
+  expect(Math.max(...network.vertices.map((v) => v.y))).toBe(120);
+  expect(vectorCoordinateSize({ ...edited, width: 532 })).toEqual([266, 120]);
 });

@@ -76,36 +76,45 @@ export function LayoutProperties({
   return (
     <section className="text-properties layout-properties">
       <div className="section-heading">{t("Sizing and constraints")}</div>
-      {(["width", "height"] as const).map((axis) => (
-        <label key={axis}>
-          {t(axis === "width" ? "Width sizing" : "Height sizing")}
-          <select
-            aria-label={t(axis === "width" ? "Width sizing" : "Height sizing")}
-            value={dimensionMode(node, axis, parent)}
-            onChange={(e) => onSizing(axis, e.target.value as Sizing)}
-          >
-            {(["fixed", "hug", "fill"] as const).map((mode) => (
-              <option
-                key={mode}
-                value={mode}
-                disabled={
-                  mode === "fill" &&
-                  (!parent?.layout || parent.layout === "none")
-                }
-              >
-                {t(mode)}
-              </option>
-            ))}
-          </select>
-        </label>
-      ))}
-      {(["minWidth", "maxWidth", "minHeight", "maxHeight"] as const).map(
-        (key) => (
-          <div key={key}>
-            {number(key, item[key], (v) => itemPatch({ [key]: v }), true)}
-          </div>
-        ),
-      )}
+      <div className="sizing-pair">
+        {(["width", "height"] as const).map((axis) => (
+          <label key={axis}>
+            {t(axis === "width" ? "Width sizing" : "Height sizing")}
+            <select
+              aria-label={t(
+                axis === "width" ? "Width sizing" : "Height sizing",
+              )}
+              value={dimensionMode(node, axis, parent)}
+              onChange={(e) => onSizing(axis, e.target.value as Sizing)}
+            >
+              {(["fixed", "hug", "fill"] as const).map((mode) => (
+                <option
+                  key={mode}
+                  value={mode}
+                  disabled={
+                    mode === "fill" &&
+                    (!parent?.layout || parent.layout === "none")
+                  }
+                >
+                  {t(mode)}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+      <details className="size-limits">
+        <summary>{t("Size limits")}</summary>
+        <div className="sizing-pair">
+          {(["minWidth", "maxWidth", "minHeight", "maxHeight"] as const).map(
+            (key) => (
+              <div key={key}>
+                {number(key, item[key], (v) => itemPatch({ [key]: v }), true)}
+              </div>
+            ),
+          )}
+        </div>
+      </details>
       {parent?.layout && parent.layout !== "none" && (
         <>
           <label>

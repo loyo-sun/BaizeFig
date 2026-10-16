@@ -2676,3 +2676,158 @@ html[lang="zh-CN"] .layer-title-input {
   min-width: 0;
   max-width: 140px;
 }
+
+/* Inspector: compact commands, paired dimensions, predictable field widths. */
+.arrange-tools .arrange-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+}
+.arrange-tools .arrange-grid button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  padding: 4px;
+  border-radius: 5px;
+}
+.arrange-tools button:hover:not(:disabled) {
+  background: #eef6ff;
+  color: #0d99ff;
+}
+.arrange-tools button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.arrange-tools .setting-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  margin-top: 10px;
+}
+.arrange-tools .setting-row select {
+  flex: 1;
+  min-width: 0;
+  max-width: 150px;
+}
+.arrange-tools > .number-field {
+  margin-top: 8px;
+}
+.layout-properties .sizing-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+.layout-properties .sizing-pair label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  font-size: 11px;
+  min-width: 0;
+}
+.layout-properties .sizing-pair input,
+.layout-properties .sizing-pair select {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  box-sizing: border-box;
+}
+.layout-properties > div > label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+}
+.layout-properties > div > label input,
+.layout-properties > div > label select {
+  min-width: 0;
+  width: 125px;
+}
+.layout-properties .size-limits {
+  width: 100%;
+  margin: 4px 0;
+}
+.size-limits summary {
+  cursor: pointer;
+  font-size: 11px;
+  color: #777;
+  padding: 6px 0;
+}
+.size-limits[open] summary {
+  margin-bottom: 4px;
+}
+
+#vector-properties-slot:empty {
+  display: none;
+}
+.properties.is-vector-editing > :not(#vector-properties-slot) {
+  display: none;
+}
+.vector-inspector.vector-toolbar {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.vector-inspector-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.vector-inspector button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+.vector-node-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-bottom: 14px;
+}
+.vector-node-actions select {
+  flex: 1;
+  min-width: 120px;
+}
+.vector-inspector details {
+  border-top: 1px solid #eee;
+  padding: 12px 0;
+}
+.vector-inspector summary {
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.vector-inspector .vector-advanced label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+}
+.vector-inspector .vector-advanced input {
+  width: 80px;
+}
+.vector-inspector .vector-region-style {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.vector-help p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #777;
+}
+
+.layout-properties .sizing-pair > label input,
+.layout-properties .sizing-pair > label select {
+  width: 100%;
+}

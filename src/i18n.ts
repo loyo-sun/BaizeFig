@@ -4,6 +4,10 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Path refinement": "简化与偏移",
+  "Region styles": "区域样式",
+  "Editing tips": "操作提示",
+  "Size limits": "最小与最大尺寸",
   "Blend mode": "混合模式",
   "Blend normal": "正常",
   "Blend multiply": "正片叠底",

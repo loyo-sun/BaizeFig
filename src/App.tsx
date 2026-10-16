@@ -1,3 +1,4 @@
+import { ArrangeIcon } from "./ArrangeIcon";
 import { FigPagePicker } from "./FigPagePicker";
 import type { FigPageSummary } from "./figImport";
 import { PerformanceMonitor } from "./PerformanceMonitor";
@@ -108,6 +109,12 @@ import {
 } from "react";
 import {
   MousePointer2,
+  FlipHorizontal2,
+  FlipVertical2,
+  RotateCcw,
+  RotateCw,
+  BringToFront,
+  SendToBack,
   Ungroup,
   Spline,
   ScanLine,
@@ -379,6 +386,7 @@ export default function App() {
     id: string;
     paintIndex?: number;
   } | null>(null);
+  const [vectorPanel, setVectorPanel] = useState<HTMLDivElement | null>(null);
   const [editingVector, setEditingVector] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<TextEditSession | null>(null);
   const [toast, setToast] = useState(""),
@@ -3823,10 +3831,7 @@ export default function App() {
                       node={node}
                       zoom={view.zoom}
                       view={view}
-                      width={Math.min(
-                        730,
-                        (svg.current?.clientWidth ?? 762) - 32,
-                      )}
+                      panelTarget={vectorPanel}
                       panTool={tool === "hand"}
                       snapPoint={(p, disabled) =>
                         snapWorldPoint(p, [node.id], disabled)
@@ -4167,7 +4172,10 @@ export default function App() {
                 </div>
               )}
             </div>
-            <div className="properties">
+            <div
+              className={`properties${editingVector ? " is-vector-editing" : ""}`}
+            >
+              <div id="vector-properties-slot" ref={setVectorPanel} />
               <FontNotice doc={doc} onReplace={() => setModal("fonts")} />
               {!first ? (
                 <>
@@ -4592,17 +4600,33 @@ export default function App() {
                     <details className="arrange-tools">
                       <summary>{t("Arrange and distribute")}</summary>
                       <div className="arrange-grid">
-                        <button onClick={() => transformCommand("flip-x")}>
-                          {t("Flip horizontal")}
+                        <button
+                          title={t("Flip horizontal")}
+                          aria-label={t("Flip horizontal")}
+                          onClick={() => transformCommand("flip-x")}
+                        >
+                          <FlipHorizontal2 size={16} />
                         </button>
-                        <button onClick={() => transformCommand("flip-y")}>
-                          {t("Flip vertical")}
+                        <button
+                          title={t("Flip vertical")}
+                          aria-label={t("Flip vertical")}
+                          onClick={() => transformCommand("flip-y")}
+                        >
+                          <FlipVertical2 size={16} />
                         </button>
-                        <button onClick={() => transformCommand("left")}>
-                          {t("Rotate 90° left")}
+                        <button
+                          title={t("Rotate 90° left")}
+                          aria-label={t("Rotate 90° left")}
+                          onClick={() => transformCommand("left")}
+                        >
+                          <RotateCcw size={16} />
                         </button>
-                        <button onClick={() => transformCommand("right")}>
-                          {t("Rotate 90° right")}
+                        <button
+                          title={t("Rotate 90° right")}
+                          aria-label={t("Rotate 90° right")}
+                          onClick={() => transformCommand("right")}
+                        >
+                          <RotateCw size={16} />
                         </button>
                       </div>
                       <label className="setting-row">
@@ -4636,6 +4660,8 @@ export default function App() {
                       </label>
                       <div className="arrange-grid">
                         <button
+                          title={t("Bring forward")}
+                          aria-label={t("Bring forward")}
                           onClick={() =>
                             run({
                               type: "order",
@@ -4644,9 +4670,11 @@ export default function App() {
                             })
                           }
                         >
-                          {t("Bring forward")}
+                          <BringToFront size={16} />
                         </button>
                         <button
+                          title={t("Send backward")}
+                          aria-label={t("Send backward")}
                           onClick={() =>
                             run({
                               type: "order",
@@ -4655,7 +4683,7 @@ export default function App() {
                             })
                           }
                         >
-                          {t("Send backward")}
+                          <SendToBack size={16} />
                         </button>
                       </div>
                       <NumberField
@@ -4668,9 +4696,19 @@ export default function App() {
                         {arrangeCommands.map((c) => (
                           <button
                             key={c.mode}
+                            title={t(c.name)}
+                            aria-label={t(c.name)}
+                            disabled={
+                              selected.length <
+                              (c.mode === "round"
+                                ? 1
+                                : ["tidy", "pack-x", "pack-y"].includes(c.mode)
+                                  ? 2
+                                  : 3)
+                            }
                             onClick={() => arrangeSelection(c.mode)}
                           >
-                            {t(c.name)}
+                            <ArrangeIcon mode={c.mode} />
                           </button>
                         ))}
                       </div>
