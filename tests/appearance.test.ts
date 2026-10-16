@@ -311,11 +311,55 @@ it("renders path paint overrides once and does not inherit fill paints into save
     writeFileSync(process.env.STROKE_PAINT_FIXTURE_PATH, JSON.stringify(d));
 });
 
-it("does not multiply region overrides by the parent paint stack",async()=>{
- const d=emptyDocument(),p=d.pages[0].id,n=makeNode("rectangle",p,{id:"network-paints",width:100,height:100});
- const network=editableNetwork(n); network.regions[0].paints=[{type:"solid",color:"#ffaa00",opacity:.4}];
- n.fidelity={size:[100,100],network,paints:[{type:"solid",color:"#ff0000",opacity:.5},{type:"solid",color:"#0000ff",opacity:.5}]};
- d.nodes=[n];validateDocument(d);
- const svg=await svgString(d,p);expect(svg.match(/fill="#ffaa00"/g)).toHaveLength(1);
- expect(svg).not.toContain('#ff0000');expect(svg).not.toContain('#0000ff');
+it("does not multiply region overrides by the parent paint stack", async () => {
+  const d = emptyDocument(),
+    p = d.pages[0].id,
+    n = makeNode("rectangle", p, {
+      id: "network-paints",
+      width: 100,
+      height: 100,
+    });
+  const network = editableNetwork(n);
+  network.regions[0].paints = [
+    { type: "solid", color: "#ffaa00", opacity: 0.4 },
+  ];
+  n.fidelity = {
+    size: [100, 100],
+    network,
+    paints: [
+      { type: "solid", color: "#ff0000", opacity: 0.5 },
+      { type: "solid", color: "#0000ff", opacity: 0.5 },
+    ],
+  };
+  d.nodes = [n];
+  validateDocument(d);
+  const svg = await svgString(d, p);
+  expect(svg.match(/fill="#ffaa00"/g)).toHaveLength(1);
+  expect(svg).not.toContain("#ff0000");
+  expect(svg).not.toContain("#0000ff");
+});
+
+it("allows single-layer Boolean groups but keeps masks requiring two layers", async () => {
+  const doc = emptyDocument(),
+    page = doc.pages[0].id;
+  doc.nodes = [
+    makeNode("rectangle", page, { id: "shape", width: 100, height: 80 }),
+  ];
+  for (const mode of ["union", "subtract", "intersect", "exclude"] as const) {
+    const result = combineShapes(doc, ["shape"], mode);
+    validateDocument(result.doc);
+    expect(result.doc.nodes.find((n) => n.id === "shape")?.parentId).toBe(
+      result.id,
+    );
+    expect(
+      result.doc.nodes.find((n) => n.id === result.id)?.fidelity
+        ?.booleanOperation,
+    ).toBe(mode);
+    expect(await svgString(result.doc, page)).toContain("boolean-");
+  }
+  expect(() => combineShapes(doc, [], "union")).toThrow();
+  expect(() => combineShapes(doc, ["shape"], "mask")).toThrow(
+    "Select at least two layers",
+  );
+  expect(doc.nodes).toHaveLength(1);
 });

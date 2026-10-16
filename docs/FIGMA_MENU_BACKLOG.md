@@ -595,18 +595,18 @@ GitHub：[#28](https://github.com/loyo-sun/BaizeFig/issues/28)
 
 GitHub：[#29](https://github.com/loyo-sun/BaizeFig/issues/29)
 
-状态：Todo（待办）
+状态：Done（审计与补录完成；功能差异仍由各工作包跟踪）
 
 来源：截图 01–11
 
-当前基线：11 张截图可见条目可确认；更深层及滚动区域没有完整证据。
+2026-10-16 已通过浏览器展开核对，完整补录及差异归属见 [菜单审计](MENU_AUDIT_2026-10-16.md)。
 
-- [ ] 逐个核对 File/New、Edit/Copy as、Edit/Select all with。
-- [ ] 核对 View/Outlines、Panels、底部未显示的滚动菜单。
-- [ ] 核对 Object/More layout options、Slots、Main component、Boolean groups。
-- [ ] 核对 Text/Alignment、Adjust、Case、Text direction、Spell check。
-- [ ] 核对 Preferences/Theme，以及 Libraries、AI balance、Help and account 的内容。
-- [ ] 记录截图中灰态是上下文禁用；不据此认定 BaizeFig 缺失，继续用实际代码判定。
+- [x] 逐个核对 File/New、Edit/Copy as、Edit/Select all with。
+- [x] 核对 View/Outlines、Panels、底部未显示的滚动菜单。
+- [x] 核对 Object/More layout options、Slots、Main component、Boolean groups。
+- [x] 核对 Text/Alignment、Adjust、Case、Text direction、Spell check。
+- [x] 核对 Preferences/Theme，以及 Libraries、AI balance、Help and account 的内容。
+- [x] 记录截图中灰态是上下文禁用；不据此认定 BaizeFig 缺失，继续用实际代码判定。
 
 验收：
 

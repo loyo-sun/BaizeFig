@@ -5,7 +5,9 @@ export function combineShapes(
   mode: NonNullable<NonNullable<Node["fidelity"]>["booleanOperation"]> | "mask",
 ): { doc: Document; id: string } {
   const selected = roots(original, ids);
-  if (selected.length < 2) throw Error("Select at least two layers");
+  if (!selected.length) throw Error("Select at least one layer");
+  if (mode === "mask" && selected.length < 2)
+    throw Error("Select at least two layers");
   if (new Set(selected.map((n) => n.pageId)).size !== 1)
     throw Error("Cannot group across pages");
   const result = execute(original, { type: "group", ids }),

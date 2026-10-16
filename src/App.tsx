@@ -1031,9 +1031,24 @@ export default function App() {
               e.metaKey || e.ctrlKey,
             )
           : undefined;
-      setHoverTarget(
-        candidate && candidate.type !== "frame" ? candidate.id : null,
-      );
+      let preview = candidate;
+      if (preview?.type === "frame" && !e.metaKey && !e.ctrlKey) {
+        const p = point(e),
+          local = transformPoint(
+            inverse(worldTransform(doc, preview)),
+            p.x,
+            p.y,
+          ),
+          edge = 5 / view.zoom;
+        if (
+          local.x > edge &&
+          local.y > edge &&
+          local.x < preview.width - edge &&
+          local.y < preview.height - edge
+        )
+          preview = undefined;
+      }
+      setHoverTarget(preview?.id ?? null);
       if (e.altKey && selected.length && tool === "move") {
         const id = (e.target as Element)
             .closest("[data-node-id]")
@@ -2289,7 +2304,7 @@ export default function App() {
           exclude: "Exclude",
           mask: "Use as mask",
         }[mode],
-        disabled: editableSelection.length < 2,
+        disabled: editableSelection.length < (mode === "mask" ? 2 : 1),
         run: () => {
           try {
             const result = combineShapes(doc, selected, mode);
@@ -4608,7 +4623,7 @@ export default function App() {
                         </button>
                       ))}
                     </div>
-                    {selected.length > 1 && (
+                    {selected.length > 0 && (
                       <div className="combine-controls">
                         {(
                           [
@@ -4621,6 +4636,7 @@ export default function App() {
                         ).map((mode) => (
                           <button
                             key={mode}
+                            disabled={mode === "mask" && selected.length < 2}
                             title={t(
                               {
                                 union: "Union",

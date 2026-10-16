@@ -97,3 +97,22 @@ it("keeps root and flipped submenu inside viewport boundaries", () => {
     ),
   ).toEqual({ left: 522, top: 512 });
 });
+
+it("matches audited Boolean menu shortcuts without requiring Command or Control", () => {
+  for (const [code, name] of [
+    ["KeyU", "Union"],
+    ["KeyS", "Subtract"],
+    ["KeyI", "Intersect"],
+    ["KeyE", "Exclude"],
+  ]) {
+    for (const platform of ["mac", "other"] as const) {
+      expect(
+        shortcutRegistry
+          .filter((s) =>
+            shortcutMatches(event(code, "AS"), s, "physical", platform),
+          )
+          .map((s) => s.name),
+      ).toEqual([name]);
+    }
+  }
+});
