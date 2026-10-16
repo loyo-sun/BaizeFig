@@ -38,6 +38,7 @@ export const PathDrawingOverlay = forwardRef<
     [revision, refresh] = useState(0),
     [hover, setHover] = useState<Vec | null>(null);
   const creationDrag = useRef<HandleDrag | null>(null);
+  const gestureBefore = useRef<PenAnchor[] | null>(null);
   const anchorDrag = useRef<{
     index: number;
     kind: "anchor" | "incoming" | "outgoing";
@@ -45,22 +46,70 @@ export const PathDrawingOverlay = forwardRef<
     original: PenAnchor;
     handle?: HandleDrag;
   } | null>(null);
-  const point = (e: {
-    clientX: number;
-    clientY: number;
-    ctrlKey?: boolean;
-    metaKey?: boolean;
-    shiftKey?: boolean;
-  }) => {
+  const point = (
+    e: {
+      clientX: number;
+      clientY: number;
+      ctrlKey?: boolean;
+      metaKey?: boolean;
+      shiftKey?: boolean;
+    },
+    snapEnabled = true,
+  ) => {
     const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(
       group.current!.getScreenCTM()!.inverse(),
     );
     const raw = { x: p.x, y: p.y };
-    return tool === "pen" && snapPoint
+    return snapEnabled && tool === "pen" && snapPoint
       ? snapPoint(raw, !!(e.ctrlKey || e.metaKey || e.shiftKey))
       : raw;
   };
   const paint = () => refresh((v) => v + 1);
+  function cancelGesture() {
+    if (gestureBefore.current) anchors.current = gestureBefore.current;
+    gestureBefore.current = null;
+    anchorDrag.current = null;
+    creationDrag.current = null;
+    dragging.current = false;
+    closing.current = false;
+    stroke.current = [];
+    setHover(null);
+    onSnapEnd?.();
+    paint();
+  }
+  function moveAnchor(e: React.PointerEvent) {
+    const d = anchorDrag.current;
+    if (!d || temporaryHand) return;
+    e.stopPropagation();
+    const p = point(e, d.kind === "anchor"),
+      a = anchors.current[d.index];
+    if (!a) return;
+    if (d.kind === "anchor") {
+      a.x = d.original.x + p.x - d.start.x;
+      a.y = d.original.y + p.y - d.start.y;
+    } else {
+      const next = dragHandle(d.handle!, p, e.altKey, e.shiftKey);
+      a.independent = d.handle!.independent;
+      a[d.kind] = next.handle;
+      a[d.kind === "incoming" ? "outgoing" : "incoming"] = next.opposite;
+    }
+    paint();
+  }
+  function moveCreation(e: React.PointerEvent) {
+    const a = anchors.current.at(-1);
+    if (!a || !creationDrag.current || temporaryHand) return;
+    const p = point(e, false);
+    if (
+      Math.hypot(p.x - a.x, p.y - a.y) < 2 / zoom &&
+      !Math.hypot(a.outgoing.x, a.outgoing.y)
+    )
+      return;
+    const next = dragHandle(creationDrag.current, p, e.altKey, e.shiftKey);
+    a.outgoing = next.handle;
+    a.incoming = next.opposite;
+    a.independent = creationDrag.current.independent;
+    paint();
+  }
   function finish(closed = false) {
     onSnapEnd?.();
     const network =
@@ -72,19 +121,15 @@ export const PathDrawingOverlay = forwardRef<
     dragging.current = false;
     closing.current = false;
     anchorDrag.current = null;
+    creationDrag.current = null;
+    gestureBefore.current = null;
     setHover(null);
     paint();
     if (network.vertices.length >= 2) onFinish(network);
   }
   useImperativeHandle(ref, () => ({ finish: () => finish() }));
   useEffect(() => {
-    const blur = () => {
-      anchorDrag.current = null;
-      dragging.current = false;
-      closing.current = false;
-      if (tool === "pencil") stroke.current = [];
-      paint();
-    };
+    const blur = cancelGesture;
     window.addEventListener("blur", blur);
     return () => window.removeEventListener("blur", blur);
   }, [tool]);
@@ -104,6 +149,7 @@ export const PathDrawingOverlay = forwardRef<
       ) {
         e.preventDefault();
         e.stopImmediatePropagation();
+        cancelGesture();
         anchors.current.pop();
         paint();
       }
@@ -144,30 +190,13 @@ export const PathDrawingOverlay = forwardRef<
     <g
       ref={group}
       data-path-drawing={tool}
-      onPointerMove={(e) => {
-        const d = anchorDrag.current;
-        if (!d) return;
-        e.stopPropagation();
-        const p = point(e),
-          a = anchors.current[d.index];
-        if (!a) return;
-        if (d.kind === "anchor") {
-          a.x = d.original.x + p.x - d.start.x;
-          a.y = d.original.y + p.y - d.start.y;
-        } else {
-          const next = dragHandle(d.handle!, p, e.altKey, e.shiftKey);
-          a.independent = d.handle!.independent;
-          a[d.kind] = next.handle;
-          a[d.kind === "incoming" ? "outgoing" : "incoming"] = next.opposite;
-        }
-        paint();
-      }}
-      onPointerCancel={() => {
-        anchorDrag.current = null;
-      }}
+      onPointerMove={moveAnchor}
+      onPointerCancel={cancelGesture}
       onPointerUp={(e) => {
         onSnapEnd?.();
         if (anchorDrag.current) {
+          moveAnchor(e);
+          gestureBefore.current = null;
           const d = anchorDrag.current,
             a = anchors.current[d.index],
             close =
@@ -194,6 +223,7 @@ export const PathDrawingOverlay = forwardRef<
           e.preventDefault();
           e.stopPropagation();
           e.currentTarget.setPointerCapture(e.pointerId);
+          gestureBefore.current = structuredClone(anchors.current);
           let p = point(e);
           if (tool === "pencil") {
             stroke.current = [p];
@@ -212,7 +242,7 @@ export const PathDrawingOverlay = forwardRef<
           if (e.shiftKey) p = snap(p);
           if (last && Math.hypot(p.x - last.x, p.y - last.y) < 1 / zoom) return;
           creationDrag.current = {
-            start: p,
+            start: point(e, false),
             original: { x: 0, y: 0 },
             opposite: { x: 0, y: 0 },
             independent: e.altKey,
@@ -236,18 +266,7 @@ export const PathDrawingOverlay = forwardRef<
             paint();
             return;
           }
-          const a = anchors.current.at(-1)!;
-          if (Math.hypot(p.x - a.x, p.y - a.y) < 2 / zoom) return;
-          const next = dragHandle(
-            creationDrag.current!,
-            p,
-            e.altKey,
-            e.shiftKey,
-          );
-          a.outgoing = next.handle;
-          a.incoming = next.opposite;
-          a.independent = creationDrag.current!.independent;
-          paint();
+          moveCreation(e);
         }}
         onPointerUp={(e) => {
           onSnapEnd?.();
@@ -263,27 +282,26 @@ export const PathDrawingOverlay = forwardRef<
           }
           if (!dragging.current) return;
           if (tool === "pencil") {
-            appendSamples(e);
-            const endpoint = point(e),
-              last = stroke.current.at(-1);
-            if (
-              last &&
-              Math.hypot(endpoint.x - last.x, endpoint.y - last.y) > 1e-9
-            )
-              stroke.current.push(endpoint);
+            if (!temporaryHand) {
+              appendSamples(e);
+              const endpoint = point(e),
+                last = stroke.current.at(-1);
+              if (
+                last &&
+                Math.hypot(endpoint.x - last.x, endpoint.y - last.y) > 1e-9
+              )
+                stroke.current.push(endpoint);
+            }
             finish();
           } else {
+            moveCreation(e);
+            creationDrag.current = null;
+            gestureBefore.current = null;
             dragging.current = false;
             paint();
           }
         }}
-        onPointerCancel={() => {
-          anchors.current = [];
-          stroke.current = [];
-          dragging.current = false;
-          closing.current = false;
-          paint();
-        }}
+        onPointerCancel={cancelGesture}
         onDoubleClick={(e) => {
           e.stopPropagation();
           if (tool === "pen") finish();
@@ -324,7 +342,8 @@ export const PathDrawingOverlay = forwardRef<
                     stroke="#0d99ff"
                     strokeWidth={1 / zoom}
                     onPointerDown={(e) => {
-                      if (temporaryHand) return;
+                      if (temporaryHand || e.button !== 0) return;
+                      gestureBefore.current = structuredClone(anchors.current);
                       setHover(null);
                       e.preventDefault();
                       e.stopPropagation();
@@ -332,10 +351,10 @@ export const PathDrawingOverlay = forwardRef<
                       anchorDrag.current = {
                         index: i,
                         kind,
-                        start: point(e),
+                        start: point(e, false),
                         original: structuredClone(a),
                         handle: {
-                          start: point(e),
+                          start: point(e, false),
                           original: { ...a[kind] },
                           opposite: {
                             ...a[kind === "incoming" ? "outgoing" : "incoming"],
@@ -353,7 +372,8 @@ export const PathDrawingOverlay = forwardRef<
               data-pen-control="anchor"
               pointerEvents="all"
               onPointerDown={(e) => {
-                if (temporaryHand) return;
+                if (temporaryHand || e.button !== 0) return;
+                gestureBefore.current = structuredClone(anchors.current);
                 setHover(null);
                 e.preventDefault();
                 e.stopPropagation();
