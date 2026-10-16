@@ -1,3 +1,4 @@
+import { mergeFigOverride } from "./figOverrides";
 import { reflowText } from "./textLayout";
 import { readFigGlyphCache, readFigDecorations } from "./figGlyphCache";
 import { figFontSettings } from "./fontSettings";
@@ -358,6 +359,7 @@ export function importFigArchive(
   );
   const source: Raw[] = message.nodeChanges;
   const index = new Map(source.map((n) => [guid(n.guid), n]));
+  const derivedOverrides = new WeakSet<Raw>(source.flatMap(n => n.derivedSymbolData ?? []));
   const resolveProperty = figPropertyResolver(source);
   const propertyId = (value: Raw) =>
     resolveProperty(guid(value))?.canonical ?? guid(value);
@@ -1569,7 +1571,7 @@ export function importFigArchive(
       for (const override of overrides) {
         const guids = override.guidPath?.guids ?? [];
         if (guids.length === 1 && guid(guids[0]) === childKey) {
-          copy = { ...copy, ...override };
+          copy = mergeFigOverride(copy, override, derivedOverrides.has(override), warnings);
           for (const key of Object.keys(override)) explicit.add(key);
         }
       }
@@ -1579,7 +1581,11 @@ export function importFigArchive(
             o.guidPath?.guids?.length > 1 &&
             guid(o.guidPath.guids[0]) === childKey,
         )
-        .map((o) => ({ ...o, guidPath: { guids: o.guidPath.guids.slice(1) } }));
+        .map((o) => {
+          const nested = { ...o, guidPath: { guids: o.guidPath.guids.slice(1) } };
+          if (derivedOverrides.has(o)) derivedOverrides.add(nested);
+          return nested;
+        });
       add(copy, pageId, node.id, nextPath, nested, props, explicit);
     }
     if (raw.type === "INSTANCE" && !base && !ownChildren.length)
@@ -1643,6 +1649,8 @@ export function importFigArchive(
       add(definition, doc.pages[0].id, null, new Set());
       const nodes = doc.nodes.splice(start);
       if (nodes.length) {
+        if (doc.componentLibrary.length >= 2000)
+          throw Error("Figma component library exceeds import limits");
         doc.componentLibrary.push({
           sourceId: id,
           name: definition.name ?? "Component",

@@ -1474,3 +1474,23 @@ it("preserves slices as non-painting export regions that include intersecting pa
   expect(svg).toContain("<text");
   expect(svg).not.toContain(`data-node-id="${region.id}"`);
 });
+
+it("keeps valid nested source geometry when derived instance dimensions are NaN", () => {
+  const source = [nodes[0],nodes[1],
+    {guid:g(10),type:"SYMBOL",parentIndex:{guid:g(1)},size:{x:300,y:100}},
+    {guid:g(11),type:"FRAME",parentIndex:{guid:g(10)},size:{x:200,y:80}},
+    {guid:g(12),type:"ROUNDED_RECTANGLE",parentIndex:{guid:g(11)},size:{x:31,y:12},transform:{m00:1,m01:0,m02:5,m10:0,m11:1,m12:6}},
+    {guid:g(20),type:"INSTANCE",parentIndex:{guid:g(1)},size:{x:300,y:100},symbolData:{symbolID:g(10)}}];
+  const archive=readFigArchive(stream({nodeChanges:source} as any));
+  const instance=archive.message.nodeChanges.find((n:any)=>n.guid.localID===20);
+  instance.derivedSymbolData=[{guidPath:{guids:[g(11),g(12)]},size:{x:NaN,y:24},transform:{m00:1,m01:0,m02:NaN,m10:0,m11:1,m12:Infinity}}];
+  const result=importFigArchive(archive,"nested.fig",["0:20"]);
+  const n=result.document.nodes.find(n=>n.fidelity?.sourceId==="0:12")!;
+  expect(n).toMatchObject({x:5,y:6,width:31,height:24});
+  validateDocument(JSON.parse(JSON.stringify(result.document)));
+  expect(result.report.warnings).toContain("Some derived component geometry was unavailable; source geometry is retained.");
+});
+it("reports an explicit component dependency limit instead of an invalid document", () => {
+  const source=[nodes[0],nodes[1],...Array.from({length:2001},(_,i)=>({guid:g(100+i),type:"SYMBOL",parentIndex:{guid:g(1)},size:{x:10,y:10}}))];
+  expect(()=>importFigArchive(readFigArchive(stream({nodeChanges:source} as any)))).toThrow("Figma component library exceeds import limits");
+});

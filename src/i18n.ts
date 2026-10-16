@@ -780,6 +780,8 @@ export const zhCN: Record<string, string> = {
     "正在本地解码图层及内嵌图片。",
   "Figma file imported": "Figma 文件已导入",
   "Invalid or unsupported Figma file": "Figma 文件无效或格式暂不支持",
+  "Some derived component geometry was unavailable; source geometry is retained.": "部分组件计算位置或尺寸无效，已保留主组件中的有效几何信息。",
+  "Figma component library exceeds import limits": "所选内容依赖的组件过多，请减少选中的画板后分批导入",
   "Figma file exceeds import limits": "Figma 文件超过导入处理限制",
   "No supported pages in Figma file": "Figma 文件中没有可导入的页面",
   "Figma import timed out": "Figma 导入超时，请尝试较小的文件",
