@@ -26,7 +26,11 @@ it.skipIf(!process.env.FIG_COMPAT_SAMPLE_PATH)(
       );
       const pages = figPageSummaries(archive);
       report.pageCount = pages.length;
-      report.pageSizes = pages.map((p) => ({ id: p.id, layers: p.layers }));
+      report.pageSizes = pages.map((p) => ({
+        id: p.id,
+        layers: p.layers,
+        parts: p.parts?.map((part) => ({ id: part.id, layers: part.layers })),
+      }));
       if (process.env.FIG_COMPAT_REPORT_PATH)
         writeFileSync(
           process.env.FIG_COMPAT_REPORT_PATH,

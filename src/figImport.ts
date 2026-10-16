@@ -275,13 +275,14 @@ export interface FigPageSummary {
   id: string;
   name: string;
   layers: number;
+  parts?: { id: string; name: string; layers: number }[];
 }
 export function figPageSummaries(
   archive: ReturnType<typeof readFigArchive>,
 ): FigPageSummary[] {
   const source: Raw[] = archive.message.nodeChanges;
   const index = new Map(source.map((n) => [guid(n.guid), n]));
-  const pages = new Map(
+  const pages = new Map<string, FigPageSummary>(
     source
       .filter((n) => n.type === "CANVAS" && n.visible !== false)
       .map((n) => [
@@ -305,6 +306,29 @@ export function figPageSummaries(
     const id = owner(guid(n.guid));
     if (id) pages.get(id)!.layers++;
   }
+  const partOwners = new Map<string, string | undefined>();
+  const parts = new Map<string, { id: string; name: string; layers: number }>();
+  for (const n of source)
+    if (pages.has(guid(n.parentIndex?.guid)) && n.size) {
+      const part = { id: guid(n.guid), name: n.name ?? n.type, layers: 0 };
+      parts.set(part.id, part);
+      (pages.get(guid(n.parentIndex.guid))!.parts ??= []).push(part);
+    }
+  function partOwner(id: string, seen = new Set<string>()): string | undefined {
+    if (parts.has(id)) return id;
+    if (partOwners.has(id)) return partOwners.get(id);
+    if (!id || seen.has(id) || seen.size > 100) return;
+    seen.add(id);
+    const n = index.get(id),
+      value = n && partOwner(guid(n.parentIndex?.guid), seen);
+    partOwners.set(id, value);
+    return value;
+  }
+  for (const n of source)
+    if (n.size) {
+      const id = partOwner(guid(n.guid));
+      if (id) parts.get(id)!.layers++;
+    }
   return [...pages.values()];
 }
 export function importFigArchive(
@@ -313,12 +337,25 @@ export function importFigArchive(
   pageIds?: string[],
 ): FigImportResult {
   const { files, message, meta } = archive;
+  const summaries = pageIds ? figPageSummaries(archive) : [];
+  const selection = pageIds && new Set(pageIds);
+  const allowed = new Set(
+    summaries.flatMap((p) => [p.id, ...(p.parts ?? []).map((part) => part.id)]),
+  );
   if (
-    pageIds &&
-    (!pageIds.length ||
-      pageIds.some((id) => !figPageSummaries(archive).some((p) => p.id === id)))
+    selection &&
+    (!selection.size || [...selection].some((id) => !allowed.has(id)))
   )
     throw Error("No supported pages in Figma file");
+  const selectedPages = new Set(
+    summaries
+      .filter(
+        (p) =>
+          selection?.has(p.id) ||
+          p.parts?.some((part) => selection?.has(part.id)),
+      )
+      .map((p) => p.id),
+  );
   const source: Raw[] = message.nodeChanges;
   const index = new Map(source.map((n) => [guid(n.guid), n]));
   const resolveProperty = figPropertyResolver(source);
@@ -1535,13 +1572,25 @@ export function importFigArchive(
     (n) =>
       n.type === "CANVAS" &&
       n.visible !== false &&
-      (!pageIds || pageIds.includes(guid(n.guid))),
+      (!selection || selectedPages.has(guid(n.guid))),
   )) {
     const pageId = crypto.randomUUID();
     doc.pages.push({ id: pageId, name: page.name ?? "Page" });
     for (const root of children.get(guid(page.guid)) ?? [])
-      add(root, pageId, null, new Set());
+      if (
+        !selection ||
+        selection.has(guid(page.guid)) ||
+        selection.has(guid(root.guid))
+      )
+        add(root, pageId, null, new Set());
   }
+  if (
+    selection &&
+    summaries.some((p) => selectedPages.has(p.id) && !selection.has(p.id))
+  )
+    warnings.add(
+      "Only selected top-level layers were imported; other content remains in the original file.",
+    );
   if (doc.pages.length) {
     const originalImages = images,
       originalInstances = instances;
@@ -1554,7 +1603,11 @@ export function importFigArchive(
     const pending = new Set<string>(
       pageIds
         ? doc.nodes.flatMap((n) =>
-            n.fidelity?.componentSourceId ? [n.fidelity.componentSourceId] : [],
+            n.fidelity?.componentSourceId
+              ? [n.fidelity.componentSourceId]
+              : n.type === "component" && n.fidelity?.sourceId
+                ? [n.fidelity.sourceId]
+                : [],
           )
         : definitions.keys(),
     );

@@ -1334,3 +1334,53 @@ it("decodes a large message with the bounded two-pass expansion path", () => {
   );
   expect(archive.message.nodeChanges[0].name.length).toBe(large.length);
 });
+
+// Selection is explicit and lossless within the chosen root subtree.
+it("imports a selected top-level frame with its children and stable local geometry", () => {
+  const source = [
+    nodes[0],
+    nodes[1],
+    {
+      guid: g(101),
+      type: "FRAME",
+      name: "Chosen",
+      parentIndex: { guid: g(1), position: "a" },
+      size: { x: 100, y: 100 },
+      transform: { m00: 1, m01: 0, m02: 300, m10: 0, m11: 1, m12: 200 },
+    },
+    {
+      guid: g(102),
+      type: "ROUNDED_RECTANGLE",
+      parentIndex: { guid: g(101), position: "a" },
+      size: { x: 20, y: 20 },
+    },
+    {
+      guid: g(103),
+      type: "ROUNDED_RECTANGLE",
+      parentIndex: { guid: g(1), position: "b" },
+      size: { x: 100, y: 100 },
+    },
+  ];
+  const archive = readFigArchive(stream({ nodeChanges: source } as any));
+  expect(figPageSummaries(archive)[0].parts?.map((p) => p.layers)).toEqual([
+    2, 1,
+  ]);
+  const { document, report } = importFigArchive(archive, "partial.fig", [
+    "0:101",
+  ]);
+  expect(document.nodes.map((n) => n.fidelity?.sourceId)).toEqual([
+    "0:101",
+    "0:102",
+  ]);
+  expect(document.nodes[0]).toMatchObject({ x: 300, y: 200, parentId: null });
+  expect(document.nodes[1].parentId).toBe(document.nodes[0].id);
+  expect(report.warnings).toContain(
+    "Only selected top-level layers were imported; other content remains in the original file.",
+  );
+  expect(() => importFigArchive(archive, "partial.fig", ["0:102"])).toThrow(
+    "No supported pages",
+  );
+  const all = importFigArchive(archive, "partial.fig", ["0:1", "0:101"]);
+  expect(all.document.nodes).toHaveLength(3);
+  validateDocument(document);
+});
