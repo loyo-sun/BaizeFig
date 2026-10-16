@@ -15,6 +15,8 @@ export interface VectorPath {
   region?: number;
 }
 export interface Fidelity {
+  // A non-rendering Figma slice; exports the page through this region.
+  exportRegion?: boolean;
   booleanOperation?: "union" | "subtract" | "intersect" | "exclude";
   pointCount?: number;
   innerRatio?: number;
@@ -342,6 +344,7 @@ export function networkPaths(
   return result;
 }
 export function validateFidelity(f: Fidelity) {
+  if (f.exportRegion !== undefined && typeof f.exportRegion !== "boolean") throw Error("Invalid export region");
   if (
     (f.strokeAlign &&
       !["center", "inside", "outside"].includes(f.strokeAlign)) ||

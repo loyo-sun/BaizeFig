@@ -1460,3 +1460,17 @@ it("imports foreground blur with its radius and preserves export and reload", as
   validateDocument(reloaded);
   expect(await svgString(reloaded, reloaded.pages[0].id)).toContain('stdDeviation="150"');
 });
+
+it("preserves slices as non-painting export regions that include intersecting page content", async () => {
+  const archive = readFigArchive(stream());
+  archive.message.nodeChanges.push({guid:g(700),type:"SLICE",name:"Export region",parentIndex:{guid:g(1),position:"zz"},size:{x:120,y:80},transform:{m00:1,m01:0,m02:10,m10:0,m11:1,m12:20}});
+  const result = importFigArchive(archive);
+  const doc = JSON.parse(JSON.stringify(result.document)); validateDocument(doc);
+  const region = doc.nodes.find((n:any)=>n.fidelity?.exportRegion)!;
+  expect(region).toMatchObject({width:120,height:80,x:10,y:20});
+  expect(result.report.warnings).not.toContain("Some unsupported layers were skipped.");
+  const svg = await svgString(doc,doc.pages[0].id,[region.id]);
+  expect(svg).toContain('viewBox="10 20 120 80"');
+  expect(svg).toContain("<text");
+  expect(svg).not.toContain(`data-node-id="${region.id}"`);
+});

@@ -553,6 +553,7 @@ export function importFigArchive(
     TEXT_PATH: "text",
     BOOLEAN_OPERATION: "group",
     SECTION: "frame",
+    SLICE: "frame",
   };
   function parseTracks(
     positions: Raw | undefined,
@@ -752,6 +753,7 @@ export function importFigArchive(
             : r.booleanOperation === "EXCLUDE"
               ? "exclude"
               : "union";
+    if (r.type === "SLICE") fidelity.exportRegion = true;
     if (r.isMask)
       fidelity.mask = r.maskType === "LUMINANCE" ? "luminance" : "alpha";
     if (r.effects?.length)

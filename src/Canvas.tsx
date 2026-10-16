@@ -725,6 +725,7 @@ export function NodeShape({
   node: Node;
   outline?: boolean;
 }) {
+  if (node.fidelity?.exportRegion) return null;
   if (node.fidelity?.network || node.fidelity?.paths?.some((p) => p.paints))
     return <ShapeContent node={node} outline={outline} />;
   return (
@@ -754,7 +755,7 @@ export const Scene = React.memo(function Scene({
   const prefix = React.useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const renderId = (n: Node) => `${prefix}-${n.id}`;
   function draw(n: Node): React.ReactNode {
-    if (!n.visible) return null;
+    if (!n.visible || n.fidelity?.exportRegion) return null;
     return (
       <g
         key={n.id}
@@ -1081,7 +1082,7 @@ export function exportBounds(
     (n) =>
       n.pageId === pageId &&
       n.visible &&
-      (ids.length ? ids.includes(n.id) : !n.parentId) &&
+      (ids.length ? ids.includes(n.id) : !n.parentId && !n.fidelity?.exportRegion) &&
       !ancestors(doc, n).some((p) => !p.visible),
   );
   let result = bounds(doc, included);
@@ -1146,6 +1147,10 @@ export async function svgString(
   ids: string[] = [],
   options: { viewport?: ExportViewport; background?: string } = {},
 ) {
+  if (ids.length === 1) {
+    const region = doc.nodes.find(n => n.id === ids[0] && n.fidelity?.exportRegion);
+    if (region) { options = {...options, viewport: options.viewport ?? bounds(doc, [region])}; ids = []; }
+  }
   const { renderToStaticMarkup } = await import("react-dom/server");
   const b = options.viewport ?? exportBounds(doc, pageId, ids);
   if (
