@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Document, Node } from "./core";
 import {
   dimensionMode,
+  alignmentAt,
   layoutConfig,
   parseTracks,
   printTracks,
@@ -179,43 +180,91 @@ export function LayoutProperties({
       {active && (
         <>
           <div className="section-heading">{t("Layout rules")}</div>
-          {config.padding.map((v, i) => (
-            <div key={i}>
-              {number(
-                [
-                  "Padding top",
-                  "Padding right",
-                  "Padding bottom",
-                  "Padding left",
-                ][i],
-                v,
-                (n) => {
-                  const padding = [...config.padding] as typeof config.padding;
-                  padding[i] = n ?? 0;
-                  update({ padding });
-                },
-              )}
+          {node.layout !== "grid" && (
+            <div
+              className="layout-alignment"
+              role="radiogroup"
+              aria-label={t("Layout alignment")}
+            >
+              {Array.from({ length: 9 }, (_, index) => {
+                const row = Math.floor(index / 3),
+                  column = index % 3;
+                const value = alignmentAt(node, row, column);
+                const label = t(
+                  [
+                    "Align top left",
+                    "Align top center",
+                    "Align top right",
+                    "Align middle left",
+                    "Align center",
+                    "Align middle right",
+                    "Align bottom left",
+                    "Align bottom center",
+                    "Align bottom right",
+                  ][index],
+                );
+                return (
+                  <label key={index} title={label}>
+                    <input
+                      type="radio"
+                      name={`layout-alignment-${node.id}`}
+                      aria-label={label}
+                      checked={
+                        config.justify === value.justify &&
+                        config.align === value.align
+                      }
+                      onChange={() => update(value)}
+                    />
+                    <span aria-hidden="true" />
+                  </label>
+                );
+              })}
             </div>
-          ))}
-          {options(
-            "Justify content",
-            config.justify,
-            [
-              "start",
-              "center",
-              "end",
-              "space-between",
-              "space-around",
-              "space-evenly",
-            ],
-            (v) => update({ justify: v as typeof config.justify }),
           )}
-          {options(
-            "Align items",
-            config.align,
-            ["start", "center", "end", "stretch", "baseline"],
-            (v) => update({ align: v as typeof config.align }),
-          )}
+          <div className="sizing-pair layout-padding">
+            {[3, 1, 0, 2].map((i) => (
+              <div key={i}>
+                {number(
+                  [
+                    "Padding top",
+                    "Padding right",
+                    "Padding bottom",
+                    "Padding left",
+                  ][i],
+                  config.padding[i],
+                  (n) => {
+                    const padding = [
+                      ...config.padding,
+                    ] as typeof config.padding;
+                    padding[i] = n ?? 0;
+                    update({ padding });
+                  },
+                )}
+              </div>
+            ))}
+          </div>
+          <details className="size-limits">
+            <summary>{t("Advanced alignment")}</summary>
+            {options(
+              "Justify content",
+              config.justify,
+              [
+                "start",
+                "center",
+                "end",
+                "space-between",
+                "space-around",
+                "space-evenly",
+              ],
+              (v) => update({ justify: v as typeof config.justify }),
+            )}
+            {options(
+              "Align items",
+              config.align,
+              ["start", "center", "end", "stretch", "baseline"],
+              (v) => update({ align: v as typeof config.align }),
+            )}
+          </details>
           {node.layout !== "grid" ? (
             <>
               <label>
@@ -292,6 +341,24 @@ export function LayoutProperties({
             </>
           )}
         </>
+      )}
+      {node.type === "frame" && (
+        <label className="clip-content-toggle">
+          <input
+            type="checkbox"
+            checked={node.fidelity?.clipsContent !== false}
+            onChange={(e) =>
+              onChange({
+                fidelity: {
+                  size: [node.width, node.height],
+                  ...node.fidelity,
+                  clipsContent: e.target.checked,
+                },
+              })
+            }
+          />
+          {t("Clip content")}
+        </label>
       )}
       {error && <p role="alert">{t(error)}</p>}
     </section>

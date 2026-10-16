@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { emptyDocument, makeNode } from "../src/core";
+import {
+  emptyDocument,
+  makeNode,
+  execute,
+  History,
+  validateDocument,
+} from "../src/core";
 import { exportBounds, svgString } from "../src/Canvas";
 import {
   exportPlan,
@@ -236,4 +242,34 @@ describe("shared renderer export", () => {
     expect(svg).not.toContain("<script>");
     expect(svg).toContain("&amp; text");
   });
+});
+
+it("frame clipping toggle survives save, SVG export and undo", async () => {
+  const doc = emptyDocument(),
+    page = doc.pages[0].id;
+  doc.nodes = [
+    makeNode("frame", page, { id: "clip-frame", width: 100, height: 100 }),
+    makeNode("rectangle", page, {
+      id: "overflow-child",
+      parentId: "clip-frame",
+      x: 80,
+      width: 80,
+      height: 40,
+    }),
+  ];
+  const history = new History();
+  history.push(doc);
+  const next = execute(doc, {
+    type: "update",
+    ids: ["clip-frame"],
+    patch: { fidelity: { size: [100, 100], clipsContent: false } },
+  }).doc;
+  const restored = JSON.parse(JSON.stringify(next));
+  validateDocument(restored);
+  expect(await svgString(restored, page)).not.toMatch(
+    /<clipPath id="clip-[^"]*-clip-frame"/,
+  );
+  expect(await svgString(history.undo(next), page)).toMatch(
+    /<clipPath id="clip-[^"]*-clip-frame"/,
+  );
 });

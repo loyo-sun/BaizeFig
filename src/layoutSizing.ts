@@ -17,6 +17,13 @@ export function layoutConfig(node: Node): NonNullable<Node["importedLayout"]> {
     },
   );
 }
+export function alignmentAt(node: Node, row: number, column: number) {
+  const positions = ["start", "center", "end"] as const;
+  return {
+    justify: positions[node.layout === "horizontal" ? column : row],
+    align: positions[node.layout === "horizontal" ? row : column],
+  };
+}
 export function dimensionMode(
   node: Node,
   axis: "width" | "height",

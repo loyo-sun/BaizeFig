@@ -166,6 +166,8 @@ import {
   FilePlus2,
   MoreHorizontal,
   ArrowRight,
+  ArrowDown,
+  PanelsTopLeft,
   ZoomIn,
   ZoomOut,
   Maximize,
@@ -4943,6 +4945,25 @@ export default function App() {
                             className={
                               (first.layout ?? "none") === d ? "active" : ""
                             }
+                            title={t(
+                              d === "none"
+                                ? "Free"
+                                : d === "horizontal"
+                                  ? "→ Horizontal"
+                                  : d === "vertical"
+                                    ? "↓ Vertical"
+                                    : "Grid",
+                            )}
+                            aria-label={t(
+                              d === "none"
+                                ? "Free"
+                                : d === "horizontal"
+                                  ? "→ Horizontal"
+                                  : d === "vertical"
+                                    ? "↓ Vertical"
+                                    : "Grid",
+                            )}
+                            aria-pressed={(first.layout ?? "none") === d}
                             onClick={() =>
                               run({
                                 type: "layout",
@@ -4951,14 +4972,14 @@ export default function App() {
                               })
                             }
                           >
-                            {t(
-                              d === "none"
-                                ? "Free"
-                                : d === "horizontal"
-                                  ? "→ Horizontal"
-                                  : d === "vertical"
-                                    ? "↓ Vertical"
-                                    : "Grid",
+                            {d === "none" ? (
+                              <PanelsTopLeft size={16} />
+                            ) : d === "horizontal" ? (
+                              <ArrowRight size={16} />
+                            ) : d === "vertical" ? (
+                              <ArrowDown size={16} />
+                            ) : (
+                              <LayoutGrid size={16} />
                             )}
                           </button>
                         ))}

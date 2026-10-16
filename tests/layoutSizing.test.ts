@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import {
   emptyDocument,
+  History,
   makeNode,
   execute,
   validateDocument,
@@ -8,6 +9,7 @@ import {
 } from "../src/core";
 import {
   setDimensionMode,
+  alignmentAt,
   dimensionMode,
   parseTracks,
 } from "../src/layoutSizing";
@@ -182,3 +184,55 @@ it("lays out newly drawn children and fixes dimensions explicitly resized on can
   expect(result.nodes[0].height).toBe(500);
   expect(result.nodes[0].layoutItem?.verticalSizing).toBe("fixed");
 });
+
+it.each(["horizontal", "vertical"] as const)(
+  "nine-point %s alignment moves children and survives history/storage",
+  (direction) => {
+    for (let row = 0; row < 3; row++)
+      for (let column = 0; column < 3; column++) {
+        const doc = emptyDocument(),
+          page = doc.pages[0].id;
+        const frame = makeNode("frame", page, {
+          id: "frame",
+          layout: direction,
+          width: 300,
+          height: 200,
+          importedLayout: {
+            padding: [10, 10, 10, 10],
+            primary: "fixed",
+            counter: "fixed",
+            justify: "start",
+            align: "start",
+          },
+        });
+        doc.nodes = [
+          frame,
+          makeNode("rectangle", page, {
+            id: "child",
+            parentId: frame.id,
+            width: 40,
+            height: 20,
+          }),
+        ];
+        const history = new History();
+        history.push(doc);
+        const next = execute(doc, {
+          type: "update",
+          ids: [frame.id],
+          patch: {
+            importedLayout: {
+              ...frame.importedLayout!,
+              ...alignmentAt(frame, row, column),
+            },
+          },
+        }).doc;
+        const child = next.nodes.find((n) => n.id === "child")!;
+        expect(child.x).toBe(10 + column * 120);
+        expect(child.y).toBe(10 + row * 80);
+        const restored = JSON.parse(JSON.stringify(next));
+        validateDocument(restored);
+        expect(restored.nodes).toEqual(next.nodes);
+        expect(history.undo(next)).toEqual(doc);
+      }
+  },
+);
