@@ -4,6 +4,26 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  Effects: "效果",
+  "Add effect": "添加效果",
+  "Effect type": "效果类型",
+  "Drop shadow": "投影",
+  "Inner shadow": "内阴影",
+  "Layer blur": "图层模糊",
+  "Background blur": "背景模糊",
+  "Hide effect": "隐藏效果",
+  "Show effect": "显示效果",
+  "Duplicate effect": "复制效果",
+  "Remove effect": "删除效果",
+  "Effect color": "效果颜色",
+  "Effect opacity": "效果不透明度",
+  "Blur radius": "模糊半径",
+  Spread: "扩展",
+  "Effect X": "效果 X 偏移",
+  "Effect Y": "效果 Y 偏移",
+  "Move effect up": "上移效果",
+  "Move effect down": "下移效果",
+
   "Text effects panel": "文字效果面板",
   "Text effects": "文字效果",
   cornerBottomLeft: "左下圆角",
@@ -548,9 +568,11 @@ export const zhCN: Record<string, string> = {
   Reset: "重置",
   "Truncate overflow text": "超出文本显示省略号",
   "Original fonts unavailable": "未检测到原始字体",
-  "Choose replacement fonts before editing for consistent layout.": "请先选择替换字体，避免编辑后排版变化。",
+  "Choose replacement fonts before editing for consistent layout.":
+    "请先选择替换字体，避免编辑后排版变化。",
   "Replace missing fonts": "替换缺失字体",
-  "Replacement font was not detected. Choose an installed font.": "未检测到替换字体，请选择已安装的字体。",
+  "Replacement font was not detected. Choose an installed font.":
+    "未检测到替换字体，请选择已安装的字体。",
   "Advanced typography": "高级字体设置",
   "Typography features depend on the selected font. Changes apply to this text layer.":
     "效果取决于所选字体是否支持，修改应用于整个文字图层。",

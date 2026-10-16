@@ -211,15 +211,27 @@ export function EffectDefinitions({ node }: { node: Node }) {
     (e) => e.visible && e.type !== "background-blur",
   );
   if (!effects?.length) return null;
+  // Blur stages accumulate; include offsets and spread even for tiny shapes.
+  // Keep the former 100% margin as a floor for text overhangs/strokes.
+  const padding = effects.reduce(
+    (sum, e) =>
+      sum +
+      2 * e.radius +
+      Math.abs(e.spread) +
+      Math.max(Math.abs(e.x), Math.abs(e.y)),
+    0,
+  );
+  const px = Math.max(100, (100 * padding) / Math.max(0.01, node.width));
+  const py = Math.max(100, (100 * padding) / Math.max(0.01, node.height));
   let previous = "SourceGraphic";
   return (
     <defs>
       <filter
         id={`effect-${node.id}`}
-        x="-100%"
-        y="-100%"
-        width="300%"
-        height="300%"
+        x={`${-px}%`}
+        y={`${-py}%`}
+        width={`${100 + 2 * px}%`}
+        height={`${100 + 2 * py}%`}
         colorInterpolationFilters="sRGB"
       >
         {effects.map((e, i) => {
@@ -245,7 +257,11 @@ export function EffectDefinitions({ node }: { node: Node }) {
               {e.spread !== 0 && (
                 <feMorphology
                   in="SourceAlpha"
-                  operator={e.spread > 0 ? "dilate" : "erode"}
+                  operator={
+                    (e.type === "inner-shadow" ? -e.spread : e.spread) > 0
+                      ? "dilate"
+                      : "erode"
+                  }
                   radius={Math.abs(e.spread)}
                   result={alpha}
                 />

@@ -21,6 +21,7 @@ import { LayoutProperties } from "./LayoutProperties";
 import { setDimensionMode } from "./layoutSizing";
 import { CropEditor } from "./CropEditor";
 import { FillProperties } from "./FillProperties";
+import { EffectsProperties } from "./EffectsProperties";
 import { StrokeProperties } from "./StrokeProperties";
 import { TextProperties } from "./TextProperties";
 import { changeDocumentTextCase } from "./textCase";
@@ -271,7 +272,10 @@ export default function App() {
     null,
   );
   const [importBusy, setImportBusy] = useState(false);
-  const [figPages, setFigPages] = useState<{pages:FigPageSummary[];resolve:(ids:string[])=>void} | null>(null);
+  const [figPages, setFigPages] = useState<{
+    pages: FigPageSummary[];
+    resolve: (ids: string[]) => void;
+  } | null>(null);
   const importInFlight = useRef(false);
   const latestDocument = useRef(doc);
   latestDocument.current = doc;
@@ -1426,9 +1430,14 @@ export default function App() {
         }
         if (/\.fig$/i.test(file.name)) {
           setImportBusy(true);
-          const imported = await importFigFile(file, pages => new Promise(resolve => {
-            setModal(null); setFigPages({pages,resolve});
-          }));
+          const imported = await importFigFile(
+            file,
+            (pages) =>
+              new Promise((resolve) => {
+                setModal(null);
+                setFigPages({ pages, resolve });
+              }),
+          );
           await save(latestDocument.current);
           await save(imported.document);
           history.current = new History();
@@ -4155,7 +4164,7 @@ export default function App() {
               )}
             </div>
             <div className="properties">
-              <FontNotice doc={doc} onReplace={()=>setModal("fonts")} />
+              <FontNotice doc={doc} onReplace={() => setModal("fonts")} />
               {!first ? (
                 <>
                   <section>
@@ -4960,16 +4969,99 @@ export default function App() {
                         {t("Typography")}
                         <Type size={14} />
                       </div>
-                      {first.fidelity?.textPath&&<div><strong>{t("Text on path")}</strong><div className="field-grid">
-                        <NumberField label="%" aria="Text path position" value={first.fidelity.textPath.offset*100} min={0} max={100} step={1}
-                          onChange={v=>patch({fidelity:{...first.fidelity!,textPath:{...first.fidelity!.textPath!,offset:v/100},text:first.fidelity!.text?{...first.fidelity!.text,glyphs:undefined}:undefined}})}/>
-                        <label><input type="checkbox" aria-label={t('Reverse text path')} checked={first.fidelity.textPath.reverse}
-                          onChange={e=>patch({fidelity:{...first.fidelity!,textPath:{...first.fidelity!.textPath!,reverse:e.target.checked,offset:1-first.fidelity!.textPath!.offset},text:first.fidelity!.text?{...first.fidelity!.text,glyphs:undefined}:undefined}})}/>{t('Reverse text path')}</label>
-                      </div></div>}
-                      <div id="text-style-editor-slot" aria-label={t("Text effects panel")}>
-                        {(editingText?.id!==first.id||editingText.documentId!==doc.id)&&<div className="text-sidebar-toolbar text-range-toolbar" role="toolbar" aria-label={t("Text effects")}>
-                          {([['Bold','B'],['Italic','I'],['Underline','U'],['Strikethrough','S'],['Bulleted list','• ≡'],['Numbered list','1. ≡']] as const).map(([name,label])=><button key={name} title={t(name)} aria-label={t(name)} onClick={()=>actions.find(a=>a.name===name)?.run?.()}>{label}</button>)}
-                        </div>}
+                      {first.fidelity?.textPath && (
+                        <div>
+                          <strong>{t("Text on path")}</strong>
+                          <div className="field-grid">
+                            <NumberField
+                              label="%"
+                              aria="Text path position"
+                              value={first.fidelity.textPath.offset * 100}
+                              min={0}
+                              max={100}
+                              step={1}
+                              onChange={(v) =>
+                                patch({
+                                  fidelity: {
+                                    ...first.fidelity!,
+                                    textPath: {
+                                      ...first.fidelity!.textPath!,
+                                      offset: v / 100,
+                                    },
+                                    text: first.fidelity!.text
+                                      ? {
+                                          ...first.fidelity!.text,
+                                          glyphs: undefined,
+                                        }
+                                      : undefined,
+                                  },
+                                })
+                              }
+                            />
+                            <label>
+                              <input
+                                type="checkbox"
+                                aria-label={t("Reverse text path")}
+                                checked={first.fidelity.textPath.reverse}
+                                onChange={(e) =>
+                                  patch({
+                                    fidelity: {
+                                      ...first.fidelity!,
+                                      textPath: {
+                                        ...first.fidelity!.textPath!,
+                                        reverse: e.target.checked,
+                                        offset:
+                                          1 - first.fidelity!.textPath!.offset,
+                                      },
+                                      text: first.fidelity!.text
+                                        ? {
+                                            ...first.fidelity!.text,
+                                            glyphs: undefined,
+                                          }
+                                        : undefined,
+                                    },
+                                  })
+                                }
+                              />
+                              {t("Reverse text path")}
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                      <div
+                        id="text-style-editor-slot"
+                        aria-label={t("Text effects panel")}
+                      >
+                        {(editingText?.id !== first.id ||
+                          editingText.documentId !== doc.id) && (
+                          <div
+                            className="text-sidebar-toolbar text-range-toolbar"
+                            role="toolbar"
+                            aria-label={t("Text effects")}
+                          >
+                            {(
+                              [
+                                ["Bold", "B"],
+                                ["Italic", "I"],
+                                ["Underline", "U"],
+                                ["Strikethrough", "S"],
+                                ["Bulleted list", "• ≡"],
+                                ["Numbered list", "1. ≡"],
+                              ] as const
+                            ).map(([name, label]) => (
+                              <button
+                                key={name}
+                                title={t(name)}
+                                aria-label={t(name)}
+                                onClick={() =>
+                                  actions.find((a) => a.name === name)?.run?.()
+                                }
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <input
                         aria-label={t("Font family")}
@@ -5135,6 +5227,7 @@ export default function App() {
                       </>
                     )}
                   </section>
+                  <EffectsProperties node={first} onChange={patch} />
                   <section>
                     <div className="section-heading">
                       {t("Component")}
@@ -5369,9 +5462,15 @@ export default function App() {
           }}
         />
       )}
-      {figPages && <FigPagePicker pages={figPages.pages} onChoose={ids=>{
-        figPages.resolve(ids); setFigPages(null);
-      }}/>}
+      {figPages && (
+        <FigPagePicker
+          pages={figPages.pages}
+          onChoose={(ids) => {
+            figPages.resolve(ids);
+            setFigPages(null);
+          }}
+        />
+      )}
       {importBusy && !figPages && (
         <div
           className="modal-backdrop import-progress"
