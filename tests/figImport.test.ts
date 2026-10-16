@@ -1419,3 +1419,31 @@ it("normalizes float-sized zero geometry and unused nonfinite wrap spacing witho
     "Invalid imported design data",
   );
 });
+
+it("keeps an empty vector empty instead of inventing a rectangle", () => {
+  const result = importFig(
+    stream({
+      nodeChanges: [
+        nodes[0],
+        nodes[1],
+        {
+          guid: g(990),
+          type: "VECTOR",
+          size: { x: 10, y: 10 },
+          parentIndex: { guid: g(1), position: "a" },
+          vectorData: {
+            vectorNetworkBlob: 0,
+            normalizedSize: { x: 10, y: 10 },
+          },
+        },
+      ],
+      blobs: [{ bytes: Array(12).fill(0) }],
+    } as any),
+  );
+  expect(result.document.nodes[0].type).toBe("path");
+  expect(result.document.nodes[0].fidelity?.network?.segments).toEqual([]);
+  expect(result.report.warnings).not.toContain(
+    "Some vector geometry could not be decoded and uses bounds.",
+  );
+  validateDocument(result.document);
+});

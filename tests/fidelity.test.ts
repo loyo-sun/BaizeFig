@@ -399,3 +399,110 @@ describe("imported layout and variables", () => {
     expect(() => setVariableMode(dark, "c", "dark")).toThrow("Cyclic");
   });
 });
+
+function regionBlob(vertices: number[][], edges: number[][]) {
+  const bytes = new Uint8Array(
+      12 + vertices.length * 12 + edges.length * 28 + 12 + edges.length * 4,
+    ),
+    v = new DataView(bytes.buffer);
+  let p = 0;
+  const u = (n: number) => {
+      v.setUint32(p, n, true);
+      p += 4;
+    },
+    f = (n: number) => {
+      v.setFloat32(p, n, true);
+      p += 4;
+    };
+  [vertices.length, edges.length, 1].forEach(u);
+  for (const [x, y] of vertices) {
+    u(0);
+    f(x);
+    f(y);
+  }
+  for (const [a, b] of edges) {
+    u(0);
+    u(a);
+    f(0);
+    f(0);
+    u(b);
+    f(0);
+    f(0);
+  }
+  [0, 1, edges.length, ...edges.map((_, i) => i)].forEach(u);
+  return bytes;
+}
+it("restores implicit fill closure without adding a stroked closing edge", async () => {
+  const { validateNetwork, networkGeometry, networkStroke } =
+    await import("../src/vectorNetwork");
+  let network: any;
+  const paths = networkPaths(
+    regionBlob(
+      [
+        [0, 0],
+        [10, 0],
+        [10, 10],
+      ],
+      [
+        [0, 1],
+        [1, 2],
+      ],
+    ),
+    10,
+    10,
+    { x: 10, y: 10 },
+    (n) => {
+      network = n;
+    },
+  );
+  expect(paths[0].d.trim()).toBe("M0 0 L10 0 L10 10 Z");
+  validateNetwork(network);
+  expect(network.segments).toHaveLength(2);
+  expect(networkGeometry(network)[0].d).toMatch(/Z$/);
+  expect(networkStroke(network)).not.toContain("Z");
+  const invalid = structuredClone(network);
+  invalid.regions[0].loops[0][1].reverse = true;
+  expect(() => validateNetwork(invalid)).toThrow("Invalid vector network");
+});
+it("traverses unordered branched contours completely and rejects disconnected regions", () => {
+  let network: any;
+  const points = [
+    [0, 0],
+    [10, 0],
+    [10, 10],
+    [20, 10],
+    [20, 0],
+  ];
+  const edges = [
+    [0, 1],
+    [1, 2],
+    [2, 1],
+    [1, 3],
+    [3, 4],
+    [4, 0],
+  ];
+  const result = networkPaths(
+    regionBlob(points, edges),
+    20,
+    10,
+    { x: 20, y: 10 },
+    (n) => {
+      network = n;
+    },
+  );
+  expect(network.regions[0].loops[0]).toHaveLength(6);
+  expect(result[0].d.match(/L/g)).toHaveLength(6);
+  expect(() =>
+    networkPaths(
+      regionBlob(points, [
+        [0, 1],
+        [1, 0],
+        [2, 3],
+        [3, 2],
+      ]),
+      20,
+      10,
+      { x: 20, y: 10 },
+    ),
+  ).toThrow("Invalid vector network");
+});

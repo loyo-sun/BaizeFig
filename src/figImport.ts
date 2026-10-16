@@ -885,7 +885,6 @@ export function importFigArchive(
               r.size.y,
               r.vectorData?.normalizedSize ?? r.size,
             );
-        if (!fidelity.paths.length) throw Error();
         if (r.type === "BRUSH")
           warnings.add(
             "Brush strokes use editable outline paths; brush dynamics are not retained.",

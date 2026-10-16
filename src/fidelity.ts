@@ -203,35 +203,107 @@ export function networkPaths(
     trail = [];
     let current = -1;
     let path = "";
-    const remaining = new Set(indices);
-    while (remaining.size) {
-      let chosen = -1,
-        reverse = false;
-      for (const i of remaining) {
-        const s = segments[i];
-        if (!s) throw Error("Invalid vector network");
-        if (current < 0 || s.a === current || s.b === current) {
-          chosen = i;
-          reverse = s.b === current;
-          break;
+    if (closed) {
+      // Region contours may be open: fill closes them implicitly, while the
+      // missing edge must not acquire a stroke. Traverse every edge occurrence
+      // so side cycles cannot strand a valid contour at a greedy dead end.
+      const adjacency = new Map<number, number[]>();
+      indices.forEach((index, occurrence) => {
+        const segment = segments[index];
+        if (!segment) throw Error("Invalid vector network");
+        for (const vertex of [segment.a, segment.b]) {
+          if (!adjacency.has(vertex)) adjacency.set(vertex, []);
+          adjacency.get(vertex)!.push(occurrence);
+        }
+      });
+      const odd = [...adjacency]
+        .filter(([, edges]) => edges.length % 2)
+        .map(([vertex]) => vertex);
+      if (odd.length !== 0 && odd.length !== 2)
+        throw Error("Invalid vector network");
+      const first = segments[indices[0]];
+      if (first) {
+        const start = odd.length
+          ? odd.includes(first.a)
+            ? first.a
+            : odd[0]
+          : first.a;
+        const stack: {
+          vertex: number;
+          incoming?: { segment: number; reverse: boolean };
+        }[] = [{ vertex: start }];
+        const used = new Set<number>(),
+          cursor = new Map<number, number>(),
+          reversed: typeof trail = [];
+        while (stack.length) {
+          const top = stack[stack.length - 1],
+            edges = adjacency.get(top.vertex) ?? [];
+          let at = cursor.get(top.vertex) ?? 0;
+          while (at < edges.length && used.has(edges[at])) at++;
+          cursor.set(top.vertex, at + 1);
+          if (at >= edges.length) {
+            const done = stack.pop()!;
+            if (done.incoming) reversed.push(done.incoming);
+            continue;
+          }
+          const occurrence = edges[at],
+            index = indices[occurrence],
+            segment = segments[index];
+          used.add(occurrence);
+          const reverse = segment.b === top.vertex && segment.a !== top.vertex;
+          stack.push({
+            vertex: reverse ? segment.a : segment.b,
+            incoming: { segment: index, reverse },
+          });
+        }
+        if (used.size !== indices.length) throw Error("Invalid vector network");
+        trail = reversed.reverse();
+        for (const entry of trail) {
+          const segment = segments[entry.segment],
+            reverse = entry.reverse;
+          const a = vertices[reverse ? segment.b : segment.a],
+            b = vertices[reverse ? segment.a : segment.b];
+          if (!path) path = `M${xy(a.x, a.y)} `;
+          path +=
+            segment.ax === 0 &&
+            segment.ay === 0 &&
+            segment.bx === 0 &&
+            segment.by === 0
+              ? `L${xy(b.x, b.y)} `
+              : `C${xy(a.x + (reverse ? segment.bx : segment.ax), a.y + (reverse ? segment.by : segment.ay))} ${xy(b.x + (reverse ? segment.ax : segment.bx), b.y + (reverse ? segment.ay : segment.by))} ${xy(b.x, b.y)} `;
         }
       }
-      if (chosen < 0) {
-        if (closed) throw Error("Invalid vector network");
-        current = -1;
-        continue;
+    } else {
+      const remaining = new Set(indices);
+      while (remaining.size) {
+        let chosen = -1,
+          reverse = false;
+        for (const i of remaining) {
+          const s = segments[i];
+          if (!s) throw Error("Invalid vector network");
+          if (current < 0 || s.a === current || s.b === current) {
+            chosen = i;
+            reverse = s.b === current;
+            break;
+          }
+        }
+        if (chosen < 0) {
+          if (closed) throw Error("Invalid vector network");
+          current = -1;
+          continue;
+        }
+        const s = segments[chosen];
+        remaining.delete(chosen);
+        trail.push({ segment: chosen, reverse });
+        const a = vertices[reverse ? s.b : s.a],
+          b = vertices[reverse ? s.a : s.b];
+        if (current < 0) path += `M${xy(a.x, a.y)} `;
+        path +=
+          s.ax === 0 && s.ay === 0 && s.bx === 0 && s.by === 0
+            ? `L${xy(b.x, b.y)} `
+            : `C${xy(a.x + (reverse ? s.bx : s.ax), a.y + (reverse ? s.by : s.ay))} ${xy(b.x + (reverse ? s.ax : s.bx), b.y + (reverse ? s.ay : s.by))} ${xy(b.x, b.y)} `;
+        current = reverse ? s.a : s.b;
       }
-      const s = segments[chosen];
-      remaining.delete(chosen);
-      trail.push({ segment: chosen, reverse });
-      const a = vertices[reverse ? s.b : s.a],
-        b = vertices[reverse ? s.a : s.b];
-      if (current < 0) path += `M${xy(a.x, a.y)} `;
-      path +=
-        s.ax === 0 && s.ay === 0 && s.bx === 0 && s.by === 0
-          ? `L${xy(b.x, b.y)} `
-          : `C${xy(a.x + (reverse ? s.bx : s.ax), a.y + (reverse ? s.by : s.ay))} ${xy(b.x + (reverse ? s.ax : s.bx), b.y + (reverse ? s.ay : s.by))} ${xy(b.x, b.y)} `;
-      current = reverse ? s.a : s.b;
     }
     return path + (closed ? "Z" : "");
   };

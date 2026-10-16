@@ -46,8 +46,11 @@ export function validateNetwork(n: VectorNetwork) {
                 !!s &&
                 !!next &&
                 typeof e.reverse === "boolean" &&
-                (e.reverse ? s.a : s.b) ===
-                  (loop[(i + 1) % loop.length].reverse ? next.b : next.a)
+                // Fill closes an open contour implicitly; strokes only follow
+                // actual segments. Internal edges must remain contiguous.
+                (i === loop.length - 1 ||
+                  (e.reverse ? s.a : s.b) ===
+                    (loop[(i + 1) % loop.length].reverse ? next.b : next.a))
               );
             }),
         ),
