@@ -48,6 +48,7 @@ export function VectorEditor({
   panelTarget,
   onCommit,
   onClose,
+  onEmptyClick,
   onUndo,
   onRedo,
   onPan,
@@ -67,6 +68,7 @@ export function VectorEditor({
   view: { x: number; y: number };
   onCommit: (patch: Partial<Node>) => void;
   onClose: () => void;
+  onEmptyClick?: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onPan: (position: { x: number; y: number }) => void;
@@ -98,6 +100,8 @@ export function VectorEditor({
       independent?: boolean;
       frozen?: VectorNetwork;
       marquee?: boolean;
+      screenStart?: Vec;
+      moved?: boolean;
       pan?: { screen: Vec; view: Vec };
     } | null>(null),
     group = useRef<SVGGElement>(null),
@@ -329,6 +333,11 @@ export function VectorEditor({
       dx = p.x - d.start.x,
       dy = p.y - d.start.y;
     if (d.marquee) {
+      if (
+        d.screenStart &&
+        Math.hypot(e.clientX - d.screenStart.x, e.clientY - d.screenStart.y) > 3
+      )
+        d.moved = true;
       setPicked(
         network.vertices.flatMap((v, i) =>
           v.x >= Math.min(p.x, d.start.x) &&
@@ -395,6 +404,7 @@ export function VectorEditor({
     if (!d) return;
     e.stopPropagation();
     drag.current = null;
+    if (d.marquee && !d.moved) onEmptyClick?.();
     if (
       !d.marquee &&
       !d.pan &&
@@ -471,6 +481,7 @@ export function VectorEditor({
           onPointerDown={(e) => {
             if (startPan(e)) return;
             e.stopPropagation();
+            if (e.button !== 0) return;
             if (connect) {
               const n = structuredClone(network),
                 v = n.vertices.push(point(e)) - 1;
@@ -490,6 +501,7 @@ export function VectorEditor({
                 start: point(e),
                 vertices: [],
                 marquee: true,
+                screenStart: { x: e.clientX, y: e.clientY },
               };
               e.currentTarget.setPointerCapture(e.pointerId);
             }

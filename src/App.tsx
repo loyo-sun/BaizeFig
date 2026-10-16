@@ -1,3 +1,4 @@
+import { canvasTarget } from "./canvasSelection";
 import { ArrangeIcon } from "./ArrangeIcon";
 import { FigPagePicker } from "./FigPagePicker";
 import type { FigPageSummary } from "./figImport";
@@ -389,6 +390,8 @@ export default function App() {
     paintIndex?: number;
   } | null>(null);
   const [vectorPanel, setVectorPanel] = useState<HTMLDivElement | null>(null);
+  const [hoverTarget, setHoverTarget] = useState<string | null>(null);
+  const [selectionScope, setSelectionScope] = useState<string | null>(null);
   const [editingVector, setEditingVector] = useState<string | null>(null);
   const [editingText, setEditingText] = useState<TextEditSession | null>(null);
   const [toast, setToast] = useState(""),
@@ -490,6 +493,10 @@ export default function App() {
     width: number;
     height: number;
   } | null>(null);
+  useEffect(() => {
+    setSelectionScope(null);
+    setHoverTarget(null);
+  }, [doc.id, page]);
   const committedDocument = useRef<Document | null>(null);
   const current = useRef({ doc, page, selected, bridgeWrite });
   current.current = { doc, page, selected, bridgeWrite };
@@ -971,22 +978,8 @@ export default function App() {
       return;
     }
     if (id) {
-      let n = doc.nodes.find((n) => n.id === id)!;
-      if (n.locked || ancestors(doc, n).some((p) => p.locked)) return;
-      if (!e.metaKey && !e.ctrlKey) {
-        const parents = ancestors(doc, n);
-        const selectedParent = parents.find((p) => selected.includes(p.id));
-        if (selectedParent) {
-          const chain = [n, ...parents],
-            index = chain.findIndex((p) => p.id === selectedParent.id);
-          n = chain[Math.max(0, index - 1)];
-        } else if (!selected.includes(n.id)) {
-          const group = parents.find((p) =>
-            ["group", "component", "instance"].includes(p.type),
-          );
-          if (group) n = group;
-        }
-      }
+      const n = canvasTarget(doc, id, selectionScope, e.metaKey || e.ctrlKey);
+      if (!n) return;
       let ids = e.shiftKey
         ? selected.includes(n.id)
           ? selected.filter((s) => s !== n.id)
@@ -1012,7 +1005,10 @@ export default function App() {
       if (e.altKey) drag.current.before = before;
       return;
     }
-    if (!e.shiftKey) setSelected([]);
+    if (!e.shiftKey) {
+      setSelected([]);
+      setSelectionScope(null);
+    }
     setMarquee({ x: p.x, y: p.y, width: 0, height: 0 });
     drag.current = {
       ...base,
@@ -1023,6 +1019,21 @@ export default function App() {
   function pointerMove(e: RPointer) {
     const d = drag.current;
     if (!d) {
+      const rawId = (e.target as Element)
+        .closest("[data-node-id]")
+        ?.getAttribute("data-node-id");
+      const candidate =
+        !editingVector && !editingText && !space.current && tool === "move"
+          ? canvasTarget(
+              doc,
+              rawId ?? undefined,
+              selectionScope,
+              e.metaKey || e.ctrlKey,
+            )
+          : undefined;
+      setHoverTarget(
+        candidate && candidate.type !== "frame" ? candidate.id : null,
+      );
       if (e.altKey && selected.length && tool === "move") {
         const id = (e.target as Element)
             .closest("[data-node-id]")
@@ -1037,6 +1048,7 @@ export default function App() {
       } else setMeasure(null);
       return;
     }
+    setHoverTarget(null);
     setMeasure(null);
     const raw = point(e),
       p =
@@ -3641,6 +3653,7 @@ export default function App() {
             aria-label={t("Design canvas")}
             onPointerDown={(e) => pointerDown(e)}
             onPointerMove={pointerMove}
+            onPointerLeave={() => setHoverTarget(null)}
             onPointerUp={pointerUp}
             onPointerCancel={cancelDrag}
             onContextMenu={(e) => {
@@ -3654,7 +3667,19 @@ export default function App() {
               const hitId =
                 el?.getAttribute("data-node-id") ?? lastPointerHit.current;
               if (!hitId) return;
-              const n = doc.nodes.find((n) => n.id === hitId);
+              let n = canvasTarget(
+                doc,
+                hitId,
+                selectionScope,
+                e.metaKey || e.ctrlKey,
+              );
+              if (n && ["group", "component", "instance"].includes(n.type)) {
+                setSelectionScope(n.id);
+                n = canvasTarget(doc, hitId, n.id);
+                if (n) setSelected([n.id]);
+                setHoverTarget(null);
+                return;
+              }
               if (n?.type === "text") {
                 setSelected([n.id]);
                 if (!n.locked && !ancestors(doc, n).some((p) => p.locked))
@@ -3851,11 +3876,40 @@ export default function App() {
                       onUndo={() => setDoc(history.current.undo(doc))}
                       onRedo={() => setDoc(history.current.redo(doc))}
                       onClose={() => setEditingVector(null)}
+                      onEmptyClick={() => {
+                        setEditingVector(null);
+                        setSelected([]);
+                        setSelectionScope(null);
+                        setHoverTarget(null);
+                      }}
                       onCommit={(patch) =>
                         run({ type: "update", ids: [node.id], patch })
                       }
                     />
                   ) : null;
+                })()}
+              {hoverTarget &&
+                !editingVector &&
+                !selected.includes(hoverTarget) &&
+                (() => {
+                  const n = doc.nodes.find(
+                    (n) => n.id === hoverTarget && n.pageId === page,
+                  );
+                  if (!n) return null;
+                  const box = bounds(doc, [n]);
+                  return (
+                    <rect
+                      aria-label={t("Selection preview")}
+                      x={box.x}
+                      y={box.y}
+                      width={box.width}
+                      height={box.height}
+                      fill="none"
+                      stroke="#0d99ff"
+                      strokeWidth={1 / view.zoom}
+                      pointerEvents="none"
+                    />
+                  );
                 })()}
               {selectionBox &&
                 !editingVector &&

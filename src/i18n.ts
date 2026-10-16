@@ -382,6 +382,7 @@ export const zhCN: Record<string, string> = {
   Object: "对象",
   Arrange: "排列",
   Vector: "矢量",
+  "Selection preview": "预选边框",
   Alignment: "对齐",
   "Clip content": "裁剪内容",
   "Layout alignment": "布局对齐",
