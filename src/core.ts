@@ -93,6 +93,8 @@ export interface Node {
     spellCheck?: boolean;
     language?: string;
   };
+  componentDescription?: string;
+  componentDocumentation?: string;
   text: string;
   fontSize: number;
   fontFamily: string;

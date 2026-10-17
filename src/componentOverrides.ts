@@ -92,7 +92,7 @@ export function resetComponentOverride(
       delete owner.componentValues?.[p.id];
   }
   synchronizeInstances(doc);
-  relayout(doc);
+  relayout(doc, new Set(doc.nodes.map((n) => n.id)));
   validateDocument(doc);
   return doc;
 }

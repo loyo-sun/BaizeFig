@@ -100,12 +100,12 @@ function diff(current: Node, base: Node): Patch {
     if (!same(v, (base as any)[k])) (patch as any)[k] = structuredClone(v);
   }
   // Fidelity is merged by individual fields to keep new geometry from the source.
-  if (current.fidelity && base.fidelity) {
+  if (current.fidelity) {
     const f: any = {};
     for (const [k, v] of Object.entries(current.fidelity))
       if (
         !["sourceId", "componentSourceId"].includes(k) &&
-        !same(v, (base.fidelity as any)[k])
+        !same(v, (base.fidelity as any)?.[k])
       )
         f[k] = structuredClone(v);
     if (Object.keys(f).length) patch.fidelity = f;
@@ -237,6 +237,9 @@ function expanded(
           node.fidelity || instance.fidelity
             ? {
                 ...node.fidelity!,
+                size: node.fidelity?.size ??
+                  instance.fidelity?.size ?? [node.width, node.height],
+                linear: instance.fidelity?.linear ?? node.fidelity?.linear,
                 sourceId:
                   instance.fidelity?.sourceId ?? node.fidelity?.sourceId,
               }

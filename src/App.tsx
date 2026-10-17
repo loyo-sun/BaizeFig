@@ -56,6 +56,7 @@ import {
   type SnapGuide,
 } from "./snapping";
 import { SnapOverlay } from "./SnapOverlay";
+import { assetDestination, insertAsset } from "./assetPlacement";
 import { LocalAssets } from "./LocalAssets";
 import { LayerThumbnail } from "./LayerThumbnail";
 import { splitVectorLayers } from "./vectorSplit";
@@ -2728,6 +2729,14 @@ export default function App() {
         el.isContentEditable
       )
         return;
+      if (
+        (e.altKey && e.code === "Digit2") ||
+        (e.shiftKey && e.code === "KeyI" && !e.metaKey && !e.ctrlKey)
+      ) {
+        e.preventDefault();
+        setLeftTab("assets");
+        return;
+      }
       if (e.key === "Escape") {
         if (menuAnchor) {
           setMenuAnchor(null);
@@ -3448,7 +3457,19 @@ export default function App() {
             {leftTab === "assets" ? (
               <LocalAssets
                 doc={doc}
-                onInsert={(node, client) => {
+                onLibraries={() => setModal("assets")}
+                onPreview={(client) =>
+                  setHoverTarget(
+                    client
+                      ? (assetDestination(
+                          doc,
+                          page,
+                          point({ clientX: client.x, clientY: client.y }),
+                        )?.id ?? null)
+                      : null,
+                  )
+                }
+                onInsert={(reference, client, values) => {
                   const rect = svg.current?.getBoundingClientRect();
                   if (!rect) return;
                   if (
@@ -3464,13 +3485,7 @@ export default function App() {
                     clientY: client?.y ?? rect.top + rect.height / 2,
                   });
                   try {
-                    const next = createComponentInstance(
-                      doc,
-                      node.id,
-                      page,
-                      pos.x,
-                      pos.y,
-                    );
+                    const next = insertAsset(doc, reference, page, pos, values);
                     setEditingText(null);
                     setEditingVector(null);
                     setSelectionScope(null);

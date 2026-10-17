@@ -13,6 +13,7 @@ export const propertyPaths = (p: ComponentProperty) => [
   ...(p.additionalTargetPaths ?? []),
 ];
 export interface ComponentSet {
+  defaultComponentId?: string;
   id: string;
   name: string;
   axes: Record<string, string[]>;
@@ -64,7 +65,6 @@ export function validateComponentModels(doc: Document) {
         )
           throw Error("Invalid component variant");
         refs.add(variant.componentId);
-
       }
     }
   }

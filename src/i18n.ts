@@ -4,6 +4,21 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Insert instance": "插入实例",
+  "Default variant": "默认变体",
+  "Component details {name}": "组件详情 {name}",
+  "Click for details; drag onto the canvas to create an instance.":
+    "点击查看详情；拖入画布创建实例。",
+  "All folders": "全部文件夹",
+  "Component folder": "组件文件夹",
+  "All sources": "全部来源",
+  "Component source": "组件来源",
+  "List view": "列表视图",
+  "Grid view": "网格视图",
+  Documentation: "使用文档",
+  "No component description": "暂无组件说明",
+  "Drag preview to insert": "拖动预览插入实例",
+  "Back to assets": "返回资源",
   "Path refinement": "简化与偏移",
   "Region styles": "区域样式",
   "Editing tips": "操作提示",
