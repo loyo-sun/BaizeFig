@@ -1,6 +1,50 @@
-# 自部署 MCP（阶段一）
+# 自部署 MCP 与客户端连接
 
 BaizeFig 编辑器仍是静态网站，MCP 是同一项目附带的 Node.js 服务进程。外部 AI 客户端调用 MCP，服务通过已配对浏览器执行现有设计命令。浏览器必须保持打开；没有云端文档托管、多人服务或离线后台渲染。
+
+## 从画布连接 WorkBuddy、ChatGPT 或豆包工作
+
+在 BaizeFig 右侧点击「MCP 连接」，选择客户端。界面把本机连接与在线服务分开，手动令牌方式保留在「手动配对与高级设置」。
+
+| 客户端 | 已实现的接入入口 | 尚需的外部条件 |
+| --- | --- | --- |
+| WorkBuddy | 本地配置助手、自动配对、远程 OAuth 地址及配置说明 | 安装 WorkBuddy，重启 MCP；正式连接器市场上架另需平台审核 |
+| ChatGPT 桌面端 | 通过官方 Codex CLI 配置共享 MCP、自动配对 | 使用支持本地 MCP 的桌面版本；CLI 不可用时使用远程方式 |
+| ChatGPT 网页版 | HTTPS 地址、OAuth 与画布内确认 | 自部署可公开访问的服务，以及账号开放的自定义 MCP 入口 |
+| 豆包工作 | 专属远程入口、OAuth 地址与接入说明导出 | 官方开放平台目前内测；须账号具有相应入口/开发权限，未声称官方插件已上架或完成该产品实测 |
+
+这些入口共享 BaizeFig 的标准 MCP 工具。第三方账号权限、平台发布和远程域名不会由静态编辑器自动创建。
+
+### 本机连接：首次配置一次，以后自动配对
+
+Mac 可在向导中下载配置助手 ZIP，解压后运行 `.command`，选择已安装依赖的 BaizeFig 项目文件夹。助手需要 Node.js 20.19+，会尝试系统及已知本机运行时；它不会静默下载运行时。若系统阻止运行，请检查脚本内容并遵循系统的正常操作流程。
+
+其他系统，或希望先预览更改的用户，可在仓库运行：
+
+```sh
+npm run mcp:connect -- --client workbuddy --origin https://baizefig.netlify.app --dry-run
+npm run mcp:connect -- --client workbuddy --origin https://baizefig.netlify.app
+# ChatGPT 桌面端：将 workbuddy 换为 chatgpt。
+```
+
+WorkBuddy 助手合并 `~/.workbuddy/mcp.json` 的 baizefig 项，保留其他服务及字段，创建私有备份，再原子替换；无效 JSON 或符号链接文件会拒绝修改。ChatGPT 助手使用已安装的官方 `codex mcp add`，不自行解析或覆盖 TOML；已有配置先备份。备份命名为 `.baizefig-时间戳.bak`，可手动恢复。不要同时在多个客户端启动同一端口的桥。
+
+助手只为所选编辑器来源设置 `BAIZEFIG_AUTO_PAIR=1`，适用于回环监听的 stdio 服务，不向远程 HTTP 开放。重启客户端中的 BaizeFig MCP，然后在画布点击「自动连接画布」。无需查日志或复制令牌；编辑与导出仍须单独勾选。自动配对信任本机进程和配置的精确编辑器 Origin，因此仅用于你信任的编辑器站点。
+
+### 在线连接：生成配置、复制地址、画布确认
+
+1. 在向导选择「在线 MCP」，填写自有 HTTPS 服务域名或 `/mcp` 地址。目前向导要求服务位于根路径，路径前缀部署请使用高级手动配置。
+2. 点击「生成服务配置」，下载 `.env.baizefig`。文件含私有配对凭据，请勿提交仓库或发送给他人。页面在内存中保留相同凭据，不把它写入浏览器 URL、localStorage 或连接说明。
+3. 在服务器用 `node --env-file=.env.baizefig bridge/server.mjs --http` 启动服务，配置 HTTPS 代理，包括 `/mcp`、`/bridge`、`/.well-known/`、`/oauth/`；参见 `deploy/nginx.conf`。
+4. 返回画布点击「连接画布到服务」。若刷新后丢失配对凭据，可在高级设置中输入部署文件中的值，无需读取服务日志。
+5. 点击「复制 MCP 地址」，在客户端的自定义 MCP 入口添加，认证选择 OAuth。WorkBuddy 可使用导出的配置；ChatGPT 和豆包工作的下载文件是字段说明，**不是官方可直接导入的插件清单**。
+6. 客户端打开授权页面后，回到 BaizeFig，核对客户端声明名称及返回地址，仅允许自己主动发起的请求。批准后授权页自动返回客户端。
+
+OAuth 服务实现资源/授权服务器发现、公共客户端动态注册（DCR）、S256 PKCE、一次性授权码、1 小时访问令牌、30 天轮换刷新令牌及 issuer 响应。令牌绑定当前 editorId/documentId；无法用来访问另一画布。拒绝、断开或切换文档会终止或撤销授权。仅支持 `baizefig:design` scope，细分写入和导出能力仍在画布授权。
+
+这是单实例、单配对编辑器的自部署授权服务，不是多租户平台。注册、授权与令牌保存在内存，重启后需重新添加/授权客户端；同一实例最多 200 个注册、20 个待确认流程、100 个授权码、500 个访问及刷新令牌，过期记录按请求清理。授权码 2 分钟、确认请求 5 分钟有效。不支持 CIMD、外部身份供应商登录和 OAuth 客户端密钥模式；此轮不包含正式平台上架或账号级实测。
+
+参考：[WorkBuddy 连接器规范](https://open.workbuddy.cn/docs/connector)、[ChatGPT MCP 配置](https://learn.chatgpt.com/docs/extend/mcp)、[豆包开放平台](https://open.doubao.com/)。
 
 ## 1. 安装与启动
 
@@ -33,7 +77,7 @@ node --env-file=.env bridge/server.mjs --http
 - `BAIZEFIG_ORIGINS`：逗号分隔的精确编辑器来源，不支持 `*`。
 - `BAIZEFIG_HOSTS`：逗号分隔的允许 Host，抵御 DNS 重绑定。反向代理必须正确转发 Host。
 
-日志包含配对令牌，限制服务日志访问。访问令牌不会输出；两种令牌用途不同，应分别生成。轮换令牌后重启服务，旧连接失效。
+传统手动配对模式的日志包含配对令牌，限制服务日志访问；自动配对和 OAuth 模式不输出它。访问令牌不会输出；两种令牌用途不同，应分别生成。轮换令牌后重启服务，旧连接失效。
 
 本机开发可使用 `npm run dev`，环境来源改为 `http://127.0.0.1:4318`，Host 允许 `127.0.0.1,localhost`。仅回环地址允许明文 HTTP。
 
@@ -67,7 +111,7 @@ node --env-file=.env bridge/server.mjs --http
 }
 ```
 
-这是通用配置示意，不同客户端的字段可能不同。阶段一采用自部署者管理的静态 Bearer 令牌，**尚未提供 OAuth 登录与发现**；只接受 OAuth、不能配置 Header 的客户端不在本阶段兼容范围。不要把配对令牌当作访问令牌，也不要把真实令牌写进公开仓库。
+这是通用配置示意，不同客户端的字段可能不同。此配置对应静态 Bearer 模式；不能设置 Header 的客户端应使用上文新增的 OAuth 模式。不要把配对令牌当作访问令牌，也不要把真实令牌写进公开仓库。
 
 打开 BaizeFig 的 MCP 连接窗口：
 
@@ -152,4 +196,4 @@ npm run test:mcp:ui
 npm run build
 ```
 
-`test:mcp` 验证 SDK HTTP、stdio、认证、Origin/Host、配对、路由和断线；`test:mcp:ui` 使用已安装的 Google Chrome 隔离测试环境，以官方 SDK 客户端和独立 JSON-RPC 测试客户端（2025-06-18）完成真实浏览器中的设计、调整、截图、撤销、重配和切换文档。它们是两种测试客户端实现，不等于已经实测任意第三方 AI 产品。交互式验证用 `node scripts/mcp-smoke.mjs`；测试既有远程部署时设置 `BAIZEFIG_MCP_URL` 与 `BAIZEFIG_ACCESS_TOKEN`。
+`test:mcp` 验证 SDK HTTP、stdio、认证、Origin/Host、配对、路由、OAuth、配置助手和断线；`test:mcp:ui` 使用已安装的 Google Chrome 隔离测试环境，以官方 SDK 客户端和独立 JSON-RPC 测试客户端（2025-06-18）完成真实浏览器中的设计、调整、截图、撤销、重配和切换文档。它们是两种测试客户端实现，不等于已经实测任意第三方 AI 产品。交互式验证用 `node scripts/mcp-smoke.mjs`；测试既有远程部署时设置 `BAIZEFIG_MCP_URL` 与 `BAIZEFIG_ACCESS_TOKEN`。

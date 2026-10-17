@@ -4,6 +4,50 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Download Mac setup assistant": "下载 Mac 配置助手",
+  "On Mac: unzip, run the assistant, and select your installed BaizeFig project. Other systems can use the command below. Node.js and project dependencies are required.":
+    "Mac 用户可解压后运行助手，选择已安装的 BaizeFig 项目。其他系统可使用下方命令；需要已安装 Node.js 和项目依赖。",
+  "Choose your AI tool. Keep this canvas open while designing.":
+    "选择 AI 工具，设计期间保持当前画布打开。",
+  "AI client": "AI 客户端",
+  "Connection method": "连接方式",
+  "This computer": "本机连接",
+  "Online MCP": "在线 MCP",
+  "Use ChatGPT desktop with local MCP support. For ChatGPT web, choose Online MCP.":
+    "适用于支持本地 MCP 的 ChatGPT 桌面端。网页版请选择「在线 MCP」。",
+  "Configure WorkBuddy once, then connect automatically without reading logs or copying pairing tokens.":
+    "首次配置 WorkBuddy 后，即可自动连接，无需查看日志或复制配对令牌。",
+  "First time: run this setup command in your installed BaizeFig project, then restart the client's MCP connection.":
+    "首次使用：在已安装的 BaizeFig 项目中运行以下配置命令，然后重启客户端的 MCP 连接。",
+  "Copy setup command": "复制配置命令",
+  "Setup preserves existing servers and creates a configuration backup. Run one local AI connection at a time.":
+    "配置助手会保留其他服务并备份原配置。每次使用一个本地 AI 连接。",
+  "Connect automatically": "自动连接画布",
+  "Use your deployed HTTPS MCP service. The static editor website alone is not a service address.":
+    "填写已部署的 HTTPS MCP 服务地址。静态编辑器的网址本身不是 MCP 服务。",
+  "Doubao Work's developer platform is in preview. Use its custom connector entry where available; official installation and publishing require platform access. No public plugin has been published.":
+    "豆包工作开放平台目前在内测。请使用账号已开放的自定义连接器入口；官方安装与发布需要平台权限，BaizeFig 尚未上架官方插件。",
+  "Generate service configuration": "生成服务配置",
+  "Copy MCP address": "复制 MCP 地址",
+  "Download connection guide": "下载连接说明",
+  "Connect canvas to service": "连接画布到服务",
+  "Deploy the generated configuration on your server first. Then connect this canvas and add the address to your AI client using OAuth. The access request appears here for approval.":
+    "先将生成的配置部署到服务器，再连接当前画布。在 AI 客户端添加地址并选择 OAuth 后，访问请求会在这里等待你确认。",
+  "Manual pairing and advanced settings": "手动配对与高级设置",
+  "An AI client requests access to this canvas": "AI 客户端请求访问当前画布",
+  "Client-reported name": "客户端声明的名称",
+  "Return address": "返回地址",
+  "Allow only a connection you started. Reading is allowed after approval; editing and export still require the permissions above.":
+    "仅允许你主动发起的连接。授权后可读取当前文档，编辑和导出仍需要上方的权限。",
+  "Allow access": "允许访问",
+  Deny: "拒绝",
+  "Open client website": "打开客户端官网",
+  "Disconnecting or switching files revokes access. Pairing never enables editing or export automatically.":
+    "断开连接或切换文件会撤销访问。配对不会自动开启编辑和导出权限。",
+  "Service configuration downloaded. Restart your service with this file, then connect the canvas.":
+    "服务配置已下载。使用该文件重启服务后，即可连接画布。",
+  "Copy failed. Select and copy the displayed text.":
+    "复制失败，请手动选中并复制显示的内容。",
   "Pairing rejected. Check the token and disconnect any other paired editor.":
     "配对被拒绝，请检查令牌并断开其他已配对的编辑器。",
   "MCP service address": "MCP 服务地址",

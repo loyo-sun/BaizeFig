@@ -1,3 +1,5 @@
+import type { McpClient } from "./mcpConnections";
+import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
 import { EditorMcp, McpError, bridgeWebSocketUrl } from "./mcp";
 import {
   createIndependentMain,
@@ -439,6 +441,9 @@ export default function App() {
       commands: Command[];
       base: string;
     } | null>(null);
+  const [bridgeClient, setBridgeClient] = useState<McpClient>("workbuddy"),
+    [bridgeRemote, setBridgeRemote] = useState(false);
+  const [oauthApprovals, setOauthApprovals] = useState<OAuthApproval[]>([]);
   const [bridgeToken, setBridgeToken] = useState(""),
     [bridgeAddress, setBridgeAddress] = useState("http://127.0.0.1:4319/mcp"),
     [bridgeExport, setBridgeExport] = useState(false),
@@ -2998,8 +3003,9 @@ export default function App() {
     setBridgeWrite(false);
     setBridgeExport(false);
     setBridgeStatus("Disconnected");
+    setOauthApprovals([]);
   }
-  function connectBridge() {
+  function connectBridge(automatic = false) {
     let address: string;
     try {
       address = bridgeWebSocketUrl(bridgeAddress.trim());
@@ -3022,7 +3028,8 @@ export default function App() {
       ws.send(
         JSON.stringify({
           type: "pair",
-          token: bridgeToken,
+          token: automatic ? undefined : bridgeToken,
+          auto: automatic,
           documentId,
           editorId: mcp.current.editorId,
         }),
@@ -3051,6 +3058,7 @@ export default function App() {
         type?: string;
         method: string;
         params?: Record<string, unknown>;
+        request?: OAuthApproval;
       };
       try {
         message = JSON.parse(event.data);
@@ -3058,6 +3066,20 @@ export default function App() {
         return;
       }
       if (!message || typeof message !== "object") return;
+      if (message.type === "oauth_request" && message.request) {
+        const r = message.request;
+        if (
+          typeof r.id === "string" &&
+          typeof r.clientName === "string" &&
+          typeof r.redirectUri === "string"
+        ) {
+          setOauthApprovals((list) =>
+            [...list.filter((item) => item.id !== r.id), r].slice(-20),
+          );
+          setModal("bridge");
+        }
+        return;
+      }
       if (message.type === "paired") {
         setBridgeStatus("Connected");
         return;
@@ -6904,101 +6926,40 @@ export default function App() {
               </>
             )}
             {modal === "bridge" && (
-              <>
-                <p className="muted">
-                  {t(
-                    "Connect an MCP client to this open design using a local or self-hosted service.",
-                  )}
-                </p>
-                <div className="connection-state">
-                  <span
-                    className={
-                      bridgeStatus === "Connected" ? "green-dot" : "gray-dot"
-                    }
-                  />
-                  {t(bridgeStatus)}
-                </div>
-                <ol className="bridge-steps">
-                  <li>
-                    {t("In this project, start")} <code>npm run bridge</code>{" "}
-                    {t(
-                      "for local stdio, or deploy the HTTP service with npm run mcp:http.",
-                    )}
-                  </li>
-                  <li>
-                    {t(
-                      "Copy the pairing token from the bridge output into the field below.",
-                    )}
-                  </li>
-                  <li>
-                    {t(
-                      "Connect this browser. Enable writes only when you want the client to edit.",
-                    )}
-                  </li>
-                </ol>
-                <label className="config-label">
-                  {t("MCP service address")}
-                  <input
-                    aria-label={t("MCP service address")}
-                    value={bridgeAddress}
-                    onChange={(e) => setBridgeAddress(e.target.value)}
-                    placeholder="https://your-host/mcp"
-                  />
-                </label>
-                <label className="config-label">
-                  {t("Pairing token")}
-                  <input
-                    type="password"
-                    aria-label={t("Bridge pairing token")}
-                    value={bridgeToken}
-                    onChange={(e) => setBridgeToken(e.target.value)}
-                  />
-                </label>
-                <label className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    checked={bridgeWrite}
-                    onChange={(e) => {
-                      current.current = {
-                        ...current.current,
-                        bridgeWrite: e.target.checked,
-                      };
-                      setBridgeWrite(e.target.checked);
-                    }}
-                  />
-                  {t("Allow MCP to modify the currently open document")}
-                </label>
-                <label className="checkbox-row">
-                  <input
-                    type="checkbox"
-                    checked={bridgeExport}
-                    onChange={(e) => {
-                      current.current = {
-                        ...current.current,
-                        bridgeExport: e.target.checked,
-                      };
-                      setBridgeExport(e.target.checked);
-                    }}
-                  />
-                  {t("Allow MCP screenshots and SVG export")}
-                </label>
-                <div className="file-actions">
-                  <button
-                    className="primary"
-                    disabled={!bridgeToken || bridgeStatus !== "Disconnected"}
-                    onClick={connectBridge}
-                  >
-                    <Link2 size={15} />
-                    {t("Connect bridge")}
-                  </button>
-                  <button onClick={disconnectBridge}>{t("Disconnect")}</button>
-                </div>
-                <p className="notice">
-                  {t(
-                    "Keep this editor open. Self-hosted HTTP clients need a separate Bearer token; the pairing token only connects this browser. Disconnecting revokes editing and export permissions.",
-                  )}
-                </p>
-              </>
+              <McpConnectionWizard
+                client={bridgeClient}
+                remote={bridgeRemote}
+                onClient={setBridgeClient}
+                onRemote={setBridgeRemote}
+                address={bridgeAddress}
+                token={bridgeToken}
+                status={bridgeStatus}
+                write={bridgeWrite}
+                exporting={bridgeExport}
+                onAddress={setBridgeAddress}
+                onToken={setBridgeToken}
+                onConnect={connectBridge}
+                onDisconnect={disconnectBridge}
+                notify={notify}
+                onWrite={(value) => {
+                  current.current = { ...current.current, bridgeWrite: value };
+                  setBridgeWrite(value);
+                }}
+                onExport={(value) => {
+                  current.current = { ...current.current, bridgeExport: value };
+                  setBridgeExport(value);
+                }}
+                approvals={oauthApprovals}
+                onApproval={(id, approved) => {
+                  if (socket.current?.readyState === WebSocket.OPEN)
+                    socket.current.send(
+                      JSON.stringify({ type: "oauth_decision", id, approved }),
+                    );
+                  setOauthApprovals((list) =>
+                    list.filter((item) => item.id !== id),
+                  );
+                }}
+              />
             )}
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { createOAuth } from "./oauth.mjs";
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
 import { pathToFileURL } from "node:url";
@@ -67,7 +68,16 @@ export function createBridge(options = {}) {
         .map((s) => s.trim()),
   );
   const timeout = options.timeout ?? 30000;
-  if (http && (!accessToken || accessToken.length < 32))
+  const authMode =
+    options.authMode ?? process.env.BAIZEFIG_AUTH_MODE ?? "token";
+  if (!["token", "oauth"].includes(authMode))
+    throw Error("Invalid BAIZEFIG_AUTH_MODE");
+  const autoPair = options.autoPair ?? process.env.BAIZEFIG_AUTO_PAIR === "1";
+  if (autoPair && http)
+    throw Error(
+      "Automatic local pairing is only available for stdio on loopback",
+    );
+  if (http && authMode === "token" && (!accessToken || accessToken.length < 32))
     throw Error(
       "HTTP mode requires BAIZEFIG_ACCESS_TOKEN with at least 32 characters",
     );
@@ -78,6 +88,17 @@ export function createBridge(options = {}) {
   if (!http && !["127.0.0.1", "localhost", "::1"].includes(host))
     throw Error("stdio bridge must bind a loopback address");
   let browser;
+  const oauth =
+    http && authMode === "oauth"
+      ? createOAuth({
+          publicUrl: options.publicUrl ?? process.env.BAIZEFIG_PUBLIC_URL,
+          getEditor: () =>
+            browser
+              ? { documentId: browser.documentId, editorId: browser.editorId }
+              : null,
+          notify: (message) => browser?.ws.send(JSON.stringify(message)),
+        })
+      : null;
   const pending = new Map();
   function rejectPending() {
     for (const entry of pending.values()) {
@@ -134,7 +155,7 @@ export function createBridge(options = {}) {
       );
     });
   }
-  function mcpServer() {
+  function mcpServer(target) {
     const server = new McpServer({ name: "baizefig", version: "0.1.0" });
     for (const [name, schema] of Object.entries(toolSchemas)) {
       server.registerTool(
@@ -164,8 +185,9 @@ export function createBridge(options = {}) {
                 maxResponseBytes: 8 * 1024 * 1024,
                 receipts:
                   "500 writes per editor lifetime; cleared on page reload",
-                authentication:
-                  "HTTP static Bearer token; separate browser pairing token",
+                authentication: oauth
+                  ? "OAuth 2.1 with PKCE and explicit canvas consent"
+                  : "HTTP static Bearer token; separate browser pairing token",
                 commands: [
                   "create",
                   "update",
@@ -179,7 +201,18 @@ export function createBridge(options = {}) {
                   "reparent",
                 ],
               };
-            else result = await request(name, args);
+            else {
+              if (
+                target &&
+                ((args.documentId && args.documentId !== target.documentId) ||
+                  (args.editorId && args.editorId !== target.editorId))
+              )
+                throw fail(
+                  "TARGET_CHANGED",
+                  "OAuth grant belongs to another canvas",
+                );
+              result = await request(name, { ...args, ...(target ?? {}) });
+            }
             if (name === "get_screenshot") {
               if (
                 typeof result !== "string" ||
@@ -234,41 +267,52 @@ export function createBridge(options = {}) {
         return json(res, 403, { error: "Origin denied" });
       if (url.pathname === "/healthz" && req.method === "GET")
         return json(res, 200, { ok: true });
+      async function readBody(input) {
+        let size = 0;
+        const chunks = [];
+        for await (const chunk of input.iterator({ destroyOnReturn: false })) {
+          size += chunk.length;
+          if (size > 1024 * 1024) {
+            input.resume();
+            throw fail("BODY_TOO_LARGE", "Request exceeds 1 MiB");
+          }
+          chunks.push(chunk);
+        }
+        return Buffer.concat(chunks).toString();
+      }
+      if (oauth && (await oauth.route(req, res, url, readBody))) return;
       if (!http || url.pathname !== "/mcp" || url.search)
         return json(res, 404, { error: "Not found" });
-      if (!secret(req.headers.authorization, `Bearer ${accessToken}`)) {
-        res.setHeader("WWW-Authenticate", 'Bearer realm="baizefig"');
-        return json(res, 401, { error: "Bearer token required" });
+      const target = oauth?.authenticate(req.headers.authorization);
+      if (
+        oauth
+          ? !target
+          : !secret(req.headers.authorization, `Bearer ${accessToken}`)
+      ) {
+        res.setHeader(
+          "WWW-Authenticate",
+          oauth
+            ? `Bearer resource_metadata="${oauth.resource.replace(/\/mcp$/, "")}/.well-known/oauth-protected-resource"`
+            : 'Bearer realm="baizefig"',
+        );
+        return json(res, 401, { error: "Authorization required" });
       }
       if (req.method !== "POST") {
         res.setHeader("Allow", "POST");
-        return json(res, 405, {
-          error: "POST required; stateless HTTP has no GET stream",
-        });
+        return json(res, 405, { error: "POST required" });
       }
       if (!req.headers["content-type"]?.startsWith("application/json"))
         return json(res, 415, { error: "application/json required" });
-      let length = 0,
-        chunks = [];
-      if (Number(req.headers["content-length"]) > 1024 * 1024) {
-        req.resume();
-        return json(res, 413, { error: "Request exceeds 1 MiB" });
-      }
-      for await (const chunk of req.iterator({ destroyOnReturn: false })) {
-        length += chunk.length;
-        if (length > 1024 * 1024) {
-          req.resume();
-          return json(res, 413, { error: "Request exceeds 1 MiB" });
-        }
-        chunks.push(chunk);
-      }
       let body;
       try {
-        body = JSON.parse(Buffer.concat(chunks).toString());
-      } catch {
-        return json(res, 400, { error: "Invalid JSON" });
+        body = JSON.parse(await readBody(req));
+      } catch (error) {
+        return json(res, error.code === "BODY_TOO_LARGE" ? 413 : 400, {
+          error:
+            error.code === "BODY_TOO_LARGE" ? error.message : "Invalid JSON",
+        });
       }
-      const server = mcpServer();
+      const server = mcpServer(target);
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
         enableJsonResponse: true,
@@ -278,8 +322,14 @@ export function createBridge(options = {}) {
       });
       await server.connect(transport);
       await transport.handleRequest(req, res, body);
-    } catch {
-      if (!res.headersSent) json(res, 500, { error: "MCP request failed" });
+    } catch (error) {
+      if (!res.headersSent)
+        json(res, error.code === "BODY_TOO_LARGE" ? 413 : 500, {
+          error:
+            error.code === "BODY_TOO_LARGE"
+              ? error.message
+              : "MCP request failed",
+        });
       else res.end();
     }
   });
@@ -331,7 +381,10 @@ export function createBridge(options = {}) {
       if (!paired) {
         if (
           msg.type !== "pair" ||
-          !secret(msg.token, pairingToken) ||
+          !(
+            secret(msg.token, pairingToken) ||
+            (autoPair && msg.auto === true)
+          ) ||
           typeof msg.documentId !== "string" ||
           !msg.documentId ||
           msg.documentId.length > 200 ||
@@ -352,6 +405,10 @@ export function createBridge(options = {}) {
         ws.send(JSON.stringify({ type: "paired" }));
         return;
       }
+      if (msg.type === "oauth_decision") {
+        oauth?.decide(msg.id, msg.approved === true, browser);
+        return;
+      }
       const entry = pending.get(msg.id);
       if (!entry || entry.ws !== ws) return;
       clearTimeout(entry.timer);
@@ -369,6 +426,7 @@ export function createBridge(options = {}) {
     ws.on("close", () => {
       clearTimeout(authTimer);
       if (browser?.ws === ws) {
+        oauth?.revokeEditor(browser.editorId);
         browser = undefined;
         rejectPending();
       }
@@ -406,7 +464,7 @@ if (
     const bridge = createBridge();
     const address = await bridge.start();
     console.error(
-      `BaizeFig ${process.argv.includes("--http") ? "HTTP MCP" : "stdio bridge"} listening on ${address.address}:${address.port}\nPairing token: ${bridge.pairingToken}\nBrowser bridge path: /bridge`,
+      `BaizeFig ${process.argv.includes("--http") ? "HTTP MCP" : "stdio bridge"} listening on ${address.address}:${address.port}${process.env.BAIZEFIG_AUTO_PAIR === "1" || process.env.BAIZEFIG_AUTH_MODE === "oauth" ? "" : `\nPairing token: ${bridge.pairingToken}`}\nBrowser bridge path: /bridge`,
     );
     const stop = () => {
       void bridge.close().then(() => process.exit(0));

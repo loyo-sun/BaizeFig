@@ -3105,3 +3105,15 @@ html[lang="zh-CN"] .layer-title-input {
 .local-assets .component-properties {
   padding: 10px 0;
 }
+
+/* AI connection wizard */
+.mcp-client-options, .mcp-mode-options { display:flex; gap:8px; margin:12px 0; }
+.mcp-client-options button { flex:1; padding:12px 8px; border:1px solid var(--border, #ddd); border-radius:8px; }
+.mcp-client-options button[aria-pressed=true], .mcp-mode-options button[aria-pressed=true] { background:#e9f3ff; color:#1769c7; border-color:#85b9f4; }
+.mcp-wizard .file-actions { flex-wrap:wrap; }
+.mcp-wizard p { line-height:1.6; }
+.mcp-config-preview { white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; border-radius:8px; background:#f5f6f8; font-size:12px; user-select:text; }
+.mcp-advanced { margin:16px 0; padding:12px; border:1px solid #ddd; border-radius:8px; }
+.mcp-advanced summary { cursor:pointer; margin-bottom:8px; }
+.mcp-consent { padding:16px; margin:12px 0; border:1px solid #85b9f4; border-radius:8px; background:#f3f8ff; }
+.mcp-redirect { overflow-wrap:anywhere; font-size:12px; }
