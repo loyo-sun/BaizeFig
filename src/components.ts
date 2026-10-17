@@ -594,7 +594,17 @@ export function swapComponentInstance(
     synchronizeInstances(doc);
     return finalized(original, doc);
   }
-  const doc = changePrototypeComponent(original, id, reference);
+  const sameSet = original.componentSets?.some(
+    (s) =>
+      s.variants.some((v) => v.componentId === current.componentId) &&
+      s.variants.some((v) => v.componentId === reference),
+  );
+  const doc = changePrototypeComponent(
+    original,
+    id,
+    reference,
+    sameSet ? true : "names",
+  );
   synchronizeInstances(doc);
   return finalized(original, doc);
 }
@@ -604,6 +614,7 @@ export function changePrototypeComponent(
   original: Document,
   id: string,
   reference: string,
+  compareDefaults: boolean | "names" = false,
 ): Document {
   const doc = structuredClone(original),
     root = doc.nodes.find((n) => n.id === id && n.type === "instance");
@@ -637,15 +648,61 @@ export function changePrototypeComponent(
   if (previousDefinition) {
     const from = namedPaths(previousDefinition.nodes, previousDefinition.root),
       to = namedPaths(nextDefinition.nodes, nextDefinition.root);
+    const oldOverrides = structuredClone(root.componentOverrides ?? {});
+    const oldClears = structuredClone(root.componentClears ?? {});
+    if (compareDefaults) {
+      root.componentOverrides = {};
+      root.componentClears = {};
+    }
     for (const [name, oldPath] of from) {
       const newPath = to.get(name);
+      if (compareDefaults && newPath !== undefined) {
+        const source = paths(
+          previousDefinition.nodes,
+          previousDefinition.root,
+        ).get(oldPath)!;
+        const target = paths(nextDefinition.nodes, nextDefinition.root).get(
+          newPath,
+        )!;
+        const patch = oldOverrides[oldPath];
+        if (patch) {
+          const retained: Patch = {};
+          for (const [field, value] of Object.entries(patch)) {
+            if (
+              compareDefaults === "names" ||
+              field === "text" ||
+              same((source as any)[field], (target as any)[field])
+            )
+              (retained as any)[field] = structuredClone(value);
+            else if (field === "fidelity" && value) {
+              const fidelity = Object.fromEntries(
+                Object.entries(value).filter(([k]) =>
+                  same(
+                    (source.fidelity as any)?.[k],
+                    (target.fidelity as any)?.[k],
+                  ),
+                ),
+              );
+              if (Object.keys(fidelity).length)
+                retained.fidelity = fidelity as Node["fidelity"];
+            }
+          }
+          if (Object.keys(retained).length)
+            root.componentOverrides![newPath] = retained;
+          if (
+            oldClears[oldPath] &&
+            ("fill" in retained || "variableId" in retained)
+          )
+            root.componentClears![newPath] = oldClears[oldPath];
+        }
+      }
       if (newPath === undefined || newPath === oldPath) continue;
-      if (root.componentOverrides?.[oldPath]) {
+      if (!compareDefaults && root.componentOverrides?.[oldPath]) {
         root.componentOverrides[newPath] = structuredClone(
           root.componentOverrides[oldPath],
         );
       }
-      if (root.componentClears?.[oldPath]) {
+      if (!compareDefaults && root.componentClears?.[oldPath]) {
         root.componentClears[newPath] = structuredClone(
           root.componentClears[oldPath],
         );
@@ -1362,9 +1419,14 @@ export function restoreMainComponent(original: Document, reference: string) {
   for (const n of nodes)
     if (!doc.pages.some((p) => p.id === n.pageId)) n.pageId = doc.pages[0].id;
   doc.nodes.push(...nodes);
-  doc.componentLibrary = doc.componentLibrary?.filter(
-    (c) => c.sourceId !== reference,
-  );
+  const root = nodes.find((n) => !n.parentId)!;
+  doc.componentLibrary = doc.componentLibrary
+    ?.filter((c) => !(c.deleted && c.sourceId === root.id))
+    .map((c) =>
+      c.deleted && c.nodes.some((n) => n.id === root.id && !n.parentId)
+        ? { ...c, deleted: false, nodes: structuredClone(nodes) }
+        : c,
+    );
   synchronizeInstances(doc);
-  return { doc: finalized(original, doc), id: reference };
+  return { doc: finalized(original, doc), id: root.id };
 }

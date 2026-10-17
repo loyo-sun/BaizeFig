@@ -67,5 +67,13 @@ export function addComponentVariant(original: Document, mainId: string) {
   });
   const root = next.doc.nodes.find((n) => n.id === newId)!;
   root.name = name;
+  root.x = main.x;
+  root.y = current
+    ? Math.max(
+        ...original.nodes
+          .filter((n) => current.variants.some((v) => v.componentId === n.id))
+          .map((n) => n.y + n.height),
+      ) + 20
+    : main.y + main.height + 20;
   return { doc: setComponentSet(next.doc, set), selection: next.selection };
 }

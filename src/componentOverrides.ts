@@ -1,5 +1,6 @@
 import {
   ancestors,
+  descendants,
   execute,
   relayout,
   validateDocument,
@@ -48,7 +49,12 @@ export function listComponentOverrides(doc: Document, nodeId: string) {
     entries.push({ path, field, name: member?.name ?? path });
   };
   for (const [path, patch] of Object.entries(owner.componentOverrides ?? {}))
-    for (const field of Object.keys(patch)) add(path, field);
+    for (const field of Object.keys(patch)) {
+      if (field === "fidelity")
+        for (const key of Object.keys(patch.fidelity ?? {}))
+          add(path, "fidelity." + key);
+      else add(path, field);
+    }
   for (const prop of properties)
     if (prop.id in (owner.componentValues ?? {})) {
       const field = fieldFor(prop.type);
@@ -74,7 +80,15 @@ export function resetComponentOverride(
         : [node.componentPath ?? ""];
   for (const key of targets) {
     if (field) {
-      delete owner.componentOverrides?.[key]?.[field as keyof Node];
+      if (field.startsWith("fidelity.")) {
+        const patch = owner.componentOverrides?.[key];
+        if (patch?.fidelity) {
+          delete (patch.fidelity as unknown as Record<string, unknown>)[
+            field.slice(9)
+          ];
+          if (!Object.keys(patch.fidelity).length) delete patch.fidelity;
+        }
+      } else delete owner.componentOverrides?.[key]?.[field as keyof Node];
       if (field === "fill" || field === "variableId")
         delete owner.componentClears?.[key];
     } else {
@@ -92,7 +106,13 @@ export function resetComponentOverride(
       delete owner.componentValues?.[p.id];
   }
   synchronizeInstances(doc);
-  relayout(doc, new Set(doc.nodes.map((n) => n.id)));
+  relayout(
+    doc,
+    new Set([
+      ...descendants(doc, [owner.id]),
+      ...ancestors(doc, owner).map((n) => n.id),
+    ]),
+  );
   validateDocument(doc);
   return doc;
 }

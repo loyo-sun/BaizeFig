@@ -79,3 +79,30 @@ it("resets exposed text values and prevents pushing locked mains", () => {
   expect(canPushComponentOverrides(doc, a)).toBe(false);
   expect(() => pushComponentOverrides(doc, a)).toThrow();
 });
+it("resets one fidelity field without clearing other style overrides", () => {
+  let { doc, a } = fixture();
+  const child = doc.nodes.find(
+    (n) => n.componentOwner === a && n.type === "text",
+  )!;
+  doc = execute(doc, {
+    type: "update",
+    ids: [child.id],
+    patch: {
+      fidelity: {
+        size: [child.width, child.height],
+        corners: [4, 4, 4, 4],
+        strokeOpacity: 0.5,
+      },
+    },
+  }).doc;
+  expect(
+    listComponentOverrides(doc, a).some((e) => e.field === "fidelity.corners"),
+  ).toBe(true);
+  doc = resetComponentOverride(doc, a, child.componentPath, "fidelity.corners");
+  expect(
+    doc.nodes.find((n) => n.id === child.id)?.fidelity?.corners,
+  ).toBeUndefined();
+  expect(
+    doc.nodes.find((n) => n.id === child.id)?.fidelity?.strokeOpacity,
+  ).toBe(0.5);
+});

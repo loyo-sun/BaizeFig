@@ -134,3 +134,44 @@ it("duplicates a variant inside its set as a new main variant instead of an inst
   expect(copied.doc.componentSets![0].variants).toHaveLength(3);
   validateDocument(copied.doc);
 });
+it("persists authoring metadata through the same update command used by the inspector", () => {
+  const doc = emptyDocument(),
+    p = doc.pages[0].id;
+  doc.nodes.push(makeNode("component", p, { id: "main" }));
+  const changed = execute(doc, {
+    type: "update",
+    ids: ["main"],
+    patch: {
+      componentDescription: "Usage",
+      componentDocumentation: "https://example.com",
+      exposedNestedInstances: [],
+    },
+  }).doc;
+  expect(changed.nodes[0]).toMatchObject({
+    componentDescription: "Usage",
+    componentDocumentation: "https://example.com",
+    exposedNestedInstances: [],
+  });
+});
+it("rejects geometry edits inside an ordinary instance without rejecting text content", () => {
+  const doc = emptyDocument(),
+    p = doc.pages[0].id;
+  doc.nodes.push(
+    makeNode("component", p, { id: "main" }),
+    makeNode("text", p, { id: "label", parentId: "main", text: "Hello" }),
+  );
+  const a = createComponentInstance(doc, "main", p, 0, 0);
+  const child = a.doc.nodes.find(
+    (n) => n.componentOwner === a.id && n.type === "text",
+  )!;
+  expect(() =>
+    execute(a.doc, { type: "update", ids: [child.id], patch: { x: 20 } }),
+  ).toThrow("Edit the main component");
+  expect(
+    execute(a.doc, {
+      type: "update",
+      ids: [child.id],
+      patch: { text: "Changed" },
+    }).doc.nodes.find((n) => n.id === child.id)?.text,
+  ).toBe("Changed");
+});

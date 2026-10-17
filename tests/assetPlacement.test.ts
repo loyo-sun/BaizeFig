@@ -1,7 +1,16 @@
 import { it, expect } from "vitest";
-import { emptyDocument, makeNode, absolute } from "../src/core";
+import {
+  emptyDocument,
+  makeNode,
+  absolute,
+  validateDocument,
+  History,
+} from "../src/core";
 import { assetDestination, insertAsset } from "../src/assetPlacement";
-import { createComponentInstance } from "../src/components";
+import {
+  createComponentInstance,
+  synchronizeInstances,
+} from "../src/components";
 function fixture() {
   const doc = emptyDocument(),
     page = doc.pages[0].id;
@@ -58,4 +67,58 @@ it("inserts between auto layout children in visual order", () => {
   expect(
     result.doc.nodes.filter((n) => n.parentId === "frame").map((n) => n.id),
   ).toEqual(["a", result.id, "b"]);
+});
+it("drops into an exposed slot and keeps its contents through serialization and undo", () => {
+  let { doc, page } = fixture();
+  doc.nodes.push(
+    makeNode("component", page, {
+      id: "card",
+      x: 700,
+      componentProperties: [
+        {
+          id: "slot-prop",
+          name: "Content",
+          type: "slot",
+          targetPath: "/slot#0",
+          defaultValue: "",
+        },
+      ],
+    }),
+    makeNode("frame", page, {
+      id: "slot",
+      parentId: "card",
+      width: 200,
+      height: 200,
+      componentSlot: true,
+    }),
+  );
+  const card = createComponentInstance(doc, "card", page, 800, 400);
+  doc = card.doc;
+  const slot = doc.nodes.find(
+    (n) => n.componentOwner === card.id && n.componentSlot,
+  )!;
+  const pos = absolute(doc, slot),
+    before = JSON.stringify(doc);
+  expect(
+    assetDestination(doc, page, { x: pos.x + 20, y: pos.y + 20 })?.id,
+  ).toBe(slot.id);
+  const result = insertAsset(doc, "main", page, {
+    x: pos.x + 20,
+    y: pos.y + 20,
+  });
+  expect(result.doc.nodes.find((n) => n.id === result.id)?.parentId).toBe(
+    slot.id,
+  );
+  const saved = JSON.parse(JSON.stringify(result.doc));
+  synchronizeInstances(saved);
+  validateDocument(saved);
+  expect(
+    saved.nodes.some(
+      (n: any) => n.componentId === "main" && n.parentId === slot.id,
+    ),
+  ).toBe(true);
+  const history = new History();
+  history.push(doc);
+  expect(JSON.stringify(history.undo(result.doc))).toBe(before);
+  expect(history.redo(doc)).toEqual(result.doc);
 });

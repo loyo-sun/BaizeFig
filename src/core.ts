@@ -548,6 +548,27 @@ export function execute(
     )
       throw Error("Detach instance before changing its layer structure");
   }
+  if (command.type === "update" || command.type === "align") {
+    const restricted = doc.nodes.filter(
+      (n) =>
+        command.ids.includes(n.id) &&
+        n.componentOwner &&
+        n.componentOwner !== n.id &&
+        !inComponentSlot(doc, n),
+    );
+    if (
+      restricted.some(
+        (n) =>
+          command.type === "align" ||
+          Object.keys(command.patch).some(
+            (k) =>
+              ["x", "y", "constraints", "layoutItem"].includes(k) ||
+              (n.type === "text" && ["width", "height"].includes(k)),
+          ),
+      )
+    )
+      throw Error("Edit the main component to change instance layer geometry");
+  }
   switch (command.type) {
     case "create":
       doc.nodes.push(...structuredClone(command.nodes));
@@ -565,6 +586,9 @@ export function execute(
           const allowed = new Set([
             "type",
             "componentProperties",
+            "exposedNestedInstances",
+            "componentDescription",
+            "componentDocumentation",
             "componentValues",
             "componentSlots",
             "layoutItem",
@@ -746,15 +770,22 @@ export function execute(
           linear: matrix.slice(0, 4) as [number, number, number, number],
         };
         doc.componentLibrary ??= [];
-        doc.componentLibrary = doc.componentLibrary.filter(
-          (c) => c.sourceId !== main.id,
+        const references = new Set([
+          main.id,
+          ...(main.fidelity?.sourceId ? [main.fidelity.sourceId] : []),
+        ]);
+        const previousEntries = doc.componentLibrary;
+        doc.componentLibrary = previousEntries.filter(
+          (c) => !references.has(c.sourceId),
         );
-        doc.componentLibrary.push({
-          sourceId: main.id,
-          name: main.name,
-          nodes: family,
-          deleted: true,
-        });
+        for (const reference of references)
+          doc.componentLibrary.push({
+            ...previousEntries.find((c) => c.sourceId === reference),
+            sourceId: reference,
+            name: main.name,
+            nodes: structuredClone(family),
+            deleted: true,
+          });
       }
       doc.nodes = doc.nodes.filter((n) => !set.has(n.id));
       for (const n of doc.nodes) {
