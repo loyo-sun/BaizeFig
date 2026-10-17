@@ -7,6 +7,7 @@ import {
 } from "../src/core";
 import {
   createComponentInstance,
+  restoreMainComponent,
   resetComponentInstance,
   detachComponentInstance,
   linkImportedComponents,
@@ -159,13 +160,26 @@ it("propagates main component child insertion/removal and rejects cyclic definit
     createComponentInstance(cyclic, "main", cyclic.pages[0].id, 0, 0),
   ).toThrow("Cyclic");
 });
-it("retains the last appearance and detaches native instances when their main is deleted", () => {
+it("retains instances and restores the deleted main after a save roundtrip", () => {
   const d = setup(),
     a = createComponentInstance(d, "main", d.pages[0].id, 400, 100),
     deleted = execute(a.doc, { type: "delete", ids: ["main"] }).doc;
-  expect(deleted.nodes.find((n) => n.id === a.id)?.type).toBe("group");
+  expect(deleted.nodes.find((n) => n.id === a.id)?.type).toBe("instance");
   expect(deleted.nodes.find((n) => n.type === "text")?.text).toBe("Default");
-  expect(deleted.nodes.every((n) => !n.componentOwner)).toBe(true);
+  const restored = restoreMainComponent(
+    JSON.parse(JSON.stringify(deleted)),
+    "main",
+  );
+  const edited = execute(restored.doc, {
+    type: "update",
+    ids: ["label"],
+    patch: { text: "Restored" },
+  }).doc;
+  expect(
+    edited.nodes.find((n) => n.componentOwner === a.id && n.type === "text")
+      ?.text,
+  ).toBe("Restored");
+  validateDocument(edited);
   validateDocument(deleted);
 });
 it("propagates deletion from an editable imported main into its retained library", () => {

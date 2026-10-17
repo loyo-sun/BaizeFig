@@ -3032,3 +3032,27 @@ html[lang="zh-CN"] .layer-title-input {
   width: 100%;
   min-width: 0;
 }
+.override-panel {
+  margin: 10px 0;
+  font-size: 11px;
+}
+.override-panel summary {
+  cursor: pointer;
+}
+.override-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 5px 0;
+}
+.override-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.override-panel button {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 5px;
+}

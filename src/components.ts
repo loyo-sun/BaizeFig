@@ -707,6 +707,10 @@ export function editLibraryComponent(
   original: Document,
   reference: string,
 ): { doc: Document; id: string } {
+  const tombstone = original.componentLibrary?.find(
+    (c) => c.sourceId === reference && c.deleted,
+  );
+  if (tombstone) return restoreMainComponent(original, reference);
   const doc = structuredClone(original),
     def = definition(doc, reference);
   if (!def) throw Error("Missing main component");
@@ -1279,4 +1283,23 @@ export function linkMainCopies(
       child.componentPath = path;
     }
   }
+}
+
+export function restoreMainComponent(original: Document, reference: string) {
+  const entry = original.componentLibrary?.find(
+    (c) => c.sourceId === reference && c.deleted,
+  );
+  if (!entry) throw Error("Missing main component");
+  const doc = structuredClone(original),
+    nodes = structuredClone(entry.nodes);
+  if (nodes.some((n) => doc.nodes.some((existing) => existing.id === n.id)))
+    throw Error("Component restore ID conflict");
+  for (const n of nodes)
+    if (!doc.pages.some((p) => p.id === n.pageId)) n.pageId = doc.pages[0].id;
+  doc.nodes.push(...nodes);
+  doc.componentLibrary = doc.componentLibrary?.filter(
+    (c) => c.sourceId !== reference,
+  );
+  synchronizeInstances(doc);
+  return { doc: finalized(original, doc), id: reference };
 }

@@ -184,6 +184,7 @@ export interface Document {
     libraryId?: string;
     libraryRevision?: number;
     missing?: boolean;
+    deleted?: boolean;
     localEdits?: boolean;
   }[];
   variableCollections?: VariableCollection[];
@@ -716,23 +717,35 @@ export function execute(
             .map((n) => n.id),
         ),
       );
-      for (const instance of doc.nodes.filter(
-        (n) =>
-          n.type === "instance" &&
-          n.componentId &&
-          set.has(n.componentId) &&
-          !set.has(n.id),
+      // Keep definitions as tombstones so surviving instances can restore their main.
+      for (const main of doc.nodes.filter(
+        (n) => n.type === "component" && set.has(n.id),
       )) {
-        for (const member of doc.nodes.filter(
-          (n) => n.componentOwner === instance.id,
-        )) {
-          delete member.componentOwner;
-          delete member.componentPath;
-          delete member.componentOverrides;
-          delete member.componentClears;
-        }
-        instance.type = "group";
-        delete instance.componentId;
+        const familyIds = new Set(descendants(doc, [main.id]));
+        const family = structuredClone(
+          doc.nodes.filter((n) => familyIds.has(n.id)),
+        );
+        const root = family.find((n) => n.id === main.id)!;
+        const matrix = worldTransform(doc, main);
+        root.parentId = null;
+        root.x = matrix[4];
+        root.y = matrix[5];
+        root.rotation = 0;
+        root.fidelity = {
+          ...root.fidelity,
+          size: root.fidelity?.size ?? [root.width, root.height],
+          linear: matrix.slice(0, 4) as [number, number, number, number],
+        };
+        doc.componentLibrary ??= [];
+        doc.componentLibrary = doc.componentLibrary.filter(
+          (c) => c.sourceId !== main.id,
+        );
+        doc.componentLibrary.push({
+          sourceId: main.id,
+          name: main.name,
+          nodes: family,
+          deleted: true,
+        });
       }
       doc.nodes = doc.nodes.filter((n) => !set.has(n.id));
       for (const n of doc.nodes) {
@@ -743,7 +756,10 @@ export function execute(
               ...i,
               actions: i.actions.filter((a) =>
                 a.type === "changeTo"
-                  ? !set.has(a.componentId)
+                  ? !set.has(a.componentId) ||
+                    !!doc.componentLibrary?.some(
+                      (c) => c.sourceId === a.componentId && c.deleted,
+                    )
                   : !("targetId" in a) || !set.has(a.targetId),
               ),
             }))
@@ -1304,7 +1320,7 @@ export function validateDocument(
         (entry.libraryRevision !== undefined &&
           (!Number.isInteger(entry.libraryRevision) ||
             entry.libraryRevision < 1)) ||
-        [entry.missing, entry.localEdits].some(
+        [entry.missing, entry.localEdits, entry.deleted].some(
           (v) => v !== undefined && typeof v !== "boolean",
         ) ||
         typeof entry.sourceId !== "string" ||

@@ -7,6 +7,7 @@ import { ExportDialog } from "./ExportDialog";
 import type { ExportFormat, ExportScope } from "./exportPlan";
 import { LibraryManager } from "./LibraryManager";
 import { availableLibraryEntries } from "./componentLibraries";
+import { ComponentOverridesPanel } from "./ComponentOverridesPanel";
 import { ComponentProperties } from "./ComponentProperties";
 import { CommandMenu, type MenuItem } from "./CommandMenu";
 import {
@@ -4739,8 +4740,24 @@ export default function App() {
                           </p>
                           <button
                             onClick={openMainComponent}
-                            title={t("Edit main component")}
-                            aria-label={t("Edit main component")}
+                            title={t(
+                              doc.componentLibrary?.some(
+                                (c) =>
+                                  c.sourceId === first?.componentId &&
+                                  c.deleted,
+                              )
+                                ? "Restore main component"
+                                : "Edit main component",
+                            )}
+                            aria-label={t(
+                              doc.componentLibrary?.some(
+                                (c) =>
+                                  c.sourceId === first?.componentId &&
+                                  c.deleted,
+                              )
+                                ? "Restore main component"
+                                : "Edit main component",
+                            )}
                           >
                             <Component size={16} />
                           </button>
@@ -4823,6 +4840,12 @@ export default function App() {
                         </>
                       )}
                     </div>
+                    <ComponentOverridesPanel
+                      doc={doc}
+                      node={first}
+                      onChange={change}
+                      onError={notify}
+                    />
                     <div className="alignment">
                       {[
                         { axis: "left", icon: AlignLeft },

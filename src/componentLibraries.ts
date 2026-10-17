@@ -374,6 +374,7 @@ export function availableLibraryEntries(doc: Document) {
   return (doc.componentLibrary ?? []).filter(
     (c) =>
       !c.missing &&
+      !c.deleted &&
       (!c.libraryId ||
         doc.libraries?.find((s) => s.id === c.libraryId)?.enabled !== false),
   );
