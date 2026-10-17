@@ -4,6 +4,9 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Resize to fit content": "适应内容尺寸",
+  "Select an editable freeform container with content":
+    "请选择包含内容的可编辑自由布局容器",
   Variants: "变体",
   "Edit the main component to change instance layer geometry":
     "请编辑主组件来修改实例内部图层的位置与约束",

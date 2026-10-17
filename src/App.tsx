@@ -72,6 +72,7 @@ import {
 } from "./PathDrawingOverlay";
 import { drawnPath } from "./pathDrawing";
 import { nodeSelectionBounds } from "./pathBounds";
+import { canFitContent, fitContent } from "./fitContent";
 import { VectorEditor } from "./VectorEditor";
 import { editableNetwork, convertToPaths } from "./vectorGeometry";
 import { BooleanIcon } from "./BooleanIcon";
@@ -5338,6 +5339,22 @@ export default function App() {
                     <section>
                       <div className="section-heading">
                         {t("Auto layout")}
+                        {canFitContent(doc, first) && (
+                          <button
+                            className="tiny"
+                            title={t("Resize to fit content")}
+                            aria-label={t("Resize to fit content")}
+                            onClick={() => {
+                              try {
+                                change(fitContent(doc, first.id));
+                              } catch (error) {
+                                notify((error as Error).message);
+                              }
+                            }}
+                          >
+                            <ScanLine size={14} />
+                          </button>
+                        )}
                         <button
                           className="tiny"
                           title={t("Add auto layout · Shift A")}
