@@ -52,6 +52,11 @@ export function validateComponentModels(doc: Document) {
           new Set(values).size !== values.length
         )
           throw Error("Invalid variant axis");
+      if (
+        set.defaultComponentId !== undefined &&
+        !set.variants.some((v) => v.componentId === set.defaultComponentId)
+      )
+        throw Error("Invalid default variant");
       const refs = new Set<string>();
       for (const variant of set.variants) {
         if (
@@ -69,6 +74,14 @@ export function validateComponentModels(doc: Document) {
     }
   }
   for (const n of doc.nodes) {
+    if (
+      n.exposedNestedInstances &&
+      (!Array.isArray(n.exposedNestedInstances) ||
+        n.exposedNestedInstances.length > 256 ||
+        n.exposedNestedInstances.some((p) => typeof p !== "string"))
+    )
+      throw Error("Invalid exposed nested instances");
+
     if (
       n.componentSlotKey !== undefined &&
       typeof n.componentSlotKey !== "string"

@@ -308,6 +308,9 @@ export function useLibrary(
     ...(pack.componentSets ?? []).map((s) => ({
       ...structuredClone(s),
       id: prefix + encodeURIComponent(s.id),
+      defaultComponentId: s.defaultComponentId
+        ? reference(s.defaultComponentId)
+        : undefined,
       variants: s.variants.map((v) => ({
         ...v,
         componentId: reference(v.componentId),

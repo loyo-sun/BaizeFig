@@ -13,10 +13,13 @@ export function remapComponentMetadata(
       map.get(node.componentSlotKey) ?? node.componentSlotKey;
   if (node.componentPath !== undefined)
     node.componentPath = path(node.componentPath);
+  if (node.exposedNestedInstances)
+    node.exposedNestedInstances = node.exposedNestedInstances.map(path);
   if (node.componentProperties)
     node.componentProperties = node.componentProperties.map((p) => ({
       ...p,
       targetPath: path(p.targetPath),
+      additionalTargetPaths: p.additionalTargetPaths?.map(path),
       defaultValue:
         p.type === "instance"
           ? reference(String(p.defaultValue))

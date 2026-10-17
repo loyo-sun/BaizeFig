@@ -4,6 +4,23 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Component set": "组件集",
+  "Library status {updates} {missing}":
+    "组件库：{updates} 项更新，{missing} 项来源缺失",
+  "Move property down": "下移属性",
+  "Move property up": "上移属性",
+  "Nested property {name}": "嵌套属性 {name}",
+  "Nested instance unavailable": "嵌套实例已不可用",
+  "Expose nested instance properties": "显示嵌套实例属性",
+  "Invalid default variant": "默认变体必须属于当前组件集",
+  "Select editable layers outside instances": "请选择实例之外的可编辑图层",
+  "Select a main component": "请选择主组件",
+  "Documentation URL": "文档链接",
+  "Component description": "组件说明",
+  "Component documentation": "组件说明与文档",
+  "Create multiple components": "分别创建多个组件",
+  "Add new variant": "新增变体",
+  "Create independent component": "创建独立主组件",
   "Insert instance": "插入实例",
   "Default variant": "默认变体",
   "Component details {name}": "组件详情 {name}",

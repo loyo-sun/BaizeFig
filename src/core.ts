@@ -93,6 +93,8 @@ export interface Node {
     spellCheck?: boolean;
     language?: string;
   };
+  componentSetId?: string;
+  exposedNestedInstances?: string[];
   componentDescription?: string;
   componentDocumentation?: string;
   text: string;
@@ -206,7 +208,12 @@ export type Command =
   | { type: "delete"; ids: string[] }
   | { type: "group"; ids: string[]; kind?: "group" | "frame" | "component" }
   | { type: "ungroup"; ids: string[] }
-  | { type: "duplicate"; ids: string[]; offset?: number }
+  | {
+      type: "duplicate";
+      ids: string[];
+      offset?: number;
+      independentMain?: boolean;
+    }
   | {
       type: "order";
       ids: string[];
@@ -823,6 +830,20 @@ export function execute(
     }
     case "duplicate": {
       const selected = roots(doc, command.ids);
+      const variantCopies = new Map(
+        selected.flatMap((n) => {
+          const set = doc.componentSets?.find((s) =>
+            s.variants.some((v) => v.componentId === n.id),
+          );
+          return !command.independentMain &&
+            n.type === "component" &&
+            set &&
+            doc.nodes.find((p) => p.id === n.parentId)?.componentSetId ===
+              set.id
+            ? [[n.id, set] as const]
+            : [];
+        }),
+      );
       const all = descendants(
         doc,
         selected.map((n) => n.id),
@@ -840,7 +861,11 @@ export function execute(
           y:
             n.y +
             (selected.some((r) => r.id === n.id) ? (command.offset ?? 20) : 0),
-          name: n.name + " copy",
+          name:
+            (command.independentMain || variantCopies.size > 0) &&
+            !selected.some((r) => r.id === n.id)
+              ? n.name
+              : n.name + " copy",
           componentSlotKey: n.componentSlotKey
             ? (map.get(n.id) ?? n.componentSlotKey)
             : undefined,
@@ -883,12 +908,42 @@ export function execute(
             ),
           }));
       }
-      linkMainCopies(
-        original,
-        clones,
-        map,
-        selected.map((n) => n.id),
-      );
+      if (!command.independentMain)
+        linkMainCopies(
+          original,
+          clones,
+          map,
+          selected.filter((n) => !variantCopies.has(n.id)).map((n) => n.id),
+        );
+      for (const [sourceId, set] of variantCopies) {
+        const originalVariant = set.variants.find(
+          (v) => v.componentId === sourceId,
+        )!;
+        const axis = Object.keys(set.axes)[0];
+        let index = 2,
+          label = "Variant 2";
+        while (set.axes[axis].includes(label)) label = "Variant " + ++index;
+        set.axes[axis].push(label);
+        set.variants.push({
+          componentId: map.get(sourceId)!,
+          values: { ...originalVariant.values, [axis]: label },
+        });
+        const clone = clones.find((n) => n.id === map.get(sourceId))!;
+        clone.name = label;
+        const source = doc.nodes.find((n) => n.id === sourceId)!;
+        if (command.offset === undefined) {
+          clone.x = source.x;
+          clone.y =
+            Math.max(
+              ...doc.nodes
+                .filter((n) => n.parentId === source.parentId)
+                .map((n) => n.y + n.height),
+            ) + 20;
+        }
+        const parent = doc.nodes.find((n) => n.id === clone.parentId);
+        if (parent)
+          parent.height = Math.max(parent.height, clone.y + clone.height + 20);
+      }
       doc.nodes.push(...clones);
       synchronizeInstances(doc);
       selection = selected.map((n) => map.get(n.id)!);

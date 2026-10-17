@@ -1,3 +1,8 @@
+import {
+  createIndependentMain,
+  createMultipleComponents,
+  addComponentVariant,
+} from "./componentAuthoring";
 import { canvasTarget } from "./canvasSelection";
 import { ArrangeIcon } from "./ArrangeIcon";
 import { FigPagePicker } from "./FigPagePicker";
@@ -3193,7 +3198,7 @@ export default function App() {
                   {n.type === "component" ? (
                     <Component size={13} />
                   ) : (
-                    <span aria-hidden="true">◇</span>
+                    <span aria-hidden="true">{"◇"}</span>
                   )}
                 </span>
               )}
@@ -4676,12 +4681,14 @@ export default function App() {
                       <span>
                         {selected.length > 1
                           ? t("{count} selected", { count: selected.length })
-                          : first.type === "component"
-                            ? t("Main component")
-                            : t(
-                                first.type.charAt(0).toUpperCase() +
-                                  first.type.slice(1),
-                              )}
+                          : first.componentSetId
+                            ? t("Component set")
+                            : first.type === "component"
+                              ? t("Main component")
+                              : t(
+                                  first.type.charAt(0).toUpperCase() +
+                                    first.type.slice(1),
+                                )}
                       </span>
                       <div className="inline">
                         <button
@@ -4723,6 +4730,58 @@ export default function App() {
                         {t("Component")}
                         <Component size={14} />
                       </div>
+                      {first.type === "component" && (
+                        <div className="component-authoring-actions">
+                          {[
+                            [
+                              "Create independent component",
+                              createIndependentMain,
+                            ],
+                            ["Add new variant", addComponentVariant],
+                          ].map(([label, action]) => (
+                            <button
+                              key={label as string}
+                              onClick={() => {
+                                try {
+                                  const result = (
+                                    action as typeof createIndependentMain
+                                  )(doc, first.id);
+                                  change(result.doc);
+                                  setSelected(result.selection ?? []);
+                                } catch (e) {
+                                  notify((e as Error).message);
+                                }
+                              }}
+                            >
+                              {t(label as string)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {selected.length > 1 &&
+                        !chosen.some(
+                          (n) =>
+                            n.type === "component" ||
+                            n.type === "instance" ||
+                            n.componentOwner,
+                        ) && (
+                          <button
+                            onClick={() => {
+                              try {
+                                const result = createMultipleComponents(
+                                  doc,
+                                  selected,
+                                );
+                                change(result.doc);
+                                setSelected(result.selection);
+                              } catch (e) {
+                                notify((e as Error).message);
+                              }
+                            }}
+                          >
+                            {t("Create multiple components")}
+                          </button>
+                        )}
                       {first.type === "component" ? (
                         <button
                           className="resource"

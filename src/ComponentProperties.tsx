@@ -1,5 +1,7 @@
+import { ArrowUp, ArrowDown } from "lucide-react";
+import { NestedComponentProperties } from "./NestedComponentProperties";
 import { useState } from "react";
-import { ancestors, id, type Document, type Node } from "./core";
+import { ancestors, execute, id, type Document, type Node } from "./core";
 import {
   componentTargets,
   componentPropertyState,
@@ -38,7 +40,14 @@ export function ComponentProperties({
   const main =
       node.type === "component"
         ? node
-        : ancestors(doc, node).find((n) => n.type === "component"),
+        : node.componentSetId
+          ? doc.nodes.find(
+              (n) =>
+                n.id ===
+                doc.componentSets?.find((s) => s.id === node.componentSetId)
+                  ?.variants[0]?.componentId,
+            )
+          : ancestors(doc, node).find((n) => n.type === "component"),
     owner =
       node.type === "instance" &&
       (!node.componentOwner || node.componentOwner === node.id)
@@ -76,6 +85,76 @@ export function ComponentProperties({
     <section className="component-properties text-properties">
       <div className="section-heading">{t("Component properties")}</div>
       {error && <p role="alert">{t(error)}</p>}
+      {root && (
+        <NestedComponentProperties
+          doc={doc}
+          root={root}
+          onChange={onChange}
+          onError={setError}
+        />
+      )}
+      {main && (
+        <details>
+          <summary>{t("Component documentation")}</summary>
+          <label>
+            {t("Description")}
+            <textarea
+              aria-label={t("Component description")}
+              key={main.id + "description"}
+              defaultValue={main.componentDescription ?? ""}
+              onBlur={(e) =>
+                act(
+                  () =>
+                    execute(doc, {
+                      type: "update",
+                      ids: [main.id],
+                      patch: { componentDescription: e.target.value },
+                    }).doc,
+                )
+              }
+            />
+          </label>
+          <label>
+            {t("Documentation URL")}
+            <input
+              type="url"
+              aria-label={t("Documentation URL")}
+              key={main.id + "url"}
+              defaultValue={main.componentDocumentation ?? ""}
+              onBlur={(e) =>
+                act(
+                  () =>
+                    execute(doc, {
+                      type: "update",
+                      ids: [main.id],
+                      patch: { componentDocumentation: e.target.value },
+                    }).doc,
+                )
+              }
+            />
+          </label>
+        </details>
+      )}
+      {main && set && (
+        <label>
+          {t("Default variant")}
+          <select
+            aria-label={t("Default variant")}
+            value={set.defaultComponentId ?? set.variants[0].componentId}
+            onChange={(e) =>
+              editSet({ ...set, defaultComponentId: e.target.value })
+            }
+          >
+            {set.variants.map((v) => (
+              <option key={v.componentId} value={v.componentId}>
+                {definitions.find((d) => d.reference === v.componentId)?.name ??
+                  v.componentId}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       {selectedMains.length > 1 && (
         <button
           disabled={selectedMains.some((n) =>
@@ -165,6 +244,53 @@ export function ComponentProperties({
             );
             return (
               <div className="property-definition" key={property.id}>
+                {main && (
+                  <div className="property-order">
+                    {[-1, 1].map((direction) => {
+                      const properties = main.componentProperties ?? [],
+                        index = properties.findIndex(
+                          (p) => p.id === property.id,
+                        ),
+                        label = t(
+                          direction < 0
+                            ? "Move property up"
+                            : "Move property down",
+                        );
+                      return (
+                        <button
+                          key={direction}
+                          aria-label={label + " " + property.name}
+                          title={label}
+                          disabled={
+                            index + direction < 0 ||
+                            index + direction >= properties.length
+                          }
+                          onClick={() =>
+                            act(() => {
+                              const ordered = [...properties];
+                              [ordered[index], ordered[index + direction]] = [
+                                ordered[index + direction],
+                                ordered[index],
+                              ];
+                              return execute(doc, {
+                                type: "update",
+                                ids: [main.id],
+                                patch: { componentProperties: ordered },
+                              }).doc;
+                            })
+                          }
+                        >
+                          {direction < 0 ? (
+                            <ArrowUp size={14} />
+                          ) : (
+                            <ArrowDown size={14} />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {main ? (
                   <input
                     aria-label={t("Property name {name}", {
@@ -702,6 +828,10 @@ export function ComponentProperties({
                     editSet({
                       ...set,
                       variants,
+                      defaultComponentId:
+                        set.defaultComponentId === v.componentId
+                          ? variants[0]?.componentId
+                          : set.defaultComponentId,
                       axes: Object.fromEntries(
                         Object.keys(set.axes).map((axis) => [
                           axis,
@@ -731,6 +861,11 @@ export function ComponentProperties({
                     ...doc,
                     componentSets: doc.componentSets?.filter(
                       (s) => s.id !== set.id,
+                    ),
+                    nodes: doc.nodes.map((n) =>
+                      n.componentSetId === set.id
+                        ? { ...n, componentSetId: undefined }
+                        : n,
                     ),
                   })
                 }

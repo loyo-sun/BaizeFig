@@ -211,7 +211,7 @@ it("round-trips references, rejects missing definitions and ignores change-to ou
   ];
   expect(() => validateDocument(d)).toThrow("Invalid prototype component");
 });
-it("remaps copied state references and removes actions pointing to a deleted native component", () => {
+it("keeps linked duplicate state references and retains deleted definitions for restoration", () => {
   const { d } = fixture(),
     copy = execute(d, { type: "duplicate", ids: ["default", "active"] }).doc;
   const copied = copy.nodes.find(
@@ -222,11 +222,28 @@ it("remaps copied state references and removes actions pointing to a deleted nat
     )!;
   expect(copied.interactions![0].actions[0]).toEqual({
     type: "changeTo",
-    componentId: active.id,
+    componentId: "active",
   });
+  expect(active.type).toBe("instance");
+  const independent = execute(d, {
+    type: "duplicate",
+    ids: ["default", "active"],
+    independentMain: true,
+  }).doc;
+  const newActive = independent.nodes.find(
+    (n) => n.id !== "active" && n.name === "Button active copy",
+  )!;
+  expect(
+    independent.nodes.find(
+      (n) => n.id !== "default" && n.name === "Button copy",
+    )!.interactions![0].actions[0],
+  ).toEqual({ type: "changeTo", componentId: newActive.id });
   const deleted = execute(d, { type: "delete", ids: ["active"] }).doc;
   expect(deleted.nodes.find((n) => n.id === "default")!.interactions).toEqual(
-    [],
+    d.nodes.find((n) => n.id === "default")!.interactions,
   );
+  expect(
+    deleted.componentLibrary?.find((c) => c.sourceId === "active")?.deleted,
+  ).toBe(true);
   validateDocument(deleted);
 });

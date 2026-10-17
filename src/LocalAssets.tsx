@@ -1,3 +1,4 @@
+import { latestLibraries } from "./storage";
 import { useEffect, useRef, useState } from "react";
 import { Component, Search, Grid2X2, List, ArrowLeft, X } from "lucide-react";
 import type { Document, Node } from "./core";
@@ -31,6 +32,24 @@ export function LocalAssets({
   onPreview?: (client?: Point) => void;
   onLibraries: () => void;
 }) {
+  const [updates, setUpdates] = useState(0);
+  useEffect(() => {
+    let active = true;
+    void latestLibraries()
+      .then((packs) => {
+        if (active)
+          setUpdates(
+            (doc.libraries ?? []).filter((l) =>
+              packs.some((p) => p.id === l.id && p.revision > l.revision),
+            ).length,
+          );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [doc.libraries]);
+  const missing = (doc.componentLibrary ?? []).filter((e) => e.missing).length;
   const { t } = useI18n(),
     [query, setQuery] = useState(""),
     [mode, setMode] = useState("grid"),
@@ -169,6 +188,11 @@ export function LocalAssets({
   });
   return (
     <section className="local-assets" aria-label={t("Local components")}>
+      {(updates > 0 || missing > 0) && (
+        <button className="resource" onClick={onLibraries}>
+          {t("Library status {updates} {missing}", { updates, missing })}
+        </button>
+      )}
       {draft && root ? (
         <>
           <button

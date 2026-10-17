@@ -1,6 +1,14 @@
 import { clearVectorFillOverrides } from "./vectorFill";
 import { applyTypedBindings } from "./typedVariables";
-import { relayout, validateDocument, ancestors } from "./core";
+import {
+  relayout,
+  validateDocument,
+  ancestors,
+  makeNode,
+  bounds,
+  worldTransform,
+  setWorldTransform,
+} from "./core";
 import { applyConstraints } from "./layout";
 import { reflowText } from "./textLayout";
 import {
@@ -52,6 +60,7 @@ const fixed = new Set([
   "componentSlot",
   "componentSlotKey",
   "componentProperties",
+  "exposedNestedInstances",
 ]);
 const properties = (n: Node): Patch =>
   Object.fromEntries(
@@ -916,12 +925,14 @@ export function setComponentProperty(
         target.componentId = property.defaultValue;
     }
   }
-  def.root.componentProperties = [
-    ...(def.root.componentProperties ?? []).filter(
-      (p) => p.id !== (property?.id ?? removeId),
-    ),
-    ...(property ? [structuredClone(property)] : []),
-  ];
+  const oldProperties = def.root.componentProperties ?? [];
+  def.root.componentProperties = property
+    ? oldProperties.some((p) => p.id === property.id)
+      ? oldProperties.map((p) =>
+          p.id === property.id ? structuredClone(property) : p,
+        )
+      : [...oldProperties, structuredClone(property)]
+    : oldProperties.filter((p) => p.id !== removeId);
   updateLibraryFromMain(doc, [def.root.id]);
   synchronizeInstances(doc);
   return finalized(original, doc);
@@ -950,6 +961,14 @@ export function setComponentValue(
   if (prop.type === "instance" && !definition(doc, String(value)))
     throw Error("Missing main component");
   root.componentValues = { ...root.componentValues, [propertyId]: value };
+  if (root.componentOwner && root.componentOwner !== root.id) {
+    const owner = doc.nodes.find((n) => n.id === root.componentOwner)!;
+    owner.componentOverrides ??= {};
+    owner.componentOverrides[root.componentPath ?? ""] = {
+      ...owner.componentOverrides[root.componentPath ?? ""],
+      componentValues: structuredClone(root.componentValues),
+    };
+  }
   synchronizeInstances(doc);
   return finalized(original, doc);
 }
@@ -988,10 +1007,53 @@ export function setComponentSet(
     if (!def) throw Error("Missing main component");
     assertWritable(doc, def.root);
   }
+  const combinations = set.variants.map((v) =>
+    JSON.stringify(
+      Object.keys(set.axes)
+        .sort()
+        .map((k) => v.values[k]),
+    ),
+  );
+  if (new Set(combinations).size !== combinations.length)
+    throw Error("Duplicate variant combination");
   doc.componentSets = [
     ...(doc.componentSets ?? []).filter((s) => s.id !== set.id),
     structuredClone(set),
   ];
+  const mains = set.variants.map((v) =>
+    doc.nodes.find((n) => n.id === v.componentId && n.type === "component"),
+  );
+  if (
+    mains.every((n): n is Node => !!n && !n.componentOwner) &&
+    new Set(mains.map((n) => n.pageId)).size === 1
+  ) {
+    let frame = doc.nodes.find((n) => n.componentSetId === set.id);
+    const transforms = mains.map((n) => worldTransform(doc, n));
+    const box = bounds(doc, mains);
+    if (!frame) {
+      frame = makeNode("frame", mains[0].pageId, {
+        name: set.name,
+        componentSetId: set.id,
+        fill: "none",
+        stroke: "#9747ff",
+        strokeWidth: 1,
+        x: box.x - 24,
+        y: box.y - 24,
+        width: box.width + 48,
+        height: box.height + 48,
+      });
+      doc.nodes.push(frame);
+    }
+    frame.name = set.name;
+    for (let i = 0; i < mains.length; i++) {
+      mains[i].parentId = frame.id;
+      setWorldTransform(doc, mains[i], transforms[i]);
+    }
+    const current = worldTransform(doc, frame);
+    frame.width = Math.max(frame.width, box.x + box.width - current[4] + 24);
+    frame.height = Math.max(frame.height, box.y + box.height - current[5] + 24);
+  }
+  synchronizeInstances(doc);
   return finalized(original, doc);
 }
 export function switchVariant(
