@@ -639,6 +639,7 @@ export function swapComponentInstance(
     const local = structuredClone(original);
     const localRoot = local.nodes.find((n) => n.id === id)!;
     localRoot.componentOverrides ??= {};
+    localRoot.componentClears ??= {};
     const sourceDef =
       current.componentId && definition(original, current.componentId);
     if (sourceDef) {
@@ -651,9 +652,24 @@ export function swapComponentInstance(
       );
       function collect(live: Node, base: Node) {
         const patch = owner.componentOverrides?.[live.componentPath ?? ""];
-        if (patch && live.id !== id)
+        const clears = owner.componentClears?.[live.componentPath ?? ""];
+        if (clears)
+          localRoot.componentClears![basePaths.get(base.id)!] =
+            structuredClone(clears);
+        if (patch)
           localRoot.componentOverrides![basePaths.get(base.id)!] =
-            structuredClone(patch);
+            live.id === id
+              ? Object.fromEntries(
+                  Object.entries(structuredClone(patch)).filter(
+                    ([key]) =>
+                      ![
+                        "componentId",
+                        "componentValues",
+                        "componentSlots",
+                      ].includes(key),
+                  ),
+                )
+              : structuredClone(patch);
         const used = new Set<string>();
         for (const child of children(original.nodes, live.id)) {
           const match = children(sourceNodes, base.id).find(
@@ -681,10 +697,16 @@ export function swapComponentInstance(
       if (path.startsWith(prefix + "/")) delete owner.componentClears![path];
     recordOverrides(doc, [id], { componentId: reference });
     owner.componentOverrides![prefix] = {
-      ...owner.componentOverrides![prefix],
+      ...changedRoot.componentOverrides?.[""],
+      componentId: reference,
       componentValues: changedRoot.componentValues,
       componentSlots: changedRoot.componentSlots,
     };
+    if (owner.componentClears) delete owner.componentClears[prefix];
+    if (changedRoot.componentClears?.[""]) {
+      owner.componentClears ??= {};
+      owner.componentClears[prefix] = changedRoot.componentClears[""];
+    }
     synchronizeInstances(doc);
     const targetDef = definition(doc, reference)!;
     const targetPaths = new Map(

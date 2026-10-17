@@ -145,3 +145,39 @@ it("retains matching nested text overrides after swapping and saving an outer in
     )?.text,
   ).toBe("Custom");
 });
+it("compares nested instance root fill defaults when switching variants", () => {
+  let d = emptyDocument();
+  const p = d.pages[0].id;
+  d.nodes.push(
+    makeNode("component", p, { id: "a", fill: "#000000" }),
+    makeNode("component", p, { id: "b", fill: "#ffffff" }),
+    makeNode("component", p, { id: "card" }),
+  );
+  d.componentSets = [
+    {
+      id: "set",
+      name: "Button",
+      axes: { State: ["A", "B"] },
+      variants: [
+        { componentId: "a", values: { State: "A" } },
+        { componentId: "b", values: { State: "B" } },
+      ],
+    },
+  ];
+  const n = createComponentInstance(d, "a", p, 0, 0);
+  d = execute(n.doc, { type: "reparent", ids: [n.id], parentId: "card" }).doc;
+  const outer = createComponentInstance(d, "card", p, 500, 0);
+  const child = outer.doc.nodes.find(
+    (n) =>
+      n.componentOwner === outer.id &&
+      n.type === "instance" &&
+      n.id !== outer.id,
+  )!;
+  d = execute(outer.doc, {
+    type: "update",
+    ids: [child.id],
+    patch: { fill: "#ff0000" },
+  }).doc;
+  d = swapComponentInstance(d, child.id, "b");
+  expect(d.nodes.find((n) => n.id === child.id)?.fill).toBe("#ffffff");
+});

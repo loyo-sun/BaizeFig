@@ -4,6 +4,7 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  Variants: "变体",
   "Edit the main component to change instance layer geometry":
     "请编辑主组件来修改实例内部图层的位置与约束",
   componentValues: "嵌套组件属性",

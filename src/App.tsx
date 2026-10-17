@@ -1441,10 +1441,15 @@ export default function App() {
   }
   function presentStart() {
     const frame =
-      first?.type === "frame"
+      first?.type === "frame" && !first.componentSetId
         ? first
         : doc.nodes.find(
-            (n) => n.pageId === page && n.type === "frame" && !n.parentId,
+            (n) =>
+              n.pageId === page &&
+              n.type === "frame" &&
+              !n.parentId &&
+              !n.componentSetId &&
+              n.visible,
           );
     if (frame) setPresent(frame.id);
     else notify("Create a frame to start a prototype");
