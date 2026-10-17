@@ -4,6 +4,18 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Pairing rejected. Check the token and disconnect any other paired editor.":
+    "配对被拒绝，请检查令牌并断开其他已配对的编辑器。",
+  "MCP service address": "MCP 服务地址",
+  "Allow MCP screenshots and SVG export": "允许 MCP 截图和导出 SVG",
+  "Connect an MCP client to this open design using a local or self-hosted service.":
+    "通过本地或自部署服务，让 MCP 客户端访问当前打开的设计。",
+  "for local stdio, or deploy the HTTP service with npm run mcp:http.":
+    "用于本地 stdio，或通过 npm run mcp:http 部署 HTTP 服务。",
+  "Keep this editor open. Self-hosted HTTP clients need a separate Bearer token; the pairing token only connects this browser. Disconnecting revokes editing and export permissions.":
+    "请保持编辑器打开。自部署 HTTP 客户端需要单独的访问令牌；配对令牌仅连接浏览器。断开后将撤销编辑和导出权限。",
+  "Bridge connection failed. Check the service address, editor origin and pairing token.":
+    "连接失败，请检查服务地址、编辑器来源和配对令牌。",
   "Resize to fit content": "适应内容尺寸",
   "Select an editable freeform container with content":
     "请选择包含内容的可编辑自由布局容器",

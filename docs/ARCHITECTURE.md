@@ -39,7 +39,7 @@ React + TypeScript + Vite，SVG 场景渲染，IndexedDB 持久化。没有中�
 
 ## 命令
 
-命令返回新的文档副本与可选选区。旧文档保持不变；校验失败不提交。可通过 `get_document` 获取现有节点作为结构参考。创建节点应包含 `makeNode` 所定义的完整字段。
+命令返回新的文档副本与可选选区。旧文档保持不变；校验失败不提交。可通过 `get_document` 获取现有节点作为结构参考。命令引擎的 create 节点需要完整字段；MCP 适配层可接收基本字段并通过 `makeNode` 补全默认值。
 
 ```json
 {"type":"update","ids":["existing-node-id"],"patch":{"fill":"#2563eb","radius":8}}
@@ -49,7 +49,7 @@ React + TypeScript + Vite，SVG 场景渲染，IndexedDB 持久化。没有中�
 {"type":"layout","id":"existing-frame-id","direction":"horizontal","gap":12,"padding":16}
 ```
 
-支持：`create`、`update`、`delete`、`group`、`ungroup`、`duplicate`、`order`、`align`、`layout`。读取 `core.ts` 的 `Command` 类型获得精确参数。
+支持：`create`、`update`、`delete`、`group`、`ungroup`、`duplicate`、`order`、`align`、`layout`、`reparent`。读取 `core.ts` 的 `Command` 类型获得精确参数。
 
 锁定节点及其锁定祖先保护节点变更。导入会校验版本、节点唯一性、页面关联、父节点类型、循环结构、数值和图片数据。删除清理子树与原型目标引用。AI/MCP 批量先在副本执行全部命令，再整体应用，作为一个撤销单元。
 
@@ -63,7 +63,11 @@ IndexedDB 数据库 `baizefig` 已升级为版本 2，包含 documents、setting
 
 AI 仅允许 create/update/delete/layout 命令，命令经统一执行器。用户需配置兼容 API；没有平台 Key，也没有服务商代理。生产模型的 CORS 与实际输出质量仍需专项验证。
 
-MCP 使用官方 SDK stdio 传输。浏览器主动连接本机 WebSocket；服务器绑定回环地址，检查 Origin 和随机令牌。读取与写入权限分离，浏览器默认不允许写入；切换设计文件会断开连接并撤销写入授权。桥不具备任意本机文件读取工具。关闭服务会断开协同；此桥不是 P2P 服务或远程 HTTPS MCP。
+MCP 使用官方 SDK，支持 stdio 和自部署 Streamable HTTP。HTTP 使用独立 Bearer 访问令牌，浏览器主动连接 `/bridge` WebSocket，在 Origin/Host 检查后通过首帧配对，不在 URL 中携带凭据。单实例仅配对一个编辑器；浏览器分别授权编辑与截图/导出，切换文件、断开或刷新后需重新授权。
+
+`bridge/contracts.mjs` 提供服务端和浏览器共享的严格参数契约；`src/mcp.ts` 负责目标校验、分页读取、修订号、批次预览、原子提交与幂等回执。修改仍由 `execute` 校验并形成一个历史单元。修订号随文档对象变化更新；写入必须指定 documentId/editorId/expectedRevision/idempotencyKey。回执限于当前编辑器生命周期，刷新后不可盲目重放。
+
+桥不具备任意本机文件读取或脚本执行能力。阶段一静态编辑器仍保存本地文档，没有中心化存储、多用户路由或无人值守渲染。详见 [MCP 指南](MCP.md)。
 
 ## 后续架构工作
 
@@ -72,6 +76,6 @@ MCP 使用官方 SDK stdio 传输。浏览器主动连接本机 WebSocket；服�
 3. 增加字体测量、多段样式、复杂布局、约束、组件实例与变量系统。
 4. 为格式导入器建立样本库和独立转换层，验证 `.fig` / `.sketch` 的真实还原能力。
 5. 按节点/属性映射 CRDT，明确协同权限及主机离线行为后接入 Yjs/WebRTC。
-6. 添加可替换信令、资源通道、重连恢复，再实现远程 MCP 认证与会话桥接。
+6. 添加可替换信令、资源通道、重连恢复，在阶段一自部署 MCP 基础上实现阶段二多用户服务与认证。
 
 后续能力不会因为文档中有规划就视为已经实现。

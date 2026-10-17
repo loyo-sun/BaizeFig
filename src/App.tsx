@@ -1,3 +1,4 @@
+import { EditorMcp, McpError, bridgeWebSocketUrl } from "./mcp";
 import {
   createIndependentMain,
   createMultipleComponents,
@@ -439,6 +440,8 @@ export default function App() {
       base: string;
     } | null>(null);
   const [bridgeToken, setBridgeToken] = useState(""),
+    [bridgeAddress, setBridgeAddress] = useState("http://127.0.0.1:4319/mcp"),
+    [bridgeExport, setBridgeExport] = useState(false),
     [bridgeStatus, setBridgeStatus] = useState("Disconnected"),
     [bridgeWrite, setBridgeWrite] = useState(false);
   const history = useRef(new History()),
@@ -447,6 +450,7 @@ export default function App() {
     clipboard = useRef<NodeClipboard | null>(null),
     space = useRef(false),
     socket = useRef<WebSocket | null>(null),
+    mcp = useRef(new EditorMcp()),
     abort = useRef<AbortController | null>(null);
   const [spaceHeld, setSpaceHeld] = useState(false),
     [isPanning, setIsPanning] = useState(false);
@@ -460,8 +464,7 @@ export default function App() {
   }, [tool]);
   const pathDrawing = useRef<PathDrawingHandle>(null);
   useEffect(() => {
-    socket.current?.close();
-    setBridgeWrite(false);
+    disconnectBridge();
     setCollapsed(
       new Set(doc.nodes.filter((n) => container(n)).map((n) => n.id)),
     );
@@ -509,8 +512,22 @@ export default function App() {
     setHoverTarget(null);
   }, [doc.id, page]);
   const committedDocument = useRef<Document | null>(null);
-  const current = useRef({ doc, page, selected, bridgeWrite });
-  current.current = { doc, page, selected, bridgeWrite };
+  const current = useRef({
+    doc,
+    page,
+    selected,
+    bridgeWrite,
+    bridgeExport,
+    editing: Boolean(editingText || editingCrop || editingVector),
+  });
+  current.current = {
+    doc,
+    page,
+    selected,
+    bridgeWrite,
+    bridgeExport,
+    editing: Boolean(editingText || editingCrop || editingVector),
+  };
   const scenePointerRef = useRef(pointerDown);
   scenePointerRef.current = pointerDown;
   const scenePointerDown = useCallback(
@@ -2968,82 +2985,140 @@ export default function App() {
       notify((e as Error).message);
     }
   }
+  function disconnectBridge() {
+    const ws = socket.current;
+    socket.current = null;
+    ws?.close();
+    if (current.current)
+      current.current = {
+        ...current.current,
+        bridgeWrite: false,
+        bridgeExport: false,
+      };
+    setBridgeWrite(false);
+    setBridgeExport(false);
+    setBridgeStatus("Disconnected");
+  }
   function connectBridge() {
-    socket.current?.close();
-    const ws = new WebSocket(
-      `ws://127.0.0.1:4319/?token=${encodeURIComponent(bridgeToken)}`,
-    );
+    let address: string;
+    try {
+      address = bridgeWebSocketUrl(bridgeAddress.trim());
+    } catch (e) {
+      notify((e as Error).message);
+      return;
+    }
+    const previous = socket.current;
+    socket.current = null;
+    previous?.close();
+    const ws = new WebSocket(address);
+    const documentId = current.current.doc.id;
     socket.current = ws;
     setBridgeStatus("Connecting…");
-    ws.onopen = () => setBridgeStatus("Connected");
-    ws.onclose = () => setBridgeStatus("Disconnected");
-    ws.onerror = () =>
-      notify(
-        "Bridge connection failed. Start npm run bridge and check the pairing token.",
+    ws.onopen = () => {
+      if (socket.current !== ws || current.current.doc.id !== documentId) {
+        ws.close();
+        return;
+      }
+      ws.send(
+        JSON.stringify({
+          type: "pair",
+          token: bridgeToken,
+          documentId,
+          editorId: mcp.current.editorId,
+        }),
       );
+    };
+    ws.onclose = (event) => {
+      if (socket.current === ws) {
+        disconnectBridge();
+        if (event.code === 1008)
+          notify(
+            "Pairing rejected. Check the token and disconnect any other paired editor.",
+          );
+      }
+    };
+    ws.onerror = () => {
+      if (socket.current === ws)
+        notify(
+          "Bridge connection failed. Check the service address, editor origin and pairing token.",
+        );
+    };
     ws.onmessage = async (event) => {
+      if (socket.current !== ws || current.current.doc.id !== documentId)
+        return;
       let message: {
         id: string;
+        type?: string;
         method: string;
-        params?: { commands?: Command[] };
+        params?: Record<string, unknown>;
       };
       try {
         message = JSON.parse(event.data);
       } catch {
         return;
       }
+      if (!message || typeof message !== "object") return;
+      if (message.type === "paired") {
+        setBridgeStatus("Connected");
+        return;
+      }
       try {
         const c = current.current;
-        let result: unknown;
-        if (message.method === "get_document") result = c.doc;
-        else if (message.method === "get_selection")
-          result = {
-            ids: c.selected,
-            nodes: c.doc.nodes.filter((n) => c.selected.includes(n.id)),
-          };
-        else if (message.method === "get_screenshot") {
+        if (
+          (drag.current || c.editing) &&
+          ["apply_commands", "preview_commands"].includes(message.method)
+        )
+          throw new McpError(
+            "EDITOR_BUSY",
+            "Finish the current canvas or text edit before editing through MCP",
+          );
+        let result = mcp.current.handle(
+          message.method,
+          message.params ?? {},
+          c,
+          (next) => {
+            history.current.push(c.doc);
+            current.current = { ...c, doc: next };
+            setDoc(next);
+          },
+        );
+        if (message.method === "get_screenshot") {
           const blob = await raster(await svgString(c.doc, c.page, c.selected));
-          result = await new Promise<string>((resolve) => {
+          result = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = () => resolve(String(reader.result));
+            reader.onerror = () => reject(Error("PNG conversion failed"));
             reader.readAsDataURL(blob);
           });
         } else if (message.method === "export_svg")
           result = await svgString(c.doc, c.page, c.selected);
-        else if (message.method === "apply_commands") {
-          if (!c.bridgeWrite)
-            throw Error("Write access is disabled in the editor");
-          const commands = message.params?.commands;
-          if (!Array.isArray(commands) || commands.length > 100)
-            throw Error("Invalid command batch");
-          let next = c.doc;
-          for (const cmd of commands) {
-            if (
-              ![
-                "create",
-                "update",
-                "delete",
-                "group",
-                "ungroup",
-                "duplicate",
-                "order",
-                "align",
-                "layout",
-              ].includes(cmd.type)
-            )
-              throw Error("Unknown command");
-            next = execute(next, cmd).doc;
-          }
-          history.current.push(c.doc);
-          current.current = { ...c, doc: next };
-          setDoc(next);
-          result = { applied: commands.length };
-        } else throw Error("Unknown method");
-        ws.send(JSON.stringify({ id: message.id, result }));
+        // Async rendering must not release content after a document switch or permission revocation.
+        if (socket.current !== ws || current.current.doc.id !== documentId)
+          return;
+        if (
+          ["export_svg", "get_screenshot"].includes(message.method) &&
+          !current.current.bridgeExport
+        )
+          throw new McpError("PERMISSION_DENIED", "Export access was revoked");
+        const response = JSON.stringify({ id: message.id, result });
+        if (new TextEncoder().encode(response).length > 8 * 1024 * 1024)
+          throw new McpError(
+            "RESULT_TOO_LARGE",
+            "Result exceeds 8 MiB. Read fewer fields/nodes or export a smaller selection.",
+          );
+        if (ws.readyState === WebSocket.OPEN) ws.send(response);
       } catch (e) {
-        ws.send(
-          JSON.stringify({ id: message.id, error: (e as Error).message }),
-        );
+        const error = e as McpError;
+        if (socket.current === ws && ws.readyState === WebSocket.OPEN)
+          ws.send(
+            JSON.stringify({
+              id: message.id,
+              error: {
+                code: error.code ?? "INVALID_COMMAND",
+                message: error.message,
+              },
+            }),
+          );
       }
     };
   }
@@ -6832,7 +6907,7 @@ export default function App() {
               <>
                 <p className="muted">
                   {t(
-                    "Let an MCP client read and edit this open design through the local bridge.",
+                    "Connect an MCP client to this open design using a local or self-hosted service.",
                   )}
                 </p>
                 <div className="connection-state">
@@ -6846,7 +6921,9 @@ export default function App() {
                 <ol className="bridge-steps">
                   <li>
                     {t("In this project, start")} <code>npm run bridge</code>{" "}
-                    {t("as a stdio MCP server in your client.")}
+                    {t(
+                      "for local stdio, or deploy the HTTP service with npm run mcp:http.",
+                    )}
                   </li>
                   <li>
                     {t(
@@ -6860,6 +6937,15 @@ export default function App() {
                   </li>
                 </ol>
                 <label className="config-label">
+                  {t("MCP service address")}
+                  <input
+                    aria-label={t("MCP service address")}
+                    value={bridgeAddress}
+                    onChange={(e) => setBridgeAddress(e.target.value)}
+                    placeholder="https://your-host/mcp"
+                  />
+                </label>
+                <label className="config-label">
                   {t("Pairing token")}
                   <input
                     type="password"
@@ -6872,26 +6958,44 @@ export default function App() {
                   <input
                     type="checkbox"
                     checked={bridgeWrite}
-                    onChange={(e) => setBridgeWrite(e.target.checked)}
+                    onChange={(e) => {
+                      current.current = {
+                        ...current.current,
+                        bridgeWrite: e.target.checked,
+                      };
+                      setBridgeWrite(e.target.checked);
+                    }}
                   />
                   {t("Allow MCP to modify the currently open document")}
+                </label>
+                <label className="checkbox-row">
+                  <input
+                    type="checkbox"
+                    checked={bridgeExport}
+                    onChange={(e) => {
+                      current.current = {
+                        ...current.current,
+                        bridgeExport: e.target.checked,
+                      };
+                      setBridgeExport(e.target.checked);
+                    }}
+                  />
+                  {t("Allow MCP screenshots and SVG export")}
                 </label>
                 <div className="file-actions">
                   <button
                     className="primary"
-                    disabled={!bridgeToken}
+                    disabled={!bridgeToken || bridgeStatus !== "Disconnected"}
                     onClick={connectBridge}
                   >
                     <Link2 size={15} />
                     {t("Connect bridge")}
                   </button>
-                  <button onClick={() => socket.current?.close()}>
-                    {t("Disconnect")}
-                  </button>
+                  <button onClick={disconnectBridge}>{t("Disconnect")}</button>
                 </div>
                 <p className="notice">
                   {t(
-                    "Local bridge only. Remote ChatGPT HTTPS access and P2P sharing are not implemented in this version.",
+                    "Keep this editor open. Self-hosted HTTP clients need a separate Bearer token; the pairing token only connects this browser. Disconnecting revokes editing and export permissions.",
                   )}
                 </p>
               </>

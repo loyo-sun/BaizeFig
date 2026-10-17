@@ -16,24 +16,11 @@ npm run dev
 
 ## MCP
 
-在支持本地 stdio MCP 的客户端中配置：
+支持本地 stdio 和阶段一自部署 Streamable HTTP 接入。静态编辑器与 MCP 服务保留在同一项目中，分别运行；浏览器需要保持打开。
 
-```json
-{
-  "mcpServers": {
-    "baizefig": {
-      "command": "/absolute/path/to/node",
-      "args": ["/absolute/path/to/BaiseFig/bridge/server.mjs"]
-    }
-  }
-}
-```
+完整部署步骤、认证配对、客户端配置、工具契约、错误与验证见 [自部署 MCP 指南](MCP.md)。HTTPS 代理和进程管理示例在 `deploy/`。
 
-启动后从客户端的服务器日志读取配对令牌，在编辑器 **Connect AI** 中填入。Bridge 默认仅监听 `127.0.0.1:4319`，允许编辑器来源 `http://127.0.0.1:4318` 和 `http://localhost:4318`。其他可信编辑器来源可通过 `BAIZEFIG_ORIGINS` 显式配置。读取令牌不会自动允许写入，修改还需在编辑器勾选写入权限。
-
-提供 `get_document`、`get_selection`、`get_screenshot`、`export_svg`、`apply_commands`。目标是当前配对的活动文档；同一时间只允许一个浏览器连接。切换设计文件时自动断开 Bridge 并撤销写入权限；新文档需要重新配对和授权。
-
-远程 ChatGPT 的 HTTPS MCP 入口、P2P 协同、Yjs 合并、信令和 TURN 服务尚未实现。本地 stdio 支持不等于已经验证每个 ChatGPT 客户端都可连接。
+阶段二多用户在线服务、OAuth 登录、云端文档托管和无人值守渲染尚未实现。
 
 ## AI 引擎
 

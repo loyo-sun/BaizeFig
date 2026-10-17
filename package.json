@@ -11,11 +11,14 @@
     "preview": "vite preview --host 127.0.0.1",
     "bridge": "node bridge/server.mjs",
     "format": "prettier --write src bridge scripts tests *.ts *.json *.html",
-    "benchmark": "vitest run tests/performance.test.ts"
+    "benchmark": "vitest run tests/performance.test.ts",
+    "mcp:http": "node bridge/server.mjs --http",
+    "test:mcp": "node --test tests/mcp-transport.test.mjs",
+    "test:mcp:ui": "playwright test --config playwright.mcp.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
-    "@modelcontextprotocol/sdk": "^1.17.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@xmldom/xmldom": "^0.9.12",
     "clipper-lib": "^6.4.2",
     "fflate": "^0.8.3",

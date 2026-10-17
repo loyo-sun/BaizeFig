@@ -1,0 +1,20 @@
+# Example: adjust paths/user. Keep the environment file readable only by the service user.
+[Unit]
+Description=BaizeFig self-hosted MCP
+After=network.target
+
+[Service]
+Type=simple
+User=baizefig
+WorkingDirectory=/srv/baizefig
+EnvironmentFile=/srv/baizefig/.env
+ExecStart=/usr/bin/node bridge/server.mjs --http
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
