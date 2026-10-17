@@ -880,11 +880,20 @@ export function execute(
         selected.map((n) => n.id),
       );
       const map = new Map(all.map((a) => [a, id()]));
+      const copiedSets = (doc.componentSets ?? []).filter(
+        (s) =>
+          selected.some((n) => n.componentSetId === s.id) &&
+          s.variants.every((v) => map.has(v.componentId)),
+      );
+      const setIds = new Map(copiedSets.map((s) => [s.id, id()]));
       const clones = doc.nodes
         .filter((n) => all.includes(n.id))
         .map((n) => ({
           ...structuredClone(n),
           id: map.get(n.id)!,
+          componentSetId: n.componentSetId
+            ? setIds.get(n.componentSetId)
+            : undefined,
           parentId: n.parentId ? (map.get(n.parentId) ?? n.parentId) : null,
           x:
             n.x +
@@ -976,6 +985,18 @@ export function execute(
           parent.height = Math.max(parent.height, clone.y + clone.height + 20);
       }
       doc.nodes.push(...clones);
+      for (const set of copiedSets)
+        doc.componentSets!.push({
+          ...structuredClone(set),
+          id: setIds.get(set.id)!,
+          defaultComponentId: set.defaultComponentId
+            ? map.get(set.defaultComponentId)
+            : undefined,
+          variants: set.variants.map((v) => ({
+            ...v,
+            componentId: map.get(v.componentId)!,
+          })),
+        });
       synchronizeInstances(doc);
       selection = selected.map((n) => map.get(n.id)!);
       break;

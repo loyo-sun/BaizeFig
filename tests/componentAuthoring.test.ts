@@ -4,6 +4,7 @@ import {
   makeNode,
   execute,
   validateDocument,
+  worldTransform,
 } from "../src/core";
 import {
   createIndependentMain,
@@ -14,6 +15,7 @@ import {
   createComponentInstance,
   setComponentValue,
   synchronizeInstances,
+  setComponentSet,
 } from "../src/components";
 it("distinguishes linked duplicate from independent main and preserves child names", () => {
   let doc = emptyDocument(),
@@ -174,4 +176,45 @@ it("rejects geometry edits inside an ordinary instance without rejecting text co
       patch: { text: "Changed" },
     }).doc.nodes.find((n) => n.id === child.id)?.text,
   ).toBe("Changed");
+});
+it("keeps copied sets independent and removes variants without changing their world position", () => {
+  const doc = emptyDocument(),
+    p = doc.pages[0].id;
+  doc.nodes.push(makeNode("component", p, { id: "main", x: 200, y: 100 }));
+  const added = addComponentVariant(doc, "main");
+  const frame = added.doc.nodes.find((n) => n.componentSetId)!;
+  const copy = execute(added.doc, { type: "duplicate", ids: [frame.id] });
+  expect(copy.doc.componentSets).toHaveLength(2);
+  const copiedSet = copy.doc.componentSets![1];
+  expect(copiedSet.id).not.toBe(added.doc.componentSets![0].id);
+  expect(
+    copiedSet.variants.every(
+      (v) =>
+        !added.doc.componentSets![0].variants.some(
+          (o) => o.componentId === v.componentId,
+        ),
+    ),
+  ).toBe(true);
+  expect(
+    copy.doc.nodes.find((n) => n.id === copy.selection![0])?.componentSetId,
+  ).toBe(copiedSet.id);
+  const independent = createIndependentMain(added.doc, "main");
+  expect(
+    independent.doc.nodes.find((n) => n.id === independent.selection![0])
+      ?.parentId,
+  ).toBe(null);
+  const before = worldTransform(
+    added.doc,
+    added.doc.nodes.find((n) => n.id === added.selection![0])!,
+  );
+  const set = added.doc.componentSets![0];
+  const removed = setComponentSet(added.doc, {
+    ...set,
+    variants: set.variants.filter((v) => v.componentId !== added.selection![0]),
+  });
+  const removedMain = removed.nodes.find((n) => n.id === added.selection![0])!;
+  expect(removedMain.parentId).toBe(null);
+  expect(worldTransform(removed, removedMain)).toEqual(before);
+  validateDocument(copy.doc);
+  validateDocument(independent.doc);
 });

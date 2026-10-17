@@ -300,12 +300,51 @@ function expanded(
           parentId: node.parentId,
           pageId: node.pageId,
         };
-        const nested = expanded(
-          doc,
-          virtual,
-          [virtual, ...nodes.filter((n) => n.parentId === base.id)],
-          chain,
+        const stablePrevious: Node[] = [virtual];
+        const targetNodes = target.nodes;
+        const targetPaths = new Map(
+          [...paths(target.nodes, target.root)].map(([p, n]) => [n.id, p]),
         );
+        function retainIds(liveId: string, template: Node) {
+          const used = new Set<string>();
+          for (const child of children(targetNodes, template.id)) {
+            const prior = previous.find(
+              (n) =>
+                n.parentId === liveId &&
+                !used.has(n.id) &&
+                n.name === child.name &&
+                n.type === child.type,
+            );
+            if (prior) {
+              used.add(prior.id);
+              stablePrevious.push({
+                ...prior,
+                componentSlotKey: decodeURIComponent(
+                  (prior.componentPath ?? "")
+                    .split("/")
+                    .pop()!
+                    .replace(/#\d+$/, ""),
+                ),
+                componentOwner: virtual.id,
+                componentPath: targetPaths.get(child.id),
+              });
+              retainIds(prior.id, child);
+            }
+          }
+        }
+        retainIds(node.id, target.root);
+        const nested = expanded(doc, virtual, stablePrevious, chain);
+        for (const member of nested) {
+          const prior = stablePrevious.find((n) => n.id === member.id);
+          member.componentSlotKey =
+            prior?.componentSlotKey ??
+            decodeURIComponent(
+              (member.componentPath ?? "")
+                .split("/")
+                .pop()!
+                .replace(/#\d+$/, ""),
+            );
+        }
         const nestedRoot = nested.find((n) => n.id === virtual.id)!;
         node = merge(
           {
@@ -588,17 +627,94 @@ export function swapComponentInstance(
   assertWritable(original, current);
   if (current.componentId !== reference)
     assertLibraryEnabled(original, reference);
-  if (current.componentOwner && current.componentOwner !== current.id) {
-    const doc = structuredClone(original);
-    recordOverrides(doc, [id], { componentId: reference });
-    synchronizeInstances(doc);
-    return finalized(original, doc);
-  }
   const sameSet = original.componentSets?.some(
     (s) =>
       s.variants.some((v) => v.componentId === current.componentId) &&
       s.variants.some((v) => v.componentId === reference),
   );
+  if (current.componentOwner && current.componentOwner !== current.id) {
+    const doc = structuredClone(original);
+    const owner = doc.nodes.find((n) => n.id === current.componentOwner)!;
+    const prefix = current.componentPath ?? "";
+    const local = structuredClone(original);
+    const localRoot = local.nodes.find((n) => n.id === id)!;
+    localRoot.componentOverrides ??= {};
+    const sourceDef =
+      current.componentId && definition(original, current.componentId);
+    if (sourceDef) {
+      const sourceNodes = sourceDef.nodes;
+      const basePaths = new Map(
+        [...paths(sourceDef.nodes, sourceDef.root)].map(([path, n]) => [
+          n.id,
+          path,
+        ]),
+      );
+      function collect(live: Node, base: Node) {
+        const patch = owner.componentOverrides?.[live.componentPath ?? ""];
+        if (patch && live.id !== id)
+          localRoot.componentOverrides![basePaths.get(base.id)!] =
+            structuredClone(patch);
+        const used = new Set<string>();
+        for (const child of children(original.nodes, live.id)) {
+          const match = children(sourceNodes, base.id).find(
+            (n) =>
+              !used.has(n.id) && n.name === child.name && n.type === child.type,
+          );
+          if (match) {
+            used.add(match.id);
+            collect(child, match);
+          }
+        }
+      }
+      collect(current, sourceDef.root);
+    }
+    const changed = changePrototypeComponent(
+      local,
+      id,
+      reference,
+      sameSet ? true : "names",
+    );
+    const changedRoot = changed.nodes.find((n) => n.id === id)!;
+    for (const path of Object.keys(owner.componentOverrides ?? {}))
+      if (path.startsWith(prefix + "/")) delete owner.componentOverrides![path];
+    for (const path of Object.keys(owner.componentClears ?? {}))
+      if (path.startsWith(prefix + "/")) delete owner.componentClears![path];
+    recordOverrides(doc, [id], { componentId: reference });
+    owner.componentOverrides![prefix] = {
+      ...owner.componentOverrides![prefix],
+      componentValues: changedRoot.componentValues,
+      componentSlots: changedRoot.componentSlots,
+    };
+    synchronizeInstances(doc);
+    const targetDef = definition(doc, reference)!;
+    const targetPaths = new Map(
+      [...paths(targetDef.nodes, targetDef.root)].map(([path, n]) => [
+        n.id,
+        path,
+      ]),
+    );
+    function restore(live: Node, base: Node) {
+      const patch = changedRoot.componentOverrides?.[targetPaths.get(base.id)!];
+      if (patch && live.id !== id) recordOverrides(doc, [live.id], patch);
+      const used = new Set<string>();
+      for (const child of children(doc.nodes, live.id)) {
+        const match = children(targetDef.nodes, base.id).find(
+          (n) =>
+            !used.has(n.id) && n.name === child.name && n.type === child.type,
+        );
+        if (match) {
+          used.add(match.id);
+          restore(child, match);
+        }
+      }
+    }
+    restore(
+      doc.nodes.find((n) => n.id === id)!,
+      targetDef.root,
+    );
+    synchronizeInstances(doc);
+    return finalized(original, doc);
+  }
   const doc = changePrototypeComponent(
     original,
     id,
@@ -1073,6 +1189,21 @@ export function setComponentSet(
   );
   if (new Set(combinations).size !== combinations.length)
     throw Error("Duplicate variant combination");
+  const oldSet = doc.componentSets?.find((s) => s.id === set.id);
+  const oldFrame = doc.nodes.find((n) => n.componentSetId === set.id);
+  if (oldFrame)
+    for (const variant of oldSet?.variants ?? []) {
+      if (set.variants.some((v) => v.componentId === variant.componentId))
+        continue;
+      const main = doc.nodes.find(
+        (n) => n.id === variant.componentId && n.parentId === oldFrame.id,
+      );
+      if (main) {
+        const transform = worldTransform(doc, main);
+        main.parentId = oldFrame.parentId;
+        setWorldTransform(doc, main, transform);
+      }
+    }
   doc.componentSets = [
     ...(doc.componentSets ?? []).filter((s) => s.id !== set.id),
     structuredClone(set),

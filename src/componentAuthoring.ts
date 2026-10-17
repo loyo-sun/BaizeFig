@@ -1,15 +1,27 @@
 import { ancestors, execute, roots, id, type Document } from "./core";
 import { setComponentSet } from "./components";
-export function createIndependentMain(doc: Document, mainId: string) {
+export function createIndependentMain(
+  doc: Document,
+  mainId: string,
+  keepSetParent = false,
+) {
   const main = doc.nodes.find((n) => n.id === mainId);
   if (!main || main.type !== "component" || main.componentOwner)
     throw Error("Select a main component");
-  return execute(doc, {
+  const result = execute(doc, {
     type: "duplicate",
     ids: [mainId],
     offset: 40,
     independentMain: true,
   });
+  const parent = doc.nodes.find((n) => n.id === main.parentId);
+  if (!keepSetParent && parent?.componentSetId)
+    return execute(result.doc, {
+      type: "reparent",
+      ids: result.selection!,
+      parentId: parent.parentId,
+    });
+  return result;
 }
 export function createMultipleComponents(original: Document, ids: string[]) {
   const nodes = roots(original, ids);
@@ -38,7 +50,7 @@ export function createMultipleComponents(original: Document, ids: string[]) {
   return { doc, selection };
 }
 export function addComponentVariant(original: Document, mainId: string) {
-  const next = createIndependentMain(original, mainId),
+  const next = createIndependentMain(original, mainId, true),
     newId = next.selection![0];
   const main = original.nodes.find((n) => n.id === mainId)!;
   const current = original.componentSets?.find((s) =>

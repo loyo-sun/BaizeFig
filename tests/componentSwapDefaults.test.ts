@@ -3,6 +3,7 @@ import { emptyDocument, makeNode, execute } from "../src/core";
 import {
   createComponentInstance,
   swapComponentInstance,
+  synchronizeInstances,
 } from "../src/components";
 it("preserves text but drops style overrides when the destination uses different defaults", () => {
   const d = emptyDocument(),
@@ -73,4 +74,50 @@ it("does not map overrides to a differently named layer", () => {
       (n) => n.componentOwner === instance.id && n.type === "text",
     )!.text,
   ).toBe("B");
+});
+it("retains matching nested text overrides after swapping and saving an outer instance", () => {
+  const d = emptyDocument(),
+    p = d.pages[0].id;
+  for (const id of ["a", "b"])
+    d.nodes.push(
+      makeNode("component", p, { id }),
+      makeNode("text", p, {
+        id: id + "label",
+        parentId: id,
+        name: "Label",
+        text: id,
+      }),
+    );
+  d.nodes.push(makeNode("component", p, { id: "card" }));
+  const nested = createComponentInstance(d, "a", p, 0, 0);
+  const main = execute(nested.doc, {
+    type: "reparent",
+    ids: [nested.id],
+    parentId: "card",
+  }).doc;
+  const outer = createComponentInstance(main, "card", p, 400, 0);
+  const label = outer.doc.nodes.find(
+    (n) => n.componentOwner === outer.id && n.type === "text",
+  )!;
+  const child = outer.doc.nodes.find(
+    (n) =>
+      n.componentOwner === outer.id &&
+      n.type === "instance" &&
+      n.id !== outer.id,
+  )!;
+  const edited = execute(outer.doc, {
+    type: "update",
+    ids: [label.id],
+    patch: { text: "Custom" },
+  }).doc;
+  expect(edited.nodes.find((n) => n.id === label.id)?.text).toBe("Custom");
+  const changed = JSON.parse(
+    JSON.stringify(swapComponentInstance(edited, child.id, "b")),
+  );
+  synchronizeInstances(changed);
+  expect(
+    changed.nodes.find(
+      (n) => n.componentOwner === outer.id && n.type === "text",
+    )?.text,
+  ).toBe("Custom");
 });
