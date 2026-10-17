@@ -4,7 +4,31 @@ import {
   createComponentInstance,
   swapComponentInstance,
   synchronizeInstances,
+  switchVariant,
 } from "../src/components";
+it("matches the Figma S/Active to L/Default fallback when L/Active is absent", () => {
+  const d = emptyDocument(),
+    p = d.pages[0].id;
+  for (const id of ["sd", "ld", "sa"])
+    d.nodes.push(makeNode("component", p, { id }));
+  d.componentSets = [
+    {
+      id: "button",
+      name: "Button",
+      axes: { Size: ["S", "L"], State: ["Default", "Active"] },
+      variants: [
+        { componentId: "sd", values: { Size: "S", State: "Default" } },
+        { componentId: "ld", values: { Size: "L", State: "Default" } },
+        { componentId: "sa", values: { Size: "S", State: "Active" } },
+      ],
+    },
+  ];
+  const a = createComponentInstance(d, "sa", p, 500, 0);
+  expect(
+    switchVariant(a.doc, a.id, "Size", "L").nodes.find((n) => n.id === a.id)
+      ?.componentId,
+  ).toBe("ld");
+});
 it("preserves text but drops style overrides when the destination uses different defaults", () => {
   const d = emptyDocument(),
     p = d.pages[0].id;

@@ -902,7 +902,9 @@ export function execute(
             n.y +
             (selected.some((r) => r.id === n.id) ? (command.offset ?? 20) : 0),
           name:
-            (command.independentMain || variantCopies.size > 0) &&
+            (command.independentMain ||
+              variantCopies.size > 0 ||
+              copiedSets.length > 0) &&
             !selected.some((r) => r.id === n.id)
               ? n.name
               : n.name + " copy",

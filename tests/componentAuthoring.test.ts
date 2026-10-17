@@ -186,6 +186,13 @@ it("keeps copied sets independent and removes variants without changing their wo
   const copy = execute(added.doc, { type: "duplicate", ids: [frame.id] });
   expect(copy.doc.componentSets).toHaveLength(2);
   const copiedSet = copy.doc.componentSets![1];
+  for (const [index, variant] of copiedSet.variants.entries()) {
+    expect(copy.doc.nodes.find((n) => n.id === variant.componentId)?.name).toBe(
+      added.doc.nodes.find(
+        (n) => n.id === added.doc.componentSets![0].variants[index].componentId,
+      )?.name,
+    );
+  }
   expect(copiedSet.id).not.toBe(added.doc.componentSets![0].id);
   expect(
     copiedSet.variants.every(

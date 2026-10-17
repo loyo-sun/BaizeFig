@@ -608,6 +608,10 @@ export default function App() {
   );
   const chosen = doc.nodes.filter((n) => selected.includes(n.id)),
     first = chosen[0];
+  const instanceGeometryRestricted = chosen.some(
+    (n) =>
+      n.componentOwner && n.componentOwner !== n.id && !inComponentSlot(doc, n),
+  );
   const [prototypeTrigger, setPrototypeTrigger] =
     useState<PrototypeInteraction["trigger"]>("click");
   const currentInteraction = first?.interactions?.find(
@@ -3461,6 +3465,7 @@ export default function App() {
             </div>
             {leftTab === "assets" ? (
               <LocalAssets
+                key={doc.id}
                 doc={doc}
                 onLibraries={() => setModal("assets")}
                 onPreview={(client) =>
@@ -5245,16 +5250,21 @@ export default function App() {
                     <div className="field-grid">
                       <NumberField
                         label="X"
+                        disabled={instanceGeometryRestricted}
                         value={first.x}
                         onChange={(v) => patch({ x: v })}
                       />
                       <NumberField
                         label="Y"
+                        disabled={instanceGeometryRestricted}
                         value={first.y}
                         onChange={(v) => patch({ y: v })}
                       />
                       <NumberField
                         label="W"
+                        disabled={
+                          instanceGeometryRestricted && first.type === "text"
+                        }
                         value={
                           first.width *
                           Math.hypot(
@@ -5276,6 +5286,9 @@ export default function App() {
                       />
                       <NumberField
                         label="H"
+                        disabled={
+                          instanceGeometryRestricted && first.type === "text"
+                        }
                         value={
                           first.height *
                           Math.hypot(
@@ -6887,6 +6900,7 @@ function NumberField({
   min = -100000,
   max = 100000,
   step = 1,
+  disabled = false,
 }: {
   label: string;
   aria?: string;
@@ -6895,6 +6909,7 @@ function NumberField({
   min?: number;
   max?: number;
   step?: number;
+  disabled?: boolean;
 }) {
   const { t } = useI18n();
   const [draft, setDraft] = useState(String(Math.round(value * 100) / 100));
@@ -6908,10 +6923,18 @@ function NumberField({
     } else setDraft(String(value));
   }
   return (
-    <label className="number-field">
+    <label
+      className="number-field"
+      title={
+        disabled
+          ? t("Edit the main component to change instance layer geometry")
+          : undefined
+      }
+    >
       <span>{t(label)}</span>
       <input
         type="number"
+        disabled={disabled}
         aria-label={t(aria ?? label)}
         value={draft}
         step={step}
