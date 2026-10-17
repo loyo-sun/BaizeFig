@@ -840,6 +840,12 @@ export function execute(
         const matrix = worldTransform(original, originalNode);
         n.parentId = group.id;
         setWorldTransform(doc, n, matrix);
+        if (command.kind === "component")
+          n.constraints = {
+            horizontal: "scale",
+            vertical: "scale",
+            ...n.constraints,
+          };
       }
       selection = [group.id];
       break;
