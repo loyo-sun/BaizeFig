@@ -32,6 +32,7 @@ import {
 } from "./layout";
 import { reflowText, remapTextRuns, type TextRun } from "./textLayout";
 import {
+  linkMainCopies,
   recordOverrides,
   synchronizeInstances,
   captureSlotContent,
@@ -864,7 +865,14 @@ export function execute(
             ),
           }));
       }
+      linkMainCopies(
+        original,
+        clones,
+        map,
+        selected.map((n) => n.id),
+      );
       doc.nodes.push(...clones);
+      synchronizeInstances(doc);
       selection = selected.map((n) => map.get(n.id)!);
       break;
     }

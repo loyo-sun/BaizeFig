@@ -158,7 +158,7 @@ it("retains overrides when the clipboard contains a main component and its insta
     [],
   );
   const instance = r.doc.nodes.find(
-    (n) => r.selection.includes(n.id) && n.type === "instance",
+    (n) => n.id === r.selection[1] && n.type === "instance",
   )!;
   expect(
     r.doc.nodes.find(

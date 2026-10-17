@@ -1232,3 +1232,51 @@ export function bindComponentProperty(
   synchronizeInstances(doc);
   return finalized(original, doc);
 }
+
+/** Copying a main in the same document uses its definition, never a new main. */
+export function linkMainCopies(
+  original: Document,
+  copies: Node[],
+  mapping: Map<string, string>,
+  rootIds: string[],
+) {
+  const converted = new Set(
+    rootIds.filter((id) =>
+      original.nodes.some((n) => n.id === id && n.type === "component"),
+    ),
+  );
+  for (const source of original.nodes) {
+    if (!source.componentId || !converted.has(source.componentId)) continue;
+    const copy = copies.find((n) => n.id === mapping.get(source.id));
+    if (!copy) continue;
+    copy.componentId = source.componentId;
+    copy.componentOverrides = structuredClone(source.componentOverrides);
+    copy.componentValues = structuredClone(source.componentValues);
+    copy.componentClears = structuredClone(source.componentClears);
+    for (const child of original.nodes.filter(
+      (n) => n.componentOwner === source.id,
+    )) {
+      const clone = copies.find((n) => n.id === mapping.get(child.id));
+      if (clone) clone.componentPath = child.componentPath;
+    }
+  }
+  for (const sourceId of rootIds) {
+    const main = original.nodes.find(
+      (n) => n.id === sourceId && n.type === "component",
+    );
+    const copy = copies.find((n) => n.id === mapping.get(sourceId));
+    if (!main || !copy) continue;
+    copy.type = "instance";
+    copy.componentId = main.id;
+    copy.componentOwner = copy.id;
+    copy.componentPath = "";
+    copy.componentOverrides = {};
+    delete copy.componentProperties;
+    for (const { node, path } of componentTargets(original, main.id)) {
+      const child = copies.find((n) => n.id === mapping.get(node.id));
+      if (!child) continue;
+      child.componentOwner = copy.id;
+      child.componentPath = path;
+    }
+  }
+}

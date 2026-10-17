@@ -360,19 +360,9 @@ it("duplicates component property targets and copies customized slots across pag
   const copiedMain = duplicate.doc.nodes.find(
     (n) => n.id === duplicate.selection![0],
   )!;
-  const copiedTarget = componentTargets(duplicate.doc, copiedMain.id).find(
-    (t) => t.node.type === "text",
-  )!;
-  expect(
-    copiedMain.componentProperties!.find((p) => p.type === "text")?.targetPath,
-  ).toBe(copiedTarget.path);
-  const inst = createComponentInstance(
-    duplicate.doc,
-    copiedMain.id,
-    doc.pages[0].id,
-    0,
-    0,
-  );
+  expect(copiedMain.type).toBe("instance");
+  expect(copiedMain.componentId).toBe("main");
+  const inst = { doc: duplicate.doc, id: copiedMain.id };
   doc = setComponentValue(inst.doc, inst.id, "text", "Copied binding");
   expect(
     doc.nodes.some(

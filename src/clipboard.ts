@@ -1,5 +1,5 @@
 import { remapComponentMetadata, componentPathMapper } from "./componentRemap";
-import { inComponentSlot } from "./components";
+import { inComponentSlot, linkMainCopies } from "./components";
 import type { PrototypeAction } from "./prototype";
 import {
   ancestors,
@@ -222,6 +222,13 @@ export function pasteNodes(
       }
       selection.push(node.id);
     }
+    if (data.documentId === original.id)
+      linkMainCopies(
+        original,
+        copied,
+        map,
+        sourceRoots.map((n) => n.id),
+      );
     const result = execute(next, { type: "create", nodes: copied });
     next = result.doc;
     if (mode === "replace") {
