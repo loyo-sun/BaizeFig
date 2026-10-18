@@ -78,7 +78,9 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
       await page
         .getByRole("button", { name: "Connect bridge", exact: true })
         .click();
-      await expect(page.locator(".mcp-wizard .connection-state")).toHaveText("Connected");
+      await expect(page.locator(".mcp-wizard .connection-state")).toHaveText(
+        "Connected",
+      );
       if (implementation === "sdk") {
         client = new Client({
           name: "baizefig-browser-integration",
@@ -259,7 +261,9 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
       await page
         .getByRole("button", { name: "Connect bridge", exact: true })
         .click();
-      await expect(page.locator(".mcp-wizard .connection-state")).toHaveText("Connected");
+      await expect(page.locator(".mcp-wizard .connection-state")).toHaveText(
+        "Connected",
+      );
       expect(
         text(
           await call("get_request_status", {
@@ -308,10 +312,10 @@ test("left Cloud panel replaces Tools and opens local deployment without an acco
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Sign in to LoyoCloud", exact: true }),
-  ).toBeDisabled();
+  ).toBeEnabled();
   await expect(
     page.getByText(
-      "LoyoCloud sign-in is not available yet. You can use your own MCP deployment below.",
+      "Sign in or create an account in the secure cloud window. Your password is never sent to this editor.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -452,7 +456,9 @@ test("OAuth access is approved in the real canvas and revoked on disconnect", as
     await page
       .getByRole("button", { name: "Connect bridge", exact: true })
       .click();
-    await expect(page.locator(".mcp-wizard .connection-state")).toHaveText("Connected");
+    await expect(page.locator(".mcp-wizard .connection-state")).toHaveText(
+      "Connected",
+    );
     const registered = await fetch(root + "/oauth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -578,7 +584,9 @@ test("local automatic pairing requires no token and edits the real canvas", asyn
     await page
       .getByRole("button", { name: "Connect automatically", exact: true })
       .click();
-    await expect(page.locator(".mcp-wizard .connection-state")).toHaveText("Connected");
+    await expect(page.locator(".mcp-wizard .connection-state")).toHaveText(
+      "Connected",
+    );
     await page
       .getByRole("checkbox", {
         name: "Allow MCP to modify the currently open document",

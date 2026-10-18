@@ -1,3 +1,4 @@
+import { cloudBase, loginCloud, logoutCloud, type CloudSession } from "./cloud";
 import { CloudPanel } from "./CloudPanel";
 import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
@@ -442,6 +443,9 @@ export default function App() {
       commands: Command[];
       base: string;
     } | null>(null);
+  const [cloudSession, setCloudSession] = useState<CloudSession | null>(null);
+  const [cloudSigningIn, setCloudSigningIn] = useState(false);
+  const [cloudActive, setCloudActive] = useState(false);
   const [bridgeRemote, setBridgeRemote] = useState(true);
   const [oauthApprovals, setOauthApprovals] = useState<OAuthApproval[]>([]);
   const [bridgeToken, setBridgeToken] = useState(""),
@@ -472,10 +476,13 @@ export default function App() {
   const pathDrawing = useRef<PathDrawingHandle>(null);
   useEffect(() => {
     disconnectBridge();
+    if (cloudActive && cloudSession && Date.now() < cloudSession.expiresAt) {
+      connectBridge(false, cloudSession);
+    }
     setCollapsed(
       new Set(doc.nodes.filter((n) => container(n)).map((n) => n.id)),
     );
-  }, [doc.id]);
+  }, [doc.id, cloudActive, cloudSession?.token]);
   const lastPointerHit = useRef<string | undefined>(undefined);
   const drag = useRef<{
     type: "move" | "resize" | "rotate" | "draw" | "pan" | "marquee";
@@ -3007,10 +3014,12 @@ export default function App() {
     setBridgeStatus("Disconnected");
     setOauthApprovals([]);
   }
-  function connectBridge(automatic = false) {
+  function connectBridge(automatic = false, cloud?: CloudSession) {
     let address: string;
     try {
-      address = bridgeWebSocketUrl(bridgeAddress.trim());
+      address = cloud
+        ? cloud.base.replace(/^http/, "ws") + "/api/v1/bridge/baizefig"
+        : bridgeWebSocketUrl(bridgeAddress.trim());
     } catch (e) {
       notify((e as Error).message);
       return;
@@ -3030,10 +3039,11 @@ export default function App() {
       ws.send(
         JSON.stringify({
           type: "pair",
-          token: automatic ? undefined : bridgeToken,
+          token: cloud ? cloud.token : automatic ? undefined : bridgeToken,
           auto: automatic,
           documentId,
           editorId: mcp.current.editorId,
+          name: current.current.doc.name,
         }),
       );
     };
@@ -3061,6 +3071,7 @@ export default function App() {
         method: string;
         params?: Record<string, unknown>;
         request?: OAuthApproval;
+        permissions?: { write?: boolean; export?: boolean };
       };
       try {
         message = JSON.parse(event.data);
@@ -3099,7 +3110,13 @@ export default function App() {
         let result = mcp.current.handle(
           message.method,
           message.params ?? {},
-          c,
+          cloud
+            ? {
+                ...c,
+                bridgeWrite: message.permissions?.write === true,
+                bridgeExport: message.permissions?.export === true,
+              }
+            : c,
           (next) => {
             history.current.push(c.doc);
             current.current = { ...c, doc: next };
@@ -3121,14 +3138,19 @@ export default function App() {
           return;
         if (
           ["export_svg", "get_screenshot"].includes(message.method) &&
-          !current.current.bridgeExport
+          !(cloud
+            ? message.permissions?.export === true
+            : current.current.bridgeExport)
         )
           throw new McpError("PERMISSION_DENIED", "Export access was revoked");
         const response = JSON.stringify({ id: message.id, result });
-        if (new TextEncoder().encode(response).length > 8 * 1024 * 1024)
+        if (
+          new TextEncoder().encode(response).length >
+          (cloud ? 3 : 8) * 1024 * 1024
+        )
           throw new McpError(
             "RESULT_TOO_LARGE",
-            "Result exceeds 8 MiB. Read fewer fields/nodes or export a smaller selection.",
+            "Result exceeds the service limit. Read fewer fields/nodes or export a smaller selection.",
           );
         if (ws.readyState === WebSocket.OPEN) ws.send(response);
       } catch (e) {
@@ -3589,8 +3611,58 @@ export default function App() {
             {leftTab === "cloud" ? (
               <CloudPanel
                 status={bridgeStatus}
+                session={cloudSession}
+                signingIn={cloudSigningIn}
+                cloudActive={cloudActive}
+                onSignIn={() => {
+                  setCloudSigningIn(true);
+                  void loginCloud(cloudBase(import.meta.env.VITE_LOYOCLOUD_URL))
+                    .then((session) => {
+                      setCloudSession(session);
+                      setCloudActive(true);
+                      setModal(null);
+                    })
+                    .catch((e) => notify(e.message))
+                    .finally(() => setCloudSigningIn(false));
+                }}
+                onSignOut={() => {
+                  if (!cloudSession) return;
+                  void logoutCloud(cloudSession)
+                    .then(() => {
+                      if (cloudActive) disconnectBridge();
+                      setCloudActive(false);
+                      setCloudSession(null);
+                    })
+                    .catch((e) => notify(e.message));
+                }}
+                onCloudConnect={() => {
+                  if (!cloudSession) return;
+                  if (Date.now() >= cloudSession.expiresAt) {
+                    setCloudSession(null);
+                    notify("Cloud session expired. Please sign in again.");
+                    return;
+                  }
+                  if (cloudActive) connectBridge(false, cloudSession);
+                  else setCloudActive(true);
+                }}
+                onCloudDisconnect={() => {
+                  setCloudActive(false);
+                  disconnectBridge();
+                }}
+                onCopy={() => {
+                  if (cloudSession)
+                    void navigator.clipboard
+                      .writeText(cloudSession.mcpUrl)
+                      .then(() => notify("Copied"))
+                      .catch(() =>
+                        notify(
+                          "Copy failed. Select and copy the displayed text.",
+                        ),
+                      );
+                }}
                 onConnection={() => setModal("bridge")}
                 onLocal={() => {
+                  setCloudActive(false);
                   if (bridgeRemote) {
                     setBridgeRemote(false);
                     setBridgeAddress("http://127.0.0.1:4319/mcp");

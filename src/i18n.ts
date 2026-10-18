@@ -5,14 +5,26 @@ export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
   Cloud: "云",
+  "Add this MCP address in your AI tool, then sign in and authorize BaizeFig.":
+    "在 AI 工具中添加此 MCP 地址，登录并授权 BaizeFig。",
+  "Connection guide": "连接指南",
+  "Cloud session expired. Please sign in again.":
+    "云账号登录已过期，请重新登录。",
   "Cloud services": "云服务",
   "Connect AI through LoyoCloud or your own deployment.":
     "通过 LoyoCloud 或自主部署的服务连接 AI。",
   "Sign in to manage your application access and AI connections.":
     "登录后管理应用授权与 AI 连接。",
   "Sign in to LoyoCloud": "登录 LoyoCloud",
-  "LoyoCloud sign-in is not available yet. You can use your own MCP deployment below.":
-    "LoyoCloud 登录尚未开放，可先使用下方的自主部署连接。",
+  "Application authorization stays valid when you switch canvases.":
+    "切换画布时，应用授权持续有效。",
+  "Connect this canvas": "连接当前画布",
+  "Disconnect canvas": "断开画布",
+  "Manage application access": "管理应用授权",
+  "Sign out of cloud": "退出云账号",
+  "Signing in…": "正在登录…",
+  "Sign in or create an account in the secure cloud window. Your password is never sent to this editor.":
+    "在云服务窗口中登录或注册，密码不会发送到编辑器。",
   "Your own deployment": "自主部署",
   "Connect a local MCP service or configure your self-hosted service. No LoyoCloud account is required.":
     "连接本地 MCP 或配置自部署服务，无需 LoyoCloud 账号。",
