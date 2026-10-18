@@ -3195,3 +3195,49 @@ html[lang="zh-CN"] .layer-title-input {
   background: #f2f6f3;
   border-radius: 6px;
 }
+
+.cloud-deployment-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-top: 18px;
+  background: #f1f3f2;
+  border: 1px solid #e5e9e6;
+  border-radius: 10px;
+}
+.cloud-deployment-switch button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #666;
+  font-size: 12px;
+}
+.cloud-deployment-switch button[aria-pressed="true"] {
+  background: #fff;
+  border-color: #dce5df;
+  color: #286247;
+  box-shadow: 0 1px 3px #172e2110;
+}
+.cloud-deployment-switch button:focus-visible {
+  outline: 2px solid #37765b;
+  outline-offset: 2px;
+}
+.cloud-mcp-card {
+  background: #f8faf9;
+  margin-top: 20px;
+}
+.cloud-card .cloud-connection-source {
+  font-size: 11px;
+  color: #888;
+}
+.cloud-mcp-url {
+  margin-top: 10px;
+}

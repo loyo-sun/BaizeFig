@@ -5,6 +5,10 @@ export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
   Cloud: "云",
+  "Deployment method": "部署方式",
+  "Shared connection status and management for both deployment options.":
+    "两种部署方式共用的连接状态与管理。",
+  "Current connection": "当前连接",
   "Add this MCP address in your AI tool, then sign in and authorize BaizeFig.":
     "在 AI 工具中添加此 MCP 地址，登录并授权 BaizeFig。",
   "Connection guide": "连接指南",

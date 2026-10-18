@@ -323,6 +323,38 @@ test("left Cloud panel replaces Tools and opens local deployment without an acco
     path: "test-results/cloud-panel.png",
     fullPage: true,
   });
+  const panel = page.getByRole("region", {
+    name: "Cloud services",
+    exact: true,
+  });
+  const cloudOption = panel.getByRole("button", {
+    name: "LoyoCloud",
+    exact: true,
+  });
+  const selfOption = panel.getByRole("button", {
+    name: "Your own deployment",
+    exact: true,
+  });
+  await expect(cloudOption).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    panel.getByRole("button", { name: "Local deployment", exact: true }),
+  ).toHaveCount(0);
+  await selfOption.click();
+  await expect(selfOption).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    panel.getByRole("button", { name: "Sign in to LoyoCloud", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    panel.getByRole("heading", { name: "MCP", exact: true }),
+  ).toBeVisible();
+  await expect(
+    panel.getByRole("button", { name: "MCP connection", exact: true }),
+  ).toBeVisible();
+  await cloudOption.click();
+  await expect(
+    panel.getByRole("button", { name: "Sign in to LoyoCloud", exact: true }),
+  ).toBeVisible();
+  await selfOption.click();
   await page
     .getByRole("button", { name: "Local deployment", exact: true })
     .click();
