@@ -1,4 +1,4 @@
-import { configuredMcpEndpoint, type McpClient } from "./mcpConnections";
+import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
 import { EditorMcp, McpError, bridgeWebSocketUrl } from "./mcp";
 import {
@@ -441,8 +441,7 @@ export default function App() {
       commands: Command[];
       base: string;
     } | null>(null);
-  const [bridgeClient, setBridgeClient] = useState<McpClient>("workbuddy"),
-    [bridgeRemote, setBridgeRemote] = useState(true);
+  const [bridgeRemote, setBridgeRemote] = useState(true);
   const [oauthApprovals, setOauthApprovals] = useState<OAuthApproval[]>([]);
   const [bridgeToken, setBridgeToken] = useState(""),
     [bridgeAddress, setBridgeAddress] = useState(() =>
@@ -6929,9 +6928,7 @@ export default function App() {
             )}
             {modal === "bridge" && (
               <McpConnectionWizard
-                client={bridgeClient}
                 remote={bridgeRemote}
-                onClient={setBridgeClient}
                 onRemote={setBridgeRemote}
                 address={bridgeAddress}
                 token={bridgeToken}

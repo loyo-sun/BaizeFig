@@ -67,7 +67,7 @@ MCP 使用官方 SDK，支持 stdio 和自部署 Streamable HTTP。HTTP 支持�
 
 `bridge/contracts.mjs` 提供服务端和浏览器共享的严格参数契约；`src/mcp.ts` 负责目标校验、分页读取、修订号、批次预览、原子提交与幂等回执。修改仍由 `execute` 校验并形成一个历史单元。修订号随文档对象变化更新；写入必须指定 documentId/editorId/expectedRevision/idempotencyKey。回执限于当前编辑器生命周期，刷新后不可盲目重放。
 
-`McpConnectionWizard.tsx` 提供 WorkBuddy、ChatGPT、豆包工作入口；`scripts/connect-client.mjs` 是用户主动运行的本地配置助手，保留并备份配置。可选 stdio 自动配对仅信任已配置 Origin；远程 OAuth 的访问申请通过已配对 WebSocket 交给画布确认，授权令牌绑定当前编辑器与文档，断开立即撤销。
+`McpConnectionWizard.tsx` 提供无客户端品牌选择的统一 MCP/OAuth 入口，本地高级选项导出通用 stdio 配置；`scripts/connect-client.mjs` 是用户主动运行的本地配置助手，保留并备份配置。可选 stdio 自动配对仅信任已配置 Origin；远程 OAuth 的访问申请通过已配对 WebSocket 交给画布确认，授权令牌绑定当前编辑器与文档，断开立即撤销。
 
 桥不具备任意本机文件读取或脚本执行能力。阶段一静态编辑器仍保存本地文档，没有中心化存储、多用户路由或无人值守渲染。详见 [MCP 指南](MCP.md)。
 

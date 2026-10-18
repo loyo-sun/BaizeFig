@@ -4,24 +4,24 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
-  "One MCP address and OAuth authorization for WorkBuddy, ChatGPT and Doubao Work. Keep this canvas open while designing.":
-    "WorkBuddy、ChatGPT、豆包工作共用一个 MCP 地址，通过 OAuth 授权连接。设计期间请保持画布打开。",
-  "Client setup instructions": "客户端添加指引",
+  "Connect your AI tool with one MCP address and OAuth authorization. Keep this canvas open while designing.":
+    "通过统一的 MCP 地址和 OAuth 授权连接 AI 工具。设计期间请保持画布打开。",
+  "Your AI tool must support custom remote MCP connections with Streamable HTTP and OAuth. Availability depends on your account and platform permissions.":
+    "AI 工具需支持自定义远程 MCP、Streamable HTTP 和 OAuth；是否可用取决于账号与平台权限。",
+  "Add the standard stdio configuration below in your AI tool. Replace the project path with your installed BaizeFig folder; Node.js and project dependencies are required.":
+    "在 AI 工具中添加下方标准 stdio 配置，将项目路径替换为本机已安装的 BaizeFig 文件夹；需要 Node.js 和项目依赖。",
+  "Copy local MCP configuration": "复制本地 MCP 配置",
+  "Restart the MCP connection in your AI tool, then connect this canvas automatically. Run one local connection at a time.":
+    "在 AI 工具中重启 MCP 连接，再自动连接当前画布。同一时间运行一个本地连接。",
   "Unified remote connection": "统一远程连接",
   "Copy the same HTTPS MCP address for any supported client.":
-    "复制统一的 HTTPS MCP 地址，三个客户端使用相同地址。",
+    "复制统一的 HTTPS MCP 地址，在支持的 AI 工具中使用。",
   "Add a custom MCP connection in your AI tool and choose OAuth.":
     "在 AI 工具中添加自定义 MCP，认证方式选择 OAuth。",
   "Return to this canvas to approve access, then start designing.":
     "返回当前画布确认访问，随后开始设计。",
   "No online MCP service is configured yet. A deployment administrator must provide a real HTTPS service address; the static editor URL is not an MCP endpoint.":
     "尚未配置在线 MCP 服务。请由部署管理员提供真实的 HTTPS 服务地址；静态编辑器网址不是 MCP 服务地址。",
-  "WorkBuddy: add this address as a custom connector and use OAuth authorization.":
-    "WorkBuddy：在自定义连接器中添加此地址，使用 OAuth 授权。",
-  "ChatGPT: add this address through the custom MCP entry available to your account and use OAuth authorization.":
-    "ChatGPT：通过账号已开放的自定义 MCP 入口添加此地址，使用 OAuth 授权。",
-  "Doubao Work: use the custom connector or developer entry available to your account, with the same address and OAuth authorization.":
-    "豆包工作：使用账号已开放的自定义连接器或开发者入口，填写同一地址并使用 OAuth 授权。",
   "Before client authorization, connect this canvas to the deployed service through the administrator settings below.":
     "客户端授权前，请通过下方管理员设置，将当前画布连接到已部署的服务。",
   "Local compatibility mode is active. Open the advanced local options to configure it, or return to the unified remote connection.":
@@ -29,35 +29,15 @@ export const zhCN: Record<string, string> = {
   "Local connection (advanced)": "本地连接（高级选项）",
   "Administrators only: generate a private deployment file, deploy the service, then connect this canvas. This does not create or host an online service.":
     "仅供管理员配置：生成私有部署文件，部署服务后再连接当前画布。此操作不会自动创建或托管在线服务。",
-  "Download Mac setup assistant": "下载 Mac 配置助手",
-  "On Mac: unzip, run the assistant, and select your installed BaizeFig project. Other systems can use the command below. Node.js and project dependencies are required.":
-    "Mac 用户可解压后运行助手，选择已安装的 BaizeFig 项目。其他系统可使用下方命令；需要已安装 Node.js 和项目依赖。",
-  "Choose your AI tool. Keep this canvas open while designing.":
-    "选择 AI 工具，设计期间保持当前画布打开。",
   "AI client": "AI 客户端",
   "Connection method": "连接方式",
   "This computer": "本机连接",
   "Online MCP": "在线 MCP",
-  "Use ChatGPT desktop with local MCP support. For ChatGPT web, choose Online MCP.":
-    "适用于支持本地 MCP 的 ChatGPT 桌面端。网页版请选择「在线 MCP」。",
-  "Configure WorkBuddy once, then connect automatically without reading logs or copying pairing tokens.":
-    "首次配置 WorkBuddy 后，即可自动连接，无需查看日志或复制配对令牌。",
-  "First time: run this setup command in your installed BaizeFig project, then restart the client's MCP connection.":
-    "首次使用：在已安装的 BaizeFig 项目中运行以下配置命令，然后重启客户端的 MCP 连接。",
-  "Copy setup command": "复制配置命令",
-  "Setup preserves existing servers and creates a configuration backup. Run one local AI connection at a time.":
-    "配置助手会保留其他服务并备份原配置。每次使用一个本地 AI 连接。",
   "Connect automatically": "自动连接画布",
-  "Use your deployed HTTPS MCP service. The static editor website alone is not a service address.":
-    "填写已部署的 HTTPS MCP 服务地址。静态编辑器的网址本身不是 MCP 服务。",
-  "Doubao Work's developer platform is in preview. Use its custom connector entry where available; official installation and publishing require platform access. No public plugin has been published.":
-    "豆包工作开放平台目前在内测。请使用账号已开放的自定义连接器入口；官方安装与发布需要平台权限，BaizeFig 尚未上架官方插件。",
   "Generate service configuration": "生成服务配置",
   "Copy MCP address": "复制 MCP 地址",
   "Download connection guide": "下载连接说明",
   "Connect canvas to service": "连接画布到服务",
-  "Deploy the generated configuration on your server first. Then connect this canvas and add the address to your AI client using OAuth. The access request appears here for approval.":
-    "先将生成的配置部署到服务器，再连接当前画布。在 AI 客户端添加地址并选择 OAuth 后，访问请求会在这里等待你确认。",
   "Manual pairing and advanced settings": "手动配对与高级设置",
   "An AI client requests access to this canvas": "AI 客户端请求访问当前画布",
   "Client-reported name": "客户端声明的名称",
@@ -66,7 +46,6 @@ export const zhCN: Record<string, string> = {
     "仅允许你主动发起的连接。授权后可读取当前文档，编辑和导出仍需要上方的权限。",
   "Allow access": "允许访问",
   Deny: "拒绝",
-  "Open client website": "打开客户端官网",
   "Disconnecting or switching files revokes access. Pairing never enables editing or export automatically.":
     "断开连接或切换文件会撤销访问。配对不会自动开启编辑和导出权限。",
   "Service configuration downloaded. Restart your service with this file, then connect the canvas.":
@@ -77,12 +56,6 @@ export const zhCN: Record<string, string> = {
     "配对被拒绝，请检查令牌并断开其他已配对的编辑器。",
   "MCP service address": "MCP 服务地址",
   "Allow MCP screenshots and SVG export": "允许 MCP 截图和导出 SVG",
-  "Connect an MCP client to this open design using a local or self-hosted service.":
-    "通过本地或自部署服务，让 MCP 客户端访问当前打开的设计。",
-  "for local stdio, or deploy the HTTP service with npm run mcp:http.":
-    "用于本地 stdio，或通过 npm run mcp:http 部署 HTTP 服务。",
-  "Keep this editor open. Self-hosted HTTP clients need a separate Bearer token; the pairing token only connects this browser. Disconnecting revokes editing and export permissions.":
-    "请保持编辑器打开。自部署 HTTP 客户端需要单独的访问令牌；配对令牌仅连接浏览器。断开后将撤销编辑和导出权限。",
   "Bridge connection failed. Check the service address, editor origin and pairing token.":
     "连接失败，请检查服务地址、编辑器来源和配对令牌。",
   "Resize to fit content": "适应内容尺寸",
@@ -1378,8 +1351,6 @@ export const zhCN: Record<string, string> = {
     "允许 MCP 修改当前打开的文档",
   "Connect bridge": "连接桥接服务",
   Disconnect: "断开连接",
-  "Local bridge only. Remote ChatGPT HTTPS access and P2P sharing are not implemented in this version.":
-    "当前仅支持本地桥接。远程 ChatGPT HTTPS 接入和 P2P 分享尚未实现。",
   "Close preview": "关闭预览",
   "Prototype preview": "原型预览",
   "Click linked elements to navigate · Esc to close":

@@ -1,20 +1,24 @@
 import { describe, it, expect } from "vitest";
 import {
-  localSetupCommand,
+  localConnectionConfig,
   remoteEndpoint,
   newPairingToken,
   serviceEnvironment,
-  remoteClientConfig,
+  connectionGuide,
   configuredMcpEndpoint,
 } from "../src/mcpConnections";
 describe("client connection setup", () => {
-  it("builds local setup without exposing a pairing secret", () => {
-    expect(
-      localSetupCommand("workbuddy", "https://baizefig.netlify.app"),
-    ).toContain('--client workbuddy --origin "https://baizefig.netlify.app"');
-    expect(
-      localSetupCommand("chatgpt", "https://baizefig.netlify.app"),
-    ).not.toContain("TOKEN");
+  it("exports standard local stdio configuration without a pairing secret", () => {
+    const config = JSON.parse(
+      localConnectionConfig("https://baizefig.netlify.app"),
+    );
+    expect(config.mcpServers.baizefig.command).toBe("node");
+    expect(config.mcpServers.baizefig.env).toEqual({
+      BAIZEFIG_ORIGINS: "https://baizefig.netlify.app",
+      BAIZEFIG_AUTO_PAIR: "1",
+    });
+    expect(JSON.stringify(config)).not.toContain("TOKEN");
+    expect(() => localConnectionConfig("https://example.com/path")).toThrow();
   });
   it("requires a real HTTPS root service endpoint", () => {
     expect(remoteEndpoint("https://mcp.example.com/")).toBe(
@@ -46,21 +50,12 @@ describe("client connection setup", () => {
     expect(env).toContain("BAIZEFIG_AUTH_MODE=oauth");
     expect(env).toContain("BAIZEFIG_ORIGINS=https://baizefig.netlify.app");
     expect(env).not.toContain("BAIZEFIG_ACCESS_TOKEN");
-    const guide = JSON.parse(
-      remoteClientConfig("workbuddy", "https://mcp.example.com"),
-    );
+    const guide = JSON.parse(connectionGuide("https://mcp.example.com"));
+    expect(guide.url).toBe("https://mcp.example.com/mcp");
     expect(guide.transport).toBe("streamableHttp");
-    expect(guide.authentication.type).toBe("OAuth");
-    expect(guide.clients).toEqual(["WorkBuddy", "ChatGPT", "豆包工作"]);
-    expect(remoteClientConfig("workbuddy", "https://mcp.example.com")).toBe(
-      remoteClientConfig("chatgpt", "https://mcp.example.com"),
-    );
-    expect(remoteClientConfig("workbuddy", "https://mcp.example.com")).toBe(
-      remoteClientConfig("doubao", "https://mcp.example.com"),
-    );
-    expect(
-      JSON.parse(remoteClientConfig("doubao", "https://mcp.example.com"))
-        .instructions,
-    ).toContain("not a verified Doubao plugin manifest");
+    expect(guide.authentication).toEqual({ type: "OAuth", pkce: "S256" });
+    expect(guide).not.toHaveProperty("clients");
+    expect(JSON.stringify(guide)).not.toMatch(/WorkBuddy|ChatGPT|Doubao|TOKEN/);
+    expect(guide.instructions).toContain("not a client import manifest");
   });
 });

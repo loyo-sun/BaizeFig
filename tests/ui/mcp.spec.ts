@@ -283,31 +283,24 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
   });
 }
 
-test("client wizard generates private deployment settings, portable guides and Mac installer", async ({
+test("unified wizard exports generic guides and keeps deployment secrets private", async ({
   page,
 }) => {
   const { readFileSync } = await import("node:fs");
-  const { unzipSync, strFromU8 } = await import("fflate");
   await page.addInitScript(() =>
     localStorage.setItem("baizefig.ui.language", "en"),
   );
   await page.goto("/");
   await page.locator(".mcp-inspector-row button").click();
   await expect(
-    page.getByRole("button", { name: "WorkBuddy", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await expect(
     page.getByRole("region", {
       name: "Unified remote connection",
       exact: true,
     }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", {
-      name: "Download Mac setup assistant",
-      exact: true,
-    }),
-  ).toBeHidden();
+  await expect(page.locator(".mcp-wizard")).not.toContainText(
+    /WorkBuddy|ChatGPT|豆包|Doubao/,
+  );
   await expect(
     page.getByRole("button", { name: "Copy MCP address", exact: true }),
   ).toBeDisabled();
@@ -319,24 +312,13 @@ test("client wizard generates private deployment settings, portable guides and M
   await page
     .getByRole("button", { name: "This computer", exact: true })
     .click();
-  const macDownload = page.waitForEvent("download");
-  await page
-    .getByRole("button", { name: "Download Mac setup assistant", exact: true })
-    .click();
-  const zip = unzipSync(readFileSync((await (await macDownload).path())!));
-  expect(strFromU8(zip["连接 BaizeFig.command"])).toContain(
-    "--client workbuddy",
+  const local = JSON.parse(
+    await page.locator(".mcp-config-preview").innerText(),
   );
-  expect(strFromU8(zip["连接 BaizeFig.command"])).not.toContain(
-    "PAIRING_TOKEN",
+  expect(local.mcpServers.baizefig.env.BAIZEFIG_ORIGINS).toBe(
+    "http://127.0.0.1:4318",
   );
-  await page.getByRole("button", { name: "ChatGPT", exact: true }).click();
-  await expect(
-    page.getByText(
-      "Use ChatGPT desktop with local MCP support. For ChatGPT web, choose Online MCP.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+  expect(local.mcpServers.baizefig.env.BAIZEFIG_AUTO_PAIR).toBe("1");
   await page.getByRole("button", { name: "Online MCP", exact: true }).click();
   await page
     .getByRole("textbox", { name: "MCP service address", exact: true })
@@ -345,12 +327,6 @@ test("client wizard generates private deployment settings, portable guides and M
   await expect(
     page.getByRole("textbox", { name: "MCP service address", exact: true }),
   ).toHaveValue("https://mcp.example.com/mcp");
-  for (const name of ["WorkBuddy", "ChatGPT", "豆包工作"]) {
-    await page.getByRole("button", { name, exact: true }).click();
-    await expect(
-      page.getByRole("textbox", { name: "MCP service address", exact: true }),
-    ).toHaveValue("https://mcp.example.com/mcp");
-  }
   await page
     .getByText("Manual pairing and advanced settings", { exact: true })
     .click();
@@ -364,25 +340,17 @@ test("client wizard generates private deployment settings, portable guides and M
   const env = readFileSync((await (await envDownload).path())!, "utf8");
   expect(env).toContain("BAIZEFIG_AUTH_MODE=oauth");
   expect(env).toContain("BAIZEFIG_ORIGINS=http://127.0.0.1:4318");
-  await page.getByRole("button", { name: "豆包工作", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "This computer", exact: true }),
-  ).toBeDisabled();
-  await expect(
-    page.getByText(/No public plugin has been published/),
-  ).toBeVisible();
+  const token = env.match(/BAIZEFIG_PAIRING_TOKEN=(.+)/)![1];
   const guideDownload = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Download connection guide", exact: true })
     .click();
-  expect(
-    JSON.parse(readFileSync((await (await guideDownload).path())!, "utf8"))
-      .instructions,
-  ).toContain("not a verified Doubao plugin manifest");
-  await page.screenshot({
-    path: "test-results/mcp-client-wizard.png",
-    fullPage: true,
-  });
+  const raw = readFileSync((await (await guideDownload).path())!, "utf8");
+  const guide = JSON.parse(raw);
+  expect(guide.url).toBe("https://mcp.example.com/mcp");
+  expect(guide.authentication).toEqual({ type: "OAuth", pkce: "S256" });
+  expect(raw).not.toContain(token);
+  expect(raw).not.toMatch(/WorkBuddy|ChatGPT|Doubao|豆包/);
 });
 
 test("OAuth access is approved in the real canvas and revoked on disconnect", async ({
@@ -517,94 +485,91 @@ test("OAuth access is approved in the real canvas and revoked on disconnect", as
   }
 });
 
-for (const provider of ["WorkBuddy", "ChatGPT"]) {
-  test(`${provider}: local automatic pairing requires no token and edits the real canvas`, async ({
-    page,
-  }) => {
-    const { StdioClientTransport } =
-      await import("@modelcontextprotocol/sdk/client/stdio.js");
-    const client = new Client({ name: "automatic-canvas-test", version: "1" });
-    const transport = new StdioClientTransport({
-      command: process.execPath,
-      args: ["bridge/server.mjs"],
-      env: { ...process.env, BAIZEFIG_PORT: "0", BAIZEFIG_AUTO_PAIR: "1" },
-      stderr: "pipe",
-    });
-    let port: number | undefined;
-    transport.stderr!.on("data", (data: Buffer) => {
-      const match = data.toString().match(/listening on [^\n]+:(\d+)/);
-      if (match) port = Number(match[1]);
-    });
-    try {
-      await client.connect(transport);
-      expect(port).toBeTruthy();
-      await page.addInitScript(() =>
-        localStorage.setItem("baizefig.ui.language", "en"),
-      );
-      await page.goto("/");
-      await page.locator(".mcp-inspector-row button").click();
-      await page.getByRole("button", { name: provider, exact: true }).click();
-      await page
-        .getByText("Local connection (advanced)", { exact: true })
-        .click();
-      await page
-        .getByRole("button", { name: "This computer", exact: true })
-        .click();
-      await page
-        .getByText("Manual pairing and advanced settings", { exact: true })
-        .click();
-      await page
-        .getByRole("textbox", { name: "MCP service address", exact: true })
-        .fill(`http://127.0.0.1:${port}/mcp`);
-      await expect(
-        page.getByLabel("Bridge pairing token", { exact: true }),
-      ).toHaveValue("");
-      await page
-        .getByRole("button", { name: "Connect automatically", exact: true })
-        .click();
-      await expect(page.locator(".connection-state")).toHaveText("Connected");
-      await page
-        .getByRole("checkbox", {
-          name: "Allow MCP to modify the currently open document",
-          exact: true,
-        })
-        .check();
-      const result: any = await client.callTool({
-        name: "get_document",
-        arguments: {},
-      });
-      const doc = JSON.parse(result.content[0].text);
-      const write: any = await client.callTool({
-        name: "apply_commands",
-        arguments: {
-          documentId: doc.documentId,
-          editorId: doc.editorId,
-          expectedRevision: doc.revision,
-          idempotencyKey: "auto-pair-test",
-          commands: [
-            {
-              type: "create",
-              nodes: [
-                {
-                  id: "auto-created",
-                  type: "text",
-                  pageId: doc.pages[0].id,
-                  text: "Automatic pairing works",
-                },
-              ],
-            },
-          ],
-        },
-      });
-      expect(write.isError).not.toBe(true);
-      await page
-        .getByRole("button", { name: "Close dialog", exact: true })
-        .click();
-      await expect(page.locator(".design-canvas")).toContainText(
-        "Automatic pairing works",
-      );
-    } finally {
-      await client.close();
-    }
+test("local automatic pairing requires no token and edits the real canvas", async ({
+  page,
+}) => {
+  const { StdioClientTransport } =
+    await import("@modelcontextprotocol/sdk/client/stdio.js");
+  const client = new Client({ name: "automatic-canvas-test", version: "1" });
+  const transport = new StdioClientTransport({
+    command: process.execPath,
+    args: ["bridge/server.mjs"],
+    env: { ...process.env, BAIZEFIG_PORT: "0", BAIZEFIG_AUTO_PAIR: "1" },
+    stderr: "pipe",
   });
-}
+  let port: number | undefined;
+  transport.stderr!.on("data", (data: Buffer) => {
+    const match = data.toString().match(/listening on [^\n]+:(\d+)/);
+    if (match) port = Number(match[1]);
+  });
+  try {
+    await client.connect(transport);
+    expect(port).toBeTruthy();
+    await page.addInitScript(() =>
+      localStorage.setItem("baizefig.ui.language", "en"),
+    );
+    await page.goto("/");
+    await page.locator(".mcp-inspector-row button").click();
+    await page
+      .getByText("Local connection (advanced)", { exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "This computer", exact: true })
+      .click();
+    await page
+      .getByText("Manual pairing and advanced settings", { exact: true })
+      .click();
+    await page
+      .getByRole("textbox", { name: "MCP service address", exact: true })
+      .fill(`http://127.0.0.1:${port}/mcp`);
+    await expect(
+      page.getByLabel("Bridge pairing token", { exact: true }),
+    ).toHaveValue("");
+    await page
+      .getByRole("button", { name: "Connect automatically", exact: true })
+      .click();
+    await expect(page.locator(".connection-state")).toHaveText("Connected");
+    await page
+      .getByRole("checkbox", {
+        name: "Allow MCP to modify the currently open document",
+        exact: true,
+      })
+      .check();
+    const result: any = await client.callTool({
+      name: "get_document",
+      arguments: {},
+    });
+    const doc = JSON.parse(result.content[0].text);
+    const write: any = await client.callTool({
+      name: "apply_commands",
+      arguments: {
+        documentId: doc.documentId,
+        editorId: doc.editorId,
+        expectedRevision: doc.revision,
+        idempotencyKey: "auto-pair-test",
+        commands: [
+          {
+            type: "create",
+            nodes: [
+              {
+                id: "auto-created",
+                type: "text",
+                pageId: doc.pages[0].id,
+                text: "Automatic pairing works",
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(write.isError).not.toBe(true);
+    await page
+      .getByRole("button", { name: "Close dialog", exact: true })
+      .click();
+    await expect(page.locator(".design-canvas")).toContainText(
+      "Automatic pairing works",
+    );
+  } finally {
+    await client.close();
+  }
+});
