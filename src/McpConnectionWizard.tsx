@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useI18n } from "./LanguageContext";
 import {
   localConnectionConfig,
@@ -30,6 +31,7 @@ export function McpConnectionWizard(p: {
   notify: (value: string) => void;
 }) {
   const { t } = useI18n();
+  const [initialLocal] = useState(!p.remote);
   const { remote, onRemote: setRemote } = p;
   const locked = p.status !== "Disconnected";
   const copy = async (value: string) => {
@@ -157,7 +159,7 @@ export function McpConnectionWizard(p: {
           )}
         </p>
       )}
-      <details className="mcp-advanced">
+      <details className="mcp-advanced" open={initialLocal}>
         <summary>{t("Local connection (advanced)")}</summary>
         <div
           className="mcp-mode-options"

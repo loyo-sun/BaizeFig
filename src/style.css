@@ -1629,28 +1629,6 @@ hr {
   border-color: #e5e5e5;
   color: #444;
 }
-.mcp-inspector-row {
-  border-top: 1px solid #e5e5e5;
-  flex-shrink: 0;
-}
-.mcp-inspector-row > button {
-  padding: 15px 17px;
-  width: 100%;
-  justify-content: flex-start;
-  gap: 6px;
-  font-size: 11px;
-}
-.mcp-inspector-row > button > span {
-  border: 1px solid #e5e5e5;
-  border-radius: 4px;
-  padding: 1px 4px;
-  font-size: 10px;
-  color: #777;
-}
-.mcp-inspector-row > button > svg {
-  margin-left: auto;
-  color: #666;
-}
 .right-footer {
   font-size: 8px;
   color: #bbb;
@@ -3116,3 +3094,14 @@ html[lang="zh-CN"] .layer-title-input {
 .mcp-advanced summary { cursor:pointer; margin-bottom:8px; }
 .mcp-consent { padding:16px; margin:12px 0; border:1px solid #85b9f4; border-radius:8px; background:#f3f8ff; }
 .mcp-redirect { overflow-wrap:anywhere; font-size:12px; }
+
+.cloud-panel { padding: 16px; overflow-y: auto; min-height: 0; }
+.cloud-panel h2 { margin: 0 0 8px; font-size: 16px; }
+.cloud-panel header > p, .cloud-card p { font-size: 12px; line-height: 1.65; color: #666; }
+.cloud-card { border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px; margin-top: 14px; }
+.cloud-card > svg { color: #777; }
+.cloud-card h3 { font-size: 13px; margin: 8px 0; }
+.cloud-card button { width: 100%; justify-content: center; }
+.cloud-card button:disabled { cursor: not-allowed; opacity: .5; }
+.cloud-card .connection-state { font-size: 12px; margin: 8px 0 12px; }
+.cloud-card p.muted { font-size: 11px; color: #888; }

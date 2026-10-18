@@ -1,3 +1,4 @@
+import { CloudPanel } from "./CloudPanel";
 import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
 import { EditorMcp, McpError, bridgeWebSocketUrl } from "./mcp";
@@ -186,7 +187,7 @@ import {
   ZoomOut,
   Maximize,
   File,
-  BriefcaseBusiness,
+  Cloud,
   Hexagon,
   HelpCircle,
   PanelLeftClose,
@@ -291,7 +292,7 @@ function readCanvasAids() {
 export default function App() {
   const { language, setLanguage, persistenceError, t } = useI18n();
   const [doc, setDoc] = useState<Document>(() => demoDocument());
-  const [leftTab, setLeftTab] = useState<"file" | "assets">("file");
+  const [leftTab, setLeftTab] = useState<"file" | "assets" | "cloud">("file");
   const [svgReport, setSvgReport] = useState<{
     layers: number;
     warnings: string[];
@@ -3492,34 +3493,52 @@ export default function App() {
             {[
               { label: "Agents", Icon: Sparkles },
 
-              { label: "Tools", Icon: BriefcaseBusiness },
+              { label: "Cloud", Icon: Cloud },
               { label: "Variables", Icon: Hexagon },
-            ].map(({ label, Icon }) => (
-              <div
-                className="rail-research"
-                key={label}
-                title={t("Under research")}
-              >
+            ].map(({ label, Icon }) =>
+              label === "Cloud" ? (
                 <button
-                  className="rail-item"
-                  disabled
-                  aria-label={t(label)}
-                  aria-describedby={`research-${label}`}
+                  key={label}
+                  className={`rail-item ${leftTab === "cloud" ? "active" : ""}`}
+                  aria-label={t("Cloud")}
+                  aria-pressed={leftTab === "cloud"}
+                  onClick={() => {
+                    setLeftTab("cloud");
+                    setModal(null);
+                  }}
                 >
                   <span>
                     <Icon size={19} />
                   </span>
-                  {t(label)}
+                  {t("Cloud")}
                 </button>
-                <span
-                  className="research-tooltip"
-                  id={`research-${label}`}
-                  role="tooltip"
+              ) : (
+                <div
+                  className="rail-research"
+                  key={label}
+                  title={t("Under research")}
                 >
-                  {t("Under research")}
-                </span>
-              </div>
-            ))}
+                  <button
+                    className="rail-item"
+                    disabled
+                    aria-label={t(label)}
+                    aria-describedby={`research-${label}`}
+                  >
+                    <span>
+                      <Icon size={19} />
+                    </span>
+                    {t(label)}
+                  </button>
+                  <span
+                    className="research-tooltip"
+                    id={`research-${label}`}
+                    role="tooltip"
+                  >
+                    {t("Under research")}
+                  </span>
+                </div>
+              ),
+            )}
             <div className="rail-bottom">
               <button
                 className="tiny"
@@ -3567,7 +3586,20 @@ export default function App() {
                 <span className="save-state">{t(saved)}</span>
               </div>
             </div>
-            {leftTab === "assets" ? (
+            {leftTab === "cloud" ? (
+              <CloudPanel
+                status={bridgeStatus}
+                onConnection={() => setModal("bridge")}
+                onLocal={() => {
+                  if (bridgeRemote) {
+                    setBridgeRemote(false);
+                    setBridgeAddress("http://127.0.0.1:4319/mcp");
+                    setBridgeToken("");
+                  }
+                  setModal("bridge");
+                }}
+              />
+            ) : leftTab === "assets" ? (
               <LocalAssets
                 key={doc.id}
                 doc={doc}
@@ -5872,15 +5904,6 @@ export default function App() {
                   })}
                 </button>
               </section>
-            </div>
-            <div className="mcp-inspector-row">
-              <button onClick={() => setModal("bridge")}>
-                <strong>{t("MCP")}</strong>
-                <span>
-                  {t(bridgeStatus === "Connected" ? "1 connection" : "Connect")}
-                </span>
-                <Settings2 size={15} />
-              </button>
             </div>
             <div className="right-footer">
               <span className="green-dot" />

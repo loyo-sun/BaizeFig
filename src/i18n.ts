@@ -4,6 +4,20 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  Cloud: "云",
+  "Cloud services": "云服务",
+  "Connect AI through LoyoCloud or your own deployment.":
+    "通过 LoyoCloud 或自主部署的服务连接 AI。",
+  "Sign in to manage your application access and AI connections.":
+    "登录后管理应用授权与 AI 连接。",
+  "Sign in to LoyoCloud": "登录 LoyoCloud",
+  "LoyoCloud sign-in is not available yet. You can use your own MCP deployment below.":
+    "LoyoCloud 登录尚未开放，可先使用下方的自主部署连接。",
+  "Your own deployment": "自主部署",
+  "Connect a local MCP service or configure your self-hosted service. No LoyoCloud account is required.":
+    "连接本地 MCP 或配置自部署服务，无需 LoyoCloud 账号。",
+  "Local deployment": "本地部署",
+
   "Connect your AI tool with one MCP address and OAuth authorization. Keep this canvas open while designing.":
     "通过统一的 MCP 地址和 OAuth 授权连接 AI 工具。设计期间请保持画布打开。",
   "Your AI tool must support custom remote MCP connections with Streamable HTTP and OAuth. Availability depends on your account and platform permissions.":
