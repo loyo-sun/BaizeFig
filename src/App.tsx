@@ -3612,6 +3612,7 @@ export default function App() {
               <CloudPanel
                 status={bridgeStatus}
                 session={cloudSession}
+                serviceAddress={bridgeAddress}
                 signingIn={cloudSigningIn}
                 cloudActive={cloudActive}
                 onSignIn={() => {
@@ -3649,16 +3650,15 @@ export default function App() {
                   setCloudActive(false);
                   disconnectBridge();
                 }}
-                onCopy={() => {
-                  if (cloudSession)
-                    void navigator.clipboard
-                      .writeText(cloudSession.mcpUrl)
-                      .then(() => notify("Copied"))
-                      .catch(() =>
-                        notify(
-                          "Copy failed. Select and copy the displayed text.",
-                        ),
-                      );
+                onCopy={(address) => {
+                  void navigator.clipboard
+                    .writeText(address)
+                    .then(() => notify("Copied"))
+                    .catch(() =>
+                      notify(
+                        "Copy failed. Select and copy the displayed text.",
+                      ),
+                    );
                 }}
                 onConnection={() => setModal("bridge")}
                 onLocal={() => {

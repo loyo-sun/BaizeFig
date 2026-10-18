@@ -327,20 +327,15 @@ test("left Cloud panel replaces Tools and opens local deployment without an acco
     name: "Cloud services",
     exact: true,
   });
-  const cloudOption = panel.getByRole("button", {
-    name: "LoyoCloud",
-    exact: true,
+  const deploymentSelect = panel.getByRole("combobox", {
+    name: "Deployment method",
   });
-  const selfOption = panel.getByRole("button", {
-    name: "Your own deployment",
-    exact: true,
-  });
-  await expect(cloudOption).toHaveAttribute("aria-pressed", "true");
+  await expect(deploymentSelect).toHaveValue("cloud");
   await expect(
-    panel.getByRole("button", { name: "Local deployment", exact: true }),
+    panel.getByRole("button", { name: "Configure deployment", exact: true }),
   ).toHaveCount(0);
-  await selfOption.click();
-  await expect(selfOption).toHaveAttribute("aria-pressed", "true");
+  await deploymentSelect.selectOption("self");
+  await expect(deploymentSelect).toHaveValue("self");
   await expect(
     panel.getByRole("button", { name: "Sign in to LoyoCloud", exact: true }),
   ).toHaveCount(0);
@@ -350,13 +345,13 @@ test("left Cloud panel replaces Tools and opens local deployment without an acco
   await expect(
     panel.getByRole("button", { name: "MCP connection", exact: true }),
   ).toBeVisible();
-  await cloudOption.click();
+  await deploymentSelect.selectOption("cloud");
   await expect(
     panel.getByRole("button", { name: "Sign in to LoyoCloud", exact: true }),
   ).toBeVisible();
-  await selfOption.click();
+  await deploymentSelect.selectOption("self");
   await page
-    .getByRole("button", { name: "Local deployment", exact: true })
+    .getByRole("button", { name: "Configure deployment", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "This computer", exact: true }),

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { CloudSession } from "./cloud";
-import { Cloud, Server, Plug } from "lucide-react";
+import { Cloud, Server, Bot, ChevronRight } from "lucide-react";
 import { useI18n } from "./LanguageContext";
 
 export function CloudPanel(p: {
@@ -8,156 +8,183 @@ export function CloudPanel(p: {
   session: CloudSession | null;
   signingIn: boolean;
   cloudActive: boolean;
+  serviceAddress: string;
   onSignIn: () => void;
   onSignOut: () => void;
   onCloudConnect: () => void;
   onCloudDisconnect: () => void;
-  onCopy: () => void;
+  onCopy: (address: string) => void;
   onConnection: () => void;
   onLocal: () => void;
 }) {
   const { t } = useI18n();
   const [deployment, setDeployment] = useState<"cloud" | "self">("cloud");
+  const connected = p.status === "Connected";
+  const cloudService =
+    p.status !== "Disconnected" ? p.cloudActive : deployment === "cloud";
+  const address = cloudService ? p.session?.mcpUrl : p.serviceAddress;
   return (
     <section className="cloud-panel" aria-label={t("Cloud services")}>
-      <header>
-        <h2>{t("Cloud")}</h2>
+      <header className="cloud-panel-header">
+        <div className="cloud-title-row">
+          <h2>{t("Cloud")}</h2>
+          <select
+            aria-label={t("Deployment method")}
+            value={deployment}
+            onChange={(e) => setDeployment(e.target.value as "cloud" | "self")}
+          >
+            <option value="cloud">LoyoCloud</option>
+            <option value="self">{t("Your own deployment")}</option>
+          </select>
+        </div>
         <p>{t("Connect AI through LoyoCloud or your own deployment.")}</p>
       </header>
-      <div
-        className="cloud-deployment-switch"
-        role="group"
-        aria-label={t("Deployment method")}
-      >
-        <button
-          type="button"
-          aria-pressed={deployment === "cloud"}
-          onClick={() => setDeployment("cloud")}
-        >
-          <Cloud size={16} aria-hidden="true" /> LoyoCloud
-        </button>
-        <button
-          type="button"
-          aria-pressed={deployment === "self"}
-          onClick={() => setDeployment("self")}
-        >
-          <Server size={16} aria-hidden="true" /> {t("Your own deployment")}
-        </button>
-      </div>
-      {deployment === "cloud" ? (
-        <section className="cloud-card" aria-labelledby="loyocloud-heading">
-          <Cloud size={21} aria-hidden="true" />
-          <h3 id="loyocloud-heading">LoyoCloud</h3>
-          {p.session ? (
-            <>
-              <p>{p.session.user.username}</p>
-              <p className="muted">
-                {t(
-                  "Application authorization stays valid when you switch canvases.",
-                )}
-              </p>
-              <a
-                href={p.session.base + "/console"}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t("Manage application access")}
-              </a>
-              <button onClick={p.onSignOut}>{t("Sign out of cloud")}</button>
-            </>
-          ) : (
-            <>
+      <div className="cloud-panel-body">
+        {deployment === "cloud" ? (
+          <section className="cloud-card" aria-labelledby="loyocloud-heading">
+            <div className="cloud-card-heading">
+              <span className="cloud-service-icon">
+                <Cloud size={23} fill="currentColor" aria-hidden="true" />
+              </span>
+              <div>
+                <h3 id="loyocloud-heading">LoyoCloud</h3>
+                <p>{t("Official cloud service")}</p>
+              </div>
+            </div>
+            {p.session ? (
+              <div className="cloud-card-content">
+                <div className="cloud-account-row">
+                  <span>{t("Account")}</span>
+                  <strong>{p.session.user.username}</strong>
+                </div>
+                <a
+                  className="cloud-account-link"
+                  href={p.session.base + "/console"}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("Account center")}
+                  <ChevronRight size={15} aria-hidden="true" />
+                </a>
+              </div>
+            ) : (
+              <div className="cloud-card-content">
+                <p>
+                  {t(
+                    "Sign in to manage your application access and AI connections.",
+                  )}
+                </p>
+                <button
+                  className="cloud-primary"
+                  onClick={p.onSignIn}
+                  disabled={p.signingIn}
+                >
+                  {t(p.signingIn ? "Signing in…" : "Sign in to LoyoCloud")}
+                </button>
+                <p className="cloud-fine-print">
+                  {t(
+                    "Sign in or create an account in the secure cloud window. Your password is never sent to this editor.",
+                  )}
+                </p>
+              </div>
+            )}
+          </section>
+        ) : (
+          <section className="cloud-card" aria-labelledby="local-cloud-heading">
+            <div className="cloud-card-heading">
+              <span className="cloud-service-icon cloud-self-icon">
+                <Server size={22} aria-hidden="true" />
+              </span>
+              <div>
+                <h3 id="local-cloud-heading">{t("Your own deployment")}</h3>
+                <p>{t("Your infrastructure, your control")}</p>
+              </div>
+            </div>
+            <div className="cloud-card-content">
               <p>
                 {t(
-                  "Sign in to manage your application access and AI connections.",
+                  "Connect a local MCP service or configure your self-hosted service. No LoyoCloud account is required.",
                 )}
               </p>
               <button
-                className="primary"
-                onClick={p.onSignIn}
-                disabled={p.signingIn}
+                onClick={p.onLocal}
+                disabled={p.status !== "Disconnected"}
               >
-                {t(p.signingIn ? "Signing in…" : "Sign in to LoyoCloud")}
+                {t("Configure deployment")}
               </button>
-              <p className="muted">
-                {t(
-                  "Sign in or create an account in the secure cloud window. Your password is never sent to this editor.",
-                )}
-              </p>
-            </>
-          )}
-        </section>
-      ) : (
-        <section className="cloud-card" aria-labelledby="local-cloud-heading">
-          <Server size={21} aria-hidden="true" />
-          <h3 id="local-cloud-heading">{t("Your own deployment")}</h3>
-          <p>
-            {t(
-              "Connect a local MCP service or configure your self-hosted service. No LoyoCloud account is required.",
-            )}
-          </p>
-          <button onClick={p.onLocal} disabled={p.status !== "Disconnected"}>
-            {t("Local deployment")}
-          </button>
-        </section>
-      )}
-      <section
-        className="cloud-card cloud-mcp-card"
-        aria-labelledby="mcp-cloud-heading"
-      >
-        <Plug size={21} aria-hidden="true" />
-        <h3 id="mcp-cloud-heading">MCP</h3>
-        <p>
-          {t(
-            "Shared connection status and management for both deployment options.",
-          )}
-        </p>
-        <div className="connection-state" role="status">
-          <span
-            className={p.status === "Connected" ? "green-dot" : "gray-dot"}
-          />
-          {t(p.status)}
-        </div>
-        <p className="cloud-connection-source">
-          {t("Current connection")}:{" "}
-          {p.status === "Disconnected"
-            ? t("Disconnected")
-            : p.cloudActive
-              ? "LoyoCloud"
-              : t("Your own deployment")}
-        </p>
-        {p.session && (p.cloudActive || deployment === "cloud") ? (
-          <>
-            <button
-              className="primary"
-              onClick={p.onCloudConnect}
-              disabled={p.cloudActive && p.status !== "Disconnected"}
+            </div>
+          </section>
+        )}
+        <section
+          className="cloud-card cloud-mcp-card"
+          aria-labelledby="mcp-cloud-heading"
+        >
+          <div className="cloud-card-heading">
+            <span className="cloud-service-icon cloud-mcp-icon">
+              <Bot size={23} aria-hidden="true" />
+            </span>
+            <div>
+              <h3 id="mcp-cloud-heading">MCP</h3>
+              <p>{t("Shared by both deployments")}</p>
+            </div>
+            <span
+              className={`cloud-status ${connected ? "is-connected" : ""}`}
+              role="status"
             >
-              {t("Connect this canvas")}
-            </button>
-            {p.cloudActive && p.status !== "Disconnected" && (
-              <button onClick={p.onCloudDisconnect}>
-                {t("Disconnect canvas")}
+              <i />
+              {t(p.status)}
+            </span>
+          </div>
+          <div className="cloud-card-content">
+            <span className="cloud-field-label">
+              {t("MCP service address")}
+            </span>
+            {address ? (
+              <div className="cloud-address-row">
+                <code>{address}</code>
+                <button onClick={() => p.onCopy(address)}>
+                  {t("Copy address")}
+                </button>
+              </div>
+            ) : (
+              <p className="cloud-empty-address">
+                {t("Connect a service to view its MCP address.")}
+              </p>
+            )}
+            {p.status !== "Disconnected" && (
+              <p className="cloud-fine-print">
+                {t("Current connection")}:{" "}
+                {p.cloudActive ? "LoyoCloud" : t("Your own deployment")}
+              </p>
+            )}
+          </div>
+          <div className="cloud-mcp-actions">
+            {p.status === "Disconnected" &&
+              deployment === "cloud" &&
+              p.session && (
+                <button className="cloud-primary" onClick={p.onCloudConnect}>
+                  {t("Connect this canvas")}
+                </button>
+              )}
+            <button onClick={p.onConnection}>{t("MCP connection")}</button>
+            {p.status !== "Disconnected" && (
+              <button className="cloud-danger" onClick={p.onCloudDisconnect}>
+                {t("Disconnect")}
               </button>
             )}
-            <button onClick={p.onCopy}>{t("Copy MCP address")}</button>
-            <code className="cloud-mcp-url">{p.session.mcpUrl}</code>
+          </div>
+        </section>
+        {p.session && (
+          <footer className="cloud-panel-footer">
+            <button onClick={p.onSignOut}>{t("Sign out of cloud")}</button>
             <p>
               {t(
-                "Add this MCP address in your AI tool, then sign in and authorize BaizeFig.",
+                "Application authorization stays valid when you switch canvases.",
               )}
             </p>
-            <a
-              href={p.session.base + "/guide"}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t("Connection guide")}
-            </a>
-          </>
-        ) : null}
-        <button onClick={p.onConnection}>{t("MCP connection")}</button>
-      </section>
+          </footer>
+        )}
+      </div>
     </section>
   );
 }

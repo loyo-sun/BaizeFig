@@ -5,6 +5,14 @@ export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
   Cloud: "云",
+  "Official cloud service": "官方云服务",
+  "Account center": "账号中心",
+  Account: "账号",
+  "Your infrastructure, your control": "自有服务，自主管理",
+  "Configure deployment": "配置自主部署",
+  "Shared by both deployments": "两种部署方式共用",
+  "Copy address": "复制地址",
+  "Connect a service to view its MCP address.": "连接服务后显示 MCP 地址。",
   "Deployment method": "部署方式",
   "Shared connection status and management for both deployment options.":
     "两种部署方式共用的连接状态与管理。",
