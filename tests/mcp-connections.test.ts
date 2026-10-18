@@ -5,6 +5,7 @@ import {
   newPairingToken,
   serviceEnvironment,
   remoteClientConfig,
+  configuredMcpEndpoint,
 } from "../src/mcpConnections";
 describe("client connection setup", () => {
   it("builds local setup without exposing a pairing secret", () => {
@@ -27,6 +28,13 @@ describe("client connection setup", () => {
     ])
       expect(() => remoteEndpoint(input)).toThrow();
   });
+  it("accepts only valid configured remote addresses and never invents a service", () => {
+    expect(configuredMcpEndpoint(undefined)).toBe("");
+    expect(configuredMcpEndpoint("http://127.0.0.1:4319/mcp")).toBe("");
+    expect(configuredMcpEndpoint("https://mcp.example.com")).toBe(
+      "https://mcp.example.com/mcp",
+    );
+  });
   it("creates OAuth deployment settings and labels unverified import formats honestly", () => {
     const token = newPairingToken();
     expect(token).toMatch(/^[0-9a-f]{64}$/);
@@ -38,10 +46,18 @@ describe("client connection setup", () => {
     expect(env).toContain("BAIZEFIG_AUTH_MODE=oauth");
     expect(env).toContain("BAIZEFIG_ORIGINS=https://baizefig.netlify.app");
     expect(env).not.toContain("BAIZEFIG_ACCESS_TOKEN");
-    expect(
-      JSON.parse(remoteClientConfig("workbuddy", "https://mcp.example.com"))
-        .mcpServers.baizefig.type,
-    ).toBe("streamableHttp");
+    const guide = JSON.parse(
+      remoteClientConfig("workbuddy", "https://mcp.example.com"),
+    );
+    expect(guide.transport).toBe("streamableHttp");
+    expect(guide.authentication.type).toBe("OAuth");
+    expect(guide.clients).toEqual(["WorkBuddy", "ChatGPT", "豆包工作"]);
+    expect(remoteClientConfig("workbuddy", "https://mcp.example.com")).toBe(
+      remoteClientConfig("chatgpt", "https://mcp.example.com"),
+    );
+    expect(remoteClientConfig("workbuddy", "https://mcp.example.com")).toBe(
+      remoteClientConfig("doubao", "https://mcp.example.com"),
+    );
     expect(
       JSON.parse(remoteClientConfig("doubao", "https://mcp.example.com"))
         .instructions,

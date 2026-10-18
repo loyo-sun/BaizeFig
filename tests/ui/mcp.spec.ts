@@ -296,6 +296,29 @@ test("client wizard generates private deployment settings, portable guides and M
   await expect(
     page.getByRole("button", { name: "WorkBuddy", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("region", {
+      name: "Unified remote connection",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Download Mac setup assistant",
+      exact: true,
+    }),
+  ).toBeHidden();
+  await expect(
+    page.getByRole("button", { name: "Copy MCP address", exact: true }),
+  ).toBeDisabled();
+  await page.screenshot({
+    path: "test-results/mcp-unified-remote.png",
+    fullPage: true,
+  });
+  await page.getByText("Local connection (advanced)", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "This computer", exact: true })
+    .click();
   const macDownload = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Download Mac setup assistant", exact: true })
@@ -318,6 +341,19 @@ test("client wizard generates private deployment settings, portable guides and M
   await page
     .getByRole("textbox", { name: "MCP service address", exact: true })
     .fill("https://mcp.example.com/mcp");
+  await page.getByRole("button", { name: "Online MCP", exact: true }).click();
+  await expect(
+    page.getByRole("textbox", { name: "MCP service address", exact: true }),
+  ).toHaveValue("https://mcp.example.com/mcp");
+  for (const name of ["WorkBuddy", "ChatGPT", "豆包工作"]) {
+    await page.getByRole("button", { name, exact: true }).click();
+    await expect(
+      page.getByRole("textbox", { name: "MCP service address", exact: true }),
+    ).toHaveValue("https://mcp.example.com/mcp");
+  }
+  await page
+    .getByText("Manual pairing and advanced settings", { exact: true })
+    .click();
   const envDownload = page.waitForEvent("download");
   await page
     .getByRole("button", {
@@ -508,6 +544,12 @@ for (const provider of ["WorkBuddy", "ChatGPT"]) {
       await page.goto("/");
       await page.locator(".mcp-inspector-row button").click();
       await page.getByRole("button", { name: provider, exact: true }).click();
+      await page
+        .getByText("Local connection (advanced)", { exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "This computer", exact: true })
+        .click();
       await page
         .getByText("Manual pairing and advanced settings", { exact: true })
         .click();

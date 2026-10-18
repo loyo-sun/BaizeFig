@@ -1,4 +1,4 @@
-import type { McpClient } from "./mcpConnections";
+import { configuredMcpEndpoint, type McpClient } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
 import { EditorMcp, McpError, bridgeWebSocketUrl } from "./mcp";
 import {
@@ -442,10 +442,12 @@ export default function App() {
       base: string;
     } | null>(null);
   const [bridgeClient, setBridgeClient] = useState<McpClient>("workbuddy"),
-    [bridgeRemote, setBridgeRemote] = useState(false);
+    [bridgeRemote, setBridgeRemote] = useState(true);
   const [oauthApprovals, setOauthApprovals] = useState<OAuthApproval[]>([]);
   const [bridgeToken, setBridgeToken] = useState(""),
-    [bridgeAddress, setBridgeAddress] = useState("http://127.0.0.1:4319/mcp"),
+    [bridgeAddress, setBridgeAddress] = useState(() =>
+      configuredMcpEndpoint(import.meta.env.VITE_BAIZEFIG_MCP_URL),
+    ),
     [bridgeExport, setBridgeExport] = useState(false),
     [bridgeStatus, setBridgeStatus] = useState("Disconnected"),
     [bridgeWrite, setBridgeWrite] = useState(false);

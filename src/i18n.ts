@@ -4,6 +4,31 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "One MCP address and OAuth authorization for WorkBuddy, ChatGPT and Doubao Work. Keep this canvas open while designing.":
+    "WorkBuddy、ChatGPT、豆包工作共用一个 MCP 地址，通过 OAuth 授权连接。设计期间请保持画布打开。",
+  "Client setup instructions": "客户端添加指引",
+  "Unified remote connection": "统一远程连接",
+  "Copy the same HTTPS MCP address for any supported client.":
+    "复制统一的 HTTPS MCP 地址，三个客户端使用相同地址。",
+  "Add a custom MCP connection in your AI tool and choose OAuth.":
+    "在 AI 工具中添加自定义 MCP，认证方式选择 OAuth。",
+  "Return to this canvas to approve access, then start designing.":
+    "返回当前画布确认访问，随后开始设计。",
+  "No online MCP service is configured yet. A deployment administrator must provide a real HTTPS service address; the static editor URL is not an MCP endpoint.":
+    "尚未配置在线 MCP 服务。请由部署管理员提供真实的 HTTPS 服务地址；静态编辑器网址不是 MCP 服务地址。",
+  "WorkBuddy: add this address as a custom connector and use OAuth authorization.":
+    "WorkBuddy：在自定义连接器中添加此地址，使用 OAuth 授权。",
+  "ChatGPT: add this address through the custom MCP entry available to your account and use OAuth authorization.":
+    "ChatGPT：通过账号已开放的自定义 MCP 入口添加此地址，使用 OAuth 授权。",
+  "Doubao Work: use the custom connector or developer entry available to your account, with the same address and OAuth authorization.":
+    "豆包工作：使用账号已开放的自定义连接器或开发者入口，填写同一地址并使用 OAuth 授权。",
+  "Before client authorization, connect this canvas to the deployed service through the administrator settings below.":
+    "客户端授权前，请通过下方管理员设置，将当前画布连接到已部署的服务。",
+  "Local compatibility mode is active. Open the advanced local options to configure it, or return to the unified remote connection.":
+    "当前为本地兼容模式。请展开高级本地选项进行配置，或返回统一远程连接。",
+  "Local connection (advanced)": "本地连接（高级选项）",
+  "Administrators only: generate a private deployment file, deploy the service, then connect this canvas. This does not create or host an online service.":
+    "仅供管理员配置：生成私有部署文件，部署服务后再连接当前画布。此操作不会自动创建或托管在线服务。",
   "Download Mac setup assistant": "下载 Mac 配置助手",
   "On Mac: unzip, run the assistant, and select your installed BaizeFig project. Other systems can use the command below. Node.js and project dependencies are required.":
     "Mac 用户可解压后运行助手，选择已安装的 BaizeFig 项目。其他系统可使用下方命令；需要已安装 Node.js 和项目依赖。",

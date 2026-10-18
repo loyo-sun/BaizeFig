@@ -55,35 +55,28 @@ export function serviceEnvironment(
     "",
   ].join("\n");
 }
-export function remoteClientConfig(client: McpClient, address: string) {
-  const url = remoteEndpoint(address);
-  if (client === "chatgpt")
-    return JSON.stringify(
-      {
-        name: "BaizeFig",
-        url,
-        authentication: "OAuth",
-        instructions:
-          "Add this URL through ChatGPT custom MCP settings, then approve the request in your paired BaizeFig canvas. This file is a connection guide, not an import manifest.",
-      },
-      null,
-      2,
-    );
-  if (client === "doubao")
-    return JSON.stringify(
-      {
-        name: "BaizeFig",
-        url,
-        authentication: "OAuth 2.1 / PKCE S256",
-        instructions:
-          "For Doubao Work's official custom connector/developer entry where available. This file is a connection guide, not a verified Doubao plugin manifest. Platform access or review may be required.",
-      },
-      null,
-      2,
-    );
+export function configuredMcpEndpoint(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  try {
+    return remoteEndpoint(value);
+  } catch {
+    return "";
+  }
+}
+export function remoteClientConfig(_client: McpClient, address: string) {
   return JSON.stringify(
     {
-      mcpServers: { baizefig: { type: "streamableHttp", url, timeout: 30000 } },
+      name: "BaizeFig",
+      url: remoteEndpoint(address),
+      transport: "streamableHttp",
+      authentication: { type: "OAuth", pkce: "S256" },
+      clients: ["WorkBuddy", "ChatGPT", "豆包工作"],
+      steps: [
+        "Add this same MCP URL through the client's custom connector entry.",
+        "Choose OAuth, then approve the request in the paired BaizeFig canvas.",
+      ],
+      instructions:
+        "A shared connection guide, not an official client import manifest. Deploy your own HTTPS service first. Doubao Work availability depends on platform access; this is not a verified Doubao plugin manifest.",
     },
     null,
     2,
