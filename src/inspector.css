@@ -1,0 +1,254 @@
+/* Inspector rhythm: 4px base, 8px rows, 12px groups, 16px section inset. */
+.properties {
+  --inspector-row: 32px;
+  --inspector-gap: 8px;
+  --inspector-group: 12px;
+  --inspector-inset: 16px;
+  font-size: 12px;
+  line-height: 1.5;
+  scrollbar-gutter: stable;
+}
+.properties section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--inspector-gap);
+  padding: var(--inspector-inset);
+  min-width: 0;
+}
+.properties section section {
+  padding: var(--inspector-group) 0;
+  margin: 0;
+}
+.properties .section-heading {
+  min-height: 24px;
+  margin: 0 0 4px;
+  font-size: 12px;
+  line-height: 20px;
+  gap: var(--inspector-gap);
+}
+.properties :is(input, select, textarea, button) {
+  font: inherit;
+  box-sizing: border-box;
+}
+.properties
+  :is(
+    select,
+    input:not([type="checkbox"]):not([type="radio"]):not([type="color"])
+  ) {
+  height: var(--inspector-row);
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.properties input:is([type="checkbox"], [type="radio"]) {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  flex: none;
+}
+.properties .number-field {
+  height: var(--inspector-row);
+  gap: var(--inspector-gap);
+  margin: 0;
+  padding: 0 8px;
+}
+.properties .number-field > span {
+  font-size: 11px;
+  line-height: 16px;
+}
+.properties .number-field > input {
+  height: 30px;
+  padding: 0;
+  border: 0;
+}
+.properties :is(.field-grid, .effect-fields, .sizing-pair, .layout-padding) {
+  gap: var(--inspector-gap);
+  margin: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.properties
+  :is(
+    .text-properties,
+    .component-actions,
+    .effect-order,
+    .constraint-control
+  ) {
+  gap: var(--inspector-gap);
+  margin: 0;
+}
+.properties .text-properties {
+  margin-top: 4px;
+}
+.properties
+  :is(
+    .text-properties > label,
+    .font-settings > label,
+    .setting-row,
+    .clip-control
+  ) {
+  min-height: var(--inspector-row);
+  gap: var(--inspector-gap);
+  margin: 0;
+  font-size: 12px;
+}
+.properties .text-properties > label > :is(input, select) {
+  width: 55%;
+  max-width: none;
+}
+.properties :is(.sizing-pair label, .component-properties details > label) {
+  gap: 4px;
+  margin: 0 0 var(--inspector-gap);
+}
+.properties .sizing-pair label {
+  margin: 0;
+}
+.properties .color-row {
+  height: var(--inspector-row);
+  gap: var(--inspector-gap);
+  margin: 0;
+  padding: 4px 8px;
+}
+.properties .color-row input[type="color"] {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  flex: none;
+}
+.properties .color-row span {
+  font-size: 12px;
+}
+.properties :is(.appearance-row, .effect-toolbar) {
+  gap: 4px;
+  min-height: var(--inspector-row);
+}
+.properties .appearance-row > label {
+  height: var(--inspector-row);
+}
+.properties .appearance-row input {
+  padding: 0 4px;
+}
+.properties
+  :is(
+    .section-heading button,
+    .appearance-row > button,
+    .effect-toolbar button
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 4px;
+}
+.properties :is(.font-settings, .size-limits, .arrange-tools, .inspector-more) {
+  margin: 0;
+}
+.properties summary {
+  min-height: 28px;
+  padding: 4px 0;
+  line-height: 20px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.properties details[open] > summary {
+  margin-bottom: var(--inspector-gap);
+}
+.properties .inspector-more {
+  padding: 0;
+}
+.properties .local-styles {
+  min-height: 0;
+}
+.properties .effect-card {
+  margin: 0;
+  padding: var(--inspector-gap);
+  display: flex;
+  flex-direction: column;
+  gap: var(--inspector-gap);
+}
+.properties .effect-fields label {
+  gap: 4px;
+}
+.properties .effect-order {
+  gap: 4px;
+}
+.properties p {
+  margin: 0;
+  line-height: 1.6;
+}
+.properties .muted {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.properties .position-transforms {
+  padding: 0;
+  gap: 4px;
+}
+.properties .position-transforms button {
+  height: var(--inspector-row);
+  width: 36px;
+}
+.properties .text-sidebar-toolbar {
+  margin: 0;
+  min-height: 36px;
+}
+.properties .text-sidebar-toolbar button {
+  height: 28px;
+  padding: 2px;
+}
+.properties .typography-heading {
+  margin-bottom: 0;
+  gap: 4px;
+}
+.properties .typography-heading .font-manager-link {
+  justify-content: flex-start;
+  padding: 0;
+  height: 24px;
+  font-size: 11px;
+}
+.properties .layer-title-input {
+  width: 100%;
+}
+.properties .export-controls {
+  gap: var(--inspector-gap);
+  margin: 0 0 var(--inspector-gap);
+}
+.properties .export-button {
+  min-height: var(--inspector-row);
+}
+.properties .text-properties > label:has(input[type="checkbox"]) {
+  justify-content: flex-start;
+}
+.properties .text-properties > label > input[type="checkbox"] {
+  width: 14px;
+  max-width: 14px;
+}
+.properties .appearance-row > label {
+  width: 76px;
+  flex: 0 0 76px;
+  gap: 2px;
+}
+.properties .appearance-row input {
+  width: 0;
+  min-width: 0;
+  flex: 1;
+  padding: 0 4px;
+  appearance: textfield;
+}
+.properties .appearance-row input::-webkit-inner-spin-button {
+  appearance: none;
+}
+.properties .layer-title-input {
+  margin: 0;
+}
+.properties .alignment {
+  margin: 0;
+  gap: 4px;
+  min-height: 32px;
+}
+.properties .alignment > button {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 4px;
+}

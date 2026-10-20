@@ -5549,24 +5549,23 @@ export default function App() {
                         onChange={(v) => patch({ radius: v })}
                       />
                     </div>
+                    <div className="position-transforms">
+                      <button
+                        title={t("Flip horizontal")}
+                        aria-label={t("Flip horizontal")}
+                        onClick={() => transformCommand("flip-x")}
+                      >
+                        <FlipHorizontal2 size={16} />
+                      </button>
+                      <button
+                        title={t("Flip vertical")}
+                        aria-label={t("Flip vertical")}
+                        onClick={() => transformCommand("flip-y")}
+                      >
+                        <FlipVertical2 size={16} />
+                      </button>
+                    </div>
                   </section>
-                  <div className="position-transforms">
-                    {" "}
-                    <button
-                      title={t("Flip horizontal")}
-                      aria-label={t("Flip horizontal")}
-                      onClick={() => transformCommand("flip-x")}
-                    >
-                      <FlipHorizontal2 size={16} />
-                    </button>
-                    <button
-                      title={t("Flip vertical")}
-                      aria-label={t("Flip vertical")}
-                      onClick={() => transformCommand("flip-y")}
-                    >
-                      <FlipVertical2 size={16} />
-                    </button>
-                  </div>{" "}
                   <section className="inspector-dimensions">
                     <div className="section-heading">{t("Layout")}</div>
                     <div className="field-grid">
