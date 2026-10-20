@@ -3416,8 +3416,19 @@ html[lang="zh-CN"] .layer-title-input {
   outline-offset: 2px;
 }
 .grouped-dock .dock-group > .dock-chevron {
-  width: 18px;
-  background: transparent;
+  width: 26px;
+  height: 30px;
+  border-radius: 8px;
+  background: #f3f4f5;
+  color: #555;
+}
+.grouped-dock .dock-group > .dock-chevron:hover,
+.grouped-dock .dock-group > .dock-chevron[aria-expanded="true"] {
+  background: #e1f1ff;
+  color: #007bd1;
+}
+.dock-chevron[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
 }
 .dock-menu {
   position: absolute;

@@ -83,7 +83,7 @@ export function ToolDock({
                 aria-expanded={open === index}
                 onClick={() => setOpen(open === index ? null : index)}
               >
-                <ChevronDown size={12} />
+                <ChevronDown size={16} strokeWidth={2.5} />
               </button>
             )}
             {open === index && (
