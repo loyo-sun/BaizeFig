@@ -86,7 +86,7 @@ export const PathDrawingOverlay = forwardRef<
     closingDrag.current = {
       start: point(e, false),
       moved: false,
-      original: { ...first.incoming },
+      original: { x: 0, y: 0 },
       opposite: { ...first.outgoing },
       independent: true,
     };
@@ -99,7 +99,12 @@ export const PathDrawingOverlay = forwardRef<
     const p = point(e, false);
     if (!drag.moved && Math.hypot(p.x - drag.start.x, p.y - drag.start.y) * zoom < 2) return;
     drag.moved = true;
-    first.incoming = dragHandle(drag, p, true, e.shiftKey).handle;
+    // Closing draws the arriving tangent, opposite to the pen drag direction.
+    // Rebuild from the gesture origin rather than adding to an old handle.
+    first.incoming = dragHandle(drag, {
+      x: 2 * drag.start.x - p.x,
+      y: 2 * drag.start.y - p.y,
+    }, true, e.shiftKey).handle;
     first.independent = true;
     setHover(first);
     paint();

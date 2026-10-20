@@ -255,14 +255,14 @@ it.each(["anchor", "magnet"])("drags only the incoming closure handle via %s wit
   event(target, "pointerdown", x, 100);
   event(target, "pointermove", x + 20, 140);
   const incoming = host.querySelector('[aria-label="Pen handle 1 incoming"]')!;
-  expect(incoming.getAttribute("cx")).toBe("90");
-  expect(incoming.getAttribute("cy")).toBe("130");
+  expect(incoming.getAttribute("cx")).toBe("80");
+  expect(incoming.getAttribute("cy")).toBe("60");
   event(target, "pointerup", x + 25, 150);
   expect(finished).toHaveLength(1);
   const n = finished[0];
   expect(n.vertices[0]).toEqual({ x: 100, y: 100 });
   expect(n.segments[0].ha).toEqual({ x: 30, y: 10 });
-  expect(n.segments[2].hb).toEqual({ x: -5, y: 40 });
+  expect(n.segments[2].hb).toEqual({ x: -25, y: -50 });
   expect(n.regions[0].loops[0]).toHaveLength(3);
 });
 it("restores the first handle if closure dragging is cancelled and can close again", () => {
@@ -279,4 +279,18 @@ it("restores the first handle if closure dragging is cancelled and can close aga
   click(100, 100);
   expect(finished[0].segments[2].hb).toEqual({ x: -30, y: -10 });
   expect(finished[0].segments[0].ha).toEqual({ x: 30, y: 10 });
+});
+
+it.each([0.25, 1, 2])("matches Ardot: downward closure drag bends incoming upward at zoom %s", (z) => {
+  zoom = z;
+  render();
+  click(100, 100);
+  click(220, 100);
+  click(220, 220);
+  const first = host.querySelector('[aria-label="Pen anchor 1"]')!;
+  event(first, "pointerdown", 100, 100);
+  event(first, "pointerup", 100, 160);
+  expect(finished[0].segments[2].hb).toEqual({ x: 0, y: -60 / z });
+  expect(finished[0].segments[0].ha).toEqual({ x: 0, y: 0 });
+  expect(finished[0].vertices[0]).toEqual({ x: 100 / z, y: 100 / z });
 });
