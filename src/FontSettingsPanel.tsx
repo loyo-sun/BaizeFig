@@ -6,8 +6,10 @@ import { useI18n } from "./LanguageContext";
 export function FontSettingsPanel({
   node,
   onChange,
+  expanded = false,
 }: {
   node: Node;
+  expanded?: boolean;
   onChange: (patch: Partial<Node>) => void;
 }) {
   const { t } = useI18n(),
@@ -46,7 +48,7 @@ export function FontSettingsPanel({
     });
   }
   return (
-    <details className="font-settings">
+    <details className="font-settings" open={expanded || undefined}>
       <summary>{t("Advanced typography")}</summary>
       <label>
         {t("Truncate overflow text")}

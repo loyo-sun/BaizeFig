@@ -5641,6 +5641,115 @@ export default function App() {
                         }
                       />
                     </div>
+                    {container(first) && (
+                      <div className="auto-layout-controls">
+                        <div className="section-heading">
+                          {t("Auto layout")}
+                          {canFitContent(doc, first) && (
+                            <button
+                              className="tiny"
+                              title={t("Resize to fit content")}
+                              aria-label={t("Resize to fit content")}
+                              onClick={() => {
+                                try {
+                                  change(fitContent(doc, first.id));
+                                } catch (error) {
+                                  notify((error as Error).message);
+                                }
+                              }}
+                            >
+                              <ScanLine size={14} />
+                            </button>
+                          )}
+                          <button
+                            className="tiny"
+                            title={t("Add auto layout · Shift A")}
+                            aria-label={t("Add auto layout")}
+                            onClick={() => autoLayout()}
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                        <div className="segmented">
+                          {(
+                            ["none", "horizontal", "vertical", "grid"] as const
+                          ).map((d) => (
+                            <button
+                              key={d}
+                              className={
+                                (first.layout ?? "none") === d ? "active" : ""
+                              }
+                              title={t(
+                                d === "none"
+                                  ? "Free"
+                                  : d === "horizontal"
+                                    ? "→ Horizontal"
+                                    : d === "vertical"
+                                      ? "↓ Vertical"
+                                      : "Grid",
+                              )}
+                              aria-label={t(
+                                d === "none"
+                                  ? "Free"
+                                  : d === "horizontal"
+                                    ? "→ Horizontal"
+                                    : d === "vertical"
+                                      ? "↓ Vertical"
+                                      : "Grid",
+                              )}
+                              aria-pressed={(first.layout ?? "none") === d}
+                              onClick={() =>
+                                run({
+                                  type: "layout",
+                                  id: first.id,
+                                  direction: d,
+                                })
+                              }
+                            >
+                              {d === "none" ? (
+                                <PanelsTopLeft size={16} />
+                              ) : d === "horizontal" ? (
+                                <ArrowRight size={16} />
+                              ) : d === "vertical" ? (
+                                <ArrowDown size={16} />
+                              ) : (
+                                <LayoutGrid size={16} />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        {first.layout && first.layout !== "none" && (
+                          <div className="field-grid">
+                            <NumberField
+                              label="Gap"
+                              value={first.gap ?? 12}
+                              min={0}
+                              onChange={(v) =>
+                                run({
+                                  type: "layout",
+                                  id: first.id,
+                                  direction: first.layout!,
+                                  gap: v,
+                                })
+                              }
+                            />
+                            <NumberField
+                              label="Pad"
+                              value={first.padding ?? 16}
+                              min={0}
+                              onChange={(v) =>
+                                run({
+                                  type: "layout",
+                                  id: first.id,
+                                  direction: first.layout!,
+                                  padding: v,
+                                })
+                              }
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <LayoutProperties
                       key={first.id}
                       doc={doc}
@@ -5678,115 +5787,6 @@ export default function App() {
                       </label>
                     )}
                   </section>
-                  {container(first) && (
-                    <section>
-                      <div className="section-heading">
-                        {t("Auto layout")}
-                        {canFitContent(doc, first) && (
-                          <button
-                            className="tiny"
-                            title={t("Resize to fit content")}
-                            aria-label={t("Resize to fit content")}
-                            onClick={() => {
-                              try {
-                                change(fitContent(doc, first.id));
-                              } catch (error) {
-                                notify((error as Error).message);
-                              }
-                            }}
-                          >
-                            <ScanLine size={14} />
-                          </button>
-                        )}
-                        <button
-                          className="tiny"
-                          title={t("Add auto layout · Shift A")}
-                          aria-label={t("Add auto layout")}
-                          onClick={() => autoLayout()}
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-                      <div className="segmented">
-                        {(
-                          ["none", "horizontal", "vertical", "grid"] as const
-                        ).map((d) => (
-                          <button
-                            key={d}
-                            className={
-                              (first.layout ?? "none") === d ? "active" : ""
-                            }
-                            title={t(
-                              d === "none"
-                                ? "Free"
-                                : d === "horizontal"
-                                  ? "→ Horizontal"
-                                  : d === "vertical"
-                                    ? "↓ Vertical"
-                                    : "Grid",
-                            )}
-                            aria-label={t(
-                              d === "none"
-                                ? "Free"
-                                : d === "horizontal"
-                                  ? "→ Horizontal"
-                                  : d === "vertical"
-                                    ? "↓ Vertical"
-                                    : "Grid",
-                            )}
-                            aria-pressed={(first.layout ?? "none") === d}
-                            onClick={() =>
-                              run({
-                                type: "layout",
-                                id: first.id,
-                                direction: d,
-                              })
-                            }
-                          >
-                            {d === "none" ? (
-                              <PanelsTopLeft size={16} />
-                            ) : d === "horizontal" ? (
-                              <ArrowRight size={16} />
-                            ) : d === "vertical" ? (
-                              <ArrowDown size={16} />
-                            ) : (
-                              <LayoutGrid size={16} />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                      {first.layout && first.layout !== "none" && (
-                        <div className="field-grid">
-                          <NumberField
-                            label="Gap"
-                            value={first.gap ?? 12}
-                            min={0}
-                            onChange={(v) =>
-                              run({
-                                type: "layout",
-                                id: first.id,
-                                direction: first.layout!,
-                                gap: v,
-                              })
-                            }
-                          />
-                          <NumberField
-                            label="Pad"
-                            value={first.padding ?? 16}
-                            min={0}
-                            onChange={(v) =>
-                              run({
-                                type: "layout",
-                                id: first.id,
-                                direction: first.layout!,
-                                padding: v,
-                              })
-                            }
-                          />
-                        </div>
-                      )}
-                    </section>
-                  )}
                   {first.type === "text" && (
                     <section className="typography-section">
                       <div className="section-heading typography-heading">
@@ -5919,21 +5919,32 @@ export default function App() {
                           step={0.1}
                           onChange={(v) => patch({ lineHeight: v })}
                         />
-                        <select
+                        <div
+                          className="segmented"
+                          role="group"
                           aria-label={t("Text alignment")}
-                          value={first.textAlign}
-                          onChange={(e) =>
-                            patch({
-                              textAlign: e.target.value as Node["textAlign"],
-                            })
-                          }
                         >
-                          {["left", "center", "right"].map((a) => (
-                            <option key={a} value={a}>
-                              {t(a)}
-                            </option>
+                          {(
+                            [
+                              ["left", AlignLeft],
+                              ["center", AlignCenter],
+                              ["right", AlignRight],
+                            ] as const
+                          ).map(([value, Icon]) => (
+                            <button
+                              key={value}
+                              title={t(value)}
+                              aria-label={t("Text alignment") + ": " + t(value)}
+                              aria-pressed={first.textAlign === value}
+                              className={
+                                first.textAlign === value ? "active" : ""
+                              }
+                              onClick={() => patch({ textAlign: value })}
+                            >
+                              <Icon size={15} />
+                            </button>
                           ))}
-                        </select>
+                        </div>
                       </div>
                       <TextProperties
                         key={first.id + "text-properties"}
@@ -5950,60 +5961,21 @@ export default function App() {
                     </section>
                   )}
                   <LayerAppearance node={first} onChange={patch} />
-                  <section>
-                    <div className="section-heading">
-                      {t("Fill")}
-                      <button
-                        className="tiny"
-                        aria-label={t("Reset fill")}
-                        onClick={() =>
-                          patch({
-                            fill: first.fill === "none" ? "#d9d9d9" : "none",
-                          })
-                        }
-                      >
-                        {first.fill === "none" ? (
-                          <Plus size={14} />
-                        ) : (
-                          <Minus size={14} />
-                        )}
-                      </button>
-                    </div>
-                    {first.fill !== "none" && (
-                      <label className="color-row">
-                        <input
-                          type="color"
-                          aria-label={t("Fill color")}
-                          value={
-                            first.fill === "none"
-                              ? "#ffffff"
-                              : first.fill.slice(0, 7)
-                          }
-                          onChange={(e) => patch({ fill: e.target.value })}
-                        />
-                        <span>
-                          {first.fill === "none"
-                            ? t("None")
-                            : first.fill.replace("#", "").toUpperCase()}
-                        </span>
-                      </label>
-                    )}
-                    <FillProperties
-                      key={first.id + "fills"}
-                      node={first}
-                      onChange={patch}
-                      onCrop={(paintIndex) => {
-                        if (
-                          !first.locked &&
-                          !ancestors(doc, first).some((p) => p.locked)
-                        ) {
-                          setEditingText(null);
-                          setEditingVector(null);
-                          setEditingCrop({ id: first.id, paintIndex });
-                        }
-                      }}
-                    />
-                  </section>
+                  <FillProperties
+                    key={first.id + "fills"}
+                    node={first}
+                    onChange={patch}
+                    onCrop={(paintIndex) => {
+                      if (
+                        !first.locked &&
+                        !ancestors(doc, first).some((p) => p.locked)
+                      ) {
+                        setEditingText(null);
+                        setEditingVector(null);
+                        setEditingCrop({ id: first.id, paintIndex });
+                      }
+                    }}
+                  />
                   <section>
                     <div className="section-heading">
                       {t("Stroke")}
@@ -6049,8 +6021,9 @@ export default function App() {
                       </>
                     )}
                   </section>
-                  {container(first) && (
+                  {(container(first) || selected.length > 1) && (
                     <SelectionColors
+                      selectedIds={selected}
                       doc={doc}
                       node={first}
                       onChange={change}

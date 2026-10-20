@@ -11,6 +11,8 @@ export interface ImportedPaint {
   type: "solid" | "linear" | "radial" | "diamond" | "image";
   color?: string;
   opacity: number;
+  /** Preserves opacity while an inspector paint is hidden. */
+  hiddenOpacity?: number;
   stops?: { position: number; color: string }[];
   transform?: [number, number, number, number, number, number];
   image?: string;

@@ -1,3 +1,11 @@
+import {
+  ArrowLeftRight,
+  ArrowUpDown,
+  Square,
+  AlignStartVertical,
+  AlignCenterVertical,
+  AlignEndVertical,
+} from "lucide-react";
 import { InspectorPopover } from "./InspectorPopover";
 import { FontSettingsPanel } from "./FontSettingsPanel";
 import type { Node } from "./core";
@@ -23,77 +31,92 @@ export function TextProperties({
     onChange({ textFlow: { ...flow, ...value } });
   return (
     <div className="text-properties">
-      <label>
-        {t("Text resizing")}
-        <select
-          aria-label={t("Text resizing")}
-          value={flow.autoResize}
-          onChange={(e) =>
-            onChange({
-              textFlow: {
-                ...flow,
-                autoResize: e.target.value as typeof flow.autoResize,
-              },
-              layoutItem: {
-                ...node.layoutItem,
-                horizontalSizing: e.target.value === "both" ? "hug" : "fixed",
-                verticalSizing: e.target.value === "fixed" ? "fixed" : "hug",
-              },
-            })
-          }
-        >
-          <option value="fixed">{t("Fixed size")}</option>
-          <option value="height">{t("Auto height")}</option>
-          <option value="both">{t("Auto width and height")}</option>
-        </select>
-      </label>
-      <label>
-        {t("Letter spacing")}
-        <input
-          aria-label={t("Letter spacing")}
-          type="number"
-          value={flow.letterSpacing}
-          step={0.1}
-          onChange={(e) => {
-            if (e.target.value !== "")
-              change({ letterSpacing: Number(e.target.value) });
-          }}
-        />
-      </label>
-      <label>
-        {t("Paragraph spacing")}
-        <input
-          aria-label={t("Paragraph spacing")}
-          type="number"
-          value={flow.paragraphSpacing ?? 0}
-          min={0}
-          max={10000}
-          onChange={(e) => {
-            if (e.target.value !== "")
-              change({ paragraphSpacing: Number(e.target.value) });
-          }}
-        />
-      </label>
-      <label>
-        {t("Vertical text alignment")}
-        <select
-          aria-label={t("Vertical text alignment")}
-          value={flow.verticalAlign}
-          onChange={(e) =>
-            change({
-              verticalAlign: e.target.value as typeof flow.verticalAlign,
-            })
-          }
-        >
-          {(["top", "center", "bottom"] as const).map((v) => (
-            <option key={v} value={v}>
-              {t(v === "top" ? "Top" : v === "center" ? "Center" : "Bottom")}
-            </option>
+      <div className="text-icon-row">
+        <div className="segmented" role="group" aria-label={t("Text resizing")}>
+          {(
+            [
+              ["both", "Auto width and height", ArrowLeftRight],
+              ["height", "Auto height", ArrowUpDown],
+              ["fixed", "Fixed size", Square],
+            ] as const
+          ).map(([value, label, Icon]) => (
+            <button
+              key={value}
+              title={t(label)}
+              aria-label={t(label)}
+              aria-pressed={flow.autoResize === value}
+              className={flow.autoResize === value ? "active" : ""}
+              onClick={() =>
+                onChange({
+                  textFlow: { ...flow, autoResize: value },
+                  layoutItem: {
+                    ...node.layoutItem,
+                    horizontalSizing: value === "both" ? "hug" : "fixed",
+                    verticalSizing: value === "fixed" ? "fixed" : "hug",
+                  },
+                })
+              }
+            >
+              <Icon size={15} />
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
+        <div
+          className="segmented"
+          role="group"
+          aria-label={t("Vertical text alignment")}
+        >
+          {(
+            [
+              ["top", "Top", AlignStartVertical],
+              ["center", "Center", AlignCenterVertical],
+              ["bottom", "Bottom", AlignEndVertical],
+            ] as const
+          ).map(([value, label, Icon]) => (
+            <button
+              key={value}
+              title={t(label)}
+              aria-label={t("Vertical text alignment") + ": " + t(label)}
+              aria-pressed={flow.verticalAlign === value}
+              className={flow.verticalAlign === value ? "active" : ""}
+              onClick={() => change({ verticalAlign: value })}
+            >
+              <Icon size={15} />
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="sizing-pair">
+        <label>
+          {t("Letter spacing")}
+          <input
+            aria-label={t("Letter spacing")}
+            type="number"
+            value={flow.letterSpacing}
+            step={0.1}
+            onChange={(e) => {
+              if (e.target.value !== "")
+                change({ letterSpacing: Number(e.target.value) });
+            }}
+          />
+        </label>
+        <label>
+          {t("Paragraph spacing")}
+          <input
+            aria-label={t("Paragraph spacing")}
+            type="number"
+            value={flow.paragraphSpacing ?? 0}
+            min={0}
+            max={10000}
+            onChange={(e) => {
+              if (e.target.value !== "")
+                change({ paragraphSpacing: Number(e.target.value) });
+            }}
+          />
+        </label>
+      </div>
       <InspectorPopover title={t("Advanced typography")}>
-        <FontSettingsPanel node={node} onChange={onChange} />
+        <FontSettingsPanel expanded node={node} onChange={onChange} />
         <label>
           {t("Text direction")}
           <select

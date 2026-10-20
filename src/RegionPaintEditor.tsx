@@ -12,7 +12,19 @@ export function RegionPaintEditor({
 }) {
   const { t } = useI18n();
   function patch(index: number, patch: Partial<ImportedPaint>) {
-    onChange(paints.map((p, i) => (i === index ? { ...p, ...patch } : p)));
+    onChange(
+      paints.map((p, i) =>
+        i === index
+          ? {
+              ...p,
+              ...patch,
+              ...(p.hiddenOpacity !== undefined && patch.opacity !== undefined
+                ? { opacity: 0, hiddenOpacity: patch.opacity }
+                : {}),
+            }
+          : p,
+      ),
+    );
   }
   return (
     <div className="region-paints">

@@ -176,16 +176,18 @@ export function LayerAppearance({
 export function SelectionColors({
   doc,
   node,
+  selectedIds,
   onChange,
   onError,
 }: {
   doc: Document;
   node: Node;
+  selectedIds?: string[];
   onChange: (d: Document) => void;
   onError: (s: string) => void;
 }) {
   const { t } = useI18n();
-  const ids = new Set(descendants(doc, [node.id]));
+  const ids = new Set(descendants(doc, selectedIds ?? [node.id]));
   const entries = new Map<string, { id: string; key: "fill" | "stroke" }[]>();
   for (const n of doc.nodes.filter((n) => ids.has(n.id) && n.visible))
     for (const key of ["fill", "stroke"] as const) {

@@ -1,3 +1,4 @@
+import { InspectorPopover } from "./InspectorPopover";
 import { useState } from "react";
 import type { Node } from "./core";
 import { useI18n } from "./LanguageContext";
@@ -58,115 +59,121 @@ export function StrokeProperties({
           ))}
         </select>
       </label>
-      <label>
-        {t("Stroke cap")}
-        <select
-          aria-label={t("Stroke cap")}
-          value={f.strokeCap ?? "butt"}
-          onChange={(e) =>
-            change({ strokeCap: e.target.value as "butt" | "round" | "square" })
-          }
-        >
-          {["butt", "round", "square"].map((v) => (
-            <option key={v} value={v}>
-              {t(
-                v === "butt"
-                  ? "Butt cap"
-                  : v === "round"
-                    ? "Round cap"
-                    : "Square cap",
-              )}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        {t("Stroke join")}
-        <select
-          aria-label={t("Stroke join")}
-          value={f.strokeJoin ?? "miter"}
-          onChange={(e) =>
-            change({
-              strokeJoin: e.target.value as "miter" | "round" | "bevel",
-            })
-          }
-        >
-          {["miter", "round", "bevel"].map((v) => (
-            <option key={v} value={v}>
-              {t(
-                v === "miter"
-                  ? "Miter join"
-                  : v === "round"
-                    ? "Round join"
-                    : "Bevel join",
-              )}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        {t("Miter limit")}
-        <input
-          type="number"
-          aria-label={t("Miter limit")}
-          min={1}
-          max={1000}
-          value={f.strokeMiterLimit ?? 4}
-          onChange={(e) => {
-            if (e.target.value)
-              change({ strokeMiterLimit: Math.max(1, Number(e.target.value)) });
-          }}
-        />
-      </label>
-      <label>
-        {t("Stroke opacity")}
-        <input
-          type="number"
-          aria-label={t("Stroke opacity")}
-          min={0}
-          max={100}
-          value={Math.round((f.strokeOpacity ?? 1) * 100)}
-          onChange={(e) => {
-            if (e.target.value !== "")
+      <InspectorPopover title={t("Stroke")}>
+        <label>
+          {t("Stroke cap")}
+          <select
+            aria-label={t("Stroke cap")}
+            value={f.strokeCap ?? "butt"}
+            onChange={(e) =>
               change({
-                strokeOpacity: Math.max(
-                  0,
-                  Math.min(1, Number(e.target.value) / 100),
-                ),
-              });
-          }}
-        />
-      </label>
-      <label>
-        {t("Dash pattern")}
-        <input
-          key={(f.strokeDash ?? []).join(",")}
-          aria-label={t("Dash pattern")}
-          defaultValue={(f.strokeDash ?? []).join(" ")}
-          placeholder="8 4"
-          onBlur={(e) => {
-            try {
-              change({ strokeDash: parseStrokeDash(e.target.value) });
-              setError("");
-            } catch (error) {
-              setError(t((error as Error).message));
+                strokeCap: e.target.value as "butt" | "round" | "square",
+              })
             }
-          }}
-        />
-      </label>
-      <label>
-        {t("Dash offset")}
-        <input
-          type="number"
-          aria-label={t("Dash offset")}
-          value={f.strokeDashOffset ?? 0}
-          onChange={(e) => {
-            if (e.target.value !== "")
-              change({ strokeDashOffset: Number(e.target.value) });
-          }}
-        />
-      </label>
-      {error && <p role="alert">{error}</p>}
+          >
+            {["butt", "round", "square"].map((v) => (
+              <option key={v} value={v}>
+                {t(
+                  v === "butt"
+                    ? "Butt cap"
+                    : v === "round"
+                      ? "Round cap"
+                      : "Square cap",
+                )}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("Stroke join")}
+          <select
+            aria-label={t("Stroke join")}
+            value={f.strokeJoin ?? "miter"}
+            onChange={(e) =>
+              change({
+                strokeJoin: e.target.value as "miter" | "round" | "bevel",
+              })
+            }
+          >
+            {["miter", "round", "bevel"].map((v) => (
+              <option key={v} value={v}>
+                {t(
+                  v === "miter"
+                    ? "Miter join"
+                    : v === "round"
+                      ? "Round join"
+                      : "Bevel join",
+                )}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          {t("Miter limit")}
+          <input
+            type="number"
+            aria-label={t("Miter limit")}
+            min={1}
+            max={1000}
+            value={f.strokeMiterLimit ?? 4}
+            onChange={(e) => {
+              if (e.target.value)
+                change({
+                  strokeMiterLimit: Math.max(1, Number(e.target.value)),
+                });
+            }}
+          />
+        </label>
+        <label>
+          {t("Stroke opacity")}
+          <input
+            type="number"
+            aria-label={t("Stroke opacity")}
+            min={0}
+            max={100}
+            value={Math.round((f.strokeOpacity ?? 1) * 100)}
+            onChange={(e) => {
+              if (e.target.value !== "")
+                change({
+                  strokeOpacity: Math.max(
+                    0,
+                    Math.min(1, Number(e.target.value) / 100),
+                  ),
+                });
+            }}
+          />
+        </label>
+        <label>
+          {t("Dash pattern")}
+          <input
+            key={(f.strokeDash ?? []).join(",")}
+            aria-label={t("Dash pattern")}
+            defaultValue={(f.strokeDash ?? []).join(" ")}
+            placeholder="8 4"
+            onBlur={(e) => {
+              try {
+                change({ strokeDash: parseStrokeDash(e.target.value) });
+                setError("");
+              } catch (error) {
+                setError(t((error as Error).message));
+              }
+            }}
+          />
+        </label>
+        <label>
+          {t("Dash offset")}
+          <input
+            type="number"
+            aria-label={t("Dash offset")}
+            value={f.strokeDashOffset ?? 0}
+            onChange={(e) => {
+              if (e.target.value !== "")
+                change({ strokeDashOffset: Number(e.target.value) });
+            }}
+          />
+        </label>
+        {error && <p role="alert">{error}</p>}
+      </InspectorPopover>
     </div>
   );
 }

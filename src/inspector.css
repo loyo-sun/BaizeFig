@@ -357,3 +357,115 @@
     max-height: calc(100dvh - 96px);
   }
 }
+.properties .paint-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 28px;
+}
+.properties .paint-row input[type="color"] {
+  width: 20px;
+  height: 24px;
+  border: 0;
+  padding: 0;
+  flex: none;
+}
+.properties .paint-row .paint-hex {
+  width: 0;
+  flex: 1;
+  padding: 4px;
+  font-size: 11px;
+}
+.properties .paint-opacity {
+  display: flex;
+  align-items: center;
+  flex: 0 0 54px;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+.properties .paint-opacity input {
+  width: 38px;
+  padding: 2px;
+  appearance: textfield;
+}
+.properties .paint-opacity input::-webkit-inner-spin-button {
+  appearance: none;
+}
+.properties .paint-row > button {
+  width: 20px;
+  height: 28px;
+  padding: 2px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.properties .paint-type {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.properties .inspector-popover .font-settings[open] > summary {
+  display: none;
+}
+.properties .text-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.properties .text-icon-row .segmented {
+  flex: 1;
+  min-width: 0;
+}
+.properties .text-icon-row button {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+.properties .text-properties > .sizing-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.properties .text-properties > .sizing-pair > label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+}
+.properties .text-properties > .sizing-pair > label > input {
+  width: 100%;
+}
+.properties .typography-section .segmented {
+  min-width: 0;
+}
+.properties .typography-section .segmented button {
+  min-width: 0;
+  height: 28px;
+  padding: 4px;
+}
+.properties .inspector-popover :is(.component-actions, .arrange-tools) {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.properties .auto-layout-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.properties .auto-layout-controls > .section-heading {
+  font-size: 11px;
+  color: #70777b;
+}
+.properties .auto-layout-controls .segmented button {
+  min-height: 28px;
+}
+.properties .layout-properties .layout-alignment {
+  margin: 0;
+}
