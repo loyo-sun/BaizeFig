@@ -3,6 +3,7 @@ import type { Document } from "./core";
 import { useFontAvailability } from "./useFontAvailability";
 import { hasFont, replaceFont } from "./fonts";
 import { useI18n } from "./LanguageContext";
+import { FontFamilySelect } from "./FontFamilySelect";
 export function FontManager({
   doc,
   onReplace,
@@ -53,11 +54,7 @@ export function FontManager({
       </div>
       <label>
         {t("Replacement font")}
-        <input
-          aria-label={t("Replacement font")}
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-        />
+        <FontFamilySelect doc={doc} value={to} onChange={setTo} label="Replacement font" />
       </label>
       <button
         className="primary"

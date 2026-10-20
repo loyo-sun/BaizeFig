@@ -3419,12 +3419,12 @@ html[lang="zh-CN"] .layer-title-input {
   width: 26px;
   height: 30px;
   border-radius: 8px;
-  background: #f3f4f5;
+  background: transparent;
   color: #555;
 }
 .grouped-dock .dock-group > .dock-chevron:hover,
 .grouped-dock .dock-group > .dock-chevron[aria-expanded="true"] {
-  background: #e1f1ff;
+  background: transparent;
   color: #007bd1;
 }
 .dock-chevron[aria-expanded="true"] > svg {

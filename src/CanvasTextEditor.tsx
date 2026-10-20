@@ -34,7 +34,6 @@ export function CanvasTextEditor({
   node,
   session,
   onCommit,
-  onCancel,
 }: {
   doc: Document;
   node: Node;
@@ -44,7 +43,6 @@ export function CanvasTextEditor({
     runs: TextRun[],
     paragraphs: TextParagraph[],
   ) => void;
-  onCancel: () => void;
 }) {
   const { t } = useI18n(),
     element = useRef<HTMLDivElement>(null),
@@ -496,8 +494,11 @@ export function CanvasTextEditor({
       node.textFlow?.letterSpacing ?? node.fidelity?.text?.letterSpacing ?? 0,
     color: node.fill === "none" ? "#202a24" : node.fill,
     whiteSpace: node.textFlow?.autoResize === "both" ? "pre" : "pre-wrap",
-    minHeight: node.fontSize * node.lineHeight,
+    minHeight: node.textFlow?.autoResize === "fixed"
+      ? Math.max(node.height, node.fontSize * node.lineHeight)
+      : node.fontSize * node.lineHeight,
     width: Math.max(1, preview.width),
+    outline: node.textFlow?.autoResize === "both" ? "none" : undefined,
     opacity: node.opacity,
   };
   return (
@@ -662,8 +663,7 @@ export function CanvasTextEditor({
             }
             if (e.key === "Escape") {
               e.preventDefault();
-              finished.current = true;
-              onCancel();
+              finish();
             } else if (
               (e.metaKey || e.ctrlKey) &&
               ["b", "i", "u"].includes(e.key.toLowerCase())

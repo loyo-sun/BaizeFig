@@ -1014,8 +1014,8 @@ export default function App() {
         x: origin.x,
         y: origin.y,
         parentId: parent?.id ?? null,
-        width: tool === "text" ? 240 : 0,
-        height: tool === "text" ? 36 : 0,
+        width: 0,
+        height: 0,
         fill:
           kind === "line" || tool === "arrow"
             ? "none"
@@ -1034,6 +1034,13 @@ export default function App() {
       }
       if (defaultStyles[n.type])
         Object.assign(n, propertyPatch(n, defaultStyles[n.type]!));
+      if (kind === "text") {
+        n.text = "";
+        n.width = 1;
+        n.height = n.fontSize * n.lineHeight;
+        n.textFlow = { ...n.textFlow!, autoResize: "both" };
+        n.layoutItem = { ...n.layoutItem, horizontalSizing: "hug", verticalSizing: "hug" };
+      }
       setDoc({ ...doc, nodes: [...doc.nodes, n] });
       setSelected([n.id]);
       drag.current = {
@@ -1241,7 +1248,7 @@ export default function App() {
       setDoc((prev) => ({
         ...prev,
         nodes: prev.nodes.map((n) => {
-          if (n.id !== d.nodeId || n.type === "text") return n;
+          if (n.id !== d.nodeId) return n;
           const parent = n.parentId
             ? prev.nodes.find((a) => a.id === n.parentId)
             : undefined;
@@ -1252,6 +1259,16 @@ export default function App() {
             end = m ? transformPoint(m, p.x, p.y) : p,
             localDx = end.x - start.x,
             localDy = end.y - start.y;
+          if (n.type === "text") {
+            if (Math.hypot(p.x - d.start.x, p.y - d.start.y) * view.zoom < 4)
+              return { ...n, x: start.x, y: start.y, width: 1, height: n.fontSize * n.lineHeight,
+                textFlow: { ...n.textFlow!, autoResize: "both" },
+                layoutItem: { ...n.layoutItem, horizontalSizing: "hug", verticalSizing: "hug" } };
+            return { ...n, x: Math.min(start.x, end.x), y: Math.min(start.y, end.y),
+              width: Math.max(1, Math.abs(localDx)), height: Math.max(n.fontSize * n.lineHeight, Math.abs(localDy)),
+              textFlow: { ...n.textFlow!, autoResize: "fixed" },
+              layoutItem: { ...n.layoutItem, horizontalSizing: "fixed", verticalSizing: "fixed" } };
+          }
           if (tool === "arrow")
             return { ...n, ...arrowGeometry(start, end, e.shiftKey) };
           if (n.type === "path") {
@@ -4217,9 +4234,12 @@ export default function App() {
                       doc={doc}
                       node={node}
                       session={editingText}
-                      onCancel={() => setEditingText(null)}
                       onCommit={(text, runs, paragraphs) => {
                         setEditingText(null);
+                        if (!text && !node.text) {
+                          run({ type: "delete", ids: [node.id] });
+                          return;
+                        }
                         if (
                           text !== node.text ||
                           JSON.stringify(runs) !==
@@ -4331,9 +4351,11 @@ export default function App() {
                   );
                 })()}
               {selectionBox &&
+                !editingText &&
                 !editingVector &&
                 !editingCrop &&
-                (tool === "move" || tool === "hand" || tool === "scale") && (
+                (tool === "move" || tool === "hand" || tool === "scale" ||
+                  (tool === "text" && first?.textFlow?.autoResize === "fixed")) && (
                   <g className="selection-overlay">
                     <rect
                       x={selectionBox.x}
@@ -4347,7 +4369,7 @@ export default function App() {
                       strokeWidth={1 / view.zoom}
                       pointerEvents="none"
                     />
-                    {chosen.length >= 1 &&
+                    {tool !== "text" && chosen.length >= 1 &&
                       !chosen.some(
                         (n) =>
                           n.locked || ancestors(doc, n).some((a) => a.locked),
@@ -5860,13 +5882,6 @@ export default function App() {
                   {first.type === "text" && (
                     <section className="typography-section">
                       <div className="section-heading typography-heading">
-                        <button
-                          className="font-manager-link"
-                          title={t("Font availability and replacement")}
-                          onClick={() => setModal("fonts")}
-                        >
-                          {t("Font availability and replacement")}
-                        </button>
                         {t("Typography")}
                         <Type size={14} />
                       </div>
@@ -6015,6 +6030,8 @@ export default function App() {
                       <TextProperties
                         key={first.id + "text-properties"}
                         node={first}
+                        doc={doc}
+                        onReplaceFonts={change}
                         onChange={patch}
                         onCase={(mode) => {
                           try {

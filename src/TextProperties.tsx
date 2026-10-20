@@ -11,18 +11,25 @@ import {
 } from "lucide-react";
 import { InspectorPopover } from "./InspectorPopover";
 import { FontSettingsPanel } from "./FontSettingsPanel";
-import type { Node } from "./core";
+import { useState } from "react";
+import { FontManager } from "./FontManager";
+import type { Node, Document } from "./core";
 import { useI18n } from "./LanguageContext";
 import type { TextCase } from "./textCase";
 export function TextProperties({
   node,
   onChange,
   onCase,
+  doc,
+  onReplaceFonts,
 }: {
   node: Node;
   onChange: (patch: Partial<Node>) => void;
   onCase: (mode: TextCase) => void;
+  doc: Document;
+  onReplaceFonts: (doc: Document) => void;
 }) {
+  const [tab, setTab] = useState<"typography" | "fonts">("typography");
   const { t } = useI18n(),
     flow = node.textFlow ?? {
       autoResize: "fixed" as const,
@@ -110,6 +117,18 @@ export function TextProperties({
         ))}
       </div>
       <InspectorPopover title={t("Advanced typography")}>
+        <div className="segmented" role="tablist" aria-label={t("Advanced typography")}
+          onKeyDown={(e) => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+            e.preventDefault();
+            const next = e.key === "Home" ? "typography" : e.key === "End" ? "fonts" : tab === "fonts" ? "typography" : "fonts";
+            setTab(next);
+            e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next === "typography" ? 0 : 1]?.focus();
+          }}>
+          <button role="tab" tabIndex={tab === "typography" ? 0 : -1} aria-selected={tab === "typography"} onClick={() => setTab("typography")}>{t("Typography")}</button>
+          <button role="tab" tabIndex={tab === "fonts" ? 0 : -1} aria-selected={tab === "fonts"} onClick={() => setTab("fonts")}>{t("Font availability and replacement")}</button>
+        </div>
+        {tab === "fonts" ? <div role="tabpanel" aria-label={t("Font availability and replacement")}><FontManager doc={doc} onReplace={onReplaceFonts} /></div> : <div className="advanced-typography-fields" role="tabpanel" aria-label={t("Typography")}>
         <label>
           {t("Paragraph spacing")}
           <input
@@ -195,6 +214,7 @@ export function TextProperties({
             "Spell check uses your browser dictionaries and privacy settings. BaizeFig does not send text to a spelling service.",
           )}
         </p>
+        </div>}
       </InspectorPopover>
     </div>
   );

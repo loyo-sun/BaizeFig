@@ -27,10 +27,12 @@ export function FontFamilySelect({
   doc,
   value,
   onChange,
+  label = "Font family",
 }: {
   doc: Document;
   value: string;
   onChange: (value: string) => void;
+  label?: string;
 }) {
   const { t } = useI18n();
   const [installed, setInstalled] = useState<string[]>(["Inter"]);
@@ -61,7 +63,7 @@ export function FontFamilySelect({
   return (
     <select
       className="font-family-select"
-      aria-label={t("Font family")}
+      aria-label={t(label)}
       title={value}
       value={value}
       onChange={(e) => onChange(e.target.value)}
