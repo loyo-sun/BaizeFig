@@ -3399,6 +3399,21 @@ html[lang="zh-CN"] .layer-title-input {
   width: 36px;
   height: 36px;
   border-radius: 50%;
+  color: #444;
+}
+.grouped-dock .dock-group > button:hover {
+  background: #f5f5f5;
+}
+.grouped-dock .dock-group > button[aria-pressed="true"] {
+  background: #0d99ff;
+  color: white;
+}
+.grouped-dock .dock-group > button[aria-pressed="true"]:hover {
+  background: #0085e3;
+}
+.grouped-dock .dock-group > button:focus-visible {
+  outline: 2px solid #0d99ff;
+  outline-offset: 2px;
 }
 .grouped-dock .dock-group > .dock-chevron {
   width: 18px;
