@@ -4,6 +4,7 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Document font": "文档字体",
   Arrow: "箭头",
   "More actions": "更多操作",
   Position: "位置",

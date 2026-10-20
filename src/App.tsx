@@ -1,3 +1,4 @@
+import { FontFamilySelect } from "./FontFamilySelect";
 import { arrowGeometry } from "./arrowGeometry";
 import { cloudBase, loginCloud, logoutCloud, type CloudSession } from "./cloud";
 import { CloudPanel } from "./CloudPanel";
@@ -938,7 +939,10 @@ export default function App() {
     lastPointerHit.current = id;
     if (e.button === 2) {
       e.stopPropagation();
-      if (id && !selected.includes(id)) setSelected([id]);
+      const target = id
+        ? canvasTarget(doc, id, selectionScope, e.metaKey || e.ctrlKey)
+        : undefined;
+      if (target && !selected.includes(target.id)) setSelected([target.id]);
       return;
     }
     if (e.button !== 0 && e.button !== 1) return;
@@ -1912,6 +1916,28 @@ export default function App() {
     "Auto height",
     "Fixed size",
   ]);
+  const selectionKey = selected.join("|");
+  useEffect(() => {
+    if (!selected.length) return;
+    const parents = new Set(
+      selected.flatMap((id) => {
+        const node = doc.nodes.find((n) => n.id === id);
+        return node ? ancestors(doc, node).map((a) => a.id) : [];
+      }),
+    );
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      parents.forEach((id) => next.delete(id));
+      return next;
+    });
+    setLayerFilter("");
+    const frame = requestAnimationFrame(() => {
+      const rows = document.querySelectorAll<HTMLElement>("[data-layer-id]");
+      const row = [...rows].find((el) => el.dataset.layerId === selected[0]);
+      row?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectionKey, leftTab]);
   const actions = [
     {
       name: "Paste over selection",
@@ -2559,9 +2585,18 @@ export default function App() {
         a.name,
       ) &&
         !editableSelection.length) ||
+      (a.name === "Create component" &&
+        chosen.some(
+          (n) =>
+            ["component", "instance"].includes(n.type) || !!n.componentOwner,
+        )) ||
       (a.name === "Paste properties" && !styleClipboard.current),
     checked: "checked" in a ? Boolean(a.checked) : undefined,
   }));
+  const hideCreateComponent = chosen.some(
+    (n) =>
+      n.type === "component" || n.type === "instance" || !!n.componentOwner,
+  );
   const actionItem = (name: string): MenuItem =>
     actions.find((a) => a.name === name) ?? {
       name,
@@ -2570,7 +2605,15 @@ export default function App() {
     };
   const sub = (name: string, names: (string | MenuItem)[]): MenuItem => ({
     name,
-    children: names.map((n) => (typeof n === "string" ? actionItem(n) : n)),
+    children: names
+      .filter(
+        (n) =>
+          !(
+            hideCreateComponent &&
+            (typeof n === "string" ? n : n.name) === "Create component"
+          ),
+      )
+      .map((n) => (typeof n === "string" ? actionItem(n) : n)),
   });
   const menuItems: MenuItem[] = [
     { ...actionItem("Open file browser"), name: "Back to files" },
@@ -3277,6 +3320,7 @@ export default function App() {
             <div
               className={`layer ${selected.includes(n.id) ? "selected" : ""} ${ancestors(doc, n).some((a) => selected.includes(a.id)) ? "in-selection" : ""} ${[n, ...ancestors(doc, n)].some((a) => a.type === "component" || a.type === "instance") ? "component-layer" : ""} ${!n.visible ? "dim" : ""}`}
               style={{ paddingLeft: 12 + depth * 14, touchAction: "none" }}
+              aria-selected={selected.includes(n.id)}
               data-layer-id={n.id}
               draggable={false}
               onPointerDown={(e) => beginLayerDrag(e, n)}
@@ -5722,9 +5766,13 @@ export default function App() {
                     }}
                   />
                   {first.type === "text" && (
-                    <section>
-                      <div className="section-heading">
-                        <button onClick={() => setModal("fonts")}>
+                    <section className="typography-section">
+                      <div className="section-heading typography-heading">
+                        <button
+                          className="font-manager-link"
+                          title={t("Font availability and replacement")}
+                          onClick={() => setModal("fonts")}
+                        >
                           {t("Font availability and replacement")}
                         </button>
                         {t("Typography")}
@@ -5824,11 +5872,10 @@ export default function App() {
                           </div>
                         )}
                       </div>
-                      <input
-                        aria-label={t("Font family")}
-                        key={first.id + first.fontFamily}
-                        defaultValue={first.fontFamily}
-                        onBlur={(e) => patch({ fontFamily: e.target.value })}
+                      <FontFamilySelect
+                        doc={doc}
+                        value={first.fontFamily}
+                        onChange={(fontFamily) => patch({ fontFamily })}
                       />
                       <div className="field-grid">
                         <NumberField
@@ -6062,7 +6109,11 @@ export default function App() {
               "Paste",
               "Paste over selection",
               "Paste to replace",
-            ].map(actionItem),
+            ]
+              .filter(
+                (name) => !(hideCreateComponent && name === "Create component"),
+              )
+              .map(actionItem),
             sub("Copy as", ["Copy as CSS", "Copy as SVG", "Copy as PNG"]),
             ...[
               "Duplicate selection",
@@ -6075,7 +6126,11 @@ export default function App() {
               "Copy properties",
               "Paste properties",
               "Pick color",
-            ].map(actionItem),
+            ]
+              .filter(
+                (name) => !(hideCreateComponent && name === "Create component"),
+              )
+              .map(actionItem),
           ]}
           anchor={svg.current as unknown as HTMLElement}
           point={context}
