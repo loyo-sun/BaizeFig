@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import {
   penNetwork,
+  penCloseTarget,
   pencilNetwork,
   dragHandle,
   type HandleDrag,
@@ -184,7 +185,8 @@ export const PathDrawingOverlay = forwardRef<
         ? penNetwork(anchors.current)
         : pencilNetwork(stroke.current),
     paths = [{ d: networkStroke(network) }],
-    last = anchors.current.at(-1);
+    last = anchors.current.at(-1),
+    closeTarget = hover && penCloseTarget(anchors.current, hover, zoom);
   void revision;
   return (
     <g
@@ -194,20 +196,17 @@ export const PathDrawingOverlay = forwardRef<
       onPointerCancel={cancelGesture}
       onPointerUp={(e) => {
         onSnapEnd?.();
+        if (closing.current) {
+          e.stopPropagation();
+          finish(true);
+          return;
+        }
         if (anchorDrag.current) {
           moveAnchor(e);
           gestureBefore.current = null;
-          const d = anchorDrag.current,
-            a = anchors.current[d.index],
-            close =
-              d.kind === "anchor" &&
-              d.index === 0 &&
-              anchors.current.length >= 3 &&
-              Math.hypot(a.x - d.original.x, a.y - d.original.y) < 1 / zoom;
           anchorDrag.current = null;
           e.stopPropagation();
-          if (close) finish(true);
-          else paint();
+          paint();
         }
       }}
     >
@@ -231,12 +230,9 @@ export const PathDrawingOverlay = forwardRef<
             paint();
             return;
           }
-          const first = anchors.current[0];
-          if (
-            anchors.current.length >= 3 &&
-            Math.hypot(p.x - first.x, p.y - first.y) < 8 / zoom
-          ) {
+          if (penCloseTarget(anchors.current, point(e, false), zoom)) {
             closing.current = true;
+            setHover(anchors.current[0]);
             return;
           }
           if (e.shiftKey) p = snap(p);
@@ -257,8 +253,11 @@ export const PathDrawingOverlay = forwardRef<
         }}
         onPointerMove={(e) => {
           if (temporaryHand) return;
-          const p = e.shiftKey && !dragging.current ? snap(point(e)) : point(e);
+          const close = !dragging.current && tool === "pen"
+            ? penCloseTarget(anchors.current, point(e, false), zoom) : undefined;
+          const p = close ?? (e.shiftKey && !dragging.current ? snap(point(e)) : point(e));
           setHover(p);
+          if (close) onSnapEnd?.();
           if (!dragging.current) return;
           e.stopPropagation();
           if (tool === "pencil") {
@@ -308,6 +307,10 @@ export const PathDrawingOverlay = forwardRef<
         }}
       />
       <g pointerEvents="none">
+        {closeTarget && !dragging.current && !anchorDrag.current && (
+          <circle data-pen-close-hint="" cx={closeTarget.x} cy={closeTarget.y}
+            r={8 / zoom} fill="#0d99ff22" stroke="#0d99ff" strokeWidth={1.5 / zoom} />
+        )}
         {paths.map((p, i) => (
           <path key={i} d={p.d} fill="none" stroke="#202a24" strokeWidth={1} />
         ))}
@@ -317,7 +320,7 @@ export const PathDrawingOverlay = forwardRef<
           !dragging.current &&
           !anchorDrag.current && (
             <path
-              d={`M${last.x} ${last.y} C${last.x + last.outgoing.x} ${last.y + last.outgoing.y} ${hover.x} ${hover.y} ${hover.x} ${hover.y}`}
+              d={`M${last.x} ${last.y} C${last.x + last.outgoing.x} ${last.y + last.outgoing.y} ${hover.x + (closeTarget ? closeTarget.incoming.x : 0)} ${hover.y + (closeTarget ? closeTarget.incoming.y : 0)} ${hover.x} ${hover.y}`}
               fill="none"
               stroke="#0d99ff"
               strokeWidth={1 / zoom}
@@ -370,13 +373,24 @@ export const PathDrawingOverlay = forwardRef<
             <rect
               aria-label={`Pen anchor ${i + 1}`}
               data-pen-control="anchor"
+              data-pen-close={i === 0 && anchors.current.length >= 3 ? "true" : undefined}
               pointerEvents="all"
+              onPointerEnter={() => {
+                if (i === 0 && anchors.current.length >= 3 && !temporaryHand)
+                  setHover(a);
+              }}
               onPointerDown={(e) => {
                 if (temporaryHand || e.button !== 0) return;
                 gestureBefore.current = structuredClone(anchors.current);
                 setHover(null);
                 e.preventDefault();
                 e.stopPropagation();
+                if (i === 0 && anchors.current.length >= 3) {
+                  closing.current = true;
+                  setHover(a);
+                  e.currentTarget.setPointerCapture(e.pointerId);
+                  return;
+                }
                 anchorDrag.current = {
                   index: i,
                   kind: "anchor",

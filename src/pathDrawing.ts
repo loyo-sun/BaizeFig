@@ -7,6 +7,12 @@ export interface PenAnchor extends Vec {
   outgoing: Vec;
   independent?: boolean;
 }
+export function penCloseTarget(anchors: PenAnchor[], pointer: Vec, zoom: number) {
+  const first = anchors[0];
+  return anchors.length >= 3 && first &&
+    Math.hypot(pointer.x - first.x, pointer.y - first.y) * zoom <= 10
+    ? first : undefined;
+}
 export interface HandleDrag {
   start: Vec;
   original: Vec;

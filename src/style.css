@@ -478,6 +478,9 @@ hr {
 .tool-pen.cursor-override .design-canvas [data-pen-control] {
   cursor: move !important;
 }
+.tool-pen.cursor-override .design-canvas [data-pen-close="true"] {
+  cursor: crosshair !important;
+}
 .canvas-top-note {
   position: absolute;
   top: 20px;

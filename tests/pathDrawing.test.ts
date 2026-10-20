@@ -8,6 +8,7 @@ import {
 } from "../src/core";
 import {
   penNetwork,
+  penCloseTarget,
   pencilNetwork,
   drawnPath,
   type PenAnchor,
@@ -19,6 +20,20 @@ const anchor = (x: number, y: number): PenAnchor => ({
   y,
   incoming: { x: 0, y: 0 },
   outgoing: { x: 0, y: 0 },
+});
+it("snaps closure to the first anchor at a constant screen distance without moving it", () => {
+  const anchors = [anchor(100, 100), anchor(200, 100), anchor(150, 200)];
+  anchors[0].incoming = { x: -20, y: 10 };
+  const before = structuredClone(anchors);
+  for (const zoom of [0.25, 1, 4]) {
+    expect(penCloseTarget(anchors, { x: 100 + 9 / zoom, y: 100 }, zoom)).toBe(anchors[0]);
+    expect(penCloseTarget(anchors, { x: 100 + 11 / zoom, y: 100 }, zoom)).toBeUndefined();
+  }
+  const closed = penNetwork(anchors, true);
+  expect(closed.segments.at(-1)).toMatchObject({ a: 2, b: 0, hb: { x: -20, y: 10 } });
+  expect(closed.vertices).toHaveLength(3);
+  expect(closed.regions).toHaveLength(1);
+  expect(anchors).toEqual(before);
 });
 it("creates straight click segments, symmetric dragged cubic handles and a closed region without a duplicate endpoint", () => {
   const anchors = [
