@@ -1,11 +1,6 @@
+import { selectionColors, replaceSelectionColor } from "./selectionColors";
 import { Eye, EyeOff } from "lucide-react";
-import {
-  ancestors,
-  descendants,
-  execute,
-  type Document,
-  type Node,
-} from "./core";
+import { type Document, type Node } from "./core";
 import { useI18n } from "./LanguageContext";
 export function ConstraintsControl({
   doc,
@@ -187,20 +182,7 @@ export function SelectionColors({
   onError: (s: string) => void;
 }) {
   const { t } = useI18n();
-  const ids = new Set(descendants(doc, selectedIds ?? [node.id]));
-  const entries = new Map<string, { id: string; key: "fill" | "stroke" }[]>();
-  for (const n of doc.nodes.filter((n) => ids.has(n.id) && n.visible))
-    for (const key of ["fill", "stroke"] as const) {
-      const value = n[key];
-      if (
-        !/^#[0-9a-f]{6}$/i.test(value) ||
-        (key === "stroke" && !n.strokeWidth)
-      )
-        continue;
-      const list = entries.get(value.toUpperCase()) ?? [];
-      list.push({ id: n.id, key });
-      entries.set(value.toUpperCase(), list);
-    }
+  const entries = selectionColors(doc, selectedIds ?? [node.id]);
   if (!entries.size) return null;
   return (
     <section className="selection-colors">
@@ -210,21 +192,10 @@ export function SelectionColors({
           <input
             type="color"
             aria-label={t("Replace selection color") + " " + color}
-            value={color}
+            value={color.slice(0, 7)}
             onChange={(e) => {
               try {
-                let next = doc;
-                for (const target of targets) {
-                  const n = next.nodes.find((n) => n.id === target.id)!;
-                  if (n.locked || ancestors(next, n).some((a) => a.locked))
-                    continue;
-                  next = execute(next, {
-                    type: "update",
-                    ids: [target.id],
-                    patch: { [target.key]: e.target.value },
-                  }).doc;
-                }
-                onChange(next);
+                onChange(replaceSelectionColor(doc, targets, e.target.value));
               } catch (e) {
                 onError((e as Error).message);
               }

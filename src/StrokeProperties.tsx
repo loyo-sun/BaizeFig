@@ -124,25 +124,7 @@ export function StrokeProperties({
             }}
           />
         </label>
-        <label>
-          {t("Stroke opacity")}
-          <input
-            type="number"
-            aria-label={t("Stroke opacity")}
-            min={0}
-            max={100}
-            value={Math.round((f.strokeOpacity ?? 1) * 100)}
-            onChange={(e) => {
-              if (e.target.value !== "")
-                change({
-                  strokeOpacity: Math.max(
-                    0,
-                    Math.min(1, Number(e.target.value) / 100),
-                  ),
-                });
-            }}
-          />
-        </label>
+
         <label>
           {t("Dash pattern")}
           <input

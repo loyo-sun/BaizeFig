@@ -1,3 +1,4 @@
+import { InspectorPopover } from "./InspectorPopover";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { NestedComponentProperties } from "./NestedComponentProperties";
 import { useState } from "react";
@@ -94,8 +95,7 @@ export function ComponentProperties({
         />
       )}
       {main && (
-        <details>
-          <summary>{t("Component documentation")}</summary>
+        <InspectorPopover title={t("Component documentation")}>
           <label>
             {t("Description")}
             <textarea
@@ -133,7 +133,7 @@ export function ComponentProperties({
               }
             />
           </label>
-        </details>
+        </InspectorPopover>
       )}
       {main && set && (
         <label>
@@ -540,8 +540,7 @@ export function ComponentProperties({
             );
           })}
           {main && (
-            <details>
-              <summary>{t("Add component property")}</summary>
+            <InspectorPopover title={t("Add component property")}>
               <label>
                 {t("Property type")}
                 <select
@@ -647,7 +646,7 @@ export function ComponentProperties({
               >
                 {t("Add property")}
               </button>
-            </details>
+            </InspectorPopover>
           )}
           {main && set && (
             <details>

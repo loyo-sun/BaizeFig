@@ -1,4 +1,7 @@
 import {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
   ArrowLeftRight,
   ArrowUpDown,
   Square,
@@ -86,20 +89,27 @@ export function TextProperties({
           ))}
         </div>
       </div>
-      <div className="sizing-pair">
-        <label>
-          {t("Letter spacing")}
-          <input
-            aria-label={t("Letter spacing")}
-            type="number"
-            value={flow.letterSpacing}
-            step={0.1}
-            onChange={(e) => {
-              if (e.target.value !== "")
-                change({ letterSpacing: Number(e.target.value) });
-            }}
-          />
-        </label>
+      <div className="segmented" role="group" aria-label={t("Text alignment")}>
+        {(
+          [
+            ["left", AlignLeft],
+            ["center", AlignCenter],
+            ["right", AlignRight],
+          ] as const
+        ).map(([value, Icon]) => (
+          <button
+            key={value}
+            title={t(value)}
+            aria-label={t("Text alignment") + ": " + t(value)}
+            aria-pressed={node.textAlign === value}
+            className={node.textAlign === value ? "active" : ""}
+            onClick={() => onChange({ textAlign: value })}
+          >
+            <Icon size={15} />
+          </button>
+        ))}
+      </div>
+      <InspectorPopover title={t("Advanced typography")}>
         <label>
           {t("Paragraph spacing")}
           <input
@@ -114,8 +124,6 @@ export function TextProperties({
             }}
           />
         </label>
-      </div>
-      <InspectorPopover title={t("Advanced typography")}>
         <FontSettingsPanel expanded node={node} onChange={onChange} />
         <label>
           {t("Text direction")}

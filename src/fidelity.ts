@@ -68,6 +68,7 @@ export interface Fidelity {
   clipsContent?: boolean;
   corners?: [number, number, number, number];
   strokeOpacity?: number;
+  hiddenStrokeOpacity?: number;
   strokeAlign?: "center" | "inside" | "outside";
   strokeMiterLimit?: number;
   strokeDash?: number[];
@@ -395,6 +396,10 @@ export function validateFidelity(f: Fidelity) {
     f.size.some((x) => x < 0) ||
     (f.linear && !finite(f.linear, 4)) ||
     (f.corners && (!finite(f.corners, 4) || f.corners.some((x) => x < 0))) ||
+    (f.hiddenStrokeOpacity !== undefined &&
+      (!Number.isFinite(f.hiddenStrokeOpacity) ||
+        f.hiddenStrokeOpacity < 0 ||
+        f.hiddenStrokeOpacity > 1)) ||
     (f.strokeOpacity !== undefined &&
       (!Number.isFinite(f.strokeOpacity) ||
         f.strokeOpacity < 0 ||
@@ -550,6 +555,10 @@ export function validateFidelity(f: Fidelity) {
                 (v) => Number.isFinite(v) && v > 0,
               ))) ||
           !["solid", "linear", "radial", "diamond", "image"].includes(p.type) ||
+          (p.hiddenOpacity !== undefined &&
+            (!Number.isFinite(p.hiddenOpacity) ||
+              p.hiddenOpacity < 0 ||
+              p.hiddenOpacity > 1)) ||
           !Number.isFinite(p.opacity) ||
           p.opacity < 0 ||
           p.opacity > 1 ||

@@ -66,7 +66,12 @@ export function FillProperties({
           title={t("Add fill")}
           aria-label={t("Add fill")}
           onClick={() =>
-            save([...paints, { type: "solid", color: "#d9d9d9", opacity: 1 }])
+            paints.length
+              ? save([
+                  ...paints,
+                  { type: "solid", color: "#d9d9d9", opacity: 1 },
+                ])
+              : onChange({ fill: "#d9d9d9" })
           }
         >
           <Plus size={14} />
@@ -168,7 +173,11 @@ export function FillProperties({
           <button
             title={t("Remove fill")}
             aria-label={t("Remove fill") + " " + (index + 1)}
-            onClick={() => save(paints.filter((_, i) => i !== index))}
+            onClick={() =>
+              paints.length === 1
+                ? onChange({ fill: "none", image: undefined })
+                : save(paints.filter((_, i) => i !== index))
+            }
           >
             <Minus size={14} />
           </button>

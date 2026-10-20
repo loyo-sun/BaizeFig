@@ -469,3 +469,42 @@
 .properties .layout-properties .layout-alignment {
   margin: 0;
 }
+.properties .component-properties .inspector-popover > label {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.properties
+  .component-properties
+  .inspector-popover
+  > label
+  > :is(input, select, textarea) {
+  width: 100%;
+  max-width: none;
+}
+.properties .component-properties .inspector-popover textarea {
+  min-height: 72px;
+}
+.properties .inspector-popover .field-grid .number-field {
+  flex-direction: column;
+  height: auto;
+  align-items: stretch;
+  padding: 6px;
+  gap: 2px;
+}
+.properties .inspector-popover .field-grid .number-field > input {
+  width: 100%;
+  flex: none;
+  min-height: 26px;
+}
+@media (max-width: 960px) {
+  .app {
+    min-width: 0;
+  }
+  .left-panel {
+    width: 220px;
+  }
+  .right-panel {
+    flex-shrink: 0;
+  }
+}

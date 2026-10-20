@@ -1,3 +1,4 @@
+import { StrokePaintRow } from "./StrokePaintRow";
 import { InspectorPopover } from "./InspectorPopover";
 import { FontFamilySelect } from "./FontFamilySelect";
 import { arrowGeometry } from "./arrowGeometry";
@@ -5579,15 +5580,84 @@ export default function App() {
                         </button>
                       </div>
                     </div>
-                    <div className="field-grid">
-                      <NumberField
-                        label="⌜"
-                        aria="Corner radius"
-                        value={first.radius}
-                        min={0}
-                        onChange={(v) => patch({ radius: v })}
-                      />
-                    </div>
+                    {![
+                      "text",
+                      "ellipse",
+                      "line",
+                      "path",
+                      "star",
+                      "polygon",
+                    ].includes(first.type) && (
+                      <div className="field-grid">
+                        <NumberField
+                          label="⌜"
+                          aria="Corner radius"
+                          value={first.radius}
+                          min={0}
+                          onChange={(v) => patch({ radius: v })}
+                        />
+                        {![
+                          "text",
+                          "ellipse",
+                          "line",
+                          "path",
+                          "star",
+                          "polygon",
+                        ].includes(first.type) && (
+                          <InspectorPopover
+                            key={first.id + "corners"}
+                            title={t("Independent corners")}
+                            iconOnly
+                          >
+                            <div className="field-grid">
+                              {(
+                                [
+                                  "Top left",
+                                  "Top right",
+                                  "Bottom right",
+                                  "Bottom left",
+                                ] as const
+                              ).map((label, index) => (
+                                <NumberField
+                                  key={label}
+                                  label={label}
+                                  aria={label}
+                                  min={0}
+                                  value={
+                                    first.fidelity?.corners?.[index] ??
+                                    first.radius
+                                  }
+                                  onChange={(value) => {
+                                    const corners: [
+                                      number,
+                                      number,
+                                      number,
+                                      number,
+                                    ] = [
+                                      ...(first.fidelity?.corners ?? [
+                                        first.radius,
+                                        first.radius,
+                                        first.radius,
+                                        first.radius,
+                                      ]),
+                                    ];
+                                    corners[index] = value;
+                                    patch({
+                                      fidelity: {
+                                        ...(first.fidelity ?? {
+                                          size: [first.width, first.height],
+                                        }),
+                                        corners,
+                                      },
+                                    });
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </InspectorPopover>
+                        )}
+                      </div>
+                    )}
                   </section>
                   <section className="inspector-dimensions">
                     <div className="section-heading">{t("Layout")}</div>
@@ -5919,32 +5989,28 @@ export default function App() {
                           step={0.1}
                           onChange={(v) => patch({ lineHeight: v })}
                         />
-                        <div
-                          className="segmented"
-                          role="group"
-                          aria-label={t("Text alignment")}
-                        >
-                          {(
-                            [
-                              ["left", AlignLeft],
-                              ["center", AlignCenter],
-                              ["right", AlignRight],
-                            ] as const
-                          ).map(([value, Icon]) => (
-                            <button
-                              key={value}
-                              title={t(value)}
-                              aria-label={t("Text alignment") + ": " + t(value)}
-                              aria-pressed={first.textAlign === value}
-                              className={
-                                first.textAlign === value ? "active" : ""
-                              }
-                              onClick={() => patch({ textAlign: value })}
-                            >
-                              <Icon size={15} />
-                            </button>
-                          ))}
-                        </div>
+                        <NumberField
+                          label="Letter spacing"
+                          value={
+                            first.textFlow?.letterSpacing ??
+                            first.fidelity?.text?.letterSpacing ??
+                            0
+                          }
+                          step={0.1}
+                          onChange={(value) =>
+                            patch({
+                              textFlow: {
+                                ...(first.textFlow ?? {
+                                  autoResize: "fixed",
+                                  verticalAlign: "top",
+                                  letterSpacing: 0,
+                                  runs: first.fidelity?.text?.spans,
+                                }),
+                                letterSpacing: value,
+                              },
+                            })
+                          }
+                        />
                       </div>
                       <TextProperties
                         key={first.id + "text-properties"}
@@ -5995,21 +6061,7 @@ export default function App() {
                     </div>
                     {first.strokeWidth > 0 && (
                       <>
-                        <label className="color-row">
-                          <input
-                            type="color"
-                            aria-label={t("Stroke color")}
-                            value={
-                              first.stroke === "none"
-                                ? "#202a24"
-                                : first.stroke.slice(0, 7)
-                            }
-                            onChange={(e) => patch({ stroke: e.target.value })}
-                          />
-                          <span>
-                            {first.stroke.toUpperCase().replace("#", "")}
-                          </span>
-                        </label>
+                        <StrokePaintRow node={first} onChange={patch} />
                         <NumberField
                           label="Width"
                           aria="Stroke width"

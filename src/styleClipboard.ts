@@ -27,6 +27,7 @@ const fidelityFields = [
   "corners",
   "strokeAlign",
   "strokeOpacity",
+  "hiddenStrokeOpacity",
   "strokeMiterLimit",
   "strokeDash",
   "strokeDashOffset",
