@@ -39,6 +39,7 @@ export const PathDrawingOverlay = forwardRef<
     [revision, refresh] = useState(0),
     [hover, setHover] = useState<Vec | null>(null);
   const creationDrag = useRef<HandleDrag | null>(null);
+  const closingDrag = useRef<(HandleDrag & { moved: boolean }) | null>(null);
   const gestureBefore = useRef<PenAnchor[] | null>(null);
   const anchorDrag = useRef<{
     index: number;
@@ -73,9 +74,34 @@ export const PathDrawingOverlay = forwardRef<
     creationDrag.current = null;
     dragging.current = false;
     closing.current = false;
+    closingDrag.current = null;
     stroke.current = [];
     setHover(null);
     onSnapEnd?.();
+    paint();
+  }
+  function beginClosing(e: React.PointerEvent) {
+    const first = anchors.current[0];
+    closing.current = true;
+    closingDrag.current = {
+      start: point(e, false),
+      moved: false,
+      original: { ...first.incoming },
+      opposite: { ...first.outgoing },
+      independent: true,
+    };
+    setHover(first);
+    onSnapEnd?.();
+  }
+  function moveClosing(e: React.PointerEvent) {
+    const drag = closingDrag.current, first = anchors.current[0];
+    if (!drag || !first || temporaryHand) return;
+    const p = point(e, false);
+    if (!drag.moved && Math.hypot(p.x - drag.start.x, p.y - drag.start.y) * zoom < 2) return;
+    drag.moved = true;
+    first.incoming = dragHandle(drag, p, true, e.shiftKey).handle;
+    first.independent = true;
+    setHover(first);
     paint();
   }
   function moveAnchor(e: React.PointerEvent) {
@@ -121,6 +147,7 @@ export const PathDrawingOverlay = forwardRef<
     stroke.current = [];
     dragging.current = false;
     closing.current = false;
+    closingDrag.current = null;
     anchorDrag.current = null;
     creationDrag.current = null;
     gestureBefore.current = null;
@@ -192,12 +219,16 @@ export const PathDrawingOverlay = forwardRef<
     <g
       ref={group}
       data-path-drawing={tool}
-      onPointerMove={moveAnchor}
+      onPointerMove={(e) => {
+        if (closing.current) moveClosing(e);
+        else moveAnchor(e);
+      }}
       onPointerCancel={cancelGesture}
       onPointerUp={(e) => {
         onSnapEnd?.();
         if (closing.current) {
           e.stopPropagation();
+          moveClosing(e);
           finish(true);
           return;
         }
@@ -231,8 +262,7 @@ export const PathDrawingOverlay = forwardRef<
             return;
           }
           if (penCloseTarget(anchors.current, point(e, false), zoom)) {
-            closing.current = true;
-            setHover(anchors.current[0]);
+            beginClosing(e);
             return;
           }
           if (e.shiftKey) p = snap(p);
@@ -253,6 +283,11 @@ export const PathDrawingOverlay = forwardRef<
         }}
         onPointerMove={(e) => {
           if (temporaryHand) return;
+          if (closing.current) {
+            e.stopPropagation();
+            moveClosing(e);
+            return;
+          }
           const close = !dragging.current && tool === "pen"
             ? penCloseTarget(anchors.current, point(e, false), zoom) : undefined;
           const p = close ?? (e.shiftKey && !dragging.current ? snap(point(e)) : point(e));
@@ -276,6 +311,7 @@ export const PathDrawingOverlay = forwardRef<
             return;
           e.stopPropagation();
           if (closing.current) {
+            moveClosing(e);
             finish(true);
             return;
           }
@@ -386,8 +422,7 @@ export const PathDrawingOverlay = forwardRef<
                 e.preventDefault();
                 e.stopPropagation();
                 if (i === 0 && anchors.current.length >= 3) {
-                  closing.current = true;
-                  setHover(a);
+                  beginClosing(e);
                   e.currentTarget.setPointerCapture(e.pointerId);
                   return;
                 }

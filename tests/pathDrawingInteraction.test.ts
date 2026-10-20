@@ -242,3 +242,41 @@ it("closes a path once and supports deleting a pending anchor before continuing"
   expect(finished[0].vertices).toHaveLength(3);
   expect(finished[0].regions[0].loops[0]).toHaveLength(3);
 });
+
+it.each(["anchor", "magnet"])("drags only the incoming closure handle via %s without moving the first point", (targetKind) => {
+  render();
+  event(surface(), "pointerdown", 100, 100);
+  event(surface(), "pointerup", 130, 110);
+  click(220, 100);
+  click(220, 220);
+  const target = targetKind === "anchor"
+    ? host.querySelector('[aria-label="Pen anchor 1"]')! : surface();
+  const x = targetKind === "anchor" ? 100 : 108;
+  event(target, "pointerdown", x, 100);
+  event(target, "pointermove", x + 20, 140);
+  const incoming = host.querySelector('[aria-label="Pen handle 1 incoming"]')!;
+  expect(incoming.getAttribute("cx")).toBe("90");
+  expect(incoming.getAttribute("cy")).toBe("130");
+  event(target, "pointerup", x + 25, 150);
+  expect(finished).toHaveLength(1);
+  const n = finished[0];
+  expect(n.vertices[0]).toEqual({ x: 100, y: 100 });
+  expect(n.segments[0].ha).toEqual({ x: 30, y: 10 });
+  expect(n.segments[2].hb).toEqual({ x: -5, y: 40 });
+  expect(n.regions[0].loops[0]).toHaveLength(3);
+});
+it("restores the first handle if closure dragging is cancelled and can close again", () => {
+  render();
+  event(surface(), "pointerdown", 100, 100);
+  event(surface(), "pointerup", 130, 110);
+  click(220, 100);
+  click(220, 220);
+  const first = host.querySelector('[aria-label="Pen anchor 1"]')!;
+  event(first, "pointerdown", 100, 100);
+  event(first, "pointermove", 150, 150);
+  event(first, "pointercancel", 150, 150);
+  expect(finished).toHaveLength(0);
+  click(100, 100);
+  expect(finished[0].segments[2].hb).toEqual({ x: -30, y: -10 });
+  expect(finished[0].segments[0].ha).toEqual({ x: 30, y: 10 });
+});
