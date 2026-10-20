@@ -12,7 +12,7 @@ import {
   createMultipleComponents,
   addComponentVariant,
 } from "./componentAuthoring";
-import { canvasTarget } from "./canvasSelection";
+import { canvasTarget, marqueeTargets } from "./canvasSelection";
 import { ArrangeIcon } from "./ArrangeIcon";
 import { FigPagePicker } from "./FigPagePicker";
 import type { FigPageSummary } from "./figImport";
@@ -508,6 +508,9 @@ export default function App() {
     shift?: boolean;
     targets?: SnapTarget[];
     moveBase?: Document;
+    selectionScope?: string | null;
+    marqueeSelection?: string[];
+    marqueeInitialSelection?: string[];
   } | null>(null);
   useEffect(() => {
     setEditingText(null);
@@ -1082,13 +1085,14 @@ export default function App() {
     }
     if (!e.shiftKey) {
       setSelected([]);
-      setSelectionScope(null);
     }
     setMarquee({ x: p.x, y: p.y, width: 0, height: 0 });
     drag.current = {
       ...base,
       type: "marquee",
       ids: e.shiftKey ? selected : [],
+      selectionScope,
+      marqueeInitialSelection: selected,
     };
   }
   function pointerMove(e: RPointer) {
@@ -1161,13 +1165,17 @@ export default function App() {
       return;
     }
     if (d.type === "marquee") {
-      (d as typeof d & { crossing?: boolean }).crossing = dx < 0;
-      setMarquee({
+      const box = {
         x: Math.min(p.x, d.start.x),
         y: Math.min(p.y, d.start.y),
         width: Math.abs(dx),
         height: Math.abs(dy),
-      });
+      };
+      setMarquee(box);
+      d.marqueeSelection = Math.hypot(dx, dy) * view.zoom < 4
+        ? d.ids
+        : [...new Set([...d.ids, ...marqueeTargets(doc, page, box, d.selectionScope ?? null)])];
+      setSelected(d.marqueeSelection);
       return;
     }
     if (d.type === "move") {
@@ -1309,27 +1317,8 @@ export default function App() {
     if (!d) return;
     drag.current = null;
     if (d.type === "marquee") {
-      if (marquee) {
-        const hits = doc.nodes
-          .filter(
-            (n) => n.pageId === page && !n.parentId && n.visible && !n.locked,
-          )
-          .filter((n) => {
-            const p = bounds(doc, [n]);
-            const crossing = !!(d as typeof d & { crossing?: boolean })
-              .crossing;
-            return crossing
-              ? p.x <= marquee.x + marquee.width &&
-                  p.y <= marquee.y + marquee.height &&
-                  p.x + p.width >= marquee.x &&
-                  p.y + p.height >= marquee.y
-              : p.x >= marquee.x &&
-                  p.y >= marquee.y &&
-                  p.x + p.width <= marquee.x + marquee.width &&
-                  p.y + p.height <= marquee.y + marquee.height;
-          });
-        setSelected([...new Set([...d.ids, ...hits.map((n) => n.id)])]);
-      }
+      setSelected(d.marqueeSelection ?? d.ids);
+      if (!d.marqueeSelection?.length && !d.ids.length) setSelectionScope(null);
       setMarquee(null);
       return;
     }
@@ -1387,6 +1376,7 @@ export default function App() {
     const d = drag.current;
     if (d) {
       setDoc(d.before);
+      if (d.type === "marquee") setSelected(d.marqueeInitialSelection ?? []);
       drag.current = null;
       setMarquee(null);
     }
