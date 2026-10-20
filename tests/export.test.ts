@@ -273,3 +273,29 @@ it("frame clipping toggle survives save, SVG export and undo", async () => {
     /<clipPath id="clip-[^"]*-clip-frame"/,
   );
 });
+
+it("clips component overflow in SVG and export bounds only when enabled", async () => {
+  const doc = emptyDocument(),
+    page = doc.pages[0].id;
+  doc.nodes = [
+    makeNode("component", page, {
+      id: "clip-component",
+      width: 100,
+      height: 100,
+      fill: "none",
+      fidelity: { size: [100, 100], clipsContent: true },
+    }),
+    makeNode("rectangle", page, {
+      id: "overflow",
+      parentId: "clip-component",
+      x: 80,
+      y: 80,
+      width: 100,
+      height: 100,
+    }),
+  ];
+  expect(await svgString(doc, page, ["clip-component"])).toContain("clipPath");
+  expect(exportBounds(doc, page, ["clip-component"]).width).toBe(100);
+  doc.nodes[0].fidelity!.clipsContent = false;
+  expect(exportBounds(doc, page, ["clip-component"]).width).toBe(180);
+});

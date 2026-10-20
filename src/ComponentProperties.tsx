@@ -540,7 +540,7 @@ export function ComponentProperties({
             );
           })}
           {main && (
-            <details open={!main.componentProperties?.length}>
+            <details>
               <summary>{t("Add component property")}</summary>
               <label>
                 {t("Property type")}

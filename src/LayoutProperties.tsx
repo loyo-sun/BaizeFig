@@ -155,28 +155,6 @@ export function LayoutProperties({
             ))}
         </>
       )}
-      {node.parentId &&
-        (!parent?.layout || parent.layout === "none" || item.absolute) &&
-        (["horizontal", "vertical"] as const).map((axis) => (
-          <div key={axis}>
-            {options(
-              axis === "horizontal"
-                ? "Horizontal constraint"
-                : "Vertical constraint",
-              node.constraints?.[axis] ?? "min",
-              ["min", "max", "center", "stretch", "scale"],
-              (v) =>
-                onChange({
-                  constraints: {
-                    horizontal: "min",
-                    vertical: "min",
-                    ...node.constraints,
-                    [axis]: v,
-                  },
-                }),
-            )}
-          </div>
-        ))}
       {active && (
         <>
           <div className="section-heading">{t("Layout rules")}</div>
@@ -341,24 +319,6 @@ export function LayoutProperties({
             </>
           )}
         </>
-      )}
-      {node.type === "frame" && (
-        <label className="clip-content-toggle">
-          <input
-            type="checkbox"
-            checked={node.fidelity?.clipsContent !== false}
-            onChange={(e) =>
-              onChange({
-                fidelity: {
-                  size: [node.width, node.height],
-                  ...node.fidelity,
-                  clipsContent: e.target.checked,
-                },
-              })
-            }
-          />
-          {t("Clip content")}
-        </label>
       )}
       {error && <p role="alert">{t(error)}</p>}
     </section>

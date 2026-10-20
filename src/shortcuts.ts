@@ -33,7 +33,11 @@ export const shortcutRegistry: Shortcut[] = [
     ["Pen / polyline", "KeyP"],
     ["Text", "KeyT"],
     ["Hand", "KeyH"],
-  ].map(([n, c]) => binding(n, c)),
+  ].map(([n, c]) => ({
+    ...binding(n, c),
+    ...(n === "Frame" ? { aliases: ["KeyA"] } : {}),
+  })),
+  binding("Arrow", "KeyL", "S"),
   binding("Pencil", "KeyP", "S"),
   binding("Actions", "KeyK", "M"),
   binding("Undo", "KeyZ", "M"),
@@ -150,9 +154,14 @@ export function shortcutMatches(
   ].includes(s.name);
   const code =
     layout === "physical"
-      ? e.code === s.code
+      ? [s.code, ...(s.aliases ?? [])].includes(e.code)
       : e.key.toLowerCase() ===
-        (s.key ?? codeKey(s.code, s.shift)).toLowerCase();
+          (s.key ?? codeKey(s.code, s.shift)).toLowerCase() ||
+        (layout === "character" &&
+          (s.aliases ?? []).some(
+            (alias) =>
+              e.key.toLowerCase() === codeKey(alias, s.shift).toLowerCase(),
+          ));
   return (
     code &&
     !!s.alt === e.altKey &&

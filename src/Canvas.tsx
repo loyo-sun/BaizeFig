@@ -805,7 +805,7 @@ export const Scene = React.memo(function Scene({
         ) : (
           <NodeShape node={{ ...n, id: renderId(n) }} outline={outline} />
         )}
-        {n.type === "frame" && n.fidelity?.clipsContent !== false && (
+        {(n.fidelity?.clipsContent ?? n.type === "frame") && (
           <defs>
             <clipPath id={`clip-${renderId(n)}`}>
               {n.fidelity?.corners ? (
@@ -818,7 +818,7 @@ export const Scene = React.memo(function Scene({
         )}
         <g
           clipPath={
-            n.type === "frame" && n.fidelity?.clipsContent !== false
+            (n.fidelity?.clipsContent ?? n.type === "frame")
               ? `url(#clip-${renderId(n)})`
               : undefined
           }
@@ -1147,7 +1147,7 @@ export function exportBounds(
       }
     }
     result = union(result, visual);
-    if (n.type !== "frame" || n.fidelity?.clipsContent === false)
+    if (!(n.fidelity?.clipsContent ?? n.type === "frame"))
       for (const child of doc.nodes.filter(
         (c) => c.parentId === n.id && c.visible,
       ))

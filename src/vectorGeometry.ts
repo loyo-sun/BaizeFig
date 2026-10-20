@@ -597,7 +597,7 @@ export function convertToPaths(
             paths.push({ ...p, d: transformedPath(p.d, m) });
       }
       const childClips =
-        n.type === "frame" && n.fidelity?.clipsContent !== false
+        (n.fidelity?.clipsContent ?? n.type === "frame")
           ? [...clips, ...shapePaths(n).map((p) => transformedPath(p.d, m))]
           : clips;
       for (const child of children) collect(child, childClips);

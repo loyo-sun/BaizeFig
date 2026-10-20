@@ -76,44 +76,6 @@ export function EffectsProperties({
           <Plus size={14} />
         </button>
       </div>
-      <label className="blend-field">
-        {t("Blend mode")}
-        <select
-          aria-label={t("Blend mode")}
-          value={node.fidelity?.blendMode ?? "normal"}
-          onChange={(e) =>
-            onChange({
-              fidelity: {
-                ...(node.fidelity ?? { size: [node.width, node.height] }),
-                blendMode: e.target.value,
-              },
-            })
-          }
-        >
-          {[
-            "normal",
-            "multiply",
-            "screen",
-            "overlay",
-            "darken",
-            "lighten",
-            "color-dodge",
-            "color-burn",
-            "hard-light",
-            "soft-light",
-            "difference",
-            "exclusion",
-            "hue",
-            "saturation",
-            "color",
-            "luminosity",
-          ].map((mode) => (
-            <option value={mode} key={mode}>
-              {t(`Blend ${mode}`)}
-            </option>
-          ))}
-        </select>
-      </label>
       {effects.map((effect, index) => (
         <div className="effect-card" key={index}>
           <div className="effect-toolbar">

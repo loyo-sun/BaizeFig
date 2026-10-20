@@ -7,6 +7,7 @@ export type CanvasTool =
   | "frame"
   | "rectangle"
   | "ellipse"
+  | "arrow"
   | "line"
   | "text"
   | "pen"
