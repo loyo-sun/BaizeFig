@@ -1,3 +1,4 @@
+import { InspectorPopover } from "./InspectorPopover";
 import { FontFamilySelect } from "./FontFamilySelect";
 import { arrowGeometry } from "./arrowGeometry";
 import { cloudBase, loginCloud, logoutCloud, type CloudSession } from "./cloud";
@@ -2828,7 +2829,12 @@ export default function App() {
 
   useEffect(() => {
     function down(e: KeyboardEvent) {
-      if (importInFlight.current || e.defaultPrevented) return;
+      if (
+        importInFlight.current ||
+        e.defaultPrevented ||
+        document.querySelector(".inspector-popover:popover-open")
+      )
+        return;
       const el = e.target as HTMLElement;
       if (
         el.closest('[role="menu"]') ||
@@ -5007,133 +5013,183 @@ export default function App() {
                           <a.icon size={16} />
                         </button>
                       ))}
-                    </div>
-                    <details className="inspector-more">
-                      <summary>{t("More actions")}</summary>
-                      <div className="component-actions">
-                        <div className="section-heading">
-                          {t("Component")}
-                          <Component size={14} />
-                        </div>
-                        {first.type === "component" && (
-                          <div className="component-authoring-actions">
-                            {[
-                              [
-                                "Create independent component",
-                                createIndependentMain,
-                              ],
-                              ["Add new variant", addComponentVariant],
-                            ].map(([label, action]) => (
+                      <InspectorPopover
+                        key={first.id + "more"}
+                        title={t("More actions")}
+                        iconOnly
+                      >
+                        <div className="component-actions">
+                          <div className="section-heading">
+                            {t("Component")}
+                            <Component size={14} />
+                          </div>
+                          {first.type === "component" && (
+                            <div className="component-authoring-actions">
+                              {[
+                                [
+                                  "Create independent component",
+                                  createIndependentMain,
+                                ],
+                                ["Add new variant", addComponentVariant],
+                              ].map(([label, action]) => (
+                                <button
+                                  key={label as string}
+                                  onClick={() => {
+                                    try {
+                                      const result = (
+                                        action as typeof createIndependentMain
+                                      )(doc, first.id);
+                                      change(result.doc);
+                                      setSelected(result.selection ?? []);
+                                    } catch (e) {
+                                      notify((e as Error).message);
+                                    }
+                                  }}
+                                >
+                                  {t(label as string)}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {selected.length > 1 &&
+                            !chosen.some(
+                              (n) =>
+                                n.type === "component" ||
+                                n.type === "instance" ||
+                                n.componentOwner,
+                            ) && (
                               <button
-                                key={label as string}
                                 onClick={() => {
                                   try {
-                                    const result = (
-                                      action as typeof createIndependentMain
-                                    )(doc, first.id);
+                                    const result = createMultipleComponents(
+                                      doc,
+                                      selected,
+                                    );
                                     change(result.doc);
-                                    setSelected(result.selection ?? []);
+                                    setSelected(result.selection);
                                   } catch (e) {
                                     notify((e as Error).message);
                                   }
                                 }}
                               >
-                                {t(label as string)}
+                                {t("Create multiple components")}
                               </button>
-                            ))}
-                          </div>
-                        )}
-                        {selected.length > 1 &&
-                          !chosen.some(
-                            (n) =>
-                              n.type === "component" ||
-                              n.type === "instance" ||
-                              n.componentOwner,
-                          ) && (
+                            )}
+                          {first.type === "component" ? (
                             <button
-                              onClick={() => {
-                                try {
-                                  const result = createMultipleComponents(
-                                    doc,
-                                    selected,
-                                  );
-                                  change(result.doc);
-                                  setSelected(result.selection);
-                                } catch (e) {
-                                  notify((e as Error).message);
-                                }
-                              }}
+                              className="resource"
+                              onClick={() => createInstance(first)}
                             >
-                              {t("Create multiple components")}
+                              <Copy size={14} />
+                              {t("Create instance copy")}
                             </button>
-                          )}
-                        {first.type === "component" ? (
-                          <button
-                            className="resource"
-                            onClick={() => createInstance(first)}
-                          >
-                            <Copy size={14} />
-                            {t("Create instance copy")}
-                          </button>
-                        ) : first.type !== "instance" &&
-                          !first.componentOwner ? (
-                          <button
-                            className="resource"
-                            onClick={() =>
-                              run({
-                                type: "group",
-                                ids: selected,
-                                kind: "component",
-                              })
-                            }
-                          >
-                            <Component size={14} />
-                            {t("Create component")}
-                          </button>
-                        ) : null}
-                        {first.type === "instance" && (
-                          <>
-                            <p className="muted">
-                              {t(
-                                "Instances follow their main component while preserving local overrides.",
-                              )}
-                            </p>
+                          ) : first.type !== "instance" &&
+                            !first.componentOwner ? (
                             <button
-                              onClick={openMainComponent}
-                              title={t(
-                                doc.componentLibrary?.some(
-                                  (c) =>
-                                    c.sourceId === first?.componentId &&
-                                    c.deleted,
-                                )
-                                  ? "Restore main component"
-                                  : "Edit main component",
-                              )}
-                              aria-label={t(
-                                doc.componentLibrary?.some(
-                                  (c) =>
-                                    c.sourceId === first?.componentId &&
-                                    c.deleted,
-                                )
-                                  ? "Restore main component"
-                                  : "Edit main component",
-                              )}
+                              className="resource"
+                              onClick={() =>
+                                run({
+                                  type: "group",
+                                  ids: selected,
+                                  kind: "component",
+                                })
+                              }
                             >
-                              <Component size={16} />
+                              <Component size={14} />
+                              {t("Create component")}
                             </button>
-                            <label>
-                              {t("Swap component")}
-                              <select
-                                aria-label={t("Swap component")}
-                                value={first.componentId ?? ""}
-                                onChange={(e) => {
+                          ) : null}
+                          {first.type === "instance" && (
+                            <>
+                              <p className="muted">
+                                {t(
+                                  "Instances follow their main component while preserving local overrides.",
+                                )}
+                              </p>
+                              <button
+                                onClick={openMainComponent}
+                                title={t(
+                                  doc.componentLibrary?.some(
+                                    (c) =>
+                                      c.sourceId === first?.componentId &&
+                                      c.deleted,
+                                  )
+                                    ? "Restore main component"
+                                    : "Edit main component",
+                                )}
+                                aria-label={t(
+                                  doc.componentLibrary?.some(
+                                    (c) =>
+                                      c.sourceId === first?.componentId &&
+                                      c.deleted,
+                                  )
+                                    ? "Restore main component"
+                                    : "Edit main component",
+                                )}
+                              >
+                                <Component size={16} />
+                              </button>
+                              <label>
+                                {t("Swap component")}
+                                <select
+                                  aria-label={t("Swap component")}
+                                  value={first.componentId ?? ""}
+                                  onChange={(e) => {
+                                    try {
+                                      change(
+                                        swapComponentInstance(
+                                          doc,
+                                          first.id,
+                                          e.target.value,
+                                        ),
+                                        [first.id],
+                                      );
+                                    } catch (error) {
+                                      notify((error as Error).message);
+                                    }
+                                  }}
+                                >
+                                  {first.componentId &&
+                                    !availableLibraryEntries(doc).some(
+                                      (c) => c.sourceId === first.componentId,
+                                    ) &&
+                                    doc.componentLibrary?.some(
+                                      (c) => c.sourceId === first.componentId,
+                                    ) && (
+                                      <option
+                                        value={first.componentId}
+                                        disabled
+                                      >
+                                        {
+                                          doc.componentLibrary.find(
+                                            (c) =>
+                                              c.sourceId === first.componentId,
+                                          )?.name
+                                        }{" "}
+                                        · {t("Cached")}
+                                      </option>
+                                    )}
+                                  {availableLibraryEntries(doc).map((c) => (
+                                    <option key={c.sourceId} value={c.sourceId}>
+                                      {c.name}
+                                    </option>
+                                  ))}
+                                  {doc.nodes
+                                    .filter((n) => n.type === "component")
+                                    .map((c) => (
+                                      <option key={c.id} value={c.id}>
+                                        {c.name}
+                                      </option>
+                                    ))}
+                                </select>
+                              </label>
+                              <button
+                                title={t("Reset instance overrides")}
+                                aria-label={t("Reset instance overrides")}
+                                onClick={() => {
                                   try {
                                     change(
-                                      swapComponentInstance(
-                                        doc,
-                                        first.id,
-                                        e.target.value,
-                                      ),
+                                      resetComponentInstance(doc, first.id),
                                       [first.id],
                                     );
                                   } catch (error) {
@@ -5141,364 +5197,328 @@ export default function App() {
                                   }
                                 }}
                               >
-                                {first.componentId &&
-                                  !availableLibraryEntries(doc).some(
-                                    (c) => c.sourceId === first.componentId,
-                                  ) &&
-                                  doc.componentLibrary?.some(
-                                    (c) => c.sourceId === first.componentId,
-                                  ) && (
-                                    <option value={first.componentId} disabled>
-                                      {
-                                        doc.componentLibrary.find(
-                                          (c) =>
-                                            c.sourceId === first.componentId,
-                                        )?.name
-                                      }{" "}
-                                      · {t("Cached")}
-                                    </option>
-                                  )}
-                                {availableLibraryEntries(doc).map((c) => (
-                                  <option key={c.sourceId} value={c.sourceId}>
-                                    {c.name}
-                                  </option>
-                                ))}
-                                {doc.nodes
-                                  .filter((n) => n.type === "component")
-                                  .map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.name}
-                                    </option>
-                                  ))}
-                              </select>
-                            </label>
-                            <button
-                              title={t("Reset instance overrides")}
-                              aria-label={t("Reset instance overrides")}
-                              onClick={() => {
-                                try {
+                                <RotateCcw size={16} />
+                              </button>
+                              <button
+                                title={t("Detach instance")}
+                                aria-label={t("Detach instance")}
+                                onClick={() =>
                                   change(
-                                    resetComponentInstance(doc, first.id),
+                                    detachComponentInstance(doc, first.id),
                                     [first.id],
-                                  );
-                                } catch (error) {
-                                  notify((error as Error).message);
+                                  )
                                 }
-                              }}
+                              >
+                                <Unlink size={16} />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                        <ComponentOverridesPanel
+                          doc={doc}
+                          node={first}
+                          onChange={change}
+                          onError={notify}
+                        />
+                        {selected.length > 0 && (
+                          <div className="combine-controls">
+                            {(
+                              [
+                                "union",
+                                "subtract",
+                                "intersect",
+                                "exclude",
+                                "mask",
+                              ] as const
+                            ).map((mode) => (
+                              <button
+                                key={mode}
+                                disabled={
+                                  mode === "mask" && selected.length < 2
+                                }
+                                title={t(
+                                  {
+                                    union: "Union",
+                                    subtract: "Subtract",
+                                    intersect: "Intersect",
+                                    exclude: "Exclude",
+                                    mask: "Use as mask",
+                                  }[mode],
+                                )}
+                                aria-label={t(
+                                  {
+                                    union: "Union",
+                                    subtract: "Subtract",
+                                    intersect: "Intersect",
+                                    exclude: "Exclude",
+                                    mask: "Use as mask",
+                                  }[mode],
+                                )}
+                                onClick={() => {
+                                  try {
+                                    const next = combineShapes(
+                                      doc,
+                                      selected,
+                                      mode,
+                                    );
+                                    change(next.doc, [next.id]);
+                                  } catch (error) {
+                                    notify((error as Error).message);
+                                  }
+                                }}
+                              >
+                                <BooleanIcon operation={mode} />
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <details className="arrange-tools">
+                          <summary>{t("Arrange and distribute")}</summary>
+                          <div className="arrange-grid">
+                            <button
+                              title={t("Rotate 90° left")}
+                              aria-label={t("Rotate 90° left")}
+                              onClick={() => transformCommand("left")}
                             >
                               <RotateCcw size={16} />
                             </button>
                             <button
-                              title={t("Detach instance")}
-                              aria-label={t("Detach instance")}
-                              onClick={() =>
-                                change(detachComponentInstance(doc, first.id), [
-                                  first.id,
-                                ])
+                              title={t("Rotate 90° right")}
+                              aria-label={t("Rotate 90° right")}
+                              onClick={() => transformCommand("right")}
+                            >
+                              <RotateCw size={16} />
+                            </button>
+                          </div>
+                          <label className="setting-row">
+                            {t("Parent container")}
+                            <select
+                              aria-label={t("Parent container")}
+                              value={first.parentId ?? ""}
+                              onChange={(e) =>
+                                run({
+                                  type: "reparent",
+                                  ids: selected,
+                                  parentId: e.target.value || null,
+                                })
                               }
                             >
-                              <Unlink size={16} />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      <ComponentOverridesPanel
-                        doc={doc}
-                        node={first}
-                        onChange={change}
-                        onError={notify}
-                      />
-                      {selected.length > 0 && (
-                        <div className="combine-controls">
-                          {(
-                            [
-                              "union",
-                              "subtract",
-                              "intersect",
-                              "exclude",
-                              "mask",
-                            ] as const
-                          ).map((mode) => (
-                            <button
-                              key={mode}
-                              disabled={mode === "mask" && selected.length < 2}
-                              title={t(
-                                {
-                                  union: "Union",
-                                  subtract: "Subtract",
-                                  intersect: "Intersect",
-                                  exclude: "Exclude",
-                                  mask: "Use as mask",
-                                }[mode],
-                              )}
-                              aria-label={t(
-                                {
-                                  union: "Union",
-                                  subtract: "Subtract",
-                                  intersect: "Intersect",
-                                  exclude: "Exclude",
-                                  mask: "Use as mask",
-                                }[mode],
-                              )}
-                              onClick={() => {
-                                try {
-                                  const next = combineShapes(
-                                    doc,
-                                    selected,
-                                    mode,
-                                  );
-                                  change(next.doc, [next.id]);
-                                } catch (error) {
-                                  notify((error as Error).message);
-                                }
-                              }}
-                            >
-                              <BooleanIcon operation={mode} />
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      <details className="arrange-tools">
-                        <summary>{t("Arrange and distribute")}</summary>
-                        <div className="arrange-grid">
-                          <button
-                            title={t("Rotate 90° left")}
-                            aria-label={t("Rotate 90° left")}
-                            onClick={() => transformCommand("left")}
-                          >
-                            <RotateCcw size={16} />
-                          </button>
-                          <button
-                            title={t("Rotate 90° right")}
-                            aria-label={t("Rotate 90° right")}
-                            onClick={() => transformCommand("right")}
-                          >
-                            <RotateCw size={16} />
-                          </button>
-                        </div>
-                        <label className="setting-row">
-                          {t("Parent container")}
-                          <select
-                            aria-label={t("Parent container")}
-                            value={first.parentId ?? ""}
-                            onChange={(e) =>
-                              run({
-                                type: "reparent",
-                                ids: selected,
-                                parentId: e.target.value || null,
-                              })
-                            }
-                          >
-                            <option value="">{t("Page root")}</option>
-                            {doc.nodes
-                              .filter(
-                                (n) =>
-                                  n.pageId === page &&
-                                  container(n) &&
-                                  !descendants(doc, selected).includes(n.id) &&
-                                  !n.locked,
-                              )
-                              .map((n) => (
-                                <option key={n.id} value={n.id}>
-                                  {n.name}
-                                </option>
-                              ))}
-                          </select>
-                        </label>
-                        <div className="arrange-grid">
-                          <button
-                            title={t("Bring forward")}
-                            aria-label={t("Bring forward")}
-                            onClick={() =>
-                              run({
-                                type: "order",
-                                ids: selected,
-                                direction: "forward",
-                              })
-                            }
-                          >
-                            <BringToFront size={16} />
-                          </button>
-                          <button
-                            title={t("Send backward")}
-                            aria-label={t("Send backward")}
-                            onClick={() =>
-                              run({
-                                type: "order",
-                                ids: selected,
-                                direction: "backward",
-                              })
-                            }
-                          >
-                            <SendToBack size={16} />
-                          </button>
-                        </div>
-                        <NumberField
-                          label="Spacing"
-                          value={arrangeGap}
-                          min={0}
-                          onChange={setArrangeGap}
-                        />
-                        <div className="arrange-grid">
-                          {arrangeCommands.map((c) => (
-                            <button
-                              key={c.mode}
-                              title={t(c.name)}
-                              aria-label={t(c.name)}
-                              disabled={
-                                selected.length <
-                                (c.mode === "round"
-                                  ? 1
-                                  : ["tidy", "pack-x", "pack-y"].includes(
-                                        c.mode,
-                                      )
-                                    ? 2
-                                    : 3)
-                              }
-                              onClick={() => arrangeSelection(c.mode)}
-                            >
-                              <ArrangeIcon mode={c.mode} />
-                            </button>
-                          ))}
-                        </div>
-                      </details>
-                      <div className="vector-actions">
-                        <button
-                          title={t("Split vector into layers")}
-                          aria-label={t("Split vector into layers")}
-                          onClick={splitVectorSelection}
-                        >
-                          <Ungroup size={16} />
-                        </button>
-                        <button
-                          title={t("Edit vector")}
-                          aria-label={t("Edit vector")}
-                          onClick={() => editVector()}
-                          disabled={
-                            ![
-                              "path",
-                              "rectangle",
-                              "ellipse",
-                              "line",
-                              "polygon",
-                              "star",
-                            ].includes(first.type)
-                          }
-                        >
-                          <Spline size={16} />
-                        </button>
-                        <button
-                          title={t("Outline stroke")}
-                          aria-label={t("Outline stroke")}
-                          onClick={() => vectorOperation("outline")}
-                        >
-                          <ScanLine size={16} />
-                        </button>
-                        <button
-                          title={t("Flatten")}
-                          aria-label={t("Flatten")}
-                          onClick={() => vectorOperation("flatten")}
-                        >
-                          <Combine size={16} />
-                        </button>
-                      </div>
-                      {container(first) && (
-                        <details className="arrange-tools">
-                          <summary>{t("Frame layout grid")}</summary>
-                          <button
-                            onClick={() =>
-                              patch({
-                                frameGrid: first.frameGrid
-                                  ? undefined
-                                  : {
-                                      axis: "columns",
-                                      count: 4,
-                                      gap: 8,
-                                      margin: 16,
-                                      visible: true,
-                                    },
-                              })
-                            }
-                          >
-                            {t(first.frameGrid ? "Remove grid" : "Add grid")}
-                          </button>
-                          {first.frameGrid && (
-                            <>
-                              <label className="setting-row">
-                                {t("Grid direction")}
-                                <select
-                                  aria-label={t("Grid direction")}
-                                  value={first.frameGrid.axis}
-                                  onChange={(e) =>
-                                    patch({
-                                      frameGrid: {
-                                        ...first.frameGrid!,
-                                        axis: e.target.value as
-                                          "columns" | "rows",
-                                      },
-                                    })
-                                  }
-                                >
-                                  <option value="columns">
-                                    {t("Columns")}
+                              <option value="">{t("Page root")}</option>
+                              {doc.nodes
+                                .filter(
+                                  (n) =>
+                                    n.pageId === page &&
+                                    container(n) &&
+                                    !descendants(doc, selected).includes(
+                                      n.id,
+                                    ) &&
+                                    !n.locked,
+                                )
+                                .map((n) => (
+                                  <option key={n.id} value={n.id}>
+                                    {n.name}
                                   </option>
-                                  <option value="rows">{t("Rows")}</option>
-                                </select>
-                              </label>
-                              <NumberField
-                                label="Grid count"
-                                min={1}
-                                max={64}
-                                value={first.frameGrid.count}
-                                onChange={(count) =>
-                                  patch({
-                                    frameGrid: {
-                                      ...first.frameGrid!,
-                                      count: Math.round(count),
-                                    },
-                                  })
+                                ))}
+                            </select>
+                          </label>
+                          <div className="arrange-grid">
+                            <button
+                              title={t("Bring forward")}
+                              aria-label={t("Bring forward")}
+                              onClick={() =>
+                                run({
+                                  type: "order",
+                                  ids: selected,
+                                  direction: "forward",
+                                })
+                              }
+                            >
+                              <BringToFront size={16} />
+                            </button>
+                            <button
+                              title={t("Send backward")}
+                              aria-label={t("Send backward")}
+                              onClick={() =>
+                                run({
+                                  type: "order",
+                                  ids: selected,
+                                  direction: "backward",
+                                })
+                              }
+                            >
+                              <SendToBack size={16} />
+                            </button>
+                          </div>
+                          <NumberField
+                            label="Spacing"
+                            value={arrangeGap}
+                            min={0}
+                            onChange={setArrangeGap}
+                          />
+                          <div className="arrange-grid">
+                            {arrangeCommands.map((c) => (
+                              <button
+                                key={c.mode}
+                                title={t(c.name)}
+                                aria-label={t(c.name)}
+                                disabled={
+                                  selected.length <
+                                  (c.mode === "round"
+                                    ? 1
+                                    : ["tidy", "pack-x", "pack-y"].includes(
+                                          c.mode,
+                                        )
+                                      ? 2
+                                      : 3)
                                 }
-                              />
-                              <NumberField
-                                label="Grid gap"
-                                min={0}
-                                value={first.frameGrid.gap}
-                                onChange={(gap) =>
-                                  patch({
-                                    frameGrid: { ...first.frameGrid!, gap },
-                                  })
-                                }
-                              />
-                              <NumberField
-                                label="Grid margin"
-                                min={0}
-                                value={first.frameGrid.margin}
-                                onChange={(margin) =>
-                                  patch({
-                                    frameGrid: { ...first.frameGrid!, margin },
-                                  })
-                                }
-                              />
-                              <label className="setting-row">
-                                {t("Show grid")}
-                                <input
-                                  type="checkbox"
-                                  checked={first.frameGrid.visible}
-                                  onChange={(e) =>
+                                onClick={() => arrangeSelection(c.mode)}
+                              >
+                                <ArrangeIcon mode={c.mode} />
+                              </button>
+                            ))}
+                          </div>
+                        </details>
+                        <div className="vector-actions">
+                          <button
+                            title={t("Split vector into layers")}
+                            aria-label={t("Split vector into layers")}
+                            onClick={splitVectorSelection}
+                          >
+                            <Ungroup size={16} />
+                          </button>
+                          <button
+                            title={t("Edit vector")}
+                            aria-label={t("Edit vector")}
+                            onClick={() => editVector()}
+                            disabled={
+                              ![
+                                "path",
+                                "rectangle",
+                                "ellipse",
+                                "line",
+                                "polygon",
+                                "star",
+                              ].includes(first.type)
+                            }
+                          >
+                            <Spline size={16} />
+                          </button>
+                          <button
+                            title={t("Outline stroke")}
+                            aria-label={t("Outline stroke")}
+                            onClick={() => vectorOperation("outline")}
+                          >
+                            <ScanLine size={16} />
+                          </button>
+                          <button
+                            title={t("Flatten")}
+                            aria-label={t("Flatten")}
+                            onClick={() => vectorOperation("flatten")}
+                          >
+                            <Combine size={16} />
+                          </button>
+                        </div>
+                        {container(first) && (
+                          <details className="arrange-tools">
+                            <summary>{t("Frame layout grid")}</summary>
+                            <button
+                              onClick={() =>
+                                patch({
+                                  frameGrid: first.frameGrid
+                                    ? undefined
+                                    : {
+                                        axis: "columns",
+                                        count: 4,
+                                        gap: 8,
+                                        margin: 16,
+                                        visible: true,
+                                      },
+                                })
+                              }
+                            >
+                              {t(first.frameGrid ? "Remove grid" : "Add grid")}
+                            </button>
+                            {first.frameGrid && (
+                              <>
+                                <label className="setting-row">
+                                  {t("Grid direction")}
+                                  <select
+                                    aria-label={t("Grid direction")}
+                                    value={first.frameGrid.axis}
+                                    onChange={(e) =>
+                                      patch({
+                                        frameGrid: {
+                                          ...first.frameGrid!,
+                                          axis: e.target.value as
+                                            "columns" | "rows",
+                                        },
+                                      })
+                                    }
+                                  >
+                                    <option value="columns">
+                                      {t("Columns")}
+                                    </option>
+                                    <option value="rows">{t("Rows")}</option>
+                                  </select>
+                                </label>
+                                <NumberField
+                                  label="Grid count"
+                                  min={1}
+                                  max={64}
+                                  value={first.frameGrid.count}
+                                  onChange={(count) =>
                                     patch({
                                       frameGrid: {
                                         ...first.frameGrid!,
-                                        visible: e.target.checked,
+                                        count: Math.round(count),
                                       },
                                     })
                                   }
                                 />
-                              </label>
-                            </>
-                          )}
-                        </details>
-                      )}
-                    </details>
+                                <NumberField
+                                  label="Grid gap"
+                                  min={0}
+                                  value={first.frameGrid.gap}
+                                  onChange={(gap) =>
+                                    patch({
+                                      frameGrid: { ...first.frameGrid!, gap },
+                                    })
+                                  }
+                                />
+                                <NumberField
+                                  label="Grid margin"
+                                  min={0}
+                                  value={first.frameGrid.margin}
+                                  onChange={(margin) =>
+                                    patch({
+                                      frameGrid: {
+                                        ...first.frameGrid!,
+                                        margin,
+                                      },
+                                    })
+                                  }
+                                />
+                                <label className="setting-row">
+                                  {t("Show grid")}
+                                  <input
+                                    type="checkbox"
+                                    checked={first.frameGrid.visible}
+                                    onChange={(e) =>
+                                      patch({
+                                        frameGrid: {
+                                          ...first.frameGrid!,
+                                          visible: e.target.checked,
+                                        },
+                                      })
+                                    }
+                                  />
+                                </label>
+                              </>
+                            )}
+                          </details>
+                        )}
+                      </InspectorPopover>
+                    </div>
                     <ComponentProperties
                       key={first.id + "component"}
                       doc={doc}
@@ -5541,6 +5561,25 @@ export default function App() {
                           }
                         }}
                       />
+
+                      <div className="position-transforms">
+                        <button
+                          title={t("Flip horizontal")}
+                          aria-label={t("Flip horizontal")}
+                          onClick={() => transformCommand("flip-x")}
+                        >
+                          <FlipHorizontal2 size={16} />
+                        </button>
+                        <button
+                          title={t("Flip vertical")}
+                          aria-label={t("Flip vertical")}
+                          onClick={() => transformCommand("flip-y")}
+                        >
+                          <FlipVertical2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="field-grid">
                       <NumberField
                         label="⌜"
                         aria="Corner radius"
@@ -5548,22 +5587,6 @@ export default function App() {
                         min={0}
                         onChange={(v) => patch({ radius: v })}
                       />
-                    </div>
-                    <div className="position-transforms">
-                      <button
-                        title={t("Flip horizontal")}
-                        aria-label={t("Flip horizontal")}
-                        onClick={() => transformCommand("flip-x")}
-                      >
-                        <FlipHorizontal2 size={16} />
-                      </button>
-                      <button
-                        title={t("Flip vertical")}
-                        aria-label={t("Flip vertical")}
-                        onClick={() => transformCommand("flip-y")}
-                      >
-                        <FlipVertical2 size={16} />
-                      </button>
                     </div>
                   </section>
                   <section className="inspector-dimensions">
@@ -5618,6 +5641,19 @@ export default function App() {
                         }
                       />
                     </div>
+                    <LayoutProperties
+                      key={first.id}
+                      doc={doc}
+                      node={first}
+                      onChange={patch}
+                      onSizing={(axis, mode) => {
+                        try {
+                          change(setDimensionMode(doc, first.id, axis, mode));
+                        } catch (error) {
+                          notify((error as Error).message);
+                        }
+                      }}
+                    />
                     {container(first) && (
                       <label className="clip-control">
                         <input
@@ -5751,19 +5787,6 @@ export default function App() {
                       )}
                     </section>
                   )}
-                  <LayoutProperties
-                    key={first.id}
-                    doc={doc}
-                    node={first}
-                    onChange={patch}
-                    onSizing={(axis, mode) => {
-                      try {
-                        change(setDimensionMode(doc, first.id, axis, mode));
-                      } catch (error) {
-                        notify((error as Error).message);
-                      }
-                    }}
-                  />
                   {first.type === "text" && (
                     <section className="typography-section">
                       <div className="section-heading typography-heading">
@@ -5913,6 +5936,7 @@ export default function App() {
                         </select>
                       </div>
                       <TextProperties
+                        key={first.id + "text-properties"}
                         node={first}
                         onChange={patch}
                         onCase={(mode) => {
@@ -5923,9 +5947,6 @@ export default function App() {
                           }
                         }}
                       />
-                      <p className="muted">
-                        {t("Double-click text on the canvas to edit content.")}
-                      </p>
                     </section>
                   )}
                   <LayerAppearance node={first} onChange={patch} />
@@ -5967,9 +5988,8 @@ export default function App() {
                         </span>
                       </label>
                     )}
-                  </section>
-                  <section>
                     <FillProperties
+                      key={first.id + "fills"}
                       node={first}
                       onChange={patch}
                       onCrop={(paintIndex) => {
@@ -6037,7 +6057,11 @@ export default function App() {
                       onError={notify}
                     />
                   )}
-                  <EffectsProperties node={first} onChange={patch} />
+                  <EffectsProperties
+                    key={first.id + "effects"}
+                    node={first}
+                    onChange={patch}
+                  />
                 </>
               )}
               <section className="export-section">

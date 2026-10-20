@@ -1,3 +1,4 @@
+import { InspectorPopover } from "./InspectorPopover";
 import { FontSettingsPanel } from "./FontSettingsPanel";
 import type { Node } from "./core";
 import { useI18n } from "./LanguageContext";
@@ -22,7 +23,6 @@ export function TextProperties({
     onChange({ textFlow: { ...flow, ...value } });
   return (
     <div className="text-properties">
-      <FontSettingsPanel node={node} onChange={onChange} />
       <label>
         {t("Text resizing")}
         <select
@@ -92,76 +92,79 @@ export function TextProperties({
           ))}
         </select>
       </label>
-      <label>
-        {t("Text direction")}
-        <select
-          aria-label={t("Text direction")}
-          value={flow.direction ?? "auto"}
-          onChange={(e) =>
-            change({ direction: e.target.value as "auto" | "ltr" | "rtl" })
-          }
-        >
-          {["auto", "ltr", "rtl"].map((v) => (
-            <option key={v} value={v}>
+      <InspectorPopover title={t("Advanced typography")}>
+        <FontSettingsPanel node={node} onChange={onChange} />
+        <label>
+          {t("Text direction")}
+          <select
+            aria-label={t("Text direction")}
+            value={flow.direction ?? "auto"}
+            onChange={(e) =>
+              change({ direction: e.target.value as "auto" | "ltr" | "rtl" })
+            }
+          >
+            {["auto", "ltr", "rtl"].map((v) => (
+              <option key={v} value={v}>
+                {t(
+                  v === "auto"
+                    ? "Automatic direction"
+                    : v === "ltr"
+                      ? "Left to right"
+                      : "Right to left",
+                )}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="segmented">
+          {(["upper", "lower", "title"] as const).map((mode) => (
+            <button key={mode} onClick={() => onCase(mode)}>
               {t(
-                v === "auto"
-                  ? "Automatic direction"
-                  : v === "ltr"
-                    ? "Left to right"
-                    : "Right to left",
+                mode === "upper"
+                  ? "UPPERCASE"
+                  : mode === "lower"
+                    ? "lowercase"
+                    : "Title Case",
               )}
-            </option>
+            </button>
           ))}
-        </select>
-      </label>
-      <div className="segmented">
-        {(["upper", "lower", "title"] as const).map((mode) => (
-          <button key={mode} onClick={() => onCase(mode)}>
-            {t(
-              mode === "upper"
-                ? "UPPERCASE"
-                : mode === "lower"
-                  ? "lowercase"
-                  : "Title Case",
-            )}
-          </button>
-        ))}
-      </div>
-      <label>
-        <input
-          aria-label={t("Browser spell check")}
-          type="checkbox"
-          checked={flow.spellCheck ?? false}
-          onChange={(e) => change({ spellCheck: e.target.checked })}
-        />
-        {t("Browser spell check")}
-      </label>
-      <label>
-        {t("Text language")}
-        <select
-          aria-label={t("Text language")}
-          value={flow.language ?? ""}
-          onChange={(e) => change({ language: e.target.value || undefined })}
-        >
-          {[
-            ["", "Automatic"],
-            ["zh-CN", "简体中文"],
-            ["en", "English"],
-            ["ar", "العربية"],
-            ["he", "עברית"],
-            ["tr", "Türkçe"],
-          ].map(([value, label]) => (
-            <option key={value} value={value}>
-              {t(label)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <p className="muted">
-        {t(
-          "Spell check uses your browser dictionaries and privacy settings. BaizeFig does not send text to a spelling service.",
-        )}
-      </p>
+        </div>
+        <label>
+          <input
+            aria-label={t("Browser spell check")}
+            type="checkbox"
+            checked={flow.spellCheck ?? false}
+            onChange={(e) => change({ spellCheck: e.target.checked })}
+          />
+          {t("Browser spell check")}
+        </label>
+        <label>
+          {t("Text language")}
+          <select
+            aria-label={t("Text language")}
+            value={flow.language ?? ""}
+            onChange={(e) => change({ language: e.target.value || undefined })}
+          >
+            {[
+              ["", "Automatic"],
+              ["zh-CN", "简体中文"],
+              ["en", "English"],
+              ["ar", "العربية"],
+              ["he", "עברית"],
+              ["tr", "Türkçe"],
+            ].map(([value, label]) => (
+              <option key={value} value={value}>
+                {t(label)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="muted">
+          {t(
+            "Spell check uses your browser dictionaries and privacy settings. BaizeFig does not send text to a spelling service.",
+          )}
+        </p>
+      </InspectorPopover>
     </div>
   );
 }

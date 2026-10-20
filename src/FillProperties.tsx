@@ -1,3 +1,4 @@
+import { InspectorPopover } from "./InspectorPopover";
 import { Crop } from "lucide-react";
 import type { ImportedPaint } from "./appearance";
 import type { Node } from "./core";
@@ -41,8 +42,7 @@ export function FillProperties({
 }) {
   const { t } = useI18n();
   return (
-    <details>
-      <summary>{t("Fill layers and image crop")}</summary>
+    <InspectorPopover title={t("Fill layers and image crop")}>
       {node.image && (
         <button
           title={t("Crop image visually")}
@@ -57,6 +57,6 @@ export function FillProperties({
         onChange={(paints) => onChange(fillStackPatch(node, paints))}
         onCrop={(index) => onCrop(node.fidelity?.paints ? index : undefined)}
       />
-    </details>
+    </InspectorPopover>
   );
 }

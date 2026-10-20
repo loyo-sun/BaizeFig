@@ -1,9 +1,9 @@
 /* Inspector rhythm: 4px base, 8px rows, 12px groups, 16px section inset. */
 .properties {
-  --inspector-row: 32px;
+  --inspector-row: 28px;
   --inspector-gap: 8px;
   --inspector-group: 12px;
-  --inspector-inset: 16px;
+  --inspector-inset: 12px;
   font-size: 12px;
   line-height: 1.5;
   scrollbar-gutter: stable;
@@ -57,7 +57,7 @@
   line-height: 16px;
 }
 .properties .number-field > input {
-  height: 30px;
+  height: 26px;
   padding: 0;
   border: 0;
 }
@@ -251,4 +251,109 @@
   min-width: 0;
   height: 32px;
   padding: 4px;
+}
+
+/* Compact contextual inspector, following the observed Ardot hierarchy. */
+.properties .section-heading {
+  margin: 0;
+  min-height: 24px;
+}
+.properties section:has(> .section-heading:only-child) {
+  gap: 0;
+}
+.properties .position-transforms {
+  display: flex;
+}
+.properties .position-transforms button {
+  flex: 1;
+  width: auto;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+.properties .layout-properties {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.properties .inspector-popover-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  text-align: left;
+}
+.properties .inspector-popover-trigger:hover {
+  background: #f0f3f6;
+}
+.properties .inspector-popover {
+  position: fixed;
+  inset: 88px 300px auto auto;
+  margin: 0;
+  width: min(300px, calc(100vw - 24px));
+  max-height: calc(100dvh - 112px);
+  overflow: auto;
+  box-sizing: border-box;
+  padding: 12px;
+  color: #303438;
+  background: white;
+  border: 1px solid #dedfe2;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px #0002;
+  font-size: 12px;
+}
+.properties .inspector-popover:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.properties .inspector-popover > label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.properties .inspector-popover > label > :is(input, select) {
+  max-width: 60%;
+}
+.properties .inspector-popover .section-heading {
+  display: flex;
+  justify-content: space-between;
+}
+.properties .effect-card {
+  flex-direction: row;
+  align-items: center;
+  padding: 0;
+  border: 0;
+}
+.properties .effect-toolbar {
+  flex: 1;
+  min-width: 0;
+}
+.properties .effect-toolbar select {
+  flex: 1;
+  width: 0;
+}
+.properties .effect-card > .inspector-popover-trigger {
+  flex: none;
+  padding: 4px;
+}
+.properties .color-row input[type="color"] {
+  width: 20px;
+  height: 20px;
+}
+.properties .alignment > button {
+  height: 28px;
+}
+.properties .sizing-pair label {
+  font-size: 11px;
+}
+@media (max-width: 650px) {
+  .properties .inspector-popover {
+    right: 12px;
+    top: 72px;
+    max-height: calc(100dvh - 96px);
+  }
 }

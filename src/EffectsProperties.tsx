@@ -1,3 +1,4 @@
+import { InspectorPopover } from "./InspectorPopover";
 import {
   ArrowDown,
   ArrowUp,
@@ -123,107 +124,111 @@ export function EffectsProperties({
               <Trash2 size={14} />
             </button>
           </div>
-          <div className="effect-fields">
-            {(effect.type === "drop-shadow" ||
-              effect.type === "inner-shadow") && (
-              <>
-                <label>
-                  {t("Effect color")}
-                  <input
-                    aria-label={t("Effect color")}
-                    type="color"
-                    value={effect.color.slice(0, 7)}
-                    onChange={(e) =>
-                      update(index, {
-                        color:
-                          e.target.value +
-                          (effect.color.length === 9
-                            ? effect.color.slice(7)
-                            : "ff"),
-                      })
-                    }
-                  />
-                </label>
-                <label>
-                  {t("Opacity")}
-                  <input
-                    aria-label={t("Effect opacity")}
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={Math.round(
-                      (effect.color.length === 9
-                        ? parseInt(effect.color.slice(7), 16) / 255
-                        : 1) * 100,
-                    )}
-                    onChange={(e) => {
-                      const v = e.target.valueAsNumber;
-                      if (Number.isFinite(v))
+          <InspectorPopover title={t(effectNames[effect.type])} iconOnly>
+            <div className="effect-fields">
+              {(effect.type === "drop-shadow" ||
+                effect.type === "inner-shadow") && (
+                <>
+                  <label>
+                    {t("Effect color")}
+                    <input
+                      aria-label={t("Effect color")}
+                      type="color"
+                      value={effect.color.slice(0, 7)}
+                      onChange={(e) =>
                         update(index, {
                           color:
-                            effect.color.slice(0, 7) +
-                            Math.round(Math.max(0, Math.min(100, v)) * 2.55)
-                              .toString(16)
-                              .padStart(2, "0"),
-                        });
-                    }}
-                  />
-                </label>
-              </>
-            )}
-            {(
-              [
-                "radius",
-                ...(effect.type.endsWith("shadow") ? ["spread", "x", "y"] : []),
-              ] as const
-            ).map((field) => (
-              <label key={field}>
-                {t(
-                  field === "radius"
-                    ? "Blur radius"
-                    : field === "spread"
-                      ? "Spread"
-                      : field.toUpperCase(),
-                )}
-                <input
-                  aria-label={t(
+                            e.target.value +
+                            (effect.color.length === 9
+                              ? effect.color.slice(7)
+                              : "ff"),
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    {t("Opacity")}
+                    <input
+                      aria-label={t("Effect opacity")}
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={Math.round(
+                        (effect.color.length === 9
+                          ? parseInt(effect.color.slice(7), 16) / 255
+                          : 1) * 100,
+                      )}
+                      onChange={(e) => {
+                        const v = e.target.valueAsNumber;
+                        if (Number.isFinite(v))
+                          update(index, {
+                            color:
+                              effect.color.slice(0, 7) +
+                              Math.round(Math.max(0, Math.min(100, v)) * 2.55)
+                                .toString(16)
+                                .padStart(2, "0"),
+                          });
+                      }}
+                    />
+                  </label>
+                </>
+              )}
+              {(
+                [
+                  "radius",
+                  ...(effect.type.endsWith("shadow")
+                    ? ["spread", "x", "y"]
+                    : []),
+                ] as const
+              ).map((field) => (
+                <label key={field}>
+                  {t(
                     field === "radius"
                       ? "Blur radius"
                       : field === "spread"
                         ? "Spread"
-                        : `Effect ${field.toUpperCase()}`,
+                        : field.toUpperCase(),
                   )}
-                  type="number"
-                  step="any"
-                  min={field === "radius" ? 0 : undefined}
-                  value={effect[field as "radius" | "spread" | "x" | "y"]}
-                  onChange={(e) => {
-                    const v = e.target.valueAsNumber;
-                    if (Number.isFinite(v) && (field !== "radius" || v >= 0))
-                      update(index, { [field]: v });
-                  }}
-                />
-              </label>
-            ))}
-          </div>
-          <div className="effect-order">
-            <button
-              title={t("Move effect up")}
-              aria-label={t("Move effect up")}
-              disabled={index === 0}
-              onClick={() => move(index, -1)}
-            >
-              <ArrowUp size={14} />
-            </button>
-            <button
-              title={t("Move effect down")}
-              aria-label={t("Move effect down")}
-              disabled={index === effects.length - 1}
-              onClick={() => move(index, 1)}
-            >
-              <ArrowDown size={14} />
-            </button>
-          </div>
+                  <input
+                    aria-label={t(
+                      field === "radius"
+                        ? "Blur radius"
+                        : field === "spread"
+                          ? "Spread"
+                          : `Effect ${field.toUpperCase()}`,
+                    )}
+                    type="number"
+                    step="any"
+                    min={field === "radius" ? 0 : undefined}
+                    value={effect[field as "radius" | "spread" | "x" | "y"]}
+                    onChange={(e) => {
+                      const v = e.target.valueAsNumber;
+                      if (Number.isFinite(v) && (field !== "radius" || v >= 0))
+                        update(index, { [field]: v });
+                    }}
+                  />
+                </label>
+              ))}
+            </div>
+            <div className="effect-order">
+              <button
+                title={t("Move effect up")}
+                aria-label={t("Move effect up")}
+                disabled={index === 0}
+                onClick={() => move(index, -1)}
+              >
+                <ArrowUp size={14} />
+              </button>
+              <button
+                title={t("Move effect down")}
+                aria-label={t("Move effect down")}
+                disabled={index === effects.length - 1}
+                onClick={() => move(index, 1)}
+              >
+                <ArrowDown size={14} />
+              </button>
+            </div>
+          </InspectorPopover>
         </div>
       ))}
     </section>

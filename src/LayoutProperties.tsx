@@ -75,8 +75,7 @@ export function LayoutProperties({
     </label>
   );
   return (
-    <section className="text-properties layout-properties">
-      <div className="section-heading">{t("Sizing and constraints")}</div>
+    <div className="text-properties layout-properties">
       <div className="sizing-pair">
         {(["width", "height"] as const).map((axis) => (
           <label key={axis}>
@@ -321,6 +320,6 @@ export function LayoutProperties({
         </>
       )}
       {error && <p role="alert">{t(error)}</p>}
-    </section>
+    </div>
   );
 }
