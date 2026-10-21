@@ -297,3 +297,26 @@
   outline: 2px solid var(--ui-accent);
   outline-offset: 2px;
 }
+
+.cloud-session-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 320px;
+  font-size: 12px;
+  text-align: left;
+}
+.cloud-session-options select {
+  width: 100%;
+  padding: 7px 10px;
+  color: var(--workspace-ink);
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+}
+.cloud-session-options small {
+  color: var(--ui-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}

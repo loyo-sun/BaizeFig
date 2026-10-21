@@ -1,14 +1,21 @@
 import { Cloud, Construction, LogOut } from "lucide-react";
 import type { CloudSession } from "./cloud";
+import { CloudSessionOptions } from "./CloudSessionOptions";
 import { useI18n } from "./LanguageContext";
 export function CloudWorkspace({
   session,
   signingIn,
+  restoring,
+  durationDays,
+  onDurationChange,
   onSignIn,
   onSignOut,
 }: {
   session: CloudSession | null;
   signingIn: boolean;
+  restoring: boolean;
+  durationDays: number;
+  onDurationChange: (days: number) => void;
   onSignIn: () => void;
   onSignOut: () => void;
 }) {
@@ -38,9 +45,22 @@ export function CloudWorkspace({
           </button>
         </div>
       ) : (
-        <button className="primary" disabled={signingIn} onClick={onSignIn}>
-          {t(signingIn ? "Signing in…" : "Sign in to LoyoCloud")}
-        </button>
+        <>
+          <CloudSessionOptions
+            days={durationDays}
+            onChange={onDurationChange}
+            disabled={signingIn}
+          />
+          <button className="primary" disabled={signingIn} onClick={onSignIn}>
+            {t(
+              restoring
+                ? "Restoring sign-in…"
+                : signingIn
+                  ? "Signing in…"
+                  : "Sign in to LoyoCloud",
+            )}
+          </button>
+        </>
       )}
     </section>
   );

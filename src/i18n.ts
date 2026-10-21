@@ -716,6 +716,14 @@ export const zhCN: Record<string, string> = {
   "Help and settings": "帮助与设置",
   "Help documentation": "帮助文档",
   "Help center": "帮助中心",
+  "Remember sign-in for": "登录有效期",
+  "{days} days": "{days} 天",
+  "Restore sign-in and canvas connection in this browser until expiration.":
+    "有效期内，在此浏览器自动恢复登录与画布连接。",
+  "Restoring sign-in…": "正在恢复登录…",
+  "Sign-in expires": "登录到期时间",
+  "Browser storage is unavailable. Sign-in will not be remembered.":
+    "浏览器存储不可用，无法记住登录状态。",
   "AI balance": "AI 额度",
   "Open in desktop app": "在桌面应用中打开",
   Object: "对象",

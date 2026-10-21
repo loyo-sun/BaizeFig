@@ -1,4 +1,5 @@
 import type { CloudSession } from "./cloud";
+import { CloudSessionOptions } from "./CloudSessionOptions";
 import {
   Cloud,
   Server,
@@ -16,6 +17,9 @@ export function CloudPanel(p: {
   status: string;
   session: CloudSession | null;
   signingIn: boolean;
+  restoring: boolean;
+  durationDays: number;
+  onDurationChange: (days: number) => void;
   cloudActive: boolean;
   serviceAddress: string;
   onSignIn: () => void;
@@ -113,6 +117,10 @@ export function CloudPanel(p: {
                   <span>{t("Account")}</span>
                   <strong>{p.session.user.username}</strong>
                 </div>
+                <p className="cloud-fine-print">
+                  {t("Sign-in expires")}:{" "}
+                  {new Date(p.session.expiresAt).toLocaleString()}
+                </p>
                 <a
                   className="cloud-account-link"
                   href={p.session.base + "/console"}
@@ -130,12 +138,23 @@ export function CloudPanel(p: {
                     "Sign in to manage your application access and AI connections.",
                   )}
                 </p>
+                <CloudSessionOptions
+                  days={p.durationDays}
+                  onChange={p.onDurationChange}
+                  disabled={p.signingIn}
+                />
                 <button
                   className="cloud-primary"
                   onClick={p.onSignIn}
                   disabled={p.signingIn}
                 >
-                  {t(p.signingIn ? "Signing in…" : "Sign in to LoyoCloud")}
+                  {t(
+                    p.restoring
+                      ? "Restoring sign-in…"
+                      : p.signingIn
+                        ? "Signing in…"
+                        : "Sign in to LoyoCloud",
+                  )}
                 </button>
                 <p className="cloud-fine-print">
                   {t(

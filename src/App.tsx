@@ -19,7 +19,14 @@ import { StrokePaintRow } from "./StrokePaintRow";
 import { InspectorPopover } from "./InspectorPopover";
 import { FontFamilySelect } from "./FontFamilySelect";
 import { arrowGeometry } from "./arrowGeometry";
-import { cloudBase, loginCloud, logoutCloud, type CloudSession } from "./cloud";
+import {
+  cloudBase,
+  loginCloud,
+  logoutCloud,
+  restoreCloudSession,
+  type CloudSession,
+} from "./cloud";
+import { useCloudSession } from "./useCloudSession";
 import { CloudPanel } from "./CloudPanel";
 import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
@@ -491,9 +498,13 @@ export default function App() {
       commands: Command[];
       base: string;
     } | null>(null);
-  const [cloudSession, setCloudSession] = useState<CloudSession | null>(null);
+  const cloudLogin = useCloudSession(ready);
+  const {
+    session: cloudSession,
+    active: cloudActive,
+    setActive: setCloudActive,
+  } = cloudLogin;
   const [cloudSigningIn, setCloudSigningIn] = useState(false);
-  const [cloudActive, setCloudActive] = useState(false);
   const [bridgeRemote, setBridgeRemote] = useState(true);
   const [oauthApprovals, setOauthApprovals] = useState<OAuthApproval[]>([]);
   const [bridgeToken, setBridgeToken] = useState(""),
@@ -3370,6 +3381,7 @@ export default function App() {
     disconnectBridge(false);
     if (intent.cloud && Date.now() >= intent.cloud.expiresAt) {
       disconnectBridge();
+      cloudLogin.forget();
       notify("Cloud session expired. Please sign in again.");
       return;
     }
@@ -3450,6 +3462,12 @@ export default function App() {
       if (socket.current !== ws) return;
       if (event.code === 1008 && !event.reason.includes("Another editor")) {
         disconnectBridge();
+        if (intent.cloud) {
+          const rejected = intent.cloud;
+          void restoreCloudSession(rejected).catch((error) => {
+            if (error.invalidSession) cloudLogin.forget(rejected.token);
+          });
+        }
         notify(
           "Pairing rejected. Check the token and disconnect any other paired editor.",
         );
@@ -3834,10 +3852,15 @@ export default function App() {
   }
   function signInCloud() {
     setCloudSigningIn(true);
-    void loginCloud(cloudBase(import.meta.env.VITE_LOYOCLOUD_URL))
+    void loginCloud(
+      cloudBase(import.meta.env.VITE_LOYOCLOUD_URL),
+      cloudLogin.durationDays,
+    )
       .then((session) => {
-        setCloudSession(session);
-        setCloudActive(true);
+        if (!cloudLogin.accept(session))
+          notify(
+            "Browser storage is unavailable. Sign-in will not be remembered.",
+          );
       })
       .catch((error) => notify(error.message))
       .finally(() => setCloudSigningIn(false));
@@ -3848,7 +3871,7 @@ export default function App() {
       .then(() => {
         if (cloudActive) disconnectBridge();
         setCloudActive(false);
-        setCloudSession(null);
+        cloudLogin.forget();
       })
       .catch((error) => notify(error.message));
   }
@@ -4053,14 +4076,17 @@ export default function App() {
               status={bridgeStatus}
               session={cloudSession}
               serviceAddress={bridgeAddress}
-              signingIn={cloudSigningIn}
+              signingIn={cloudSigningIn || cloudLogin.restoring}
+              restoring={cloudLogin.restoring}
+              durationDays={cloudLogin.durationDays}
+              onDurationChange={cloudLogin.setDurationDays}
               cloudActive={cloudActive}
               onSignIn={signInCloud}
               onSignOut={signOutCloud}
               onCloudConnect={() => {
                 if (!cloudSession) return;
                 if (Date.now() >= cloudSession.expiresAt) {
-                  setCloudSession(null);
+                  cloudLogin.forget();
                   notify("Cloud session expired. Please sign in again.");
                   return;
                 }
@@ -7118,7 +7144,10 @@ export default function App() {
                 {workspaceTab === "cloud" ? (
                   <CloudWorkspace
                     session={cloudSession}
-                    signingIn={cloudSigningIn}
+                    signingIn={cloudSigningIn || cloudLogin.restoring}
+                    restoring={cloudLogin.restoring}
+                    durationDays={cloudLogin.durationDays}
+                    onDurationChange={cloudLogin.setDurationDays}
                     onSignIn={signInCloud}
                     onSignOut={signOutCloud}
                   />
