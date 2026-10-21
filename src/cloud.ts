@@ -156,6 +156,11 @@ export async function restoreCloudSession(
     throw Object.assign(Error("Cloud session expired. Please sign in again."), {
       invalidSession: true,
     });
+  if (response.status === 404 || response.status === 405)
+    throw Object.assign(
+      Error("Cloud service needs an update before sign-in can be restored."),
+      { unsupported: true },
+    );
   if (!response.ok) throw Error("Cloud session restore unavailable");
   const result = await response.json();
   if (

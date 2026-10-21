@@ -47,6 +47,7 @@ export function useCloudSession(ready: boolean) {
   const [session, updateSession] = useState<CloudSession | null>(null);
   const [active, updateActive] = useState(false);
   const [restoring, setRestoring] = useState(true);
+  const [restoreError, setRestoreError] = useState("");
   const [restoreVersion, setRestoreVersion] = useState(0);
   const generation = useRef(0);
   const currentToken = useRef<string | null>(null);
@@ -76,6 +77,7 @@ export function useCloudSession(ready: boolean) {
     updateSession(null);
     updateActive(false);
     setRestoring(false);
+    setRestoreError("");
   }, []);
   const accept = (value: CloudSession) => {
     generation.current++;
@@ -84,6 +86,7 @@ export function useCloudSession(ready: boolean) {
     updateSession(value);
     updateActive(true);
     setRestoring(false);
+    setRestoreError("");
     return persisted;
   };
   const setActive = (value: boolean) => {
@@ -97,14 +100,17 @@ export function useCloudSession(ready: boolean) {
     let attempt = 0;
     const controller = new AbortController();
     const version = ++generation.current;
-    async function restore() {
+    async function restore(showLoading = false) {
       if (stopped || generation.current !== version) return;
       const saved = readStoredCloudSession(base);
       if (!saved) {
         setRestoring(false);
         return;
       }
-      setRestoring(true);
+      if (showLoading) {
+        setRestoring(true);
+        setRestoreError("");
+      }
       try {
         const validated = await restoreCloudSession(
           saved.session,
@@ -118,12 +124,22 @@ export function useCloudSession(ready: boolean) {
         updateSession(validated);
         updateActive(latest.autoConnect);
         setRestoring(false);
+        setRestoreError("");
       } catch (error) {
         if (stopped || generation.current !== version) return;
         if ((error as { invalidSession?: boolean }).invalidSession) forget();
         else {
+          setRestoring(false);
+          setRestoreError(
+            (error as { unsupported?: boolean }).unsupported
+              ? "Cloud service needs an update before sign-in can be restored. Your saved sign-in is kept."
+              : "Unable to restore sign-in right now. Your saved sign-in is kept; retrying automatically.",
+          );
           clearTimeout(retry);
-          retry = setTimeout(restore, Math.min(1000 * 2 ** attempt++, 30000));
+          retry = setTimeout(
+            () => void restore(),
+            Math.min(1000 * 2 ** attempt++, 30000),
+          );
         }
       }
     }
@@ -131,7 +147,7 @@ export function useCloudSession(ready: boolean) {
       clearTimeout(retry);
       void restore();
     };
-    void restore();
+    void restore(true);
     window.addEventListener("online", online);
     return () => {
       stopped = true;
@@ -169,6 +185,8 @@ export function useCloudSession(ready: boolean) {
     session,
     active,
     restoring,
+    restoreError,
+    retryRestore: () => setRestoreVersion((v) => v + 1),
     durationDays,
     setDurationDays,
     accept,

@@ -4078,6 +4078,8 @@ export default function App() {
               serviceAddress={bridgeAddress}
               signingIn={cloudSigningIn || cloudLogin.restoring}
               restoring={cloudLogin.restoring}
+              restoreError={cloudLogin.restoreError}
+              onRetryRestore={cloudLogin.retryRestore}
               durationDays={cloudLogin.durationDays}
               onDurationChange={cloudLogin.setDurationDays}
               cloudActive={cloudActive}
@@ -7146,6 +7148,8 @@ export default function App() {
                     session={cloudSession}
                     signingIn={cloudSigningIn || cloudLogin.restoring}
                     restoring={cloudLogin.restoring}
+                    restoreError={cloudLogin.restoreError}
+                    onRetryRestore={cloudLogin.retryRestore}
                     durationDays={cloudLogin.durationDays}
                     onDurationChange={cloudLogin.setDurationDays}
                     onSignIn={signInCloud}

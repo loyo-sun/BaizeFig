@@ -18,6 +18,8 @@ export function CloudPanel(p: {
   session: CloudSession | null;
   signingIn: boolean;
   restoring: boolean;
+  restoreError: string;
+  onRetryRestore: () => void;
   durationDays: number;
   onDurationChange: (days: number) => void;
   cloudActive: boolean;
@@ -138,6 +140,14 @@ export function CloudPanel(p: {
                     "Sign in to manage your application access and AI connections.",
                   )}
                 </p>
+                {p.restoreError && (
+                  <div role="status" className="cloud-fine-print">
+                    <p>{t(p.restoreError)}</p>
+                    <button onClick={p.onRetryRestore} disabled={p.restoring}>
+                      {t("Retry restoring sign-in")}
+                    </button>
+                  </div>
+                )}
                 <CloudSessionOptions
                   days={p.durationDays}
                   onChange={p.onDurationChange}

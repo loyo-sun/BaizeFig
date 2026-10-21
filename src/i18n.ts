@@ -721,6 +721,11 @@ export const zhCN: Record<string, string> = {
   "Restore sign-in and canvas connection in this browser until expiration.":
     "有效期内，在此浏览器自动恢复登录与画布连接。",
   "Restoring sign-in…": "正在恢复登录…",
+  "Cloud service needs an update before sign-in can be restored. Your saved sign-in is kept.":
+    "云服务尚未支持登录恢复，需要更新服务端。已保留你的登录信息。",
+  "Unable to restore sign-in right now. Your saved sign-in is kept; retrying automatically.":
+    "暂时无法恢复登录，已保留登录信息，正在后台重试。",
+  "Retry restoring sign-in": "重试恢复登录",
   "Sign-in expires": "登录到期时间",
   "Browser storage is unavailable. Sign-in will not be remembered.":
     "浏览器存储不可用，无法记住登录状态。",

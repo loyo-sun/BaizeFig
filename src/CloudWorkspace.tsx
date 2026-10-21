@@ -6,6 +6,8 @@ export function CloudWorkspace({
   session,
   signingIn,
   restoring,
+  restoreError,
+  onRetryRestore,
   durationDays,
   onDurationChange,
   onSignIn,
@@ -14,6 +16,8 @@ export function CloudWorkspace({
   session: CloudSession | null;
   signingIn: boolean;
   restoring: boolean;
+  restoreError: string;
+  onRetryRestore: () => void;
   durationDays: number;
   onDurationChange: (days: number) => void;
   onSignIn: () => void;
@@ -46,6 +50,14 @@ export function CloudWorkspace({
         </div>
       ) : (
         <>
+          {restoreError && (
+            <div role="status">
+              <p>{t(restoreError)}</p>
+              <button onClick={onRetryRestore} disabled={restoring}>
+                {t("Retry restoring sign-in")}
+              </button>
+            </div>
+          )}
           <CloudSessionOptions
             days={durationDays}
             onChange={onDurationChange}
