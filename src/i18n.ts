@@ -186,6 +186,17 @@ export const zhCN: Record<string, string> = {
   "Selection colors": "选择颜色",
   "Replace selection color": "替换所选颜色",
 
+  "Colors and typography": "颜色与排版",
+  Workspace: "工作区",
+  "Local workspace": "本地工作区",
+  "Cloud workspace": "云工作区",
+  "In development": "正在开发",
+  "Cloud files and team workspaces are in development. Your local files stay in this browser.":
+    "云端文件和团队工作区正在开发，本地文件仍保存在当前浏览器中。",
+  "Collapse sidebars": "收起两侧栏",
+  "Expand sidebars": "展开两侧栏",
+  "Reveal left sidebar": "浮动显示左侧栏",
+  "Reveal right sidebar": "浮动显示右侧栏",
   Smart: "智能",
   "Self-hosted": "自主部署",
   "Your AI workspace": "AI 连接与服务",

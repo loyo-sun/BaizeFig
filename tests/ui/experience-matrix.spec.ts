@@ -157,24 +157,19 @@ test("ordinary color and typography palettes apply values without token bindings
       fill: "#dd4400",
     }),
   ];
-  await page
-    .locator("input[type=file][multiple]")
-    .setInputFiles({
-      name: "styles.baizefig",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(doc)),
-    });
+  await page.locator("input[type=file][multiple]").setInputFiles({
+    name: "styles.baizefig",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(doc)),
+  });
   await page.locator('[data-layer-id="target"] .layer-name').click();
-  await page
-    .getByRole("button", { name: "Color palette", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Styles", exact: true }).click();
   await page
     .getByRole("button", { name: "Apply color #DD4400", exact: true })
     .click();
   await page.keyboard.press("Escape");
-  await page
-    .getByRole("button", { name: "Typography palette", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Styles", exact: true }).click();
+  await page.getByRole("tab", { name: "Typography", exact: true }).click();
   await page
     .locator(".palette-typography button")
     .filter({ hasText: "28 / 600" })

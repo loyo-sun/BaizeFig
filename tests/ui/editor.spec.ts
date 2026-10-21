@@ -11,7 +11,7 @@ test("draw, edit, duplicate, undo, persist, export and recover a design", async 
 }) => {
   await page.goto("/");
   await expect(page.getByLabel("Saved locally")).toBeVisible();
-  await page.getByRole("button", { name: "Local files", exact: true }).click();
+  await page.getByRole("button", { name: "Workspace", exact: true }).click();
   await page
     .getByRole("button", { name: "New design file", exact: true })
     .click();
@@ -50,13 +50,11 @@ test("draw, edit, duplicate, undo, persist, export and recover a design", async 
   const dl = await dlPromise;
   expect(dl.suggestedFilename()).toMatch(/\.baizefig$/);
   const path = await dl.path();
-  await page
-    .locator("input[type=file][multiple]")
-    .setInputFiles({
-      name: dl.suggestedFilename(),
-      mimeType: "application/json",
-      buffer: await readFile(path!),
-    });
+  await page.locator("input[type=file][multiple]").setInputFiles({
+    name: dl.suggestedFilename(),
+    mimeType: "application/json",
+    buffer: await readFile(path!),
+  });
   await expect(page.getByRole("status")).toContainText("Document imported");
   await expect(page.locator("svg.design-canvas [data-node-id]")).toHaveCount(2);
   await page.screenshot({

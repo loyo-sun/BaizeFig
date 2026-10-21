@@ -27,3 +27,5 @@ import "./colorPicker.css";
 import "./quickPalette.css";
 
 import "./smartPanel.css";
+
+import "./workspaceNavigation.css";

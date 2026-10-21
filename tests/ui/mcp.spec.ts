@@ -4,7 +4,10 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 // @ts-expect-error server is intentionally plain JavaScript, shared with Node deployment.
 import { createBridge } from "../../bridge/server.mjs";
 async function openMcp(page: Page) {
-  await page.getByRole("button", { name: "Extensions", exact: true }).click();
+  await page.getByRole("button", { name: "Main menu", exact: true }).click();
+  await page
+    .getByRole("menuitem", { name: "Help and account", exact: true })
+    .click();
   await page
     .getByRole("menuitem", { name: "MCP connection", exact: true })
     .click();
@@ -60,7 +63,7 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
       await page.goto("/");
       await expect(page.getByLabel("Saved locally")).toBeVisible();
       await page
-        .getByRole("button", { name: "Local files", exact: true })
+        .getByRole("button", { name: "Workspace", exact: true })
         .click();
       await page
         .getByRole("button", { name: "New design file", exact: true })
@@ -278,7 +281,7 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
         .getByRole("button", { name: "Close dialog", exact: true })
         .click();
       await page
-        .getByRole("button", { name: "Local files", exact: true })
+        .getByRole("button", { name: "Workspace", exact: true })
         .click();
       await page
         .getByRole("button", { name: "New design file", exact: true })

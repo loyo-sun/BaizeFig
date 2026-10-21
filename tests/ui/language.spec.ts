@@ -10,7 +10,8 @@ test("defaults to Chinese, switches immediately and remembers language without c
   const name = await page
     .getByRole("textbox", { name: "文件名称", exact: true })
     .inputValue();
-  await page.getByRole("button", { name: "扩展", exact: true }).click();
+  await page.getByRole("button", { name: "主菜单", exact: true }).click();
+  await page.getByRole("menuitem", { name: "偏好设置", exact: true }).click();
   await page.getByRole("menuitem", { name: "通用设置", exact: true }).click();
   await expect(page.getByLabel("界面语言", { exact: true })).toHaveValue(
     "zh-CN",
@@ -25,7 +26,10 @@ test("defaults to Chinese, switches immediately and remembers language without c
     page.getByRole("textbox", { name: "Document name", exact: true }),
   ).toHaveValue(name);
   await page.reload();
-  await page.getByRole("button", { name: "Extensions", exact: true }).click();
+  await page.getByRole("button", { name: "Main menu", exact: true }).click();
+  await page
+    .getByRole("menuitem", { name: "Preferences", exact: true })
+    .click();
   await page
     .getByRole("menuitem", { name: "General settings", exact: true })
     .click();
@@ -38,7 +42,7 @@ test("defaults to Chinese, switches immediately and remembers language without c
   await page.getByRole("button", { name: "完成", exact: true }).click();
   await page.reload();
   await expect(
-    page.getByRole("button", { name: "扩展", exact: true }),
+    page.getByRole("button", { name: "主菜单", exact: true }),
   ).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await expect(canvas).toHaveText(content!);

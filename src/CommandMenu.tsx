@@ -188,6 +188,7 @@ export function CommandMenu({
               role={
                 item.checked === undefined ? "menuitem" : "menuitemcheckbox"
               }
+              aria-label={t(item.name)}
               aria-checked={item.checked}
               aria-disabled={item.disabled || undefined}
               aria-haspopup={item.children ? "menu" : undefined}

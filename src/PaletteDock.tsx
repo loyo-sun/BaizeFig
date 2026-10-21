@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from "react";
-import { Droplet, Type, Search } from "lucide-react";
+import { Palette, Search } from "lucide-react";
 import { execute, type Document } from "./core";
 import { useI18n } from "./LanguageContext";
 export function PaletteDock({
@@ -55,49 +55,52 @@ export function PaletteDock({
     const r = e.currentTarget.getBoundingClientRect(),
       el = ref.current!;
     el.style.left = `${Math.min(window.innerWidth - 300, Math.max(8, r.left))}px`;
-    el.style.top = `${Math.max(8, r.top - 330)}px`;
+    el.style.top = `${r.bottom + 332 <= window.innerHeight ? r.bottom + 12 : Math.max(8, r.top - 332)}px`;
   }
   return (
     <div className="palette-dock">
       <button
-        aria-label={t("Color palette")}
+        aria-label={t("Styles")}
+        title={t("Colors and typography")}
         popoverTarget={id}
-        onClick={(e) => {
-          setTab("color");
-          position(e);
-        }}
+        onClick={position}
       >
-        <Droplet size={16} />
+        <Palette size={16} strokeWidth={1.5} />
       </button>
-      <button
-        aria-label={t("Typography palette")}
-        popoverTarget={id}
-        onClick={(e) => {
-          setTab("type");
-          position(e);
-        }}
-      >
-        <Type size={16} />
-      </button>
-      <span className="palette-grip" />
       <div
         popover="auto"
         ref={ref}
         id={id}
         className="inspector-popover quick-palette"
         role="dialog"
-        aria-label={t(tab === "color" ? "Color palette" : "Typography palette")}
+        aria-label={t("Styles")}
       >
-        <div className="palette-tabs">
+        <div
+          className="palette-tabs"
+          role="tablist"
+          aria-label={t("Colors and typography")}
+        >
           <button
+            role="tab"
+            aria-selected={tab === "color"}
             className={tab === "color" ? "active" : ""}
-            onClick={() => setTab("color")}
+            onClick={() => {
+              setTab("color");
+              setQuery("");
+              setError("");
+            }}
           >
             {t("Colors")}
           </button>
           <button
+            role="tab"
+            aria-selected={tab === "type"}
             className={tab === "type" ? "active" : ""}
-            onClick={() => setTab("type")}
+            onClick={() => {
+              setTab("type");
+              setQuery("");
+              setError("");
+            }}
           >
             {t("Typography")}
           </button>

@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
   });
   await page.goto("/");
   await expect(page.getByLabel("Saved locally", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Local files", exact: true }).click();
+  await page.getByRole("button", { name: "Workspace", exact: true }).click();
   await page
     .getByRole("button", { name: "New design file", exact: true })
     .click();
@@ -74,15 +74,13 @@ test("sidebar collapse and live window resize keep rulers fitted to the canvas",
   await draw(page);
   const frame = page.locator(".canvas-frame > rect");
   await page
-    .getByRole("button", { name: "Collapse left sidebar", exact: true })
+    .getByRole("button", { name: "Collapse sidebars", exact: true })
     .click();
   await expect(page.locator(".left-panel")).toBeHidden();
-  await expect(frame).toHaveAttribute("width", "1098");
+  await expect(frame).toHaveAttribute("width", "1416");
   await page.setViewportSize({ width: 1100, height: 800 });
-  await expect(frame).toHaveAttribute("width", "758");
-  await page
-    .getByRole("button", { name: "Expand left sidebar", exact: true })
-    .click();
+  await expect(frame).toHaveAttribute("width", "1076");
+  await page.keyboard.press("Tab");
   await expect(page.locator(".left-panel")).toBeVisible();
   await expect(frame).toHaveAttribute("width", "440");
 });
@@ -297,7 +295,10 @@ test("theme follows the operating system without changing document paints", asyn
 }) => {
   await draw(page);
   const initial = (await backup(page)).nodes[0].fill;
-  await page.getByRole("button", { name: "Extensions", exact: true }).click();
+  await page.getByRole("button", { name: "Main menu", exact: true }).click();
+  await page
+    .getByRole("menuitem", { name: "Preferences", exact: true })
+    .click();
   await page
     .getByRole("menuitem", { name: "General settings", exact: true })
     .click();

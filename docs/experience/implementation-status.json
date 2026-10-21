@@ -138,5 +138,19 @@
     "browserPassed": 10,
     "i18nPassed": 6,
     "record": "smart-tab.md"
+  },
+  "workspaceNavigation": {
+    "status": "implemented",
+    "record": "workspace-navigation.md",
+    "styleButton": "Single Palette icon, no divider, color/typography tabs",
+    "sidebars": "Tab toggles both; independent edge-hover overlays; canvas position preserved",
+    "workspace": "Local and cloud tabs; cloud sign-in available, cloud files explicitly in development",
+    "validation": {
+      "build": "passed",
+      "browserFull": 61,
+      "latestStyleAndNavigationChecks": 18,
+      "anchorReplayChecks": 5,
+      "shortcutAndI18nUnit": 11
+    }
   }
 }

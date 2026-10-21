@@ -1,5 +1,7 @@
 # BaizeFig 对照 Penpot 的核心体验实施与验收
 
+> 最新导航调整：工具栏改为单一「样式」按钮，无分隔线；图标总菜单、Tab双侧栏收起/边缘浮动、本地/云工作区详见 [workspace-navigation.md](workspace-navigation.md)。
+
 > 后续范围变更：用户要求完全删除设计令牌功能。令牌页签、管理/编辑/引用及绑定入口现已移除，旧数据转普通属性。下文D-024及原像素/性能记录为删除前历史结果，当前说明见 [tokens-removal.md](tokens-removal.md)。
 
 范围依据：[原改造计划](https://app.notion.com/p/3ff41f73948881b8be88ff6266f03768)。用户确认：完成核心体验及验收，W7 输出服务实施方案。实施日期 2026-10-21；分支 `codex/penpot-experience`，原基线 `20804018143d986c8002b870fc9c60cc689de22b`。预览 http://127.0.0.1:4318。

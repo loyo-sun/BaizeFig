@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   );
   await page.goto("/");
   await expect(page.getByLabel("Saved locally", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Local files", exact: true }).click();
+  await page.getByRole("button", { name: "Workspace", exact: true }).click();
   await page
     .getByRole("button", { name: "New design file", exact: true })
     .click();
@@ -90,18 +90,20 @@ test("drag Escape commits the last move as one undoable transaction", async ({
   await expect(field(page, "X")).toHaveValue("182");
   await expect(field(page, "Y")).toHaveValue("280");
 });
-test("workspace measurements, extension access, menus and inspect", async ({
+test("workspace measurements, main menu and inspect", async ({
   page,
 }) => {
   for (const [selector, x, width] of [
     [".left-panel", 0, 318],
     [".right-panel", 1122, 318],
-    [".tool-dock", 567.5, 305],
   ] as const) {
     const box = (await page.locator(selector).boundingBox())!;
     expect(box.x).toBe(x);
     expect(box.width).toBe(width);
   }
+  const toolbar = (await page.locator(".tool-dock").boundingBox())!;
+  expect(toolbar.x + toolbar.width/2).toBeCloseTo(720,0);
+  expect(toolbar.width).toBeLessThan(400);
   await draw(page);
   const input = (await field(page, "W").boundingBox())!;
   expect(input.height).toBe(32);
@@ -110,7 +112,10 @@ test("workspace measurements, extension access, menus and inspect", async ({
     "width: 200px",
   );
   await page.getByRole("button", { name: "Design", exact: true }).click();
-  await page.getByRole("button", { name: "Extensions", exact: true }).click();
+  await page.getByRole("button", { name: "Main menu", exact: true }).click();
+  await page
+    .getByRole("menuitem", { name: "Help and account", exact: true })
+    .click();
   await expect(
     page.getByRole("menuitem", { name: "MCP connection", exact: true }),
   ).toBeVisible();
@@ -217,9 +222,9 @@ test("workspace remains usable at the two secondary viewports", async ({
     expect(left.width).toBe(318);
     expect(right.width).toBe(318);
     expect(right.x).toBe(width - 318);
-    expect(toolbar.x).toBe(width / 2 - 152.5);
+    expect(toolbar.x).toBeCloseTo(width / 2 - toolbar.width / 2, 0);
     expect(toolbar.y).toBe(28);
-    await page.getByRole("button", { name: "Extensions", exact: true }).click();
+    await page.getByRole("button", { name: "Main menu", exact: true }).click();
     const menu = (await page.getByRole("menu").boundingBox())!;
     expect(menu.x).toBeGreaterThanOrEqual(0);
     expect(menu.x + menu.width).toBeLessThanOrEqual(width);

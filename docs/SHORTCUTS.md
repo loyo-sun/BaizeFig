@@ -74,7 +74,7 @@
 | Zoom to selection | Shift + 2 | Shift + 2 |
 | Zoom in | ⌘ + = | Ctrl + = |
 | Zoom out | ⌘ + - | Ctrl + - |
-| Show/Hide UI | ⌘ + \ | Ctrl + \ |
+| Show/Hide UI | Tab | Tab |
 | Present | Shift + Space | Shift + Space |
 | Keyboard shortcuts | Shift + / | Shift + / |
 | Edit vector | Enter | Enter |
@@ -94,3 +94,5 @@
 - Cmd/Ctrl S 保留本地备份；截图中的“包裹为分区 Cmd S”尚未实现，不覆盖保存。Shift O 保留本产品轮廓切换。未实现项为明确灰态，不能执行；不声称所有 Figma 命令等价。
 - 空格按住拖动临时抓手；方向键移动1px、Shift方向键10px；Alt拖动复制。双击文字编辑，Cmd/Ctrl Enter提交，Esc取消；节点控制柄等专用快捷键见编辑器提示。
 - Copy as 支持 CSS/SVG/PNG；CSS 为基础属性交付，复杂路径、分层填充及效果请用 SVG。浏览器/系统保留快捷键和原生剪贴板授权仍由平台处理。
+
+侧栏：Tab 同时收起或恢复左右栏；收起后靠近左右边缘浮动显示对应栏。输入框和文字编辑中的 Tab 保留原行为。

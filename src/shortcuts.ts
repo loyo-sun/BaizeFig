@@ -98,7 +98,7 @@ export const shortcutRegistry: Shortcut[] = [
   binding("Zoom to selection", "Digit2", "S"),
   binding("Zoom in", "Equal", "M"),
   binding("Zoom out", "Minus", "M"),
-  binding("Show/Hide UI", "Backslash", "M"),
+  binding("Show/Hide UI", "Tab"),
   binding("Present", "Space", "S"),
   binding("Keyboard shortcuts", "Slash", "S"),
   binding("Edit vector", "Enter"),

@@ -1,0 +1,43 @@
+
+> baizefig@0.1.0 build
+> tsc -b && vite build
+
+vite v6.4.4 building for production...
+transforming...
+✓ 1965 modules transformed.
+rendering chunks...
+[plugin vite:reporter] 
+(!) /Users/chingsun/Documents/项目文件/sunqing/BaiseFig/node_modules/fflate/esm/browser.js is dynamically imported by /Users/chingsun/Documents/项目文件/sunqing/BaiseFig/src/ExportDialog.tsx but also statically imported by /Users/chingsun/Documents/项目文件/sunqing/BaiseFig/src/glyphCache.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                                                  0.62 kB │ gzip:   0.40 kB
+dist/assets/inter-vietnamese-wght-normal-CBcvBZtf.woff2         10.25 kB
+dist/assets/inter-vietnamese-wght-italic-K3WlGtc8.woff2         10.60 kB
+dist/assets/inter-greek-ext-wght-normal-DlzME5K_.woff2          11.23 kB
+dist/assets/work-sans-vietnamese-wght-normal-BKsN3ITN.woff2     11.80 kB
+dist/assets/inter-greek-ext-wght-italic-DcOpz6Lw.woff2          12.10 kB
+dist/assets/inter-cyrillic-wght-normal-DqGufNeO.woff2           18.75 kB
+dist/assets/inter-greek-wght-normal-CkhJZR-_.woff2              19.00 kB
+dist/assets/inter-cyrillic-wght-italic-DzZdc28x.woff2           19.98 kB
+dist/assets/inter-greek-wght-italic-CILZdfAp.woff2              20.48 kB
+dist/assets/inter-cyrillic-ext-wght-normal-BOeWTOD4.woff2       25.96 kB
+dist/assets/inter-cyrillic-ext-wght-italic-B5xAaiFk.woff2       27.38 kB
+dist/assets/work-sans-latin-ext-wght-normal-B5dZ8C4S.woff2      35.72 kB
+dist/assets/inter-latin-wght-normal-Dx4kXJAl.woff2              48.26 kB
+dist/assets/work-sans-latin-wght-normal-Bl-S9Xys.woff2          50.32 kB
+dist/assets/inter-latin-wght-italic-DpCbqKDY.woff2              51.83 kB
+dist/assets/inter-latin-ext-wght-normal-DO1Apj_S.woff2          85.07 kB
+dist/assets/inter-latin-ext-wght-italic-0pjOp8NU.woff2          91.90 kB
+dist/assets/figImport.worker-leyLePj-.js                       127.13 kB
+dist/assets/index-BuXSF_ex.css                                  99.90 kB │ gzip:  19.22 kB
+dist/assets/svgImport-CNGhEucB.js                              102.56 kB │ gzip:  37.48 kB
+dist/assets/server.browser-BSnVuYfL.js                         204.38 kB │ gzip:  62.91 kB
+dist/assets/vector-kernel-YWQAHb0Y.js                          342.63 kB │ gzip: 114.64 kB
+dist/assets/index-CfJLBTFg.js                                  437.04 kB │ gzip: 180.61 kB
+dist/assets/index-CJLmt8lX.js                                1,000.01 kB │ gzip: 311.07 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 4.12s

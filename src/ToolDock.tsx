@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
-import { Check, Image as ImageIcon, Puzzle } from "lucide-react";
+import { Check, Image as ImageIcon } from "lucide-react";
 import { useI18n } from "./LanguageContext";
 type Item = { id: string; label: string; key: string; icon: LucideIcon };
 const groups = [
@@ -15,13 +15,13 @@ export function ToolDock({
   active,
   onSelect,
   onImage,
-  extensions,
+  children,
 }: {
   items: Item[];
   active: string;
   onSelect: (id: string) => void;
   onImage: () => void;
-  extensions: { label: string; run: () => void }[];
+  children?: ReactNode;
 }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
@@ -162,36 +162,7 @@ export function ToolDock({
           </div>
         );
       })}
-      <div className="dock-group dock-extensions">
-        <button
-          aria-label={t("Extensions")}
-          title={t("Extensions")}
-          aria-haspopup="menu"
-          aria-expanded={open === 9}
-          onClick={(e) => {
-            trigger.current = e.currentTarget;
-            setOpen(open === 9 ? null : 9);
-          }}
-        >
-          <Puzzle size={16} strokeWidth={1.5} />
-        </button>
-        {open === 9 && (
-          <div className="dock-menu extensions-menu" role="menu">
-            {extensions.map((item) => (
-              <button
-                key={item.label}
-                role="menuitem"
-                onClick={() => {
-                  dismiss();
-                  item.run();
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+      <div className="dock-palette">{children}</div>
       <div
         className="toolbar-grip"
         role="button"
@@ -210,8 +181,11 @@ export function ToolDock({
           const parent = el.parentElement!.getBoundingClientRect();
           setPosition({
             x: Math.min(
-              parent.width / 2 - 164,
-              Math.max(164 - parent.width / 2, g.before.x + e.clientX - g.x),
+              parent.width / 2 - el.offsetWidth / 2 - 12,
+              Math.max(
+                el.offsetWidth / 2 + 12 - parent.width / 2,
+                g.before.x + e.clientX - g.x,
+              ),
             ),
             y: Math.min(
               parent.height - 100,

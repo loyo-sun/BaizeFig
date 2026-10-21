@@ -18,7 +18,7 @@ const out = path.resolve(__dirname, "..");
     await page.goto("http://127.0.0.1:4318");
     await page.getByLabel("Saved locally", { exact: true }).waitFor();
     await page
-      .getByRole("button", { name: "Local files", exact: true })
+      .getByRole("button", { name: "Workspace", exact: true })
       .click();
     await page
       .getByRole("button", { name: "New design file", exact: true })
