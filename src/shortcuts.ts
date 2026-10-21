@@ -4,6 +4,7 @@ export interface Shortcut {
   code: string;
   key?: string;
   mod?: boolean;
+  ctrl?: boolean;
   alt?: boolean;
   shift?: boolean;
   aliases?: string[];
@@ -19,10 +20,12 @@ const binding = (
   code,
   key,
   mod: mods.includes("M"),
+  ctrl: mods.includes("C"),
   alt: mods.includes("A"),
   shift: mods.includes("S"),
 });
 export const shortcutRegistry: Shortcut[] = [
+  binding("New design file", "KeyN", "CA"),
   ...[
     ["Move", "KeyV"],
     ["Scale", "KeyK"],
@@ -146,12 +149,7 @@ export function shortcutMatches(
       !e.altKey &&
       !e.shiftKey
     );
-  const literalCtrl = [
-    "Pick color",
-    "Tidy up",
-    "Distribute horizontal spacing",
-    "Distribute vertical spacing",
-  ].includes(s.name);
+  const literalCtrl = !!s.ctrl;
   const code =
     layout === "physical"
       ? [s.code, ...(s.aliases ?? [])].includes(e.code)
@@ -211,12 +209,7 @@ export function shortcutLabel(name: string, platform: "mac" | "other" = "mac") {
   const s = raw ? platformShortcut(raw, platform) : undefined;
   if (name === "Pick color" && platform === "other") return "I";
   if (!s) return "";
-  const literal = [
-    "Pick color",
-    "Tidy up",
-    "Distribute horizontal spacing",
-    "Distribute vertical spacing",
-  ].includes(name);
+  const literal = !!s.ctrl;
   return [
     s.mod ? (platform === "mac" ? "⌘" : "Ctrl") : "",
     literal ? "Ctrl" : "",

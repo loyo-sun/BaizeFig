@@ -19,12 +19,7 @@ it("canonical bindings are unique and labels agree with executable shortcuts on 
     shortcutRegistry.length,
   );
   for (const s of shortcutRegistry) {
-    const literal = [
-      "Pick color",
-      "Tidy up",
-      "Distribute horizontal spacing",
-      "Distribute vertical spacing",
-    ].includes(s.name);
+    const literal = !!s.ctrl;
     for (const platform of ["mac", "other"] as const) {
       const resolved = platformShortcut(s, platform);
       const e = event(
@@ -114,5 +109,24 @@ it("matches audited Boolean menu shortcuts without requiring Command or Control"
           .map((s) => s.name),
       ).toEqual([name]);
     }
+  }
+});
+
+it("uses literal Ctrl+Alt+N for new files on every platform", () => {
+  const shortcut = shortcutRegistry.find((s) => s.name === "New design file")!;
+  for (const platform of ["mac", "other"] as const) {
+    expect(
+      shortcutMatches(event("KeyN", "CA"), shortcut, "physical", platform),
+    ).toBe(true);
+    expect(
+      shortcutMatches(event("KeyN", "MA"), shortcut, "physical", platform),
+    ).toBe(false);
+    expect(
+      shortcutMatches(event("KeyN", "C"), shortcut, "physical", platform),
+    ).toBe(false);
+    expect(
+      shortcutMatches(event("KeyN", "CAS"), shortcut, "physical", platform),
+    ).toBe(false);
+    expect(shortcutLabel(shortcut.name, platform)).toContain("Ctrl");
   }
 });

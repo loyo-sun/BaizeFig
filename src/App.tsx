@@ -357,6 +357,7 @@ export default function App() {
     resolve: (ids: string[]) => void;
   } | null>(null);
   const importInFlight = useRef(false);
+  const newDocumentInFlight = useRef(false);
   const latestDocument = useRef(doc);
   latestDocument.current = doc;
   const figInput = useRef<HTMLInputElement>(null);
@@ -1957,19 +1958,53 @@ export default function App() {
     );
     setPage(doc.pages.find((p) => p.id !== page)!.id);
   }
-  function newDoc() {
-    void save(doc).then(() => {
+  async function newDoc() {
+    if (newDocumentInFlight.current) return;
+    newDocumentInFlight.current = true;
+    try {
+      const source = current.current.doc;
+      if (!(await save(source))) throw Error("File is in trash");
       const next = emptyDocument();
       next.name = t("Untitled");
       next.pages[0].name = t("Page {number}", { number: 1 });
+      if (!(await save(next))) throw Error("Unable to save the new file");
+      committedDocument.current = next;
       history.current = new History();
       setDoc(next);
       setPage(next.pages[0].id);
       setSelected([]);
       setModal(null);
+      setMenuAnchor(null);
+      setContext(null);
       setView({ x: 0, y: 0, zoom: 1 });
-    });
+    } catch (error) {
+      setPersistentSaveError((error as Error).message);
+    } finally {
+      newDocumentInFlight.current = false;
+    }
   }
+  useEffect(() => {
+    const shortcut = shortcutRegistry.find(
+      (s) => s.name === "New design file",
+    )!;
+    const onNewFile = (event: KeyboardEvent) => {
+      if (!shortcutMatches(event, shortcut, "physical", platform)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (
+        event.repeat ||
+        !ready ||
+        importInFlight.current ||
+        newDocumentInFlight.current
+      )
+        return;
+      if (document.activeElement instanceof HTMLElement)
+        document.activeElement.blur();
+      requestAnimationFrame(() => void newDoc());
+    };
+    window.addEventListener("keydown", onNewFile, true);
+    return () => window.removeEventListener("keydown", onNewFile, true);
+  });
   function createInstance(n: Node) {
     try {
       const b = bounds(doc, [n]);
