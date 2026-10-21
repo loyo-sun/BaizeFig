@@ -7,7 +7,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { SUPPORTED_PROTOCOL_VERSIONS } from "@modelcontextprotocol/sdk/types.js";
-import { toolSchemas } from "./contracts.mjs";
+import { toolSchemas, commandDescriptions } from "./contracts.mjs";
 
 const secret = (a, b) => {
   if (typeof a !== "string" || typeof b !== "string") return false;
@@ -161,7 +161,7 @@ export function createBridge(options = {}) {
       server.registerTool(
         name,
         {
-          description: descriptions[name],
+          description: commandDescriptions[name] ?? descriptions[name],
           inputSchema: schema,
           annotations: {
             readOnlyHint: !["apply_commands"].includes(name),

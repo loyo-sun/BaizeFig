@@ -13,7 +13,7 @@
     "format": "prettier --write src bridge scripts tests *.ts *.json *.html",
     "benchmark": "vitest run tests/performance.test.ts",
     "mcp:http": "node bridge/server.mjs --http",
-    "test:mcp": "node --test tests/mcp-transport.test.mjs tests/mcp-oauth.test.mjs tests/mcp-setup.test.mjs",
+    "test:mcp": "node --test tests/mcp-contracts.test.mjs tests/mcp-transport.test.mjs tests/mcp-oauth.test.mjs tests/mcp-setup.test.mjs",
     "test:mcp:ui": "playwright test --config playwright.mcp.config.ts",
     "mcp:connect": "node scripts/connect-client.mjs"
   },

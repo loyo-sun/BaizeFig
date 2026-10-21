@@ -188,3 +188,19 @@ npm run build
 ```
 
 `test:mcp` 验证 SDK HTTP、stdio、认证、Origin/Host、配对、路由、OAuth、配置助手和断线；`test:mcp:ui` 使用已安装的 Google Chrome 隔离测试环境，以官方 SDK 客户端和独立 JSON-RPC 测试客户端（2025-06-18）完成真实浏览器中的设计、调整、截图、撤销、重配和切换文档。它们是两种测试客户端实现，不等于已经实测任意第三方 AI 产品。交互式验证用 `node scripts/mcp-smoke.mjs`；测试既有远程部署时设置 `BAIZEFIG_MCP_URL` 与 `BAIZEFIG_ACCESS_TOKEN`。
+
+## MCP interoperability and troubleshooting
+
+The batch tools expose a strict JSON Schema. Obtain documentId, editorId, revision and pageId from get_document, then use the minimal request in the tool description. Arrays must remain arrays at every level; coordinates and dimensions must remain numbers. Omit parentId for root nodes or use null. Do not add item wrappers or coerce invalid inputs. preview_commands validates without committing and does not render an image. Query get_request_status after an uncertain write; never blindly replay after changing editorId.
+
+Current geometry contract: polygon uses the regular triangle default (custom points are not rendered); path is an unfilled polyline using points. Sizes are numeric; fill_container and hug_contents are not supported. These are capability limits, not transport failures.
+
+For a failed call, collect the client/model-visible schema, the exact arguments before and after client adaptation, the error and call ID. Redact credentials and private document content. A service-side tools/list response alone does not prove what the model saw. A local validation failure may never reach the service; a successful script call does not identify which client layer generated invalid arguments. Do not extract or decrypt stored credentials to troubleshoot parameter errors.
+
+Cloud business errors include requestId for correlation with service call records. SDK or client schema rejections happen before the tool handler and may not have a service requestId. Never log authorization headers or entire document payloads for diagnostics.
+
+### 客户端互操作排查
+
+工具描述现提供可校验的最小创建示例。先读取目标和版本，再替换示例中的标识。commands、nodes、points 必须保留 JSON 数组；坐标和尺寸必须为数字。顶层节点省略 parentId 或传 null，不能传空字符串。不为特定客户端自动拆除 item 包装或转换字符串数值。
+
+排查时应对照模型可见定义、客户端适配前后的原始参数及同一调用 ID。客户端本地校验失败可能完全不会到达服务端；脚本直连成功不能单独证明客户端哪一层出错。截图和 SVG 的渲染模块随页面静态加载，降低发布后旧页面延迟加载模块失效的风险；这不保证所有旧页面跨版本可用。缺失的 assets 资源返回 404，不再由 SPA 回退成 HTML 200。重新加载前先保存工作，重新连接后重新读取目标与版本，不能自动重放写入。

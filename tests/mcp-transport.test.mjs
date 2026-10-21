@@ -78,7 +78,15 @@ test("HTTP auth, origin, host, discovery, explicit routing, schema and disconnec
   assert.equal(deniedHost, 403);
   const client = await connect(f.url);
   t.after(() => client.close());
-  assert.equal((await client.listTools()).tools.length, 8);
+  const listed = (await client.listTools()).tools;
+  assert.equal(listed.length, 8);
+  const batch = listed.find((t) => t.name === "apply_commands");
+  assert.equal(batch.inputSchema.properties.commands.type, "array");
+  assert.equal(
+    batch.inputSchema.properties.commands.items.anyOf[0].properties.nodes.type,
+    "array",
+  );
+  assert.match(batch.description, /Minimal request:/);
   const unavailable = await client.callTool({
     name: "get_document",
     arguments: {},

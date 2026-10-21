@@ -148,3 +148,14 @@ export const toolSchemas = {
   apply_commands: z.object(writeShape).strict(),
   get_request_status: z.object({ ...targetShape, idempotencyKey: id }).strict(),
 };
+
+const batchHelp =
+  ' Read get_document first and substitute its documentId, editorId, revision and pages[0].id. Minimal request: {"documentId":"DOCUMENT_ID","editorId":"EDITOR_ID","expectedRevision":"REVISION","idempotencyKey":"UNIQUE_KEY","commands":[{"type":"create","nodes":[{"id":"rect-1","pageId":"PAGE_ID","type":"rectangle","x":0,"y":0,"width":64,"height":64,"fill":"#3366ff"}]}]}. commands, nodes and points must be JSON arrays, never {"item":...}. Coordinates and sizes must be numbers, not strings; width/height do not accept fill_container or hug_contents. Omit parentId for root nodes or use null, never an empty string. Create parents before children. polygon renders a regular triangle by default; custom polygon vertices are not supported by this MCP contract. path uses points as an unfilled polyline, not SVG path data. Unknown fields are rejected.';
+export const commandDescriptions = {
+  preview_commands:
+    "Validate a batch and return changed IDs without committing; this is not a visual preview. Requires editor write permission and the same target/version/key fields as apply_commands." +
+    batchHelp,
+  apply_commands:
+    "Apply one atomic undoable batch. Requires write permission. On timeout query get_request_status before retrying; only retry the identical request with the same key. If editorId changes, read and review the document before any new write." +
+    batchHelp,
+};

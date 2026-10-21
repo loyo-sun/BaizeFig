@@ -18,6 +18,7 @@ import { Appearance, EffectDefinitions } from "./appearance";
 import { layoutText } from "./textLayout";
 import { inverse, multiply, transformPoint } from "./fidelity";
 import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import {
   type Document,
   type Node,
@@ -1174,7 +1175,6 @@ export async function svgString(
       ids = [];
     }
   }
-  const { renderToStaticMarkup } = await import("react-dom/server");
   const b = options.viewport ?? exportBounds(doc, pageId, ids);
   if (
     ![b.x, b.y, b.width, b.height].every(Number.isFinite) ||
