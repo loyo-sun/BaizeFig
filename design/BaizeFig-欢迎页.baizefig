@@ -1,0 +1,5235 @@
+{
+  "format": "baizefig",
+  "version": 1,
+  "id": "51430bf6-4450-4316-8f26-42559a688385",
+  "name": "BaizeFig · 欢迎页设计",
+  "pages": [
+    {
+      "id": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "name": "01 · 欢迎页"
+    },
+    {
+      "id": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "name": "02 · 组件库"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": null,
+      "type": "frame",
+      "name": "组件库 / 可复用主组件",
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 1150,
+      "rotation": 0,
+      "fill": "#FAFAF6",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "1dc20d10-1c0b-450b-bc26-404fe03ed2ad",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "text",
+      "name": "组件库标题",
+      "x": 48,
+      "y": 32,
+      "width": 1100,
+      "height": 32,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "BAIZEFIG / COMPONENT LIBRARY",
+      "fontSize": 20,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "f76ea22d-2d92-4b9c-a978-a9959a27dca9",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "text",
+      "name": "组件库说明",
+      "x": 48,
+      "y": 72,
+      "width": 1150,
+      "height": 25.6,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "主组件集中管理；欢迎页使用真实实例。文字可覆盖，图形保留独立矢量路径。",
+      "fontSize": 16,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "33547f9f-2cd6-4c2b-b088-df78385c510b",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "component",
+      "name": "品牌 / 白泽ICON / 黑底白色",
+      "x": 48,
+      "y": 150,
+      "width": 200,
+      "height": 200,
+      "rotation": 0,
+      "fill": "#000",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 44,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "1:1 黑底白色白泽标志。双角、兽面、慧眼与五官均为独立矢量图层。"
+    },
+    {
+      "id": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "33547f9f-2cd6-4c2b-b088-df78385c510b",
+      "type": "group",
+      "name": "白泽 / 矢量图形",
+      "x": 20,
+      "y": 17,
+      "width": 160,
+      "height": 160,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "5177c267-8e91-4fc2-84cd-22df3262698b",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "path",
+      "name": "角 / 左",
+      "x": 24.8,
+      "y": 23.200000000000003,
+      "width": 25.600000000000005,
+      "height": 49.599999999999994,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 11.2,
+          "y": 49.599999999999994
+        },
+        {
+          "x": 0,
+          "y": 31.200000000000003
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 19.2,
+          "y": 13.600000000000001
+        },
+        {
+          "x": 25.600000000000005,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "0ebce9c0-8373-48bd-b356-2fcd269859cf",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "path",
+      "name": "角 / 右",
+      "x": 109.60000000000001,
+      "y": 23.200000000000003,
+      "width": 25.60000000000001,
+      "height": 49.599999999999994,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 14.399999999999991,
+          "y": 49.599999999999994
+        },
+        {
+          "x": 25.60000000000001,
+          "y": 31.200000000000003
+        },
+        {
+          "x": 25.60000000000001,
+          "y": 0
+        },
+        {
+          "x": 6.3999999999999915,
+          "y": 13.600000000000001
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "5dc0fc89-9787-42cf-b557-4d5c68da52d4",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "path",
+      "name": "轮廓 / 兽面",
+      "x": 22.400000000000002,
+      "y": 68,
+      "width": 115.19999999999999,
+      "height": 76.80000000000001,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 13.599999999999998,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 15.200000000000003
+        },
+        {
+          "x": 8,
+          "y": 47.2
+        },
+        {
+          "x": 30.400000000000002,
+          "y": 64.80000000000001
+        },
+        {
+          "x": 57.599999999999994,
+          "y": 76.80000000000001
+        },
+        {
+          "x": 84.8,
+          "y": 64.80000000000001
+        },
+        {
+          "x": 107.19999999999999,
+          "y": 47.2
+        },
+        {
+          "x": 115.19999999999999,
+          "y": 15.200000000000003
+        },
+        {
+          "x": 101.6,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "group",
+      "name": "五官 / 眉眼与鼻口",
+      "x": 0,
+      "y": 0,
+      "width": 160,
+      "height": 160,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "124c3d53-e789-4e21-8efe-3f27df5fcfd0",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "path",
+      "name": "眉 / 左",
+      "x": 37.6,
+      "y": 80.80000000000001,
+      "width": 28.000000000000007,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 8,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 6.3999999999999915
+        },
+        {
+          "x": 16.800000000000004,
+          "y": 0
+        },
+        {
+          "x": 28.000000000000007,
+          "y": 10.399999999999991
+        }
+      ]
+    },
+    {
+      "id": "6c8b69ec-c14f-4bca-b4a3-002eca4cfb81",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "path",
+      "name": "眉 / 右",
+      "x": 94.4,
+      "y": 80.80000000000001,
+      "width": 28,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 8,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 28,
+          "y": 6.3999999999999915
+        },
+        {
+          "x": 11.200000000000003,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 10.399999999999991
+        }
+      ]
+    },
+    {
+      "id": "e5ea43cb-29d9-4795-a55a-1f2e72a65a26",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "ellipse",
+      "name": "瞳 / 左",
+      "x": 48,
+      "y": 93.60000000000001,
+      "width": 9.6,
+      "height": 9.6,
+      "rotation": 0,
+      "fill": "#FFFFFF",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "3b24ab7a-8c6b-4c42-a4f0-5f5fe6432b5a",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "ellipse",
+      "name": "瞳 / 右",
+      "x": 102.4,
+      "y": 93.60000000000001,
+      "width": 9.6,
+      "height": 9.6,
+      "rotation": 0,
+      "fill": "#FFFFFF",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "c2fcb433-2bbb-4817-b405-494d6476c635",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "path",
+      "name": "口 / 洞见",
+      "x": 69.60000000000001,
+      "y": 112,
+      "width": 20.799999999999997,
+      "height": 6.400000000000006,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 7.2,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 10.399999999999991,
+          "y": 6.400000000000006
+        },
+        {
+          "x": 20.799999999999997,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "bc964764-219d-475c-8334-60f677933abe",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "path",
+      "name": "鼻 / 中轴",
+      "x": 80,
+      "y": 117.60000000000001,
+      "width": 1,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 5.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 10.399999999999991
+        }
+      ]
+    },
+    {
+      "id": "f716ffe5-8eaf-41fe-ad79-b6f9c6bf907d",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "path",
+      "name": "慧眼 / 菱形",
+      "x": 68,
+      "y": 51.2,
+      "width": 24,
+      "height": 22.400000000000006,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 5.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 12,
+          "y": 0
+        },
+        {
+          "x": 24,
+          "y": 11.200000000000003
+        },
+        {
+          "x": 12,
+          "y": 22.400000000000006
+        },
+        {
+          "x": 0,
+          "y": 11.200000000000003
+        },
+        {
+          "x": 12,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "component",
+      "name": "品牌 / BaizeFig / 定制字标",
+      "x": 320,
+      "y": 160,
+      "width": 422,
+      "height": 92,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "逐字母定制的几何线性字标；每个字母独立分组，i 的菱形点呼应慧眼。"
+    },
+    {
+      "id": "6f37044e-97f8-4acd-ab1b-f642d1fa4ff2",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / B",
+      "x": 4,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "18df0faa-e1d1-4cdc-9e2e-97764e859668",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "6f37044e-97f8-4acd-ab1b-f642d1fa4ff2",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 0,
+      "width": 35,
+      "height": 64,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 64
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 35,
+          "y": 9
+        },
+        {
+          "x": 35,
+          "y": 23
+        },
+        {
+          "x": 24,
+          "y": 32
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "7636b395-5618-46dd-b474-d7d918ec2e7d",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "6f37044e-97f8-4acd-ab1b-f642d1fa4ff2",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 0,
+      "y": 32,
+      "width": 38,
+      "height": 32,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 38,
+          "y": 8
+        },
+        {
+          "x": 38,
+          "y": 22
+        },
+        {
+          "x": 26,
+          "y": 32
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "1db1b302-87bc-4c69-b96c-a6e0d4b60741",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / a",
+      "x": 58,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "874379a9-10af-4ab4-9ef2-2e63753e22b2",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "1db1b302-87bc-4c69-b96c-a6e0d4b60741",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 44,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 34,
+          "y": 7
+        },
+        {
+          "x": 25,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 33
+        },
+        {
+          "x": 11,
+          "y": 44
+        },
+        {
+          "x": 24,
+          "y": 44
+        },
+        {
+          "x": 34,
+          "y": 33
+        }
+      ]
+    },
+    {
+      "id": "dc42e774-e9cf-422c-b2c4-b55d4d3c266b",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "1db1b302-87bc-4c69-b96c-a6e0d4b60741",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 34,
+      "y": 18,
+      "width": 1,
+      "height": 46,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 46
+        }
+      ]
+    },
+    {
+      "id": "b00f70e3-3dee-4d64-a4ad-78a32cef8f81",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / i",
+      "x": 112,
+      "y": 3,
+      "width": 18,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "393e90c5-423e-4cc8-aedb-e13708d6c5e4",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "b00f70e3-3dee-4d64-a4ad-78a32cef8f81",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 8,
+      "y": 22,
+      "width": 1,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        }
+      ]
+    },
+    {
+      "id": "d9e59d52-859f-48d7-aa06-dc92a192edff",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "b00f70e3-3dee-4d64-a4ad-78a32cef8f81",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 0,
+      "width": 12,
+      "height": 12,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 6,
+          "y": 0
+        },
+        {
+          "x": 12,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 12
+        },
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "3cb4d6fb-fe72-41f9-9b70-dbe49c610fa2",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / z",
+      "x": 142,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "dfeeed6f-20cf-40e0-b9f8-218afa980d88",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "3cb4d6fb-fe72-41f9-9b70-dbe49c610fa2",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 20,
+      "width": 34,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 34,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        },
+        {
+          "x": 34,
+          "y": 42
+        }
+      ]
+    },
+    {
+      "id": "9c15b2c3-d726-4f6e-bbfc-9168e07e8dbf",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / e",
+      "x": 196,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "94d4af45-af89-4935-902b-41064afd7839",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "9c15b2c3-d726-4f6e-bbfc-9168e07e8dbf",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 44,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 22
+        },
+        {
+          "x": 34,
+          "y": 22
+        },
+        {
+          "x": 34,
+          "y": 11
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 33
+        },
+        {
+          "x": 11,
+          "y": 44
+        },
+        {
+          "x": 32,
+          "y": 44
+        }
+      ]
+    },
+    {
+      "id": "4e0f5284-f796-4755-9f93-ab2127a75eb8",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / F",
+      "x": 250,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "3c1a8c2a-eba5-4f85-88f7-0e0df6cc20cf",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "4e0f5284-f796-4755-9f93-ab2127a75eb8",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 0,
+      "width": 38,
+      "height": 64,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 64
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 38,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "b0c0477b-7d24-4740-bdb4-27e1a1527add",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "4e0f5284-f796-4755-9f93-ab2127a75eb8",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 0,
+      "y": 30,
+      "width": 30,
+      "height": 1,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 30,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / i",
+      "x": 304,
+      "y": 3,
+      "width": 18,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "6b005600-26ef-46cf-9bac-1cda6ad4ee48",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 8,
+      "y": 22,
+      "width": 1,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        }
+      ]
+    },
+    {
+      "id": "ab4e81ba-c056-4258-8c27-c10e8eb962b1",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 0,
+      "width": 12,
+      "height": 12,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 6,
+          "y": 0
+        },
+        {
+          "x": 12,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 12
+        },
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "eb9ba86e-179e-4a79-9e60-76c57195965d",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / g",
+      "x": 334,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "ee99e804-1a96-444c-8a40-4cf8f94d2fad",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "eb9ba86e-179e-4a79-9e60-76c57195965d",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 43,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 34,
+          "y": 4
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 32
+        },
+        {
+          "x": 10,
+          "y": 43
+        },
+        {
+          "x": 24,
+          "y": 43
+        },
+        {
+          "x": 34,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "39c51306-a184-4aae-8a9d-4f27863ecd0d",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "eb9ba86e-179e-4a79-9e60-76c57195965d",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 18,
+      "width": 32,
+      "height": 68,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 32,
+          "y": 0
+        },
+        {
+          "x": 32,
+          "y": 58
+        },
+        {
+          "x": 22,
+          "y": 68
+        },
+        {
+          "x": 0,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "component",
+      "name": "引导 / 功能说明",
+      "x": 48,
+      "y": 445,
+      "width": 300,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "通用功能引导；编号、标题、说明为可覆盖文字属性。",
+      "componentProperties": [
+        {
+          "id": "number",
+          "name": "编号",
+          "type": "text",
+          "targetPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0",
+          "defaultValue": "01"
+        },
+        {
+          "id": "title",
+          "name": "标题",
+          "type": "text",
+          "targetPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0",
+          "defaultValue": "你的创作素材库"
+        },
+        {
+          "id": "body",
+          "name": "说明",
+          "type": "text",
+          "targetPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0",
+          "defaultValue": "图层管理结构，资源复用灵感，\n智能连接 AI。"
+        }
+      ]
+    },
+    {
+      "id": "19e3b31d-be42-47f1-90bd-91a5dbcf5723",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "type": "text",
+      "name": "编号",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "01",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "9b952fe0-5cb2-4d2a-a981-8489c8a7ea46",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "type": "text",
+      "name": "标题",
+      "x": 0,
+      "y": 28,
+      "width": 300,
+      "height": 33.6,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "你的创作素材库",
+      "fontSize": 21,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "8dce85b2-1a17-49ea-b385-4731ac910f85",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "type": "text",
+      "name": "说明",
+      "x": 0,
+      "y": 68,
+      "width": 300,
+      "height": 24,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "图层管理结构，资源复用灵感，\n智能连接 AI。",
+      "fontSize": 15,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "a63758de-cc86-4ca5-931a-516c02006890",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "component",
+      "name": "操作 / 开始创作",
+      "x": 450,
+      "y": 445,
+      "width": 184,
+      "height": 50,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 8,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "主要操作按钮，文字与箭头为独立子图层。"
+    },
+    {
+      "id": "e255c973-47bf-4506-911c-35c80d7a2d74",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "a63758de-cc86-4ca5-931a-516c02006890",
+      "type": "text",
+      "name": "按钮文字",
+      "x": 24,
+      "y": 12,
+      "width": 110,
+      "height": 27.200000000000003,
+      "rotation": 0,
+      "fill": "#FFFFFF",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "开始创作",
+      "fontSize": 17,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 500,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "08ae4b83-7046-4a13-8b3f-5e367d3ec7cc",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "a63758de-cc86-4ca5-931a-516c02006890",
+      "type": "path",
+      "name": "箭头 / 向右",
+      "x": 143,
+      "y": 19,
+      "width": 20,
+      "height": 12,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 1.8,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": 20,
+          "y": 6
+        },
+        {
+          "x": 14,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 6
+        },
+        {
+          "x": 14,
+          "y": 12
+        }
+      ]
+    },
+    {
+      "id": "4e890d7d-c3b9-4325-bc3f-1fe53e6685e3",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "component",
+      "name": "引导 / 方向箭头",
+      "x": 760,
+      "y": 445,
+      "width": 56,
+      "height": 56,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "复用方向箭头，可旋转指向不同工作区。"
+    },
+    {
+      "id": "9b6e4878-5204-40ee-b6f7-9b3a12a46545",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "4e890d7d-c3b9-4325-bc3f-1fe53e6685e3",
+      "type": "path",
+      "name": "箭头 / 折线",
+      "x": 8,
+      "y": 9,
+      "width": 39,
+      "height": 39,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#8E9989",
+      "strokeWidth": 1.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 39,
+          "y": 39
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 20
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "1602da78-c262-418e-9a10-1250a874072d",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "text",
+      "name": "文字规范标题",
+      "x": 48,
+      "y": 700,
+      "width": 1100,
+      "height": 38.400000000000006,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "排版与结构",
+      "fontSize": 24,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "94f15959-5177-457e-9b18-82f89b898de7",
+      "pageId": "0fd8ad65-dfff-44f5-af34-30e888a151f2",
+      "parentId": "faad2ed8-4f6a-471f-8c64-c4854e12d939",
+      "type": "text",
+      "name": "文字规范",
+      "x": 48,
+      "y": 750,
+      "width": 1150,
+      "height": 28.8,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "标题 21px / 600　正文 15px / 400　编号 12px / 600\n品牌字标为定制矢量；其余文字为可编辑文本。\n主画板 → 页眉 / 顶部引导 / 品牌主视觉 / 底部引导 / 页脚。",
+      "fontSize": 18,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "d0e93347-7434-414d-b2ac-13057a6e4fd1",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": null,
+      "type": "frame",
+      "name": "欢迎页 / Desktop · 1280 × 900",
+      "x": 0,
+      "y": 0,
+      "width": 1280,
+      "height": 900,
+      "rotation": 0,
+      "fill": "#FAFAF6",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "7bba8601-6fea-46c6-8944-02975bfad76f",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "d0e93347-7434-414d-b2ac-13057a6e4fd1",
+      "type": "group",
+      "name": "01 / 页眉",
+      "x": 48,
+      "y": 28,
+      "width": 1184,
+      "height": 34,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "6d98a7ec-2e4c-4c8d-86e4-1c2f2a4dc764",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "7bba8601-6fea-46c6-8944-02975bfad76f",
+      "type": "text",
+      "name": "页面标签",
+      "x": 0,
+      "y": 0,
+      "width": 700,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "BAIZEFIG / GET STARTED",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "264fe8f7-8c36-4ae7-9a57-51039b5e7d52",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "7bba8601-6fea-46c6-8944-02975bfad76f",
+      "type": "text",
+      "name": "欢迎标记",
+      "x": 930,
+      "y": 0,
+      "width": 254,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "WELCOME  ·  2026",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "right",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "2822779d-30d4-4601-ada4-3671c044e989",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "7bba8601-6fea-46c6-8944-02975bfad76f",
+      "type": "rectangle",
+      "name": "页眉 / 分隔线",
+      "x": 0,
+      "y": 33,
+      "width": 1184,
+      "height": 1,
+      "rotation": 0,
+      "fill": "#DDE2D7",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "b66f9326-553d-4eec-b2af-48df26382e0f",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "d0e93347-7434-414d-b2ac-13057a6e4fd1",
+      "type": "group",
+      "name": "02 / 顶部工作区引导",
+      "x": 56,
+      "y": 100,
+      "width": 1168,
+      "height": 176,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "f9b45184-8fee-4d01-a1a3-b533ec1cf24b",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "b66f9326-553d-4eec-b2af-48df26382e0f",
+      "type": "group",
+      "name": "功能引导 / 01",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 176,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "97714129-9e05-4753-8b04-92219a638583",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "f9b45184-8fee-4d01-a1a3-b533ec1cf24b",
+      "type": "instance",
+      "name": "方向 / 指向工作区",
+      "x": 0,
+      "y": 0,
+      "width": 56,
+      "height": 56,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "复用方向箭头，可旋转指向不同工作区。",
+      "componentOwner": "97714129-9e05-4753-8b04-92219a638583",
+      "componentPath": "",
+      "fidelity": {
+        "size": [
+          56,
+          56
+        ],
+        "linear": [
+          0.5,
+          0,
+          0,
+          0.5
+        ]
+      },
+      "componentId": "4e890d7d-c3b9-4325-bc3f-1fe53e6685e3",
+      "componentOverrides": {}
+    },
+    {
+      "id": "dae1a9f1-8510-4354-9f0d-85fd7c1a9739",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "97714129-9e05-4753-8b04-92219a638583",
+      "type": "path",
+      "name": "箭头 / 折线",
+      "x": 8,
+      "y": 9,
+      "width": 39,
+      "height": 39,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#8E9989",
+      "strokeWidth": 1.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 39,
+          "y": 39
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 20
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 0
+        }
+      ],
+      "componentOwner": "97714129-9e05-4753-8b04-92219a638583",
+      "componentPath": "/9b6e4878-5204-40ee-b6f7-9b3a12a46545#0"
+    },
+    {
+      "id": "050c78c4-c405-432a-84b0-6ff6ed5f8594",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "f9b45184-8fee-4d01-a1a3-b533ec1cf24b",
+      "type": "instance",
+      "name": "说明 / 你的创作素材库",
+      "x": 0,
+      "y": 35,
+      "width": 300,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "通用功能引导；编号、标题、说明为可覆盖文字属性。",
+      "componentProperties": [
+        {
+          "id": "number",
+          "name": "编号",
+          "type": "text",
+          "targetPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0",
+          "defaultValue": "01"
+        },
+        {
+          "id": "title",
+          "name": "标题",
+          "type": "text",
+          "targetPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0",
+          "defaultValue": "你的创作素材库"
+        },
+        {
+          "id": "body",
+          "name": "说明",
+          "type": "text",
+          "targetPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0",
+          "defaultValue": "图层管理结构，资源复用灵感，\n智能连接 AI。"
+        }
+      ],
+      "componentOwner": "050c78c4-c405-432a-84b0-6ff6ed5f8594",
+      "componentPath": "",
+      "componentId": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "componentOverrides": {},
+      "componentValues": {
+        "number": "01",
+        "title": "你的创作素材库",
+        "body": "图层管理结构，资源复用灵感，\n智能连接 AI。"
+      }
+    },
+    {
+      "id": "d52e48c0-8e27-431c-b46a-cb2acf364b3f",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "050c78c4-c405-432a-84b0-6ff6ed5f8594",
+      "type": "text",
+      "name": "编号",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "01",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "050c78c4-c405-432a-84b0-6ff6ed5f8594",
+      "componentPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0"
+    },
+    {
+      "id": "c352f538-52f9-4d17-9419-13e70f875532",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "050c78c4-c405-432a-84b0-6ff6ed5f8594",
+      "type": "text",
+      "name": "标题",
+      "x": 0,
+      "y": 28,
+      "width": 300,
+      "height": 33.6,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "你的创作素材库",
+      "fontSize": 21,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "050c78c4-c405-432a-84b0-6ff6ed5f8594",
+      "componentPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0"
+    },
+    {
+      "id": "1442f3b1-11cb-4d45-b60e-30ec07bdf10c",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "050c78c4-c405-432a-84b0-6ff6ed5f8594",
+      "type": "text",
+      "name": "说明",
+      "x": 0,
+      "y": 68,
+      "width": 300,
+      "height": 24,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "图层管理结构，资源复用灵感，\n智能连接 AI。",
+      "fontSize": 15,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "050c78c4-c405-432a-84b0-6ff6ed5f8594",
+      "componentPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0"
+    },
+    {
+      "id": "41855d6a-feeb-4f39-8c92-ac223e89175c",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "b66f9326-553d-4eec-b2af-48df26382e0f",
+      "type": "group",
+      "name": "功能引导 / 02",
+      "x": 434,
+      "y": 0,
+      "width": 300,
+      "height": 176,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "22407b8a-ff41-4e9a-b486-4f816cc737f9",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "41855d6a-feeb-4f39-8c92-ac223e89175c",
+      "type": "instance",
+      "name": "方向 / 指向工作区",
+      "x": 0,
+      "y": 0,
+      "width": 56,
+      "height": 56,
+      "rotation": 45,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "复用方向箭头，可旋转指向不同工作区。",
+      "componentOwner": "22407b8a-ff41-4e9a-b486-4f816cc737f9",
+      "componentPath": "",
+      "fidelity": {
+        "size": [
+          56,
+          56
+        ],
+        "linear": [
+          0.5,
+          0,
+          0,
+          0.5
+        ]
+      },
+      "componentId": "4e890d7d-c3b9-4325-bc3f-1fe53e6685e3",
+      "componentOverrides": {}
+    },
+    {
+      "id": "16bd1127-66a6-4c70-9f53-c075cf0ee182",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "22407b8a-ff41-4e9a-b486-4f816cc737f9",
+      "type": "path",
+      "name": "箭头 / 折线",
+      "x": 8,
+      "y": 9,
+      "width": 39,
+      "height": 39,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#8E9989",
+      "strokeWidth": 1.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 39,
+          "y": 39
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 20
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 0
+        }
+      ],
+      "componentOwner": "22407b8a-ff41-4e9a-b486-4f816cc737f9",
+      "componentPath": "/9b6e4878-5204-40ee-b6f7-9b3a12a46545#0"
+    },
+    {
+      "id": "7c1b7d21-ad5f-4f65-8cc3-a85069cbdbcf",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "41855d6a-feeb-4f39-8c92-ac223e89175c",
+      "type": "instance",
+      "name": "说明 / 从一个形状开始",
+      "x": 0,
+      "y": 35,
+      "width": 300,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "通用功能引导；编号、标题、说明为可覆盖文字属性。",
+      "componentProperties": [
+        {
+          "id": "number",
+          "name": "编号",
+          "type": "text",
+          "targetPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0",
+          "defaultValue": "01"
+        },
+        {
+          "id": "title",
+          "name": "标题",
+          "type": "text",
+          "targetPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0",
+          "defaultValue": "你的创作素材库"
+        },
+        {
+          "id": "body",
+          "name": "说明",
+          "type": "text",
+          "targetPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0",
+          "defaultValue": "图层管理结构，资源复用灵感，\n智能连接 AI。"
+        }
+      ],
+      "componentOwner": "7c1b7d21-ad5f-4f65-8cc3-a85069cbdbcf",
+      "componentPath": "",
+      "componentId": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "componentOverrides": {},
+      "componentValues": {
+        "number": "02",
+        "title": "从一个形状开始",
+        "body": "选择、画框、图形、文字与钢笔。\n按 V 选择，按 F 创建画框。"
+      }
+    },
+    {
+      "id": "5e6d526d-abc1-40a3-b23d-0d1c5b6271a0",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "7c1b7d21-ad5f-4f65-8cc3-a85069cbdbcf",
+      "type": "text",
+      "name": "编号",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "02",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "7c1b7d21-ad5f-4f65-8cc3-a85069cbdbcf",
+      "componentPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0"
+    },
+    {
+      "id": "c26032fb-8227-4528-9ac8-5d4775fc1738",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "7c1b7d21-ad5f-4f65-8cc3-a85069cbdbcf",
+      "type": "text",
+      "name": "标题",
+      "x": 0,
+      "y": 28,
+      "width": 300,
+      "height": 33.6,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "从一个形状开始",
+      "fontSize": 21,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "7c1b7d21-ad5f-4f65-8cc3-a85069cbdbcf",
+      "componentPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0"
+    },
+    {
+      "id": "7cb7d8a4-09eb-42f3-a9f1-767e6b48ed20",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "7c1b7d21-ad5f-4f65-8cc3-a85069cbdbcf",
+      "type": "text",
+      "name": "说明",
+      "x": 0,
+      "y": 68,
+      "width": 300,
+      "height": 24,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "选择、画框、图形、文字与钢笔。\n按 V 选择，按 F 创建画框。",
+      "fontSize": 15,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "7c1b7d21-ad5f-4f65-8cc3-a85069cbdbcf",
+      "componentPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0"
+    },
+    {
+      "id": "9e61de3d-f666-4634-b5e2-b00f93054524",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "b66f9326-553d-4eec-b2af-48df26382e0f",
+      "type": "group",
+      "name": "功能引导 / 03",
+      "x": 868,
+      "y": 0,
+      "width": 300,
+      "height": 176,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "6282b956-b372-40c0-939a-fa221c64d416",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "9e61de3d-f666-4634-b5e2-b00f93054524",
+      "type": "instance",
+      "name": "方向 / 指向工作区",
+      "x": 0,
+      "y": 0,
+      "width": 56,
+      "height": 56,
+      "rotation": 90,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "复用方向箭头，可旋转指向不同工作区。",
+      "componentOwner": "6282b956-b372-40c0-939a-fa221c64d416",
+      "componentPath": "",
+      "fidelity": {
+        "size": [
+          56,
+          56
+        ],
+        "linear": [
+          0.5,
+          0,
+          0,
+          0.5
+        ]
+      },
+      "componentId": "4e890d7d-c3b9-4325-bc3f-1fe53e6685e3",
+      "componentOverrides": {}
+    },
+    {
+      "id": "dfcdad8d-6e4f-4549-a155-4fea61b46676",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "6282b956-b372-40c0-939a-fa221c64d416",
+      "type": "path",
+      "name": "箭头 / 折线",
+      "x": 8,
+      "y": 9,
+      "width": 39,
+      "height": 39,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#8E9989",
+      "strokeWidth": 1.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 39,
+          "y": 39
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 20
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 0
+        }
+      ],
+      "componentOwner": "6282b956-b372-40c0-939a-fa221c64d416",
+      "componentPath": "/9b6e4878-5204-40ee-b6f7-9b3a12a46545#0"
+    },
+    {
+      "id": "a28d4d94-845f-432f-a4e9-24de20406595",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "9e61de3d-f666-4634-b5e2-b00f93054524",
+      "type": "instance",
+      "name": "说明 / 让想法准备就绪",
+      "x": 0,
+      "y": 35,
+      "width": 300,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "通用功能引导；编号、标题、说明为可覆盖文字属性。",
+      "componentProperties": [
+        {
+          "id": "number",
+          "name": "编号",
+          "type": "text",
+          "targetPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0",
+          "defaultValue": "01"
+        },
+        {
+          "id": "title",
+          "name": "标题",
+          "type": "text",
+          "targetPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0",
+          "defaultValue": "你的创作素材库"
+        },
+        {
+          "id": "body",
+          "name": "说明",
+          "type": "text",
+          "targetPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0",
+          "defaultValue": "图层管理结构，资源复用灵感，\n智能连接 AI。"
+        }
+      ],
+      "componentOwner": "a28d4d94-845f-432f-a4e9-24de20406595",
+      "componentPath": "",
+      "componentId": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "componentOverrides": {},
+      "componentValues": {
+        "number": "03",
+        "title": "让想法准备就绪",
+        "body": "右上角登录、分享；切换设计、\n原型与检查，完成最后一笔。"
+      }
+    },
+    {
+      "id": "d99e95a7-87f1-44ba-9a33-cc055dcd4869",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "a28d4d94-845f-432f-a4e9-24de20406595",
+      "type": "text",
+      "name": "编号",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "03",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "a28d4d94-845f-432f-a4e9-24de20406595",
+      "componentPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0"
+    },
+    {
+      "id": "26591b00-225a-4587-a4fc-e5f329f41aa1",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "a28d4d94-845f-432f-a4e9-24de20406595",
+      "type": "text",
+      "name": "标题",
+      "x": 0,
+      "y": 28,
+      "width": 300,
+      "height": 33.6,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "让想法准备就绪",
+      "fontSize": 21,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "a28d4d94-845f-432f-a4e9-24de20406595",
+      "componentPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0"
+    },
+    {
+      "id": "d59938ac-7ac6-420a-819d-9006cac618b5",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "a28d4d94-845f-432f-a4e9-24de20406595",
+      "type": "text",
+      "name": "说明",
+      "x": 0,
+      "y": 68,
+      "width": 300,
+      "height": 24,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "右上角登录、分享；切换设计、\n原型与检查，完成最后一笔。",
+      "fontSize": 15,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "a28d4d94-845f-432f-a4e9-24de20406595",
+      "componentPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0"
+    },
+    {
+      "id": "c9a9d3aa-23fa-4a93-ae2c-cda5b1c4e3fb",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "d0e93347-7434-414d-b2ac-13057a6e4fd1",
+      "type": "group",
+      "name": "03 / 品牌主视觉",
+      "x": 380,
+      "y": 280,
+      "width": 520,
+      "height": 354,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "c9a9d3aa-23fa-4a93-ae2c-cda5b1c4e3fb",
+      "type": "instance",
+      "name": "白泽 / 品牌标志",
+      "x": 210,
+      "y": 0,
+      "width": 200,
+      "height": 200,
+      "rotation": 0,
+      "fill": "#000",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 44,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "1:1 黑底白色白泽标志。双角、兽面、慧眼与五官均为独立矢量图层。",
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "",
+      "fidelity": {
+        "size": [
+          200,
+          200
+        ],
+        "linear": [
+          0.5,
+          0,
+          0,
+          0.5
+        ]
+      },
+      "componentId": "33547f9f-2cd6-4c2b-b088-df78385c510b",
+      "componentOverrides": {}
+    },
+    {
+      "id": "620f9307-b5ff-4142-a991-2c1a8ec3c0f0",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "type": "group",
+      "name": "白泽 / 矢量图形",
+      "x": 20,
+      "y": 17,
+      "width": 160,
+      "height": 160,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0"
+    },
+    {
+      "id": "b69cadec-75a8-45ca-a8e1-60eb63bf7bdd",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "620f9307-b5ff-4142-a991-2c1a8ec3c0f0",
+      "type": "path",
+      "name": "角 / 左",
+      "x": 24.8,
+      "y": 23.200000000000003,
+      "width": 25.600000000000005,
+      "height": 49.599999999999994,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 11.2,
+          "y": 49.599999999999994
+        },
+        {
+          "x": 0,
+          "y": 31.200000000000003
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 19.2,
+          "y": 13.600000000000001
+        },
+        {
+          "x": 25.600000000000005,
+          "y": 32
+        }
+      ],
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/5177c267-8e91-4fc2-84cd-22df3262698b#0"
+    },
+    {
+      "id": "e26769ad-b6dc-417d-b2fa-5eb5c4856469",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "620f9307-b5ff-4142-a991-2c1a8ec3c0f0",
+      "type": "path",
+      "name": "角 / 右",
+      "x": 109.60000000000001,
+      "y": 23.200000000000003,
+      "width": 25.60000000000001,
+      "height": 49.599999999999994,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 14.399999999999991,
+          "y": 49.599999999999994
+        },
+        {
+          "x": 25.60000000000001,
+          "y": 31.200000000000003
+        },
+        {
+          "x": 25.60000000000001,
+          "y": 0
+        },
+        {
+          "x": 6.3999999999999915,
+          "y": 13.600000000000001
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ],
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/0ebce9c0-8373-48bd-b356-2fcd269859cf#0"
+    },
+    {
+      "id": "62dd505f-d599-4e33-ae54-3e880962659b",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "620f9307-b5ff-4142-a991-2c1a8ec3c0f0",
+      "type": "path",
+      "name": "轮廓 / 兽面",
+      "x": 22.400000000000002,
+      "y": 68,
+      "width": 115.19999999999999,
+      "height": 76.80000000000001,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 13.599999999999998,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 15.200000000000003
+        },
+        {
+          "x": 8,
+          "y": 47.2
+        },
+        {
+          "x": 30.400000000000002,
+          "y": 64.80000000000001
+        },
+        {
+          "x": 57.599999999999994,
+          "y": 76.80000000000001
+        },
+        {
+          "x": 84.8,
+          "y": 64.80000000000001
+        },
+        {
+          "x": 107.19999999999999,
+          "y": 47.2
+        },
+        {
+          "x": 115.19999999999999,
+          "y": 15.200000000000003
+        },
+        {
+          "x": 101.6,
+          "y": 0
+        }
+      ],
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/5dc0fc89-9787-42cf-b557-4d5c68da52d4#0"
+    },
+    {
+      "id": "ba9a635b-c17b-4bfb-a105-0093683638b6",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "620f9307-b5ff-4142-a991-2c1a8ec3c0f0",
+      "type": "group",
+      "name": "五官 / 眉眼与鼻口",
+      "x": 0,
+      "y": 0,
+      "width": 160,
+      "height": 160,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/640f6163-2a1a-403b-83bc-4f1307ab72ea#0"
+    },
+    {
+      "id": "b1d0c828-82c4-4cd9-9397-c45ac723a37a",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ba9a635b-c17b-4bfb-a105-0093683638b6",
+      "type": "path",
+      "name": "眉 / 左",
+      "x": 37.6,
+      "y": 80.80000000000001,
+      "width": 28.000000000000007,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 8,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 6.3999999999999915
+        },
+        {
+          "x": 16.800000000000004,
+          "y": 0
+        },
+        {
+          "x": 28.000000000000007,
+          "y": 10.399999999999991
+        }
+      ],
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/640f6163-2a1a-403b-83bc-4f1307ab72ea#0/124c3d53-e789-4e21-8efe-3f27df5fcfd0#0"
+    },
+    {
+      "id": "96b0958e-53f3-4370-82f9-3773a3effe46",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ba9a635b-c17b-4bfb-a105-0093683638b6",
+      "type": "path",
+      "name": "眉 / 右",
+      "x": 94.4,
+      "y": 80.80000000000001,
+      "width": 28,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 8,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 28,
+          "y": 6.3999999999999915
+        },
+        {
+          "x": 11.200000000000003,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 10.399999999999991
+        }
+      ],
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/640f6163-2a1a-403b-83bc-4f1307ab72ea#0/6c8b69ec-c14f-4bca-b4a3-002eca4cfb81#0"
+    },
+    {
+      "id": "7b7cbd1b-950e-4894-98e2-b2122125c91e",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ba9a635b-c17b-4bfb-a105-0093683638b6",
+      "type": "ellipse",
+      "name": "瞳 / 左",
+      "x": 48,
+      "y": 93.60000000000001,
+      "width": 9.6,
+      "height": 9.6,
+      "rotation": 0,
+      "fill": "#FFFFFF",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/640f6163-2a1a-403b-83bc-4f1307ab72ea#0/e5ea43cb-29d9-4795-a55a-1f2e72a65a26#0"
+    },
+    {
+      "id": "a1e0626d-7eb3-4a8b-8c31-3c9ad8422633",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ba9a635b-c17b-4bfb-a105-0093683638b6",
+      "type": "ellipse",
+      "name": "瞳 / 右",
+      "x": 102.4,
+      "y": 93.60000000000001,
+      "width": 9.6,
+      "height": 9.6,
+      "rotation": 0,
+      "fill": "#FFFFFF",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/640f6163-2a1a-403b-83bc-4f1307ab72ea#0/3b24ab7a-8c6b-4c42-a4f0-5f5fe6432b5a#0"
+    },
+    {
+      "id": "962bb0c9-134a-4c31-8aab-68275e86ca42",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ba9a635b-c17b-4bfb-a105-0093683638b6",
+      "type": "path",
+      "name": "口 / 洞见",
+      "x": 69.60000000000001,
+      "y": 112,
+      "width": 20.799999999999997,
+      "height": 6.400000000000006,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 7.2,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 10.399999999999991,
+          "y": 6.400000000000006
+        },
+        {
+          "x": 20.799999999999997,
+          "y": 0
+        }
+      ],
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/640f6163-2a1a-403b-83bc-4f1307ab72ea#0/c2fcb433-2bbb-4817-b405-494d6476c635#0"
+    },
+    {
+      "id": "3e1c6034-46d3-4129-9c7f-085607f1cdb8",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ba9a635b-c17b-4bfb-a105-0093683638b6",
+      "type": "path",
+      "name": "鼻 / 中轴",
+      "x": 80,
+      "y": 117.60000000000001,
+      "width": 1,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 5.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 10.399999999999991
+        }
+      ],
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/640f6163-2a1a-403b-83bc-4f1307ab72ea#0/bc964764-219d-475c-8334-60f677933abe#0"
+    },
+    {
+      "id": "9bbcbd44-aa09-4f5d-a89b-53c5d937dd98",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "620f9307-b5ff-4142-a991-2c1a8ec3c0f0",
+      "type": "path",
+      "name": "慧眼 / 菱形",
+      "x": 68,
+      "y": 51.2,
+      "width": 24,
+      "height": 22.400000000000006,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 5.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 12,
+          "y": 0
+        },
+        {
+          "x": 24,
+          "y": 11.200000000000003
+        },
+        {
+          "x": 12,
+          "y": 22.400000000000006
+        },
+        {
+          "x": 0,
+          "y": 11.200000000000003
+        },
+        {
+          "x": 12,
+          "y": 0
+        }
+      ],
+      "componentOwner": "35d27712-a283-43e1-9c48-6f95e7c90825",
+      "componentPath": "/8996c2b7-d603-49d1-9c73-95d2831ed156#0/f716ffe5-8eaf-41fe-ad79-b6f9c6bf907d#0"
+    },
+    {
+      "id": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "c9a9d3aa-23fa-4a93-ae2c-cda5b1c4e3fb",
+      "type": "instance",
+      "name": "BaizeFig / 品牌字标",
+      "x": 133,
+      "y": 122,
+      "width": 422,
+      "height": 92,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "逐字母定制的几何线性字标；每个字母独立分组，i 的菱形点呼应慧眼。",
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "",
+      "fidelity": {
+        "size": [
+          422,
+          92
+        ],
+        "linear": [
+          0.6,
+          0,
+          0,
+          0.6
+        ]
+      },
+      "componentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "componentOverrides": {}
+    },
+    {
+      "id": "6f65ba70-4636-48ab-b7f7-fec3ff30b924",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "type": "group",
+      "name": "字母 / B",
+      "x": 4,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/6f37044e-97f8-4acd-ab1b-f642d1fa4ff2#0"
+    },
+    {
+      "id": "f5256a96-061a-4a0b-a439-eac2fdff6617",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "6f65ba70-4636-48ab-b7f7-fec3ff30b924",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 0,
+      "width": 35,
+      "height": 64,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 64
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 35,
+          "y": 9
+        },
+        {
+          "x": 35,
+          "y": 23
+        },
+        {
+          "x": 24,
+          "y": 32
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/6f37044e-97f8-4acd-ab1b-f642d1fa4ff2#0/18df0faa-e1d1-4cdc-9e2e-97764e859668#0"
+    },
+    {
+      "id": "289b85bd-2150-4993-9f6b-66e249990452",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "6f65ba70-4636-48ab-b7f7-fec3ff30b924",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 0,
+      "y": 32,
+      "width": 38,
+      "height": 32,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 38,
+          "y": 8
+        },
+        {
+          "x": 38,
+          "y": 22
+        },
+        {
+          "x": 26,
+          "y": 32
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/6f37044e-97f8-4acd-ab1b-f642d1fa4ff2#0/7636b395-5618-46dd-b474-d7d918ec2e7d#0"
+    },
+    {
+      "id": "c498e9c6-8f0f-4015-be3b-674f230fffc2",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "type": "group",
+      "name": "字母 / a",
+      "x": 58,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/1db1b302-87bc-4c69-b96c-a6e0d4b60741#0"
+    },
+    {
+      "id": "164b5063-f8d8-4f94-abf0-da1fc5d7fca5",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "c498e9c6-8f0f-4015-be3b-674f230fffc2",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 44,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 34,
+          "y": 7
+        },
+        {
+          "x": 25,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 33
+        },
+        {
+          "x": 11,
+          "y": 44
+        },
+        {
+          "x": 24,
+          "y": 44
+        },
+        {
+          "x": 34,
+          "y": 33
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/1db1b302-87bc-4c69-b96c-a6e0d4b60741#0/874379a9-10af-4ab4-9ef2-2e63753e22b2#0"
+    },
+    {
+      "id": "0c865e78-8a84-4b3b-b784-0b44a3a57b5b",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "c498e9c6-8f0f-4015-be3b-674f230fffc2",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 34,
+      "y": 18,
+      "width": 1,
+      "height": 46,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 46
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/1db1b302-87bc-4c69-b96c-a6e0d4b60741#0/dc42e774-e9cf-422c-b2c4-b55d4d3c266b#0"
+    },
+    {
+      "id": "4f1e262b-9d23-47f8-8610-f47d2e67abf3",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "type": "group",
+      "name": "字母 / i",
+      "x": 112,
+      "y": 3,
+      "width": 18,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/b00f70e3-3dee-4d64-a4ad-78a32cef8f81#0"
+    },
+    {
+      "id": "2ef9cb64-96cf-4b87-a348-ff07dfc8fad9",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "4f1e262b-9d23-47f8-8610-f47d2e67abf3",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 8,
+      "y": 22,
+      "width": 1,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/b00f70e3-3dee-4d64-a4ad-78a32cef8f81#0/393e90c5-423e-4cc8-aedb-e13708d6c5e4#0"
+    },
+    {
+      "id": "fe88162d-851f-4bcd-89c5-a59d54e25b6e",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "4f1e262b-9d23-47f8-8610-f47d2e67abf3",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 0,
+      "width": 12,
+      "height": 12,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 6,
+          "y": 0
+        },
+        {
+          "x": 12,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 12
+        },
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 0
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/b00f70e3-3dee-4d64-a4ad-78a32cef8f81#0/d9e59d52-859f-48d7-aa06-dc92a192edff#0"
+    },
+    {
+      "id": "a9ef35d7-b8d5-4c83-bd5c-00845c34ce0d",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "type": "group",
+      "name": "字母 / z",
+      "x": 142,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/3cb4d6fb-fe72-41f9-9b70-dbe49c610fa2#0"
+    },
+    {
+      "id": "d3a58587-65a8-4b12-a1cd-9709cf5a7e76",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "a9ef35d7-b8d5-4c83-bd5c-00845c34ce0d",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 20,
+      "width": 34,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 34,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        },
+        {
+          "x": 34,
+          "y": 42
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/3cb4d6fb-fe72-41f9-9b70-dbe49c610fa2#0/dfeeed6f-20cf-40e0-b9f8-218afa980d88#0"
+    },
+    {
+      "id": "a743f763-cee8-4392-ac09-ad13e96e2889",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "type": "group",
+      "name": "字母 / e",
+      "x": 196,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/9c15b2c3-d726-4f6e-bbfc-9168e07e8dbf#0"
+    },
+    {
+      "id": "b834b3ef-6a9b-4b33-b274-417402e18a85",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "a743f763-cee8-4392-ac09-ad13e96e2889",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 44,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 22
+        },
+        {
+          "x": 34,
+          "y": 22
+        },
+        {
+          "x": 34,
+          "y": 11
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 33
+        },
+        {
+          "x": 11,
+          "y": 44
+        },
+        {
+          "x": 32,
+          "y": 44
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/9c15b2c3-d726-4f6e-bbfc-9168e07e8dbf#0/94d4af45-af89-4935-902b-41064afd7839#0"
+    },
+    {
+      "id": "bd87907f-605c-4682-8b52-0170d6d9a560",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "type": "group",
+      "name": "字母 / F",
+      "x": 250,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/4e0f5284-f796-4755-9f93-ab2127a75eb8#0"
+    },
+    {
+      "id": "f22f6b92-c084-4f67-bf88-a48ef7583882",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "bd87907f-605c-4682-8b52-0170d6d9a560",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 0,
+      "width": 38,
+      "height": 64,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 64
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 38,
+          "y": 0
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/4e0f5284-f796-4755-9f93-ab2127a75eb8#0/3c1a8c2a-eba5-4f85-88f7-0e0df6cc20cf#0"
+    },
+    {
+      "id": "1d341222-72cf-42d2-9c78-3aff3f834fad",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "bd87907f-605c-4682-8b52-0170d6d9a560",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 0,
+      "y": 30,
+      "width": 30,
+      "height": 1,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 30,
+          "y": 0
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/4e0f5284-f796-4755-9f93-ab2127a75eb8#0/b0c0477b-7d24-4740-bdb4-27e1a1527add#0"
+    },
+    {
+      "id": "d3e865bb-7c2f-49d7-82c3-cad8bc5d1529",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "type": "group",
+      "name": "字母 / i",
+      "x": 304,
+      "y": 3,
+      "width": 18,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4#0"
+    },
+    {
+      "id": "a6363597-d08f-4c02-bf37-138815f70127",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "d3e865bb-7c2f-49d7-82c3-cad8bc5d1529",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 8,
+      "y": 22,
+      "width": 1,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4#0/6b005600-26ef-46cf-9bac-1cda6ad4ee48#0"
+    },
+    {
+      "id": "001f13a2-db4f-4fa6-8662-7c82179b8ce1",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "d3e865bb-7c2f-49d7-82c3-cad8bc5d1529",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 0,
+      "width": 12,
+      "height": 12,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 6,
+          "y": 0
+        },
+        {
+          "x": 12,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 12
+        },
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 0
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4#0/ab4e81ba-c056-4258-8c27-c10e8eb962b1#0"
+    },
+    {
+      "id": "9e9fab1e-6544-4ab0-9565-7ade6e6937aa",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "type": "group",
+      "name": "字母 / g",
+      "x": 334,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/eb9ba86e-179e-4a79-9e60-76c57195965d#0"
+    },
+    {
+      "id": "cadd77c7-bf59-42a5-8dbd-909200b9def1",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "9e9fab1e-6544-4ab0-9565-7ade6e6937aa",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 43,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 34,
+          "y": 4
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 32
+        },
+        {
+          "x": 10,
+          "y": 43
+        },
+        {
+          "x": 24,
+          "y": 43
+        },
+        {
+          "x": 34,
+          "y": 32
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/eb9ba86e-179e-4a79-9e60-76c57195965d#0/ee99e804-1a96-444c-8a40-4cf8f94d2fad#0"
+    },
+    {
+      "id": "cb8fd623-3b7c-45ee-829e-b900d6e9744f",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "9e9fab1e-6544-4ab0-9565-7ade6e6937aa",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 18,
+      "width": 32,
+      "height": 68,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 32,
+          "y": 0
+        },
+        {
+          "x": 32,
+          "y": 58
+        },
+        {
+          "x": 22,
+          "y": 68
+        },
+        {
+          "x": 0,
+          "y": 68
+        }
+      ],
+      "componentOwner": "3f8b6e0b-4aeb-4777-bcd2-02c981357de3",
+      "componentPath": "/eb9ba86e-179e-4a79-9e60-76c57195965d#0/39c51306-a184-4aae-8a9d-4f27863ecd0d#0"
+    },
+    {
+      "id": "462bb6b2-a4d1-41e9-b6b8-371b8f2b53c0",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "c9a9d3aa-23fa-4a93-ae2c-cda5b1c4e3fb",
+      "type": "text",
+      "name": "品牌口号",
+      "x": 0,
+      "y": 195,
+      "width": 520,
+      "height": 48,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "同万物，识万象",
+      "fontSize": 30,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 500,
+      "textAlign": "center",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "76199d8d-ef89-404f-8edf-b7f71e512ac3",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "c9a9d3aa-23fa-4a93-ae2c-cda5b1c4e3fb",
+      "type": "text",
+      "name": "欢迎描述",
+      "x": 0,
+      "y": 247,
+      "width": 520,
+      "height": 25.6,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "让灵感有形，让创作发生。",
+      "fontSize": 16,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "center",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "25c363c3-b4bd-4f9c-aea5-cfb303cc31e4",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "c9a9d3aa-23fa-4a93-ae2c-cda5b1c4e3fb",
+      "type": "instance",
+      "name": "主要操作 / 开始创作",
+      "x": 168,
+      "y": 295,
+      "width": 184,
+      "height": 50,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 8,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "主要操作按钮，文字与箭头为独立子图层。",
+      "componentOwner": "25c363c3-b4bd-4f9c-aea5-cfb303cc31e4",
+      "componentPath": "",
+      "componentId": "a63758de-cc86-4ca5-931a-516c02006890",
+      "componentOverrides": {}
+    },
+    {
+      "id": "9aff12f6-2282-4786-b489-276dc7609269",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "25c363c3-b4bd-4f9c-aea5-cfb303cc31e4",
+      "type": "text",
+      "name": "按钮文字",
+      "x": 24,
+      "y": 12,
+      "width": 110,
+      "height": 27.200000000000003,
+      "rotation": 0,
+      "fill": "#FFFFFF",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "开始创作",
+      "fontSize": 17,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 500,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "25c363c3-b4bd-4f9c-aea5-cfb303cc31e4",
+      "componentPath": "/e255c973-47bf-4506-911c-35c80d7a2d74#0"
+    },
+    {
+      "id": "f8af3eab-5fa2-4162-88df-9cb6c7c84978",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "25c363c3-b4bd-4f9c-aea5-cfb303cc31e4",
+      "type": "path",
+      "name": "箭头 / 向右",
+      "x": 143,
+      "y": 19,
+      "width": 20,
+      "height": 12,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 1.8,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": 20,
+          "y": 6
+        },
+        {
+          "x": 14,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 6
+        },
+        {
+          "x": 14,
+          "y": 12
+        }
+      ],
+      "componentOwner": "25c363c3-b4bd-4f9c-aea5-cfb303cc31e4",
+      "componentPath": "/08ae4b83-7046-4a13-8b3f-5e367d3ec7cc#0"
+    },
+    {
+      "id": "30b9876e-7e0e-40db-a9ca-55341d513816",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "c9a9d3aa-23fa-4a93-ae2c-cda5b1c4e3fb",
+      "type": "group",
+      "name": "快捷键 / 提示",
+      "x": 0,
+      "y": 365,
+      "width": 520,
+      "height": 24,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "49711652-7d88-48d0-a310-9e9eb29ddaed",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "30b9876e-7e0e-40db-a9ca-55341d513816",
+      "type": "text",
+      "name": "快捷键文字",
+      "x": 0,
+      "y": 0,
+      "width": 520,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "V 选择     /     F 画框     /     T 文字",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "center",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "918ec1ca-d37b-43c3-8a62-22ea3f208d31",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "d0e93347-7434-414d-b2ac-13057a6e4fd1",
+      "type": "group",
+      "name": "04 / 底部工作区引导",
+      "x": 56,
+      "y": 698,
+      "width": 1168,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "3907f146-6276-4391-8243-54c4e3ca4f66",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "918ec1ca-d37b-43c3-8a62-22ea3f208d31",
+      "type": "group",
+      "name": "功能引导 / 04",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "312c7d9b-bc3c-4573-9d3b-2845ec57ea27",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3907f146-6276-4391-8243-54c4e3ca4f66",
+      "type": "instance",
+      "name": "方向 / 指向工作区",
+      "x": 0,
+      "y": -68,
+      "width": 56,
+      "height": 56,
+      "rotation": -90,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "复用方向箭头，可旋转指向不同工作区。",
+      "componentOwner": "312c7d9b-bc3c-4573-9d3b-2845ec57ea27",
+      "componentPath": "",
+      "fidelity": {
+        "size": [
+          56,
+          56
+        ],
+        "linear": [
+          0.5,
+          0,
+          0,
+          0.5
+        ]
+      },
+      "componentId": "4e890d7d-c3b9-4325-bc3f-1fe53e6685e3",
+      "componentOverrides": {}
+    },
+    {
+      "id": "5a2d2dda-4768-4124-b7a6-3092ff5d0da9",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "312c7d9b-bc3c-4573-9d3b-2845ec57ea27",
+      "type": "path",
+      "name": "箭头 / 折线",
+      "x": 8,
+      "y": 9,
+      "width": 39,
+      "height": 39,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#8E9989",
+      "strokeWidth": 1.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 39,
+          "y": 39
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 20
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 0
+        }
+      ],
+      "componentOwner": "312c7d9b-bc3c-4573-9d3b-2845ec57ea27",
+      "componentPath": "/9b6e4878-5204-40ee-b6f7-9b3a12a46545#0"
+    },
+    {
+      "id": "3e346f58-d0b6-4ad6-a5b8-eaec426b0a9d",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3907f146-6276-4391-8243-54c4e3ca4f66",
+      "type": "instance",
+      "name": "说明 / 给万千想法一个位置",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "通用功能引导；编号、标题、说明为可覆盖文字属性。",
+      "componentProperties": [
+        {
+          "id": "number",
+          "name": "编号",
+          "type": "text",
+          "targetPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0",
+          "defaultValue": "01"
+        },
+        {
+          "id": "title",
+          "name": "标题",
+          "type": "text",
+          "targetPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0",
+          "defaultValue": "你的创作素材库"
+        },
+        {
+          "id": "body",
+          "name": "说明",
+          "type": "text",
+          "targetPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0",
+          "defaultValue": "图层管理结构，资源复用灵感，\n智能连接 AI。"
+        }
+      ],
+      "componentOwner": "3e346f58-d0b6-4ad6-a5b8-eaec426b0a9d",
+      "componentPath": "",
+      "componentId": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "componentOverrides": {},
+      "componentValues": {
+        "number": "04",
+        "title": "给万千想法一个位置",
+        "body": "左侧添加页面、整理图层。\n拖动调整顺序，为每个想法命名。"
+      }
+    },
+    {
+      "id": "970d2781-60a8-4fea-ad20-aee0c7d8afee",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3e346f58-d0b6-4ad6-a5b8-eaec426b0a9d",
+      "type": "text",
+      "name": "编号",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "04",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "3e346f58-d0b6-4ad6-a5b8-eaec426b0a9d",
+      "componentPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0"
+    },
+    {
+      "id": "e72e1730-c06f-4f90-b6dc-0dc38ffab114",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3e346f58-d0b6-4ad6-a5b8-eaec426b0a9d",
+      "type": "text",
+      "name": "标题",
+      "x": 0,
+      "y": 28,
+      "width": 300,
+      "height": 33.6,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "给万千想法一个位置",
+      "fontSize": 21,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "3e346f58-d0b6-4ad6-a5b8-eaec426b0a9d",
+      "componentPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0"
+    },
+    {
+      "id": "474f2f16-6bb0-488c-877b-73fd03410df3",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "3e346f58-d0b6-4ad6-a5b8-eaec426b0a9d",
+      "type": "text",
+      "name": "说明",
+      "x": 0,
+      "y": 68,
+      "width": 300,
+      "height": 24,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "左侧添加页面、整理图层。\n拖动调整顺序，为每个想法命名。",
+      "fontSize": 15,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "3e346f58-d0b6-4ad6-a5b8-eaec426b0a9d",
+      "componentPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0"
+    },
+    {
+      "id": "bf6d9e29-cffb-4a75-ad11-ea061dd280d9",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "918ec1ca-d37b-43c3-8a62-22ea3f208d31",
+      "type": "group",
+      "name": "功能引导 / 05",
+      "x": 868,
+      "y": 0,
+      "width": 300,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "7ca7193e-3b3f-41e2-8184-5145af5eb569",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "bf6d9e29-cffb-4a75-ad11-ea061dd280d9",
+      "type": "instance",
+      "name": "方向 / 指向工作区",
+      "x": 0,
+      "y": -68,
+      "width": 56,
+      "height": 56,
+      "rotation": 90,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "复用方向箭头，可旋转指向不同工作区。",
+      "componentOwner": "7ca7193e-3b3f-41e2-8184-5145af5eb569",
+      "componentPath": "",
+      "fidelity": {
+        "size": [
+          56,
+          56
+        ],
+        "linear": [
+          0.5,
+          0,
+          0,
+          0.5
+        ]
+      },
+      "componentId": "4e890d7d-c3b9-4325-bc3f-1fe53e6685e3",
+      "componentOverrides": {}
+    },
+    {
+      "id": "46dc4d06-36d9-4094-9d87-d7ed8f5c4614",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "7ca7193e-3b3f-41e2-8184-5145af5eb569",
+      "type": "path",
+      "name": "箭头 / 折线",
+      "x": 8,
+      "y": 9,
+      "width": 39,
+      "height": 39,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#8E9989",
+      "strokeWidth": 1.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 39,
+          "y": 39
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 20
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 20,
+          "y": 0
+        }
+      ],
+      "componentOwner": "7ca7193e-3b3f-41e2-8184-5145af5eb569",
+      "componentPath": "/9b6e4878-5204-40ee-b6f7-9b3a12a46545#0"
+    },
+    {
+      "id": "ab5d19f3-8306-46e0-9f88-b55172ff7946",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "bf6d9e29-cffb-4a75-ad11-ea061dd280d9",
+      "type": "instance",
+      "name": "说明 / 细节，尽在掌握",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 145,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "通用功能引导；编号、标题、说明为可覆盖文字属性。",
+      "componentProperties": [
+        {
+          "id": "number",
+          "name": "编号",
+          "type": "text",
+          "targetPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0",
+          "defaultValue": "01"
+        },
+        {
+          "id": "title",
+          "name": "标题",
+          "type": "text",
+          "targetPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0",
+          "defaultValue": "你的创作素材库"
+        },
+        {
+          "id": "body",
+          "name": "说明",
+          "type": "text",
+          "targetPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0",
+          "defaultValue": "图层管理结构，资源复用灵感，\n智能连接 AI。"
+        }
+      ],
+      "componentOwner": "ab5d19f3-8306-46e0-9f88-b55172ff7946",
+      "componentPath": "",
+      "componentId": "bc1c9965-b8f9-4b8d-b044-25790c170a44",
+      "componentOverrides": {},
+      "componentValues": {
+        "number": "05",
+        "title": "细节，尽在掌握",
+        "body": "选中对象，在右侧调整尺寸、填色与布局；\n检查面板提供开发信息。"
+      }
+    },
+    {
+      "id": "3f6e8f6f-7b08-4d37-bb19-94005b0a1f0a",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ab5d19f3-8306-46e0-9f88-b55172ff7946",
+      "type": "text",
+      "name": "编号",
+      "x": 0,
+      "y": 0,
+      "width": 300,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "05",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "ab5d19f3-8306-46e0-9f88-b55172ff7946",
+      "componentPath": "/19e3b31d-be42-47f1-90bd-91a5dbcf5723#0",
+      "fidelity": {
+        "size": [
+          300,
+          19.200000000000003
+        ],
+        "text": {
+          "characters": "05",
+          "lines": [
+            {
+              "start": 0,
+              "end": 2,
+              "x": 0,
+              "y": 12
+            }
+          ],
+          "letterSpacing": 0
+        }
+      }
+    },
+    {
+      "id": "f3459f78-6d91-4c6c-8d56-b2cbbb3530ca",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ab5d19f3-8306-46e0-9f88-b55172ff7946",
+      "type": "text",
+      "name": "标题",
+      "x": 0,
+      "y": 28,
+      "width": 300,
+      "height": 33.6,
+      "rotation": 0,
+      "fill": "#161A17",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "细节，尽在掌握",
+      "fontSize": 21,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 600,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "ab5d19f3-8306-46e0-9f88-b55172ff7946",
+      "componentPath": "/9b952fe0-5cb2-4d2a-a981-8489c8a7ea46#0",
+      "fidelity": {
+        "size": [
+          300,
+          33.6
+        ],
+        "text": {
+          "characters": "细节，尽在掌握",
+          "lines": [
+            {
+              "start": 0,
+              "end": 7,
+              "x": 0,
+              "y": 21
+            }
+          ],
+          "letterSpacing": 0
+        }
+      }
+    },
+    {
+      "id": "fd3ef2df-5968-4007-87e4-04dbb1f0a871",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "ab5d19f3-8306-46e0-9f88-b55172ff7946",
+      "type": "text",
+      "name": "说明",
+      "x": 0,
+      "y": 68,
+      "width": 300,
+      "height": 48,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "选中对象，在右侧调整尺寸、填色与布局；\n检查面板提供开发信息。",
+      "fontSize": 15,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6,
+      "componentOwner": "ab5d19f3-8306-46e0-9f88-b55172ff7946",
+      "componentPath": "/8dce85b2-1a17-49ea-b385-4731ac910f85#0",
+      "fidelity": {
+        "size": [
+          300,
+          48
+        ],
+        "text": {
+          "characters": "选中对象，在右侧调整尺寸、填色与布局；\n检查面板提供开发信息。",
+          "lines": [
+            {
+              "start": 0,
+              "end": 19,
+              "x": 0,
+              "y": 15
+            },
+            {
+              "start": 20,
+              "end": 31,
+              "x": 0,
+              "y": 39
+            }
+          ],
+          "letterSpacing": 0
+        }
+      }
+    },
+    {
+      "id": "a7ab621c-b570-412a-8819-219d231db068",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "d0e93347-7434-414d-b2ac-13057a6e4fd1",
+      "type": "group",
+      "name": "05 / 页脚与帮助",
+      "x": 48,
+      "y": 852,
+      "width": 1184,
+      "height": 36,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "831cbbff-170a-4de3-827a-da8dc94ea542",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "a7ab621c-b570-412a-8819-219d231db068",
+      "type": "rectangle",
+      "name": "页脚 / 分隔线",
+      "x": 0,
+      "y": 0,
+      "width": 1184,
+      "height": 1,
+      "rotation": 0,
+      "fill": "#DDE2D7",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "900b6a64-2e6f-4ad4-af48-205d6e3206a7",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "a7ab621c-b570-412a-8819-219d231db068",
+      "type": "text",
+      "name": "版本与帮助",
+      "x": 0,
+      "y": 16,
+      "width": 500,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#6E786E",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "bate v0.01    /    帮助中心 ↗",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.6
+    },
+    {
+      "id": "d9c92107-649d-483b-9ba3-717177ed271c",
+      "pageId": "fda5c060-cc44-4287-b40d-cc92942ed8ca",
+      "parentId": "a7ab621c-b570-412a-8819-219d231db068",
+      "type": "text",
+      "name": "结束语",
+      "x": 700,
+      "y": 16,
+      "width": 484,
+      "height": 19.200000000000003,
+      "rotation": 0,
+      "fill": "#A2AA9D",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "textFlow": {
+        "autoResize": "height",
+        "verticalAlign": "top",
+        "letterSpacing": 0
+      },
+      "text": "从这里，创造万千可能。",
+      "fontSize": 12,
+      "fontFamily": "PingFang SC, Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "right",
+      "lineHeight": 1.6
+    }
+  ],
+  "background": "#e8e9ea"
+}

@@ -1,4 +1,3 @@
-import { WelcomeCanvas } from "./WelcomeCanvas";
 import release from "../package.json";
 import { InlineNameInput } from "./InlineNameInput";
 import { CloudWorkspace } from "./CloudWorkspace";
@@ -420,7 +419,6 @@ export default function App() {
     ? ("mac" as const)
     : ("other" as const);
   const [ready, setReady] = useState(false);
-  const [welcomeDismissed, setWelcomeDismissed] = useState(false);
   const [snapOptions, setSnapOptions] = useState<SnapOptions>(() => {
     try {
       const saved = JSON.parse(
@@ -450,9 +448,6 @@ export default function App() {
   const [page, setPage] = useState(doc.pages[0].id),
     [selected, setSelected] = useState<string[]>([]),
     [tool, setTool] = useState<Tool>("move");
-  useEffect(() => {
-    if (tool !== "move") setWelcomeDismissed(true);
-  }, [tool]);
   const [view, setView] = useState({ x: 0, y: 0, zoom: 1 }),
     [modal, setModal] = useState<Modal>(null),
     [tab, setTab] = useState<"design" | "prototype" | "inspect">("design");
@@ -679,7 +674,6 @@ export default function App() {
       .then((found) => {
         if (alive && found) {
           committedDocument.current = found;
-          setWelcomeDismissed(true);
           setDoc(found);
           setPage(found.pages[0].id);
         }
@@ -967,7 +961,6 @@ export default function App() {
     }
   }
   const openFiles = async () => {
-    setWelcomeDismissed(true);
     try {
       await save(doc);
       setDocuments(await listDocuments());
@@ -1785,7 +1778,6 @@ export default function App() {
   }
   async function importFiles(files: FileList | File[] | null) {
     if (!files?.length || importInFlight.current) return;
-    setWelcomeDismissed(true);
     importInFlight.current = true;
     let next = doc;
     const selection: string[] = [];
@@ -1956,7 +1948,6 @@ export default function App() {
   }
   function newDoc() {
     void save(doc).then(() => {
-      setWelcomeDismissed(true);
       const next = emptyDocument();
       next.name = t("Untitled");
       next.pages[0].name = t("Page {number}", { number: 1 });
@@ -2304,15 +2295,6 @@ export default function App() {
         }),
     })),
     { name: "New design file", key: "", run: newDoc },
-    {
-      name: "Welcome guide",
-      key: "",
-      run: () => {
-        setTool("move");
-        setWelcomeDismissed(false);
-        setModal(null);
-      },
-    },
     { name: "Open file browser", key: "", run: () => void openFiles() },
     {
       name: "Import file or image",
@@ -2914,7 +2896,6 @@ export default function App() {
   const menuItems: MenuItem[] = [
     { ...actionItem("Open file browser"), name: "Back to files" },
     actionItem("Actions"),
-    actionItem("Welcome guide"),
     sub("File", [
       "New design file",
       sub("New", ["New design file"]),
@@ -4467,15 +4448,6 @@ export default function App() {
         <main
           className={`canvas-wrap tool-${effectiveTool}${effectiveTool !== "move" ? " cursor-override" : ""}`}
         >
-          {ready && !welcomeDismissed && !hiddenUI && (
-            <WelcomeCanvas
-              onStart={() => {
-                setWelcomeDismissed(true);
-                newDoc();
-              }}
-              onDismiss={() => setWelcomeDismissed(true)}
-            />
-          )}
           <div className="canvas-top-note">
             <span className="green-dot" />
             {t("Your canvas. Your possibilities.")}
@@ -4893,9 +4865,10 @@ export default function App() {
               onClick={() => void openFiles()}
             >
               <img
-                className="profile-avatar brand-avatar"
+                className="profile-avatar"
                 src="/baize.svg"
                 alt="BaizeFig"
+                style={{ background: "#000", borderRadius: 7 }}
               />
               <ChevronDown size={12} />
             </button>
