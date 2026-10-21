@@ -1,4 +1,5 @@
 import release from "../package.json";
+import { InlineNameInput } from "./InlineNameInput";
 import { CloudWorkspace } from "./CloudWorkspace";
 import { equalData } from "./equalData";
 import { SelectionOverlay } from "./SelectionOverlay";
@@ -273,7 +274,6 @@ type Modal =
   | "commands"
   | "ai"
   | "bridge"
-  | "text"
   | "assets"
   | "share"
   | "fig-report"
@@ -461,6 +461,13 @@ export default function App() {
     [grid, setGrid] = useState(false),
     [hiddenUI, setHiddenUI] = useState(false);
   const [showPerformance, setShowPerformance] = useState(false);
+  const [renaming, setRenaming] = useState<{
+    kind: "page" | "layer";
+    id: string;
+    documentId: string;
+  } | null>(null);
+  useEffect(() => setRenaming(null), [doc.id, page]);
+
   const [layerFilter, setLayerFilter] = useState(""),
     [showLayerSearch, setShowLayerSearch] = useState(false);
   const [trashedFiles, setTrashedFiles] = useState<TrashRecord[]>([]);
@@ -468,7 +475,6 @@ export default function App() {
   const [showTrash, setShowTrash] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]),
     [query, setQuery] = useState(""),
-    [textValue, setTextValue] = useState(""),
     [context, setContext] = useState<{ x: number; y: number } | null>(null);
   const [present, setPresent] = useState<string | null>(null),
     [exportType, setExportType] = useState("PNG"),
@@ -3682,10 +3688,10 @@ export default function App() {
                     : [n.id],
                 );
               }}
-              onDoubleClick={() => {
+              onDoubleClick={(e) => {
+                if ((e.target as Element).closest("button,input")) return;
                 setSelected([n.id]);
-                setTextValue(n.name);
-                setModal("text");
+                setRenaming({ kind: "layer", id: n.id, documentId: doc.id });
               }}
             >
               <button
@@ -3743,7 +3749,22 @@ export default function App() {
                   )}
                 </span>
               )}
-              <span className="layer-name">{n.name}</span>
+              {renaming?.kind === "layer" &&
+              renaming.id === n.id &&
+              renaming.documentId === doc.id ? (
+                <InlineNameInput
+                  key={n.id}
+                  name={n.name}
+                  label={t("Layer name")}
+                  onCancel={() => setRenaming(null)}
+                  onCommit={(name) => {
+                    run({ type: "update", ids: [n.id], patch: { name } });
+                    setRenaming(null);
+                  }}
+                />
+              ) : (
+                <span className="layer-name">{n.name}</span>
+              )}
               <button
                 className="tiny layer-action"
                 aria-label={t(n.visible ? "Hide {name}" : "Show {name}", {
@@ -4156,7 +4177,7 @@ export default function App() {
                       suppressPageClick.current = false;
                       if (
                         e.button !== 0 ||
-                        (e.target as Element).closest(".tiny")
+                        (e.target as Element).closest(".tiny,input")
                       )
                         return;
                       pagePointer.current = {
@@ -4218,39 +4239,57 @@ export default function App() {
                         e.stopPropagation();
                       } else if (
                         (e.target as Element).closest(".page") &&
-                        !(e.target as Element).closest(".tiny")
+                        !(e.target as Element).closest(".tiny,input")
                       ) {
                         setPage(p.id);
                         setSelected([]);
                       }
                     }}
+                    onDoubleClick={(e) => {
+                      if ((e.target as Element).closest(".tiny,input")) return;
+                      e.stopPropagation();
+                      setRenaming({
+                        kind: "page",
+                        id: p.id,
+                        documentId: doc.id,
+                      });
+                    }}
                     draggable={false}
                   >
-                    <button
-                      onClick={() => {
-                        setPage(p.id);
-                        setSelected([]);
-                      }}
-                    >
-                      <span>
+                    {renaming?.kind === "page" &&
+                    renaming.id === p.id &&
+                    renaming.documentId === doc.id ? (
+                      <div className="page-title-edit">
                         <File size={12} />
-                      </span>
-                      <span
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
-                          const name = window.prompt(t("Page name"), p.name);
-                          if (name?.trim())
+                        <InlineNameInput
+                          key={p.id}
+                          name={p.name}
+                          label={t("Page name")}
+                          onCancel={() => setRenaming(null)}
+                          onCommit={(name) => {
                             change({
                               ...doc,
                               pages: doc.pages.map((a) =>
-                                a.id === p.id ? { ...a, name: name.trim() } : a,
+                                a.id === p.id ? { ...a, name } : a,
                               ),
                             });
+                            setRenaming(null);
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setPage(p.id);
+                          setSelected([]);
                         }}
                       >
-                        {p.name}
-                      </span>
-                    </button>
+                        <span>
+                          <File size={12} />
+                        </span>
+                        <span className="page-name">{p.name}</span>
+                      </button>
+                    )}
                     {p.id === page && (
                       <>
                         <button
@@ -7192,26 +7231,6 @@ export default function App() {
                     )}
                   </>
                 )}
-              </>
-            )}
-            {modal === "text" && (
-              <>
-                <textarea
-                  autoFocus
-                  aria-label={t("Rename layer")}
-                  className="edit-text"
-                  value={textValue}
-                  onChange={(e) => setTextValue(e.target.value)}
-                />
-                <button
-                  className="primary"
-                  onClick={() => {
-                    patch({ name: textValue });
-                    setModal(null);
-                  }}
-                >
-                  {t("Apply changes")}
-                </button>
               </>
             )}
             {modal === "ai" && (

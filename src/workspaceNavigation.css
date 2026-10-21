@@ -209,3 +209,38 @@
   overflow-wrap: anywhere;
   max-width: 230px;
 }
+
+/* Keep names in their row while editing, including narrow nested layers. */
+.page > button:first-child {
+  min-width: 0;
+}
+.page-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.page-title-edit {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.page-title-edit > svg {
+  flex: 0 0 12px;
+  color: var(--ui-selection);
+}
+.inline-name-input {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 22px;
+  padding: 1px 3px;
+  border: 1px solid var(--ui-accent, #587b55);
+  border-radius: 3px;
+  background: var(--ui-surface, #fff);
+  color: inherit;
+  font: inherit;
+  outline: none;
+  user-select: text;
+}
