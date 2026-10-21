@@ -3929,7 +3929,8 @@ export default function App() {
       <div className="workspace">
         <aside
           className="left-panel"
-          hidden={hiddenUI && hoverSidebar !== "left"}
+          aria-hidden={hiddenUI && hoverSidebar !== "left"}
+          inert={hiddenUI && hoverSidebar !== "left"}
         >
           <div className="file-panel-header">
             <div className="file-title-row">
@@ -4770,7 +4771,8 @@ export default function App() {
         </main>
         <aside
           className="right-panel"
-          hidden={hiddenUI && hoverSidebar !== "right"}
+          aria-hidden={hiddenUI && hoverSidebar !== "right"}
+          inert={hiddenUI && hoverSidebar !== "right"}
         >
           <div className="inspector-top">
             <button
@@ -6421,16 +6423,24 @@ export default function App() {
           <>
             <button
               className="sidebar-edge sidebar-edge-left"
-              aria-label={t("Reveal left sidebar")}
+              aria-label={t("Expand sidebars")}
+              title={t("Expand sidebars") + " · Tab"}
+              onClick={togglePanels}
               onPointerEnter={() => setHoverSidebar("left")}
               onFocus={() => setHoverSidebar("left")}
-            />
+            >
+              <ChevronRight size={16} />
+            </button>
             <button
               className="sidebar-edge sidebar-edge-right"
-              aria-label={t("Reveal right sidebar")}
+              aria-label={t("Expand sidebars")}
+              title={t("Expand sidebars") + " · Tab"}
+              onClick={togglePanels}
               onPointerEnter={() => setHoverSidebar("right")}
               onFocus={() => setHoverSidebar("right")}
-            />
+            >
+              <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} />
+            </button>
           </>
         )}
       </div>

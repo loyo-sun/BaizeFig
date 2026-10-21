@@ -1,45 +1,84 @@
 .workspace {
   position: relative;
+  overflow: hidden;
 }
-.workspace > :is(.left-panel, .right-panel)[hidden] {
-  display: none;
-}
-.ui-hidden .workspace > :is(.left-panel, .right-panel) {
+.workspace > :is(.left-panel, .right-panel) {
   position: absolute;
   top: 0;
   bottom: 0;
   height: 100%;
   z-index: 60;
-  box-shadow: 0 8px 32px #0002;
+  transform: translateX(0);
+  visibility: visible;
+  transition:
+    transform 0.5s ease,
+    visibility 0s;
 }
-.ui-hidden .workspace > .left-panel {
+.workspace > main {
+  margin-left: 318px;
+  margin-right: 318px;
+}
+.ui-hidden .workspace > main {
+  margin-left: 0;
+  margin-right: 0;
+}
+.workspace > .left-panel {
   left: 0;
   border-right: 1px solid var(--ui-border);
 }
-.ui-hidden .workspace > .right-panel {
+.workspace > .right-panel {
   right: 0;
   border-left: 1px solid var(--ui-border);
 }
+.ui-hidden .workspace > :is(.left-panel, .right-panel) {
+  box-shadow: 0 8px 32px #0002;
+}
+.workspace > :is(.left-panel, .right-panel)[aria-hidden="true"] {
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 0.5s ease,
+    visibility 0s 0.5s;
+}
+.workspace > .left-panel[aria-hidden="true"] {
+  transform: translateX(-100%);
+}
+.workspace > .right-panel[aria-hidden="true"] {
+  transform: translateX(100%);
+}
 .sidebar-edge {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 61;
   padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent !important;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-surface);
+  color: var(--workspace-ink);
+  box-shadow: 0 2px 8px #0001;
+  cursor: pointer;
 }
 .sidebar-edge-left {
   left: 0;
+  border-radius: 0 8px 8px 0;
 }
 .sidebar-edge-right {
   right: 0;
+  border-radius: 8px 0 0 8px;
 }
 .sidebar-edge:focus-visible {
-  background: color-mix(in srgb, var(--ui-accent) 15%, transparent) !important;
-  outline: 1px solid var(--ui-accent);
+  outline: 2px solid var(--ui-accent);
+  outline-offset: -2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace > :is(.left-panel, .right-panel) {
+    transition: none !important;
+  }
 }
 .file-title-row > .sidebar-toggle {
   position: absolute;

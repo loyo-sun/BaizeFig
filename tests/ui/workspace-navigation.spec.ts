@@ -153,3 +153,34 @@ test("avatar opens local and cloud workspaces; cloud shows development and uses 
     animations: "disabled",
   });
 });
+
+for (const method of ["keyboard", "mouse"] as const) {
+  for (const side of ["left", "right"] as const) {
+    test(`${method} collapse can be restored by clicking the ${side} edge`, async ({
+      page,
+    }) => {
+      if (method === "keyboard") await page.keyboard.press("Tab");
+      else
+        await page
+          .getByRole("button", { name: "Collapse sidebars", exact: true })
+          .click();
+      const left = page.locator(".left-panel");
+      const right = page.locator(".right-panel");
+      await page.mouse.move(700, 600);
+      await expect(left).toBeHidden();
+      await expect(right).toBeHidden();
+      await expect(left).toHaveCSS("transition-duration", "0.5s, 0s");
+      await page.locator(`.sidebar-edge-${side}`).click();
+      await page.mouse.move(700, 600);
+      await expect(left).toBeVisible();
+      await expect(right).toBeVisible();
+      await expect(page.locator(".app")).not.toHaveClass(/ui-hidden/);
+      await expect
+        .poll(() => left.evaluate((el) => getComputedStyle(el).transform))
+        .toBe("matrix(1, 0, 0, 1, 0, 0)");
+      await expect
+        .poll(() => right.evaluate((el) => getComputedStyle(el).transform))
+        .toBe("matrix(1, 0, 0, 1, 0, 0)");
+    });
+  }
+}
