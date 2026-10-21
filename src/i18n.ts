@@ -1648,6 +1648,10 @@ export const zhCN: Record<string, string> = {
   "Saved locally": "已保存到本地",
   "Save failed": "保存失败",
   Connected: "已连接",
+  "Network recovery and file changes reconnect automatically. Disconnect stops retries. Editing and export require permission again after reconnecting.":
+    "网络恢复或切换文件后会自动重连。主动断开将停止重试，重连后需重新授权编辑和导出。",
+  "Reconnecting…": "正在重新连接…",
+  "Waiting for network": "等待网络恢复",
   Disconnected: "未连接",
   "Connecting…": "连接中…",
   Connect: "连接",

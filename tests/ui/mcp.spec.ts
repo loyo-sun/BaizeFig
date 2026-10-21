@@ -260,6 +260,10 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
         }),
       ).not.toBeChecked();
       expect((await call("get_document")).isError).toBe(true);
+      await page.waitForTimeout(2200);
+      await expect(page.locator(".mcp-wizard .connection-state")).toHaveText(
+        "Disconnected",
+      );
       // Re-pair: same editor lifetime retains receipt lookup, but no write permission.
       await page
         .getByRole("button", { name: "Connect bridge", exact: true })
@@ -276,7 +280,17 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
         ).status,
       ).toBe("applied");
       expect((await call("apply_commands", batch)).isError).toBe(true);
-      // Switching local files revokes the old pairing and write access.
+      // Network recovery reconnects, but never restores write permission.
+      await page.evaluate(() => window.dispatchEvent(new Event("offline")));
+      await expect(page.locator(".mcp-wizard .connection-state")).toHaveText(
+        "Waiting for network",
+      );
+      await page.evaluate(() => window.dispatchEvent(new Event("online")));
+      await expect(page.locator(".mcp-wizard .connection-state")).toHaveText(
+        "Connected",
+      );
+      expect((await call("apply_commands", batch)).isError).toBe(true);
+      // Switching local files reconnects to the current document with access revoked.
       await page
         .getByRole("button", { name: "Close dialog", exact: true })
         .click();
@@ -287,8 +301,14 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
         .getByRole("button", { name: "New design file", exact: true })
         .click();
       await expect
-        .poll(async () => (await call("get_document")).isError)
+        .poll(async () => {
+          const result = await call("get_document");
+          return result.isError
+            ? false
+            : text(result).documentId !== target.documentId;
+        })
         .toBe(true);
+      expect((await call("apply_commands", batch)).isError).toBe(true);
     } finally {
       await client?.close();
       await bridge.close();
@@ -664,5 +684,70 @@ test("local automatic pairing requires no token and edits the real canvas", asyn
     );
   } finally {
     await client.close();
+  }
+});
+
+test("bridge restart and real network recovery reconnect; explicit disconnect stays stopped", async ({
+  page,
+  context,
+}) => {
+  let bridge = createBridge({
+    http: true,
+    host: "127.0.0.1",
+    port: 0,
+    accessToken: token,
+    pairingToken,
+  });
+  const address = await bridge.start();
+  let running = true;
+  const state = page.locator(".mcp-wizard .connection-state");
+  try {
+    await page.addInitScript(() =>
+      localStorage.setItem("baizefig.ui.language", "en"),
+    );
+    await page.goto("/");
+    await expect(page.getByLabel("Saved locally")).toBeVisible();
+    await openMcp(page);
+    await page
+      .getByText("Manual pairing and advanced settings", { exact: true })
+      .click();
+    await page
+      .getByRole("textbox", { name: "MCP service address", exact: true })
+      .fill(`http://127.0.0.1:${address.port}/mcp`);
+    await page
+      .getByLabel("Bridge pairing token", { exact: true })
+      .fill(pairingToken);
+    await page
+      .getByRole("button", { name: "Connect bridge", exact: true })
+      .click();
+    await expect(state).toHaveText("Connected");
+    await bridge.close();
+    running = false;
+    await expect(state).toHaveText("Reconnecting…");
+    // Keep the service unavailable beyond the first retry.
+    await page.waitForTimeout(1500);
+    bridge = createBridge({
+      http: true,
+      host: "127.0.0.1",
+      port: address.port,
+      accessToken: token,
+      pairingToken,
+    });
+    await bridge.start();
+    running = true;
+    await expect(state).toHaveText("Connected", { timeout: 15000 });
+    await context.setOffline(true);
+    await expect(state).toHaveText("Waiting for network");
+    await context.setOffline(false);
+    await expect(state).toHaveText("Connected", { timeout: 15000 });
+    await context.setOffline(true);
+    await expect(state).toHaveText("Waiting for network");
+    await page.getByRole("button", { name: "Disconnect", exact: true }).click();
+    await context.setOffline(false);
+    await page.waitForTimeout(2200);
+    await expect(state).toHaveText("Disconnected");
+  } finally {
+    await context.setOffline(false);
+    if (running) await bridge.close();
   }
 });

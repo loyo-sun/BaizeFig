@@ -1,0 +1,21 @@
+
+> baizefig@0.1.0 test:mcp
+> node --test tests/mcp-transport.test.mjs tests/mcp-oauth.test.mjs tests/mcp-setup.test.mjs
+
+✔ OAuth PKCE consent, denial, code replay, refresh rotation, bound routing and disconnect revocation (92.909208ms)
+✔ local opt-in automatic pairing needs an allowed origin and cannot enable remote HTTP auto-pairing (175.359792ms)
+✔ WorkBuddy installer merges and backs up config, with dry-run and fail-closed invalid files (12.115208ms)
+✔ ChatGPT installer uses the official CLI without shell interpolation (2.298958ms)
+✔ HTTP auth, origin, host, discovery, explicit routing, schema and disconnect errors (93.714542ms)
+✔ bad browser token rejected; second browser cannot replace a paired editor (5.755958ms)
+✔ timeout is explicit and invalid responses cannot cross browser connections (39.838166ms)
+✔ stdio remains usable with current tool discovery (172.77125ms)
+✔ HTTP rejects malformed, oversized and non-JSON requests without dropping the service (13.077292ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 604.470041

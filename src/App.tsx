@@ -496,6 +496,15 @@ export default function App() {
     [bridgeExport, setBridgeExport] = useState(false),
     [bridgeStatus, setBridgeStatus] = useState("Disconnected"),
     [bridgeWrite, setBridgeWrite] = useState(false);
+  const bridgeIntent = useRef<{
+    address: string;
+    token?: string;
+    automatic: boolean;
+    cloud?: CloudSession;
+  } | null>(null);
+  const bridgeRetry = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bridgeAttempt = useRef(0);
+  const bridgeDeadline = useRef<ReturnType<typeof setTimeout> | null>(null);
   const history = useRef(new History()),
     svg = useRef<SVGSVGElement>(null),
     fileInput = useRef<HTMLInputElement>(null),
@@ -530,14 +539,39 @@ export default function App() {
   }, [tool]);
   const pathDrawing = useRef<PathDrawingHandle>(null);
   useEffect(() => {
-    disconnectBridge();
     if (cloudActive && cloudSession && Date.now() < cloudSession.expiresAt) {
       connectBridge(false, cloudSession);
+    } else if (bridgeIntent.current?.cloud) {
+      disconnectBridge();
+    } else if (bridgeIntent.current) {
+      reconnectBridge();
     }
     setCollapsed(
       new Set(doc.nodes.filter((n) => container(n)).map((n) => n.id)),
     );
   }, [doc.id, cloudActive, cloudSession?.token]);
+  useEffect(() => {
+    const offline = () => {
+      if (!bridgeIntent.current) return;
+      disconnectBridge(false);
+      setBridgeStatus("Waiting for network");
+    };
+    const online = () => {
+      if (bridgeIntent.current) reconnectBridge();
+    };
+    window.addEventListener("offline", offline);
+    window.addEventListener("online", online);
+    return () => {
+      window.removeEventListener("offline", offline);
+      window.removeEventListener("online", online);
+      bridgeIntent.current = null;
+      if (bridgeRetry.current) clearTimeout(bridgeRetry.current);
+      if (bridgeDeadline.current) clearTimeout(bridgeDeadline.current);
+      const ws = socket.current;
+      socket.current = null;
+      ws?.close();
+    };
+  }, []);
   const lastPointerHit = useRef<string | undefined>(undefined);
   const lastCanvasPointer = useRef<{ x: number; y: number } | null>(null);
   const drag = useRef<{
@@ -3291,38 +3325,98 @@ export default function App() {
       notify((e as Error).message);
     }
   }
-  function disconnectBridge() {
+  function disconnectBridge(stopRetry = true, revoke = true) {
+    if (stopRetry) {
+      setCloudActive(false);
+      bridgeIntent.current = null;
+      bridgeAttempt.current = 0;
+    }
+    if (bridgeRetry.current) clearTimeout(bridgeRetry.current);
+    bridgeRetry.current = null;
+    if (bridgeDeadline.current) clearTimeout(bridgeDeadline.current);
+    bridgeDeadline.current = null;
     const ws = socket.current;
     socket.current = null;
     ws?.close();
-    if (current.current)
+    if (revoke && current.current)
       current.current = {
         ...current.current,
         bridgeWrite: false,
         bridgeExport: false,
       };
-    setBridgeWrite(false);
-    setBridgeExport(false);
+    if (revoke) {
+      setBridgeWrite(false);
+      setBridgeExport(false);
+    }
     setBridgeStatus("Disconnected");
     setOauthApprovals([]);
   }
-  function connectBridge(automatic = false, cloud?: CloudSession) {
+  function reconnectBridge() {
+    const intent = bridgeIntent.current;
+    if (!intent) return;
+    disconnectBridge(false);
+    if (intent.cloud && Date.now() >= intent.cloud.expiresAt) {
+      disconnectBridge();
+      notify("Cloud session expired. Please sign in again.");
+      return;
+    }
+    if (!navigator.onLine) {
+      setBridgeStatus("Waiting for network");
+      return;
+    }
+    setBridgeStatus("Reconnecting…");
+    const delay = Math.min(
+      1000 * 2 ** Math.min(bridgeAttempt.current++, 5),
+      30000,
+    );
+    bridgeRetry.current = setTimeout(() => {
+      bridgeRetry.current = null;
+      if (bridgeIntent.current === intent)
+        connectBridge(intent.automatic, intent.cloud, intent);
+    }, delay);
+  }
+  function connectBridge(
+    automatic = false,
+    cloud?: CloudSession,
+    saved?: NonNullable<typeof bridgeIntent.current>,
+  ) {
     let address: string;
     try {
-      address = cloud
-        ? cloud.base.replace(/^http/, "ws") + "/api/v1/bridge/baizefig"
-        : bridgeWebSocketUrl(bridgeAddress.trim());
+      address =
+        saved?.address ??
+        (cloud
+          ? cloud.base.replace(/^http/, "ws") + "/api/v1/bridge/baizefig"
+          : bridgeWebSocketUrl(bridgeAddress.trim()));
     } catch (e) {
       notify((e as Error).message);
       return;
     }
-    const previous = socket.current;
-    socket.current = null;
-    previous?.close();
-    const ws = new WebSocket(address);
+    const intent = saved ?? {
+      address,
+      token: cloud ? cloud.token : automatic ? undefined : bridgeToken,
+      automatic,
+      cloud,
+    };
+    if (!saved) bridgeAttempt.current = 0;
+    disconnectBridge(false, !!saved || !!socket.current);
+    bridgeIntent.current = intent;
+    if (!navigator.onLine) {
+      setBridgeStatus("Waiting for network");
+      return;
+    }
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(intent.address);
+    } catch {
+      reconnectBridge();
+      return;
+    }
     const documentId = current.current.doc.id;
     socket.current = ws;
     setBridgeStatus("Connecting…");
+    bridgeDeadline.current = setTimeout(() => {
+      if (socket.current === ws) reconnectBridge();
+    }, 10000);
     ws.onopen = () => {
       if (socket.current !== ws || current.current.doc.id !== documentId) {
         ws.close();
@@ -3331,7 +3425,7 @@ export default function App() {
       ws.send(
         JSON.stringify({
           type: "pair",
-          token: cloud ? cloud.token : automatic ? undefined : bridgeToken,
+          token: intent.token,
           auto: automatic,
           documentId,
           editorId: mcp.current.editorId,
@@ -3340,19 +3434,16 @@ export default function App() {
       );
     };
     ws.onclose = (event) => {
-      if (socket.current === ws) {
+      if (socket.current !== ws) return;
+      if (event.code === 1008 && !event.reason.includes("Another editor")) {
         disconnectBridge();
-        if (event.code === 1008)
-          notify(
-            "Pairing rejected. Check the token and disconnect any other paired editor.",
-          );
-      }
+        notify(
+          "Pairing rejected. Check the token and disconnect any other paired editor.",
+        );
+      } else reconnectBridge();
     };
     ws.onerror = () => {
-      if (socket.current === ws)
-        notify(
-          "Bridge connection failed. Check the service address, editor origin and pairing token.",
-        );
+      if (socket.current === ws) reconnectBridge();
     };
     ws.onmessage = async (event) => {
       if (socket.current !== ws || current.current.doc.id !== documentId)
@@ -3386,6 +3477,9 @@ export default function App() {
         return;
       }
       if (message.type === "paired") {
+        if (bridgeDeadline.current) clearTimeout(bridgeDeadline.current);
+        bridgeDeadline.current = null;
+        bridgeAttempt.current = 0;
         setBridgeStatus("Connected");
         return;
       }
@@ -3948,6 +4042,7 @@ export default function App() {
               }}
               onConnection={() => setModal("bridge")}
               onLocal={() => {
+                disconnectBridge();
                 setCloudActive(false);
                 if (bridgeRemote) {
                   setBridgeRemote(false);
@@ -7204,7 +7299,7 @@ export default function App() {
                 onAddress={setBridgeAddress}
                 onToken={setBridgeToken}
                 onConnect={connectBridge}
-                onDisconnect={disconnectBridge}
+                onDisconnect={() => disconnectBridge()}
                 notify={notify}
                 onWrite={(value) => {
                   current.current = { ...current.current, bridgeWrite: value };

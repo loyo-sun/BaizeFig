@@ -225,6 +225,11 @@
     "sha256": "40d02676fe13c1476b158f10c5f6233fb32eb08f1dd8169d95ebd78b369289d4"
   },
   {
+    "file": "mcp-reconnect.md",
+    "bytes": 1619,
+    "sha256": "4eb2f224804371b31621e58be1c67e425baa93392ddacae8440e097b130364f4"
+  },
+  {
     "file": "measurements.json",
     "bytes": 3098,
     "sha256": "a52850effba64895bf0e07243dadbb9255ec8bbca6c0e557eedcece756e3f5ee"
@@ -343,6 +348,21 @@
     "file": "validation/mcp-browser.log",
     "bytes": 943,
     "sha256": "a807ef5a7231fcfccc5549072db4022e1fa02871b5b5443524c59335135abe8f"
+  },
+  {
+    "file": "validation/mcp-reconnect-build.log",
+    "bytes": 2879,
+    "sha256": "e6ef5cbfe213c7065e3520e236c6c569d3318cf8561ecb44c271f2e37ce89725"
+  },
+  {
+    "file": "validation/mcp-reconnect-transport.log",
+    "bytes": 1119,
+    "sha256": "f8a7257d71267bab9cf6b2fb87042018135aab1a2a214686f6bf6a2518efece4"
+  },
+  {
+    "file": "validation/mcp-reconnect-ui.log",
+    "bytes": 1077,
+    "sha256": "29df600ff4e47089161d8fa2ead5ac1491527653ba5cdb09c84a0ce5dd5ec2bc"
   },
   {
     "file": "validation/mcp-transport.log",

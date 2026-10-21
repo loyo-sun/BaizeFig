@@ -317,7 +317,7 @@ export function McpConnectionWizard(p: {
       </div>
       <p className="notice">
         {t(
-          "Disconnecting or switching files revokes access. Pairing never enables editing or export automatically.",
+          "Network recovery and file changes reconnect automatically. Disconnect stops retries. Editing and export require permission again after reconnecting.",
         )}
       </p>
     </div>
