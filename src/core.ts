@@ -1,3 +1,10 @@
+import {
+  applyCompositeBindings,
+  validateCompositeTokens,
+  releaseCompositeBindings,
+  type CompositeToken,
+  type TokenTheme,
+} from "./compositeTokens";
 import { clearVectorFillOverrides } from "./vectorFill";
 import { validFontSettings, type FontSettings } from "./fontSettings";
 import { equalData } from "./equalData";
@@ -73,6 +80,7 @@ export interface Node {
   width: number;
   height: number;
   rotation: number;
+  constrainProportions?: boolean;
   fill: string;
   stroke: string;
   strokeWidth: number;
@@ -159,6 +167,7 @@ export interface Node {
   prototypeScroll?: "none" | "horizontal" | "vertical" | "both";
   targetId?: string;
   variableId?: string;
+  compositeBindings?: Partial<Record<"shadow" | "typography", string>>;
 }
 export interface Page {
   id: string;
@@ -194,6 +203,8 @@ export interface Document {
   variableCollections?: VariableCollection[];
   variables?: ColorVariable[];
   typedVariables?: TypedVariable[];
+  compositeTokens?: CompositeToken[];
+  tokenThemes?: TokenTheme[];
 }
 export type Command =
   | {
@@ -284,7 +295,7 @@ export function emptyDocument(): Document {
     name: "Untitled",
     pages: [{ id: id(), name: "Page 1" }],
     nodes: [],
-    background: "#f5f5f5",
+    background: "#e8e9ea",
   };
 }
 export function localTransform(n: Node): Matrix {
@@ -603,6 +614,7 @@ export function execute(
             "width",
             "height",
             "rotation",
+            "constrainProportions",
             "fill",
             "stroke",
             "strokeWidth",
@@ -625,6 +637,7 @@ export function execute(
             "interactions",
             "prototypeScroll",
             "variableId",
+            "compositeBindings",
             "variableModes",
             "bindings",
           ]);
@@ -710,6 +723,7 @@ export function execute(
                 patch.textFlow as Node["textFlow"],
                 !!n.fidelity?.text?.decorations?.length,
               ));
+          releaseCompositeBindings(n, patch);
           Object.assign(n, patch);
           if (keepSavedGlyphs && n.fidelity?.text && patch.textFlow) {
             n.fidelity = structuredClone(n.fidelity);
@@ -1262,6 +1276,7 @@ export function execute(
       if (variable) n.fill = resolveVariable(doc, n.variableId, new Set(), n);
     }
   }
+  applyCompositeBindings(doc);
   applyTypedBindings(doc);
   const affected = new Set<string>();
   if (command.type === "reparent")
@@ -1470,6 +1485,7 @@ export function validateDocument(
         prototypeContext ?? d,
       );
   validateTypedVariables(d);
+  validateCompositeTokens(d);
   validateInteractions(d, prototypeContext);
   if (
     d.guides &&
@@ -1518,6 +1534,11 @@ export function validateDocument(
     )
       throw Error("Invalid or duplicate node");
     ids.add(n.id);
+    if (
+      n.constrainProportions !== undefined &&
+      typeof n.constrainProportions !== "boolean"
+    )
+      throw Error("Invalid aspect ratio lock");
     if (n.variableId && !d.variables?.some((v) => v.id === n.variableId))
       throw Error("Invalid color variable reference");
     if (n.fidelity) validateFidelity(n.fidelity);
@@ -1824,6 +1845,13 @@ export class History {
     public maxEstimatedBytes = 32 * 1024 * 1024,
   ) {}
   private sizes = new WeakMap<Document, number>();
+  private selections = new WeakMap<Document, string[]>();
+  selection: string[] | undefined;
+  private remember(doc: Document, selection?: string[]) {
+    const snapshot = this.snapshot(doc);
+    if (selection) this.selections.set(snapshot, [...selection]);
+    return snapshot;
+  }
   private snapshot(doc: Document) {
     const snapshot = structuredClone(doc);
     this.sizes.set(snapshot, JSON.stringify(doc).length * 2);
@@ -1845,20 +1873,22 @@ export class History {
       else this.future.shift();
     }
   }
-  push(doc: Document) {
-    this.past.push(this.snapshot(doc));
+  push(doc: Document, selection?: string[]) {
+    this.past.push(this.remember(doc, selection));
     this.future = [];
     this.trim();
   }
-  undo(current: Document) {
+  undo(current: Document, selection?: string[]) {
     const previous = this.past.pop();
-    if (previous) this.future.push(this.snapshot(current));
+    this.selection = previous ? this.selections.get(previous) : selection;
+    if (previous) this.future.push(this.remember(current, selection));
     this.trim();
     return previous ?? current;
   }
-  redo(current: Document) {
+  redo(current: Document, selection?: string[]) {
     const next = this.future.pop();
-    if (next) this.past.push(this.snapshot(current));
+    this.selection = next ? this.selections.get(next) : selection;
+    if (next) this.past.push(this.remember(current, selection));
     this.trim();
     return next ?? current;
   }

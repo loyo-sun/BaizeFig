@@ -1,3 +1,4 @@
+import { removeDesignTokens } from "./removeDesignTokens";
 import {
   validateLibraryPackage,
   type LibraryPackage,
@@ -40,6 +41,7 @@ export interface TrashRecord {
   deletedAt: number;
 }
 export async function save(doc: Document): Promise<boolean> {
+  doc = removeDesignTokens(doc);
   const started = performance.now();
   const db = await database(),
     tx = db.transaction(
@@ -83,10 +85,11 @@ export async function loadLast(): Promise<Document | undefined> {
   const db = await database(),
     tx = db.transaction(["documents", "settings", "revisions"], "readonly"),
     key = await tx.objectStore("settings").get("last-document");
-  const doc =
+  let doc =
     (key ? await tx.objectStore("documents").get(key) : undefined) ??
     (await tx.objectStore("documents").getAll())[0];
   if (doc) {
+    doc = removeDesignTokens(doc);
     const revision = (await tx.objectStore("revisions").get(doc.id)) ?? 0;
     await tx.done;
     validateDocument(doc);
@@ -108,7 +111,7 @@ export async function listDocuments(): Promise<Document[]> {
         (await tx.objectStore("revisions").get(d.id)) ?? 0,
       );
   await tx.done;
-  return docs;
+  return docs.map(removeDesignTokens);
 }
 export async function listTrash(): Promise<TrashRecord[]> {
   return (await database()).getAll("trash");
@@ -175,6 +178,7 @@ export async function saveVersion(
   doc: Document,
   name: string,
 ): Promise<DocumentVersion> {
+  doc = removeDesignTokens(doc);
   validateDocument(doc);
   const version: DocumentVersion = {
     id: crypto.randomUUID(),
@@ -227,6 +231,7 @@ export async function restoreVersion(
     await tx.done;
     throw Error("Design changed. Compare again before merging");
   }
+  version.document = removeDesignTokens(version.document);
   validateDocument(version.document);
   validateDocument(current);
   void tx.done.catch(() => {});
@@ -307,10 +312,11 @@ export async function branchContext(
 export async function getDocument(documentId: string): Promise<Document> {
   const db = await database(),
     tx = db.transaction(["documents", "revisions"], "readonly"),
-    doc = await tx.objectStore("documents").get(documentId),
+    stored = await tx.objectStore("documents").get(documentId),
     revision = (await tx.objectStore("revisions").get(documentId)) ?? 0;
   await tx.done;
-  if (!doc) throw Error("Design file is unavailable or in trash");
+  if (!stored) throw Error("Design file is unavailable or in trash");
+  const doc = removeDesignTokens(stored);
   validateDocument(doc);
   observedRevisions.set(documentId, revision);
   return doc;

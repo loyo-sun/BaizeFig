@@ -1,9 +1,18 @@
-import { useState } from "react";
 import type { CloudSession } from "./cloud";
-import { Cloud, Server, Bot, ChevronRight } from "lucide-react";
+import {
+  Cloud,
+  Server,
+  Sparkles,
+  ArrowUpRight,
+  Copy,
+  LogOut,
+  Cable,
+} from "lucide-react";
 import { useI18n } from "./LanguageContext";
 
 export function CloudPanel(p: {
+  deployment: "cloud" | "self";
+  onDeploymentChange: (deployment: "cloud" | "self") => void;
   status: string;
   session: CloudSession | null;
   signingIn: boolean;
@@ -18,38 +27,85 @@ export function CloudPanel(p: {
   onLocal: () => void;
 }) {
   const { t } = useI18n();
-  const [deployment, setDeployment] = useState<"cloud" | "self">("cloud");
+  const deployment = p.deployment;
   const connected = p.status === "Connected";
   const cloudService =
     p.status !== "Disconnected" ? p.cloudActive : deployment === "cloud";
   const address = cloudService ? p.session?.mcpUrl : p.serviceAddress;
   return (
-    <section className="cloud-panel" aria-label={t("Cloud services")}>
+    <section
+      className="cloud-panel smart-panel"
+      aria-label={t("Cloud services")}
+    >
       <header className="cloud-panel-header">
-        <div className="cloud-title-row">
-          <h2>{t("Cloud")}</h2>
-          <select
-            aria-label={t("Deployment method")}
-            value={deployment}
-            onChange={(e) => setDeployment(e.target.value as "cloud" | "self")}
-          >
-            <option value="cloud">LoyoCloud</option>
-            <option value="self">{t("Your own deployment")}</option>
-          </select>
+        <div className="smart-heading">
+          <span className="smart-heading-icon">
+            <Sparkles size={20} aria-hidden="true" />
+          </span>
+          <div>
+            <h2>{t("Smart")}</h2>
+            <p>{t("Your AI workspace")}</p>
+          </div>
         </div>
         <p>{t("Connect AI through LoyoCloud or your own deployment.")}</p>
+        <div
+          className="smart-deployment"
+          role="radiogroup"
+          aria-label={t("Deployment method")}
+        >
+          {(["cloud", "self"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-label={
+                value === "cloud" ? "LoyoCloud" : t("Your own deployment")
+              }
+              aria-checked={deployment === value}
+              tabIndex={deployment === value ? 0 : -1}
+              onClick={() => p.onDeploymentChange(value)}
+              onKeyDown={(e) => {
+                if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key))
+                  return;
+                e.preventDefault();
+                const next =
+                  e.key === "Home"
+                    ? "cloud"
+                    : e.key === "End"
+                      ? "self"
+                      : value === "cloud"
+                        ? "self"
+                        : "cloud";
+                p.onDeploymentChange(next);
+                e.currentTarget.parentElement
+                  ?.querySelectorAll<HTMLButtonElement>("button")
+                  [next === "cloud" ? 0 : 1]?.focus();
+              }}
+            >
+              {value === "cloud" ? (
+                <Cloud size={14} aria-hidden="true" />
+              ) : (
+                <Server size={14} aria-hidden="true" />
+              )}
+              {value === "cloud" ? "LoyoCloud" : t("Self-hosted")}
+            </button>
+          ))}
+        </div>
       </header>
       <div className="cloud-panel-body">
         {deployment === "cloud" ? (
           <section className="cloud-card" aria-labelledby="loyocloud-heading">
             <div className="cloud-card-heading">
               <span className="cloud-service-icon">
-                <Cloud size={23} fill="currentColor" aria-hidden="true" />
+                <Cloud size={20} aria-hidden="true" />
               </span>
               <div>
                 <h3 id="loyocloud-heading">LoyoCloud</h3>
                 <p>{t("Official cloud service")}</p>
               </div>
+              <span className="smart-account-state">
+                {t(p.session ? "Signed in" : "Not signed in")}
+              </span>
             </div>
             {p.session ? (
               <div className="cloud-card-content">
@@ -64,7 +120,7 @@ export function CloudPanel(p: {
                   rel="noreferrer"
                 >
                   {t("Account center")}
-                  <ChevronRight size={15} aria-hidden="true" />
+                  <ArrowUpRight size={14} aria-hidden="true" />
                 </a>
               </div>
             ) : (
@@ -93,7 +149,7 @@ export function CloudPanel(p: {
           <section className="cloud-card" aria-labelledby="local-cloud-heading">
             <div className="cloud-card-heading">
               <span className="cloud-service-icon cloud-self-icon">
-                <Server size={22} aria-hidden="true" />
+                <Server size={20} aria-hidden="true" />
               </span>
               <div>
                 <h3 id="local-cloud-heading">{t("Your own deployment")}</h3>
@@ -121,11 +177,11 @@ export function CloudPanel(p: {
         >
           <div className="cloud-card-heading">
             <span className="cloud-service-icon cloud-mcp-icon">
-              <Bot size={23} aria-hidden="true" />
+              <Cable size={18} aria-hidden="true" />
             </span>
             <div>
               <h3 id="mcp-cloud-heading">MCP</h3>
-              <p>{t("Shared by both deployments")}</p>
+              <p>{t("Canvas connection")}</p>
             </div>
             <span
               className={`cloud-status ${connected ? "is-connected" : ""}`}
@@ -143,6 +199,7 @@ export function CloudPanel(p: {
               <div className="cloud-address-row">
                 <code>{address}</code>
                 <button onClick={() => p.onCopy(address)}>
+                  <Copy size={13} aria-hidden="true" />
                   {t("Copy address")}
                 </button>
               </div>
@@ -176,7 +233,10 @@ export function CloudPanel(p: {
         </section>
         {p.session && (
           <footer className="cloud-panel-footer">
-            <button onClick={p.onSignOut}>{t("Sign out of cloud")}</button>
+            <button onClick={p.onSignOut}>
+              <LogOut size={14} aria-hidden="true" />
+              {t("Sign out of cloud")}
+            </button>
             <p>
               {t(
                 "Application authorization stays valid when you switch canvases.",

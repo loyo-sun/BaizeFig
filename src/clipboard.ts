@@ -152,6 +152,10 @@ export function pasteNodes(
         !next.variables?.some((v) => v.id === node.variableId)
       )
         delete node.variableId;
+      if (node.compositeBindings)
+        for (const [kind, ref] of Object.entries(node.compositeBindings))
+          if (!next.compositeTokens?.some((t) => t.id === ref))
+            delete node.compositeBindings[kind as "shadow" | "typography"];
       if (node.bindings)
         for (const [key, ref] of Object.entries(node.bindings))
           if (!next.typedVariables?.some((v) => v.id === ref))

@@ -1,0 +1,1214 @@
+{
+  "points": [
+    {
+      "at": [
+        600,
+        416
+      ],
+      "elements": [
+        {
+          "tag": "svg",
+          "class": "viewport-controls cursor-pointer-inner main_ui_workspace_viewport__viewport-controls",
+          "text": "200 x 1200501001502002503003504004505005",
+          "box": {
+            "x": 318,
+            "y": 0,
+            "width": 804,
+            "height": 1000
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_workspace_viewport__viewport",
+          "text": "200 x 1200501001502002503003504004505005",
+          "box": {
+            "x": 318,
+            "y": 0,
+            "width": 804,
+            "height": 1000
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "SECTION",
+          "class": "main_ui_workspace__workspace-viewport",
+          "text": "200 x 1200501001502002503003504004505005",
+          "box": {
+            "x": 318,
+            "y": 0,
+            "width": 804,
+            "height": 1000
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "SECTION",
+          "class": "main_ui_workspace__workspace-content",
+          "text": "200 x 1200501001502002503003504004505005",
+          "box": {
+            "x": 318,
+            "y": 0,
+            "width": 804,
+            "height": 1000
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgb(191, 191, 191)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        500,
+        280
+      ],
+      "elements": [
+        {
+          "tag": "circle",
+          "class": "cursor-resize-nesw-0",
+          "text": "",
+          "box": {
+            "x": 490,
+            "y": 270,
+            "width": 20,
+            "height": 20
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "0px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "circle",
+          "class": null,
+          "text": "",
+          "box": {
+            "x": 496,
+            "y": 276,
+            "width": 8,
+            "height": 8
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "rgb(140, 51, 235)",
+          "strokeWidth": "1px",
+          "fill": "rgb(255, 255, 255)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "rect",
+          "class": "cursor-resize-ew-0",
+          "text": "",
+          "box": {
+            "x": 496,
+            "y": 280,
+            "width": 8,
+            "height": 120
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "0px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "rect",
+          "class": "cursor-resize-ns-0",
+          "text": "",
+          "box": {
+            "x": 500,
+            "y": 276,
+            "width": 200,
+            "height": 8
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "0px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        1200,
+        196
+      ],
+      "elements": [
+        {
+          "tag": "INPUT",
+          "class": " main_ui_ds_controls_utilities_input_field__input main_ui_ds_controls_utilities_input_field__input-with-icon",
+          "text": "200",
+          "box": {
+            "x": 1160,
+            "y": 180,
+            "width": 94,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "14px",
+          "fontWeight": "400",
+          "lineHeight": "0px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_ds_controls_utilities_input_field__tooltip-wrapper main_ui_ds_tooltip_tooltip__tooltip-trigger",
+          "text": "",
+          "box": {
+            "x": 1158,
+            "y": 180,
+            "width": 94,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "14px",
+          "fontWeight": "400",
+          "lineHeight": "0px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_ds_controls_utilities_input_field__input-wrapper       main_ui_ds_controls_utilities_input_field__variant-comfortable ",
+          "text": "",
+          "box": {
+            "x": 1134,
+            "y": 180,
+            "width": 122,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "14px",
+          "fontWeight": "400",
+          "lineHeight": "19.6px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgb(243, 244, 246)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": " main_ui_workspace_sidebar_options_menus_input_wrapper_tokens__numeric-input-wrapper main_ui_ds_controls_numeric_input__input-wrapper main_ui_ds_controls_numeric_input__resizable",
+          "text": "",
+          "box": {
+            "x": 1134,
+            "y": 180,
+            "width": 122,
+            "height": 32
+          },
+          "font": "\"Roboto Mono\", monospace",
+          "fontSize": "12px",
+          "fontWeight": "400",
+          "lineHeight": "14.4px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        1150,
+        196
+      ],
+      "elements": [
+        {
+          "tag": "svg",
+          "class": "main_ui_ds_controls_utilities_input_field__icon main_ui_ds_foundations_assets_icon__icon",
+          "text": "",
+          "box": {
+            "x": 1138,
+            "y": 188,
+            "width": 16,
+            "height": 16
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "14px",
+          "fontWeight": "400",
+          "lineHeight": "19.6px",
+          "color": "rgb(73, 94, 116)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "rgb(73, 94, 116)",
+          "strokeWidth": "1px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_ds_controls_utilities_input_field__input-wrapper       main_ui_ds_controls_utilities_input_field__variant-comfortable ",
+          "text": "",
+          "box": {
+            "x": 1134,
+            "y": 180,
+            "width": 122,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "14px",
+          "fontWeight": "400",
+          "lineHeight": "19.6px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgb(243, 244, 246)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": " main_ui_workspace_sidebar_options_menus_input_wrapper_tokens__numeric-input-wrapper main_ui_ds_controls_numeric_input__input-wrapper main_ui_ds_controls_numeric_input__resizable",
+          "text": "",
+          "box": {
+            "x": 1134,
+            "y": 180,
+            "width": 122,
+            "height": 32
+          },
+          "font": "\"Roboto Mono\", monospace",
+          "fontSize": "12px",
+          "fontWeight": "400",
+          "lineHeight": "14.4px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_workspace_sidebar_options_menus_measures__size",
+          "text": "",
+          "box": {
+            "x": 1134,
+            "y": 180,
+            "width": 284,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        1180,
+        360
+      ],
+      "elements": [
+        {
+          "tag": "BUTTON",
+          "class": "main_ui_components_title_bar__icon-text-btn",
+          "text": "填充",
+          "box": {
+            "x": 1134,
+            "y": 340,
+            "width": 252,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_components_title_bar__title-wrapper ",
+          "text": "填充",
+          "box": {
+            "x": 1134,
+            "y": 340,
+            "width": 252,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_components_title_bar__title-bar ",
+          "text": "填充",
+          "box": {
+            "x": 1134,
+            "y": 340,
+            "width": 284,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_workspace_sidebar_options_menus_fill__fill-title",
+          "text": "填充",
+          "box": {
+            "x": 1134,
+            "y": 340,
+            "width": 284,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        1200,
+        392
+      ],
+      "elements": [
+        {
+          "tag": "INPUT",
+          "class": "main_ui_workspace_sidebar_options_rows_color_row__color-input",
+          "text": "B1B2B5",
+          "box": {
+            "x": 1165,
+            "y": 378,
+            "width": 152.453125,
+            "height": 28
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "14px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "SPAN",
+          "class": "main_ui_workspace_sidebar_options_rows_color_row__color-input-wrapper",
+          "text": "",
+          "box": {
+            "x": 1165,
+            "y": 378,
+            "width": 154,
+            "height": 28
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "12px",
+          "fontWeight": "400",
+          "lineHeight": "15.6px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgb(243, 244, 246)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_workspace_sidebar_options_rows_color_row__color-name-wrapper  ",
+          "text": "",
+          "box": {
+            "x": 1134,
+            "y": 376,
+            "width": 186,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "12px",
+          "fontWeight": "400",
+          "lineHeight": "15.6px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgb(243, 244, 246)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_workspace_sidebar_options_rows_color_row__color-info",
+          "text": "%",
+          "box": {
+            "x": 1134,
+            "y": 376,
+            "width": 248,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgb(255, 255, 255)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        82,
+        70
+      ],
+      "elements": [
+        {
+          "tag": "SPAN",
+          "class": "main_ui_ds_layout_tab_switcher__tab-text ",
+          "text": "图层",
+          "box": {
+            "x": 67.28125,
+            "y": 62.796875,
+            "width": 24,
+            "height": 14.390625
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "12px",
+          "fontWeight": "500",
+          "lineHeight": "14.4px",
+          "color": "rgb(105, 17, 212)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "BUTTON",
+          "class": "main_ui_ds_layout_tab_switcher__tab main_ui_ds_layout_tab_switcher__selected",
+          "text": "图层",
+          "box": {
+            "x": 40,
+            "y": 54,
+            "width": 78.578125,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(105, 17, 212)",
+          "background": "rgb(238, 240, 242)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "LI",
+          "class": null,
+          "text": "图层",
+          "box": {
+            "x": 40,
+            "y": 54,
+            "width": 78.578125,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "21.28px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "UL",
+          "class": "main_ui_ds_layout_tab_switcher__tab-list",
+          "text": "图层素材Tokens",
+          "box": {
+            "x": 40,
+            "y": 54,
+            "width": 264,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        290,
+        320
+      ],
+      "elements": [
+        {
+          "tag": "svg",
+          "class": " main_ui_ds_foundations_assets_icon__icon",
+          "text": "",
+          "box": {
+            "x": 282,
+            "y": 312,
+            "width": 16,
+            "height": 16
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(73, 94, 116)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "rgb(73, 94, 116)",
+          "strokeWidth": "1px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "BUTTON",
+          "class": " main_ui_ds_buttons_icon_button__icon-button   main_ui_ds_buttons_icon_button__icon-button-ghost  ",
+          "text": "",
+          "box": {
+            "x": 274,
+            "y": 304,
+            "width": 32,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(73, 94, 116)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": " main_ui_ds_tooltip_tooltip__tooltip-trigger",
+          "text": "",
+          "box": {
+            "x": 274,
+            "y": 304,
+            "width": 32,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "0px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": "main_ui_components_title_bar__title-bar main_ui_workspace_sidebar_layers__tool-window-bar-title",
+          "text": "Page 1",
+          "box": {
+            "x": 12,
+            "y": 304,
+            "width": 294,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "22.88px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        1402,
+        356
+      ],
+      "elements": [
+        {
+          "tag": "use",
+          "class": null,
+          "text": "",
+          "box": {
+            "x": 1397.3330078125,
+            "y": 351.3330078125,
+            "width": 9.333984375,
+            "height": 9.333984375
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(73, 94, 116)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "rgb(73, 94, 116)",
+          "strokeWidth": "1px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "svg",
+          "class": " main_ui_ds_foundations_assets_icon__icon",
+          "text": "",
+          "box": {
+            "x": 1394,
+            "y": 348,
+            "width": 16,
+            "height": 16
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(73, 94, 116)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "rgb(73, 94, 116)",
+          "strokeWidth": "1px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "BUTTON",
+          "class": " main_ui_ds_buttons_icon_button__icon-button   main_ui_ds_buttons_icon_button__icon-button-ghost  ",
+          "text": "",
+          "box": {
+            "x": 1386,
+            "y": 340,
+            "width": 32,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(73, 94, 116)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": " main_ui_ds_tooltip_tooltip__tooltip-trigger",
+          "text": "",
+          "box": {
+            "x": 1386,
+            "y": 340,
+            "width": 32,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "0px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    },
+    {
+      "at": [
+        634,
+        57
+      ],
+      "elements": [
+        {
+          "tag": "svg",
+          "class": " main_ui_ds_foundations_assets_icon__icon",
+          "text": "",
+          "box": {
+            "x": 625.5,
+            "y": 50,
+            "width": 16,
+            "height": 16
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(73, 94, 116)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "rgb(73, 94, 116)",
+          "strokeWidth": "1px",
+          "fill": "none",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "BUTTON",
+          "class": " main_ui_ds_buttons_icon_button__icon-button   main_ui_ds_buttons_icon_button__icon-button-ghost  ",
+          "text": "",
+          "box": {
+            "x": 617.5,
+            "y": 42,
+            "width": 32,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "13.3333px",
+          "fontWeight": "400",
+          "lineHeight": "normal",
+          "color": "rgb(73, 94, 116)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "DIV",
+          "class": " main_ui_ds_tooltip_tooltip__tooltip-trigger",
+          "text": "",
+          "box": {
+            "x": 617.5,
+            "y": 42,
+            "width": 32,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "0px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        },
+        {
+          "tag": "LI",
+          "class": "main_ui_workspace_top_toolbar__toolbar-option",
+          "text": "",
+          "box": {
+            "x": 617.5,
+            "y": 42,
+            "width": 32,
+            "height": 32
+          },
+          "font": "worksans, vazirmatn, sans-serif",
+          "fontSize": "16px",
+          "fontWeight": "400",
+          "lineHeight": "21.28px",
+          "color": "rgb(0, 0, 0)",
+          "background": "rgba(0, 0, 0, 0)",
+          "stroke": "none",
+          "strokeWidth": "1px",
+          "fill": "rgb(0, 0, 0)",
+          "letterSpacing": "normal"
+        }
+      ]
+    }
+  ],
+  "svg": [
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 500,
+        "y": 280,
+        "width": 200,
+        "height": 120
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "rgb(177, 178, 181)",
+      "stroke": "none",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 500,
+        "y": 280,
+        "width": 200,
+        "height": 120
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "rgb(140, 51, 235)",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 500,
+        "y": 280,
+        "width": 200,
+        "height": 120
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "rgb(140, 51, 235)",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 564.75,
+        "y": 408,
+        "width": 70.5,
+        "height": 16
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "rgb(140, 51, 235)",
+      "stroke": "none",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "text",
+      "text": "200 x 120",
+      "box": {
+        "x": 572.53125,
+        "y": 408,
+        "width": 54.9375,
+        "height": 14
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "12px",
+      "fontWeight": "400",
+      "fill": "rgb(255, 255, 255)",
+      "stroke": "none",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 700,
+        "y": 400,
+        "width": 20,
+        "height": 20
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    },
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 500,
+        "y": 276,
+        "width": 200,
+        "height": 8
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    },
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 500,
+        "y": 396,
+        "width": 200,
+        "height": 8
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    },
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 696,
+        "y": 280,
+        "width": 8,
+        "height": 120
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    },
+    {
+      "tag": "rect",
+      "text": null,
+      "box": {
+        "x": 496,
+        "y": 280,
+        "width": 8,
+        "height": 120
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    },
+    {
+      "tag": "circle",
+      "text": null,
+      "box": {
+        "x": 496,
+        "y": 276,
+        "width": 8,
+        "height": 8
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "rgb(255, 255, 255)",
+      "stroke": "rgb(140, 51, 235)",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "circle",
+      "text": null,
+      "box": {
+        "x": 490,
+        "y": 270,
+        "width": 20,
+        "height": 20
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    },
+    {
+      "tag": "circle",
+      "text": null,
+      "box": {
+        "x": 696,
+        "y": 276,
+        "width": 8,
+        "height": 8
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "rgb(255, 255, 255)",
+      "stroke": "rgb(140, 51, 235)",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "circle",
+      "text": null,
+      "box": {
+        "x": 690,
+        "y": 270,
+        "width": 20,
+        "height": 20
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    },
+    {
+      "tag": "circle",
+      "text": null,
+      "box": {
+        "x": 696,
+        "y": 396,
+        "width": 8,
+        "height": 8
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "rgb(255, 255, 255)",
+      "stroke": "rgb(140, 51, 235)",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "circle",
+      "text": null,
+      "box": {
+        "x": 690,
+        "y": 390,
+        "width": 20,
+        "height": 20
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    },
+    {
+      "tag": "circle",
+      "text": null,
+      "box": {
+        "x": 496,
+        "y": 396,
+        "width": 8,
+        "height": 8
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "rgb(255, 255, 255)",
+      "stroke": "rgb(140, 51, 235)",
+      "strokeWidth": "1px"
+    },
+    {
+      "tag": "circle",
+      "text": null,
+      "box": {
+        "x": 490,
+        "y": 390,
+        "width": 20,
+        "height": 20
+      },
+      "font": "worksans, vazirmatn, sans-serif",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "fill": "none",
+      "stroke": "none",
+      "strokeWidth": "0px"
+    }
+  ]
+}

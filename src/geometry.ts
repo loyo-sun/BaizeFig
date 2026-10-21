@@ -17,6 +17,7 @@ export function resizeInWorld(
   dx: number,
   dy: number,
   keepRatio = false,
+  centered = false,
 ): Document {
   const before = original.nodes.find((n) => n.id === id);
   if (!before) throw Error("Missing node");
@@ -39,16 +40,20 @@ export function resizeInWorld(
     if (handle === "n" || handle === "s") width = height * ratio;
     else height = width / ratio;
   }
-  const shiftX = handle.includes("w")
-      ? box.width - width
-      : keepRatio && (handle === "n" || handle === "s")
-        ? (box.width - width) / 2
-        : 0,
-    shiftY = handle.includes("n")
-      ? box.height - height
-      : keepRatio && (handle === "e" || handle === "w")
-        ? (box.height - height) / 2
-        : 0;
+  const shiftX = centered
+      ? (box.width - width) / 2
+      : handle.includes("w")
+        ? box.width - width
+        : keepRatio && (handle === "n" || handle === "s")
+          ? (box.width - width) / 2
+          : 0,
+    shiftY = centered
+      ? (box.height - height) / 2
+      : handle.includes("n")
+        ? box.height - height
+        : keepRatio && (handle === "e" || handle === "w")
+          ? (box.height - height) / 2
+          : 0;
   const sx = box.width ? width / box.width : 1,
     sy = box.height ? height / box.height : 1;
   const origin = transformPoint(
@@ -110,6 +115,7 @@ export function resizeSelection(
   dx: number,
   dy: number,
   uniform = false,
+  centered = false,
 ) {
   const b = bounds(original, roots(original, ids));
   if (b.width < 1e-6 || b.height < 1e-6)
@@ -126,16 +132,20 @@ export function resizeSelection(
     if (handle === "n" || handle === "s") w = (h * b.width) / b.height;
     else h = (w * b.height) / b.width;
   }
-  const x = handle.includes("w")
-      ? b.x + b.width - w
-      : uniform && (handle === "n" || handle === "s")
-        ? b.x + (b.width - w) / 2
-        : b.x,
-    y = handle.includes("n")
-      ? b.y + b.height - h
-      : uniform && (handle === "e" || handle === "w")
-        ? b.y + (b.height - h) / 2
-        : b.y,
+  const x = centered
+      ? b.x + (b.width - w) / 2
+      : handle.includes("w")
+        ? b.x + b.width - w
+        : uniform && (handle === "n" || handle === "s")
+          ? b.x + (b.width - w) / 2
+          : b.x,
+    y = centered
+      ? b.y + (b.height - h) / 2
+      : handle.includes("n")
+        ? b.y + b.height - h
+        : uniform && (handle === "e" || handle === "w")
+          ? b.y + (b.height - h) / 2
+          : b.y,
     sx = w / b.width,
     sy = h / b.height;
   return transformSelection(original, ids, [

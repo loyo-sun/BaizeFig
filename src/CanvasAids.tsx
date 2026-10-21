@@ -2,7 +2,7 @@ import { useRef, useState, type PointerEvent } from "react";
 import type { Guide } from "./core";
 import { useI18n } from "./LanguageContext";
 export function rulerTicks(offset: number, zoom: number, length: number) {
-  const rough = 70 / zoom,
+  const rough = 40 / zoom,
     power = 10 ** Math.floor(Math.log10(rough)),
     step = ([1, 2, 5, 10].find((n) => n * power >= rough) ?? 10) * power;
   const start = Math.ceil(-offset / zoom / step) * step;
@@ -16,6 +16,7 @@ export function rulerTicks(offset: number, zoom: number, length: number) {
 }
 export function CanvasAids({
   guides,
+  selection,
   page,
   view,
   width,
@@ -23,6 +24,7 @@ export function CanvasAids({
   onChange,
 }: {
   guides: Guide[];
+  selection?: { x: number; y: number; width: number; height: number };
   page: string;
   view: { x: number; y: number; zoom: number };
   width: number;
@@ -128,8 +130,8 @@ export function CanvasAids({
         x={22}
         width={Math.max(0, width - 22)}
         height={22}
-        fill="#fafafa"
-        stroke="#ddd"
+        fill="var(--ui-ruler)"
+        stroke="var(--ui-ruler)"
         pointerEvents="all"
         aria-label={t("Drag from horizontal ruler to add a guide")}
         onPointerDown={(e) => begin(e, "y")}
@@ -139,34 +141,151 @@ export function CanvasAids({
         y={22}
         width={22}
         height={Math.max(0, height - 22)}
-        fill="#fafafa"
-        stroke="#ddd"
+        fill="var(--ui-ruler)"
+        stroke="var(--ui-ruler)"
         pointerEvents="all"
         aria-label={t("Drag from vertical ruler to add a guide")}
         onPointerDown={(e) => begin(e, "x")}
         {...events}
       />
+      {selection && (
+        <g fill="var(--ui-ruler-selection)">
+          <rect
+            x={Math.max(22, selection.x * view.zoom + view.x)}
+            y={0}
+            width={Math.max(
+              0,
+              Math.min(
+                width,
+                (selection.x + selection.width) * view.zoom + view.x,
+              ) - Math.max(22, selection.x * view.zoom + view.x),
+            )}
+            height={22}
+          />
+          <rect
+            x={0}
+            y={Math.max(22, selection.y * view.zoom + view.y)}
+            height={Math.max(
+              0,
+              Math.min(
+                height,
+                (selection.y + selection.height) * view.zoom + view.y,
+              ) - Math.max(22, selection.y * view.zoom + view.y),
+            )}
+            width={22}
+          />
+        </g>
+      )}
       {rulerTicks(view.x, view.zoom, width).map((v) => (
         <g key={`x${v.value}`}>
-          <line x1={v.pixel} x2={v.pixel} y1={16} y2={22} stroke="#999" />
-          <text x={v.pixel + 3} y={11} fontSize={8} fill="#666">
+          <line x1={v.pixel} x2={v.pixel} y1={16} y2={22} stroke="#b1b8c1" />
+          <text
+            x={v.pixel}
+            textAnchor="middle"
+            y={14}
+            fontSize={12}
+            fill="var(--ui-ruler-text)"
+          >
             {v.value}
           </text>
         </g>
       ))}
       {rulerTicks(view.y, view.zoom, height).map((v) => (
         <g key={`y${v.value}`}>
-          <line x1={16} x2={22} y1={v.pixel} y2={v.pixel} stroke="#999" />
+          <line x1={16} x2={22} y1={v.pixel} y2={v.pixel} stroke="#b1b8c1" />
           <text
-            transform={`translate(10 ${v.pixel + 3}) rotate(-90)`}
-            fontSize={8}
-            fill="#666"
+            transform={`translate(14 ${v.pixel}) rotate(-90)`}
+            textAnchor="middle"
+            fontSize={12}
+            fill="var(--ui-ruler-text)"
           >
             {v.value}
           </text>
         </g>
       ))}
-      <rect width={22} height={22} fill="#f4f4f4" />
+      {selection && (
+        <g fill="var(--ui-selection)" fontSize={12}>
+          {[selection.x, selection.x + selection.width]
+            .map((v, i) => ({ v, i }))
+            .filter(
+              ({ v }) =>
+                v * view.zoom + view.x >= 22 && v * view.zoom + view.x <= width,
+            )
+            .map(({ v, i }) => (
+              <g key={"sx" + i}>
+                <rect
+                  x={v * view.zoom + view.x - (i === 0 ? 36 : 0)}
+                  width={36}
+                  height={22}
+                  fill="var(--ui-ruler)"
+                />
+                <text
+                  x={v * view.zoom + view.x + (i === 0 ? -4 : 4)}
+                  y={13.6}
+                  textAnchor={i === 0 ? "end" : "start"}
+                >
+                  {Math.round(v)}
+                </text>
+              </g>
+            ))}
+          {[selection.y, selection.y + selection.height]
+            .map((v, i) => ({ v, i }))
+            .filter(
+              ({ v }) =>
+                v * view.zoom + view.y >= 22 &&
+                v * view.zoom + view.y <= height,
+            )
+            .map(({ v, i }) => (
+              <g key={"sy" + i}>
+                <rect
+                  y={v * view.zoom + view.y - (i === 0 ? 36 : 0)}
+                  width={22}
+                  height={36}
+                  fill="var(--ui-ruler)"
+                />
+                <text
+                  transform={`translate(15 ${v * view.zoom + view.y + (i === 0 ? -11 : 4)}) rotate(-90)`}
+                  textAnchor={i === 0 ? "start" : "end"}
+                >
+                  {Math.round(v)}
+                </text>
+              </g>
+            ))}
+        </g>
+      )}
+      <rect width={22} height={22} fill="var(--ui-ruler)" />
+    </g>
+  );
+}
+export function CanvasFrame({
+  width,
+  height,
+  inset = 22,
+}: {
+  width: number;
+  height: number;
+  inset?: number;
+}) {
+  if (width <= inset + 24 || height <= inset + 24) return null;
+  const a = inset,
+    b = inset + 12;
+  return (
+    <g pointerEvents="none" className="canvas-frame">
+      <path
+        fill="var(--ui-ruler)"
+        fillRule="evenodd"
+        d={`M${a} ${a}H${width}V${height}H${a}Z M${b} ${a}H${width - 12}A12 12 0 0 1 ${width} ${b}V${height - 12}A12 12 0 0 1 ${width - 12} ${height}H${b}A12 12 0 0 1 ${a} ${height - 12}V${b}A12 12 0 0 1 ${b} ${a}Z`}
+      />
+      <rect
+        x={a + 1}
+        y={a + 1}
+        width={width - a - 2}
+        height={height - a - 2}
+        rx={11}
+        fill="none"
+        stroke="var(--ui-canvas-border)"
+        strokeWidth={2}
+      />
     </g>
   );
 }

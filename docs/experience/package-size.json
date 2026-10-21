@@ -1,0 +1,36 @@
+{
+  "before": {
+    ".js": {
+      "files": 6,
+      "bytes": 2153763,
+      "gzipBytes": 729495
+    },
+    ".css": {
+      "files": 1,
+      "bytes": 64112,
+      "gzipBytes": 13200
+    },
+    ".woff2": {
+      "files": 14,
+      "bytes": 452780,
+      "gzipBytes": null
+    }
+  },
+  "after": {
+    ".js": {
+      "files": 6,
+      "bytes": 2233088,
+      "gzipBytes": 751140
+    },
+    ".css": {
+      "files": 1,
+      "bytes": 99468,
+      "gzipBytes": 19296
+    },
+    ".woff2": {
+      "files": 17,
+      "bytes": 550612,
+      "gzipBytes": null
+    }
+  }
+}

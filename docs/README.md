@@ -12,3 +12,5 @@
 - [开发与验证记录](VERIFICATION.md)
 
 产品名和仓库名为 **BaizeFig**；本地文件夹按创建时的明确要求使用 **BaiseFig**。
+
+- [Penpot 体验改造实施记录与验收证据](experience/README.md)

@@ -1,0 +1,56 @@
+{
+  "before": {
+    "Width": "200",
+    "Height": "120",
+    "X axis": "182",
+    "Y axis": "280",
+    "Rotation": "0"
+  },
+  "lockControl": [
+    {
+      "tag": "svg",
+      "cls": " main_ui_ds_foundations_assets_icon__icon",
+      "label": null,
+      "title": null
+    },
+    {
+      "tag": "BUTTON",
+      "cls": " main_ui_ds_buttons_icon_button__icon-button   main_ui_ds_buttons_icon_button__icon-button-ghost  ",
+      "label": null,
+      "title": null
+    },
+    {
+      "tag": "DIV",
+      "cls": " main_ui_ds_tooltip_tooltip__tooltip-trigger",
+      "label": "锁定比例",
+      "title": null
+    },
+    {
+      "tag": "DIV",
+      "cls": "main_ui_workspace_sidebar_options_menus_measures__size",
+      "label": null,
+      "title": null
+    }
+  ],
+  "numeric": {
+    "Width": "240",
+    "Height": "144",
+    "X axis": "182",
+    "Y axis": "280",
+    "Rotation": "0"
+  },
+  "resize": {
+    "Width": "200",
+    "Height": "120",
+    "X axis": "202",
+    "Y axis": "290",
+    "Rotation": "0"
+  },
+  "shiftResize": {
+    "Width": "220",
+    "Height": "132",
+    "X axis": "182",
+    "Y axis": "280",
+    "Rotation": "0"
+  }
+}

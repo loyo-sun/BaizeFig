@@ -40,6 +40,7 @@ import {
   type VectorNetwork,
 } from "./vectorNetwork";
 import { useI18n } from "./LanguageContext";
+import { InspectorPopover } from "./InspectorPopover";
 export function VectorEditor({
   doc,
   node,
@@ -513,7 +514,7 @@ export function VectorEditor({
             aria-label={t("Vector segment {number}", { number: i + 1 })}
             d={segmentPath(network, i)}
             fill="none"
-            stroke="#0d99ff"
+            stroke="var(--ui-selection)"
             strokeWidth={1 / zoom}
             pointerEvents="stroke"
             style={{ cursor: "crosshair" }}
@@ -566,7 +567,7 @@ export function VectorEditor({
                   y1={a.y}
                   x2={x}
                   y2={y}
-                  stroke="#0d99ff"
+                  stroke="var(--ui-selection)"
                   strokeWidth={1 / zoom}
                   pointerEvents="none"
                 />
@@ -578,7 +579,7 @@ export function VectorEditor({
                   cy={y}
                   r={r * 0.8}
                   fill="#fff"
-                  stroke="#0d99ff"
+                  stroke="var(--ui-selection)"
                   strokeWidth={1 / zoom}
                   style={{ cursor: "move" }}
                   onPointerDown={(e) => begin(e, v, i, end)}
@@ -595,8 +596,8 @@ export function VectorEditor({
             y={v.y - r}
             width={r * 2}
             height={r * 2}
-            fill={picked.includes(i) ? "#0d99ff" : "#fff"}
-            stroke="#0d99ff"
+            fill={picked.includes(i) ? "var(--ui-selection)" : "#fff"}
+            stroke="var(--ui-selection)"
             strokeWidth={1 / zoom}
             style={{ cursor: "move" }}
             onPointerDown={(e) => begin(e, i)}
@@ -615,8 +616,11 @@ export function VectorEditor({
                 {operationError}
               </div>
             )}
-            <div className="vector-inspector-heading">
-              <strong>{t("Edit vector")}</strong>
+            <div
+              className="vector-node-actions"
+              role="toolbar"
+              aria-label={t("Edit vector")}
+            >
               <button
                 title={t("Done")}
                 aria-label={t("Done")}
@@ -624,8 +628,6 @@ export function VectorEditor({
               >
                 <Check size={16} />
               </button>
-            </div>
-            <div className="vector-node-actions">
               <button
                 title={t("Corner")}
                 aria-label={t("Corner")}
@@ -642,15 +644,6 @@ export function VectorEditor({
               >
                 <Spline size={16} />
               </button>
-              <select
-                aria-label={t("Handle mode")}
-                value={mode}
-                onChange={(e) => setMode(e.target.value as typeof mode)}
-              >
-                <option value="free">{t("Free handles")}</option>
-                <option value="aligned">{t("Aligned handles")}</option>
-                <option value="mirrored">{t("Mirrored handles")}</option>
-              </select>
               <button
                 title={t("Join nodes")}
                 aria-label={t("Join nodes")}
@@ -729,164 +722,180 @@ export function VectorEditor({
                 <Ungroup size={16} />
               </button>
             </div>
-            <details className="vector-advanced">
-              <summary>{t("Path refinement")}</summary>
+            <InspectorPopover title={t("More vector operations")} iconOnly>
               <label>
-                {t("Simplify tolerance")}
-                <input
-                  aria-label={t("Simplify tolerance")}
-                  type="number"
-                  min={0.001}
-                  max={100}
-                  step={0.1}
-                  value={simplifyTolerance}
-                  onChange={(e) => setSimplifyTolerance(Number(e.target.value))}
-                />
-              </label>
-              <button
-                title={t("Simplify vector")}
-                aria-label={t("Simplify vector")}
-                onClick={() =>
-                  action(() => {
-                    const next = simplifyNetwork(network, simplifyTolerance);
-                    if (next.vertices.length !== network.vertices.length) {
-                      save(next);
-                      setPicked([]);
-                    }
-                  })
-                }
-              >
-                <ListFilter size={16} />
-              </button>
-              <label>
-                {t("Offset distance")}
-                <input
-                  aria-label={t("Offset distance")}
-                  type="number"
-                  min={-10000}
-                  max={10000}
-                  value={offsetDistance}
-                  onChange={(e) => setOffsetDistance(Number(e.target.value))}
-                />
-              </label>
-              <select
-                aria-label={t("Offset joins")}
-                value={offsetJoin}
-                onChange={(e) => setOffsetJoin(e.target.value as OffsetJoin)}
-              >
-                <option value="miter">{t("Miter joins")}</option>
-                <option value="round">{t("Round joins")}</option>
-                <option value="square">{t("Square joins")}</option>
-              </select>
-              <button
-                title={t("Offset vector")}
-                aria-label={t("Offset vector")}
-                disabled={offsetDistance === 0}
-                onClick={() =>
-                  action(() => {
-                    const next = offsetNetwork(network, offsetDistance, {
-                      join: offsetJoin,
-                    });
-                    if (!next.segments.length)
-                      throw Error(
-                        "Offset removes all geometry. Choose a smaller distance.",
-                      );
-                    onCommit(offsetNodePatch(node, next));
-                    setDraft(null);
-                    setPicked([]);
-                    setRegion(0);
-                  })
-                }
-              >
-                <Expand size={16} />
-              </button>
-            </details>
-            <details className="vector-regions">
-              <summary>{t("Region styles")}</summary>
-              <div className="vector-region-style">
-                <span>{t("Region")}</span>
+                {t("Handle mode")}
                 <select
-                  aria-label={t("Region")}
-                  value={region}
-                  onChange={(e) => setRegion(Number(e.target.value))}
+                  aria-label={t("Handle mode")}
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value as typeof mode)}
                 >
-                  {network.regions.map((_, i) => (
-                    <option key={i} value={i}>
-                      {i + 1}
-                    </option>
-                  ))}
+                  <option value="free">{t("Free handles")}</option>
+                  <option value="aligned">{t("Aligned handles")}</option>
+                  <option value="mirrored">{t("Mirrored handles")}</option>
                 </select>
-                {network.regions[region] && (
-                  <>
-                    <input
-                      type="color"
-                      aria-label={t("Region color")}
-                      value={
-                        network.regions[region].color?.slice(0, 7) ??
-                        node.fill.slice(0, 7)
+              </label>
+              <details className="vector-advanced">
+                <summary>{t("Path refinement")}</summary>
+                <label>
+                  {t("Simplify tolerance")}
+                  <input
+                    aria-label={t("Simplify tolerance")}
+                    type="number"
+                    min={0.001}
+                    max={100}
+                    step={0.1}
+                    value={simplifyTolerance}
+                    onChange={(e) =>
+                      setSimplifyTolerance(Number(e.target.value))
+                    }
+                  />
+                </label>
+                <button
+                  title={t("Simplify vector")}
+                  aria-label={t("Simplify vector")}
+                  onClick={() =>
+                    action(() => {
+                      const next = simplifyNetwork(network, simplifyTolerance);
+                      if (next.vertices.length !== network.vertices.length) {
+                        save(next);
+                        setPicked([]);
                       }
-                      onChange={(e) => {
-                        const n = structuredClone(network);
-                        n.regions[region].color = e.target.value;
-                        n.regions[region].paints = undefined;
-                        save(n);
-                      }}
-                    />
-                    <select
-                      aria-label={t("Winding rule")}
-                      value={network.regions[region].rule}
-                      onChange={(e) => {
-                        const n = structuredClone(network);
-                        n.regions[region].rule = e.target.value as
-                          "nonzero" | "evenodd";
-                        save(n);
-                      }}
-                    >
-                      <option value="nonzero">{t("Nonzero")}</option>
-                      <option value="evenodd">{t("Even odd")}</option>
-                    </select>
-                  </>
-                )}
-                {network.regions[region] && (
-                  <button
-                    title={t("Region fills")}
-                    aria-label={t("Region fills")}
-                    onClick={() => setPaintPanel(!paintPanel)}
-                  >
-                    <PaintBucket size={16} />
-                  </button>
-                )}
-              </div>
-              {paintPanel && network.regions[region] && (
-                <RegionPaintEditor
-                  paints={
-                    network.regions[region].paints ?? [
-                      {
-                        type: "solid",
-                        opacity: 1,
-                        color: network.regions[region].color ?? node.fill,
-                      },
-                    ]
+                    })
                   }
-                  onChange={(paints) => {
-                    const n = structuredClone(network);
-                    n.regions[region].paints = paints.length
-                      ? paints
-                      : [{ type: "solid", color: "#000000", opacity: 0 }];
-                    n.regions[region].color = undefined;
-                    save(n);
-                  }}
-                />
-              )}
-            </details>
-            <details className="vector-help">
-              <summary>{t("Editing tips")}</summary>
-              <p>
-                {t(
-                  "Double-click a segment to add a node. Alt-drag a handle to break symmetry.",
+                >
+                  <ListFilter size={16} />
+                </button>
+                <label>
+                  {t("Offset distance")}
+                  <input
+                    aria-label={t("Offset distance")}
+                    type="number"
+                    min={-10000}
+                    max={10000}
+                    value={offsetDistance}
+                    onChange={(e) => setOffsetDistance(Number(e.target.value))}
+                  />
+                </label>
+                <select
+                  aria-label={t("Offset joins")}
+                  value={offsetJoin}
+                  onChange={(e) => setOffsetJoin(e.target.value as OffsetJoin)}
+                >
+                  <option value="miter">{t("Miter joins")}</option>
+                  <option value="round">{t("Round joins")}</option>
+                  <option value="square">{t("Square joins")}</option>
+                </select>
+                <button
+                  title={t("Offset vector")}
+                  aria-label={t("Offset vector")}
+                  disabled={offsetDistance === 0}
+                  onClick={() =>
+                    action(() => {
+                      const next = offsetNetwork(network, offsetDistance, {
+                        join: offsetJoin,
+                      });
+                      if (!next.segments.length)
+                        throw Error(
+                          "Offset removes all geometry. Choose a smaller distance.",
+                        );
+                      onCommit(offsetNodePatch(node, next));
+                      setDraft(null);
+                      setPicked([]);
+                      setRegion(0);
+                    })
+                  }
+                >
+                  <Expand size={16} />
+                </button>
+              </details>
+              <details className="vector-regions">
+                <summary>{t("Region styles")}</summary>
+                <div className="vector-region-style">
+                  <span>{t("Region")}</span>
+                  <select
+                    aria-label={t("Region")}
+                    value={region}
+                    onChange={(e) => setRegion(Number(e.target.value))}
+                  >
+                    {network.regions.map((_, i) => (
+                      <option key={i} value={i}>
+                        {i + 1}
+                      </option>
+                    ))}
+                  </select>
+                  {network.regions[region] && (
+                    <>
+                      <input
+                        type="color"
+                        aria-label={t("Region color")}
+                        value={
+                          network.regions[region].color?.slice(0, 7) ??
+                          node.fill.slice(0, 7)
+                        }
+                        onChange={(e) => {
+                          const n = structuredClone(network);
+                          n.regions[region].color = e.target.value;
+                          n.regions[region].paints = undefined;
+                          save(n);
+                        }}
+                      />
+                      <select
+                        aria-label={t("Winding rule")}
+                        value={network.regions[region].rule}
+                        onChange={(e) => {
+                          const n = structuredClone(network);
+                          n.regions[region].rule = e.target.value as
+                            "nonzero" | "evenodd";
+                          save(n);
+                        }}
+                      >
+                        <option value="nonzero">{t("Nonzero")}</option>
+                        <option value="evenodd">{t("Even odd")}</option>
+                      </select>
+                    </>
+                  )}
+                  {network.regions[region] && (
+                    <button
+                      title={t("Region fills")}
+                      aria-label={t("Region fills")}
+                      onClick={() => setPaintPanel(!paintPanel)}
+                    >
+                      <PaintBucket size={16} />
+                    </button>
+                  )}
+                </div>
+                {paintPanel && network.regions[region] && (
+                  <RegionPaintEditor
+                    paints={
+                      network.regions[region].paints ?? [
+                        {
+                          type: "solid",
+                          opacity: 1,
+                          color: network.regions[region].color ?? node.fill,
+                        },
+                      ]
+                    }
+                    onChange={(paints) => {
+                      const n = structuredClone(network);
+                      n.regions[region].paints = paints.length
+                        ? paints
+                        : [{ type: "solid", color: "#000000", opacity: 0 }];
+                      n.regions[region].color = undefined;
+                      save(n);
+                    }}
+                  />
                 )}
-              </p>
-            </details>
+              </details>
+              <details className="vector-help">
+                <summary>{t("Editing tips")}</summary>
+                <p>
+                  {t(
+                    "Double-click a segment to add a node. Alt-drag a handle to break symmetry.",
+                  )}
+                </p>
+              </details>
+            </InspectorPopover>
           </div>,
           panelTarget,
         )}

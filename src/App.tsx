@@ -1,3 +1,17 @@
+import { equalData } from "./equalData";
+import { SelectionOverlay } from "./SelectionOverlay";
+import { ImageProperties } from "./ImageProperties";
+import { PaletteDock } from "./PaletteDock";
+import { removeDesignTokens } from "./removeDesignTokens";
+import { MultiSelectionProperties } from "./MultiSelectionProperties";
+import { NumberField } from "./NumberField";
+import { updateSelectionProperties } from "./selectionProperties";
+import { PrototypeConnections } from "./PrototypeConnections";
+import { navigationPatch } from "./prototypeWires";
+import { useUiTheme } from "./uiTheme";
+import { InspectPanel } from "./InspectPanel";
+import { commonNumber, drawingBox, visualPosition } from "./drawingExperience";
+import { ZoomControl } from "./ZoomControl";
 import { StrokePaintRow } from "./StrokePaintRow";
 import { InspectorPopover } from "./InspectorPopover";
 import { FontFamilySelect } from "./FontFamilySelect";
@@ -59,7 +73,12 @@ import {
 import { FindPanel } from "./FindPanel";
 import { replaceMatches, type FindMatch } from "./findReplace";
 import { FrameGrid } from "./FrameGrid";
-import { CanvasAids, MeasureOverlay, type Box } from "./CanvasAids";
+import {
+  CanvasAids,
+  CanvasFrame,
+  MeasureOverlay,
+  type Box,
+} from "./CanvasAids";
 import { arrangeNodes, type ArrangeMode } from "./arrange";
 import {
   snapTargets,
@@ -72,7 +91,6 @@ import {
 import { SnapOverlay } from "./SnapOverlay";
 import { assetDestination, insertAsset } from "./assetPlacement";
 import { LocalAssets } from "./LocalAssets";
-import { LayerThumbnail } from "./LayerThumbnail";
 import { splitVectorLayers } from "./vectorSplit";
 import { canvasCursor, prepareToolCursors } from "./toolCursor";
 import {
@@ -93,11 +111,7 @@ import { editableNetwork, convertToPaths } from "./vectorGeometry";
 import { BooleanIcon } from "./BooleanIcon";
 import { CanvasTextEditor, type TextEditSession } from "./CanvasTextEditor";
 import { combineShapes } from "./combine";
-import {
-  editTypedVariable,
-  bindingTypes,
-  canBindProperty,
-} from "./typedVariables";
+
 import {
   resizeInWorld,
   resizeSelection,
@@ -118,11 +132,7 @@ import {
   inComponentSlot,
 } from "./components";
 import { localDelta, worldTransform, reflowAfterPointerEdit } from "./core";
-import {
-  setVariableMode,
-  editVariableColor,
-  removeVariable,
-} from "./variables";
+
 import { importFigFile } from "./figImportClient";
 import type { FigImportResult } from "./figImport";
 import {
@@ -163,6 +173,7 @@ import {
   EyeOff,
   Lock,
   Unlock,
+  CircleDashed,
   Play,
   Undo2,
   Redo2,
@@ -263,7 +274,6 @@ type Modal =
   | "text"
   | "assets"
   | "share"
-  | "variables"
   | "fig-report"
   | "svg-report"
   | "settings"
@@ -274,12 +284,12 @@ type Modal =
 const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "move", label: "Move", key: "V", icon: MousePointer2 },
   { id: "scale", label: "Scale", key: "K", icon: Maximize },
-  { id: "frame", label: "Frame", key: "F", icon: Frame },
+  { id: "frame", label: "Frame", key: "B", icon: Frame },
   { id: "rectangle", label: "Rectangle", key: "R", icon: Square },
-  { id: "ellipse", label: "Ellipse", key: "O", icon: Circle },
+  { id: "ellipse", label: "Ellipse", key: "E", icon: Circle },
   { id: "line", label: "Line", key: "L", icon: Minus },
   { id: "arrow", label: "Arrow", key: "⇧ L", icon: ArrowRight },
-  { id: "pen", label: "Pen / polyline", key: "P", icon: PenTool },
+  { id: "pen", label: "Pen / polyline", key: "⇧ C", icon: Spline },
   { id: "pencil", label: "Pencil", key: "⇧ P", icon: Pencil },
   { id: "text", label: "Text", key: "T", icon: Type },
   { id: "hand", label: "Hand", key: "H", icon: Hand },
@@ -291,7 +301,7 @@ function readCanvasAids() {
   try {
     const v = JSON.parse(localStorage.getItem("baizefig-canvas-aids") ?? "{}");
     return {
-      rulers: v.rulers === true,
+      rulers: v.rulers !== false,
       grid: v.grid === true,
       step:
         typeof v.step === "number" && v.step >= 1 && v.step <= 1000
@@ -299,13 +309,29 @@ function readCanvasAids() {
           : 8,
     };
   } catch {
-    return { rulers: false, grid: false, step: 8 };
+    return { rulers: true, grid: false, step: 8 };
   }
 }
 export default function App() {
   const { language, setLanguage, persistenceError, t } = useI18n();
-  const [doc, setDoc] = useState<Document>(() => demoDocument());
-  const [leftTab, setLeftTab] = useState<"file" | "assets" | "cloud">("file");
+  const { theme, setTheme } = useUiTheme();
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [pagesExpanded, setPagesExpanded] = useState(true);
+  const [doc, setDocumentState] = useState<Document>(() =>
+    removeDesignTokens(demoDocument()),
+  );
+  const setDoc = useCallback(
+    (next: Document | ((previous: Document) => Document)) => {
+      setDocumentState((previous) =>
+        removeDesignTokens(typeof next === "function" ? next(previous) : next),
+      );
+    },
+    [],
+  );
+  const [leftTab, setLeftTab] = useState<"file" | "assets" | "smart">("file");
+  const [smartDeployment, setSmartDeployment] = useState<"cloud" | "self">(
+    "cloud",
+  );
   const [svgReport, setSvgReport] = useState<{
     layers: number;
     warnings: string[];
@@ -410,9 +436,9 @@ export default function App() {
   const [page, setPage] = useState(doc.pages[0].id),
     [selected, setSelected] = useState<string[]>([]),
     [tool, setTool] = useState<Tool>("move");
-  const [view, setView] = useState({ x: 100, y: 70, zoom: 0.75 }),
+  const [view, setView] = useState({ x: 0, y: 0, zoom: 1 }),
     [modal, setModal] = useState<Modal>(null),
-    [tab, setTab] = useState<"design" | "prototype">("design");
+    [tab, setTab] = useState<"design" | "prototype" | "inspect">("design");
   const [editingCrop, setEditingCrop] = useState<{
     id: string;
     paintIndex?: number;
@@ -430,8 +456,7 @@ export default function App() {
     [grid, setGrid] = useState(false),
     [hiddenUI, setHiddenUI] = useState(false);
   const [showPerformance, setShowPerformance] = useState(false);
-  const [zoomMenu, setZoomMenu] = useState(false),
-    [layerFilter, setLayerFilter] = useState(""),
+  const [layerFilter, setLayerFilter] = useState(""),
     [showLayerSearch, setShowLayerSearch] = useState(false);
   const [trashedFiles, setTrashedFiles] = useState<TrashRecord[]>([]);
   const [fileBusy, setFileBusy] = useState(false);
@@ -475,6 +500,20 @@ export default function App() {
     socket = useRef<WebSocket | null>(null),
     mcp = useRef(new EditorMcp()),
     abort = useRef<AbortController | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const element = svg.current;
+    if (!element) return;
+    const observer = new ResizeObserver(() => {
+      const width = element.clientWidth,
+        height = element.clientHeight;
+      setCanvasSize((old) =>
+        old.width === width && old.height === height ? old : { width, height },
+      );
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const [spaceHeld, setSpaceHeld] = useState(false),
     [isPanning, setIsPanning] = useState(false);
   const effectiveTool = spaceHeld || isPanning ? "hand" : tool;
@@ -496,6 +535,7 @@ export default function App() {
     );
   }, [doc.id, cloudActive, cloudSession?.token]);
   const lastPointerHit = useRef<string | undefined>(undefined);
+  const lastCanvasPointer = useRef<{ x: number; y: number } | null>(null);
   const drag = useRef<{
     type: "move" | "resize" | "rotate" | "draw" | "pan" | "marquee";
     start: { x: number; y: number };
@@ -506,6 +546,7 @@ export default function App() {
     handle?: string;
     view: { x: number; y: number; zoom: number };
     shift?: boolean;
+    selectionBefore?: string[];
     targets?: SnapTarget[];
     moveBase?: Document;
     selectionScope?: string | null;
@@ -694,30 +735,76 @@ export default function App() {
       ],
     });
   }
+  const styleGesture = useRef<{
+    before: Document;
+    next: Document;
+    selection: string[];
+  } | null>(null);
+  function onStyleGesture(phase: "start" | "end" | "cancel") {
+    if (phase === "start") {
+      if (!styleGesture.current)
+        styleGesture.current = {
+          before: doc,
+          next: doc,
+          selection: [...selected],
+        };
+      return;
+    }
+    const gesture = styleGesture.current;
+    if (!gesture) return;
+    styleGesture.current = null;
+    if (phase === "cancel") {
+      setDoc(gesture.before);
+      return;
+    }
+    if (JSON.stringify(gesture.before) !== JSON.stringify(gesture.next)) {
+      history.current.push(gesture.before, gesture.selection);
+      setDoc(gesture.next);
+    }
+  }
   const change = (next: Document, selection?: string[]) => {
+    next = removeDesignTokens(next);
     validateDocument(next);
-    history.current.push(doc);
+    if (equalData(doc, next)) {
+      if (selection) setSelected(selection);
+      return;
+    }
+    if (styleGesture.current) styleGesture.current.next = next;
+    else history.current.push(doc, selected);
     setDoc(next);
     if (selection) setSelected(selection);
   };
   const run = (command: Command) => {
     try {
       const result = execute(doc, command);
-      if (JSON.stringify(result.doc) !== JSON.stringify(doc))
-        change(result.doc, result.selection);
-      else if (result.selection) setSelected(result.selection);
+      change(result.doc, result.selection);
     } catch (e) {
       notify((e as Error).message);
     }
   };
   const undo = () => {
-    setDoc(history.current.undo(doc));
-    setSelected([]);
+    restoreHistory("undo");
   };
   const redo = () => {
-    setDoc(history.current.redo(doc));
-    setSelected([]);
+    restoreHistory("redo");
   };
+  function restoreHistory(direction: "undo" | "redo") {
+    const next = history.current[direction](doc, selected);
+    setDoc(next);
+    const ids = history.current.selection ?? selected;
+    setSelected(
+      ids.filter((id) =>
+        next.nodes.some(
+          (n) =>
+            n.id === id &&
+            n.pageId === page &&
+            n.visible &&
+            !n.locked &&
+            !ancestors(next, n).some((a) => a.locked || !a.visible),
+        ),
+      ),
+    );
+  }
   function editVector(node = first) {
     if (!node || node.locked || ancestors(doc, node).some((p) => p.locked))
       return;
@@ -764,8 +851,59 @@ export default function App() {
     )
       setEditingVector(null);
   }, [doc.id, doc.nodes, page, selected]);
-  const patch = (patch: Partial<Node>) =>
-    run({ type: "update", ids: selected, patch });
+  const patch = (patch: Partial<Node>) => {
+    try {
+      change(updateSelectionProperties(doc, selected, patch));
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  };
+  function setVisualPosition(axis: "x" | "y", value: number) {
+    try {
+      let next = doc;
+      for (const node of chosen) {
+        next = execute(next, {
+          type: "update",
+          ids: [node.id],
+          patch: { [axis]: node[axis] + value - visualPosition(node)[axis] },
+        }).doc;
+      }
+      change(next);
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
+  function setVisualDimension(axis: "width" | "height", value: number) {
+    try {
+      let next = doc;
+      for (const node of chosen) {
+        const linear = node.fidelity?.linear ?? [1, 0, 0, 1];
+        const scale =
+          axis === "width"
+            ? Math.hypot(linear[0], linear[1])
+            : Math.hypot(linear[2], linear[3]);
+        if (scale < 1e-8) throw Error("Cannot resize a collapsed transform");
+        next = execute(next, {
+          type: "update",
+          ids: [node.id],
+          patch: {
+            [axis]: value / scale,
+            ...(node.constrainProportions && node[axis] > 0
+              ? {
+                  [axis === "width" ? "height" : "width"]:
+                    (node[axis === "width" ? "height" : "width"] * value) /
+                    scale /
+                    node[axis],
+                }
+              : {}),
+          },
+        }).doc;
+      }
+      change(next);
+    } catch (error) {
+      notify((error as Error).message);
+    }
+  }
   const openFiles = async () => {
     try {
       await save(doc);
@@ -797,7 +935,7 @@ export default function App() {
         setPage(next.pages[0].id);
         setSelected([]);
         setCollapsed(new Set());
-        setView({ x: 100, y: 80, zoom: 1 });
+        setView({ x: 0, y: 0, zoom: 1 });
       }
       setDocuments(remaining);
       setTrashedFiles(await listTrash());
@@ -825,6 +963,31 @@ export default function App() {
   const localExport = () => {
     download(JSON.stringify(doc, null, 2), `${doc.name}.baizefig`);
     notify("Local copy exported");
+  };
+  const zoomTo = (
+    value: number | ((current: number) => number),
+    anchor: "center" | "pointer" = "center",
+  ) => {
+    const rect = svg.current?.getBoundingClientRect();
+    if (!rect) return;
+    const at =
+      anchor === "pointer" && lastCanvasPointer.current
+        ? {
+            x: lastCanvasPointer.current.x - rect.left,
+            y: lastCanvasPointer.current.y - rect.top,
+          }
+        : { x: rect.width / 2, y: rect.height / 2 };
+    setView((v) => {
+      const zoom = Math.min(
+        8,
+        Math.max(0.05, typeof value === "function" ? value(v.zoom) : value),
+      );
+      return {
+        zoom,
+        x: at.x - ((at.x - v.x) * zoom) / v.zoom,
+        y: at.y - ((at.y - v.y) * zoom) / v.zoom,
+      };
+    });
   };
   const fit = (selection = false) => {
     const nodes = selection
@@ -922,6 +1085,15 @@ export default function App() {
     );
   }
   function pointerDown(e: RPointer, id?: string, handle?: string) {
+    const openPopover = document.querySelector<HTMLElement>(
+      ".inspector-popover:popover-open",
+    );
+    if (openPopover) {
+      e.preventDefault();
+      e.stopPropagation();
+      openPopover.hidePopover();
+      return;
+    }
     if (editingText || editingCrop) return;
     if (colorPicking && e.button === 0) {
       e.preventDefault();
@@ -961,6 +1133,7 @@ export default function App() {
       before: clone(doc),
       view: { ...view },
       ids: [] as string[],
+      selectionBefore: [...selected],
     };
     if (tool === "hand" || space.current || e.button === 1) {
       drag.current = { ...base, type: "pan" };
@@ -1026,7 +1199,7 @@ export default function App() {
               ? "#ffffff"
               : kind === "text"
                 ? "#202a24"
-                : "#c5c8d0",
+                : "#b1b2b5",
       });
       if (tool === "arrow") {
         n.name = t("Arrow");
@@ -1042,7 +1215,11 @@ export default function App() {
         n.width = 1;
         n.height = n.fontSize * n.lineHeight;
         n.textFlow = { ...n.textFlow!, autoResize: "both" };
-        n.layoutItem = { ...n.layoutItem, horizontalSizing: "hug", verticalSizing: "hug" };
+        n.layoutItem = {
+          ...n.layoutItem,
+          horizontalSizing: "hug",
+          verticalSizing: "hug",
+        };
       }
       setDoc({ ...doc, nodes: [...doc.nodes, n] });
       setSelected([n.id]);
@@ -1096,6 +1273,7 @@ export default function App() {
     };
   }
   function pointerMove(e: RPointer) {
+    lastCanvasPointer.current = { x: e.clientX, y: e.clientY };
     const d = drag.current;
     if (!d) {
       const rawId = (e.target as Element)
@@ -1172,9 +1350,15 @@ export default function App() {
         height: Math.abs(dy),
       };
       setMarquee(box);
-      d.marqueeSelection = Math.hypot(dx, dy) * view.zoom < 4
-        ? d.ids
-        : [...new Set([...d.ids, ...marqueeTargets(doc, page, box, d.selectionScope ?? null)])];
+      d.marqueeSelection =
+        Math.hypot(dx, dy) * view.zoom < 4
+          ? d.ids
+          : [
+              ...new Set([
+                ...d.ids,
+                ...marqueeTargets(doc, page, box, d.selectionScope ?? null),
+              ]),
+            ];
       setSelected(d.marqueeSelection);
       return;
     }
@@ -1242,8 +1426,17 @@ export default function App() {
                 dx,
                 dy,
                 tool === "scale" || e.shiftKey,
+                e.altKey,
               )
-            : resizeInWorld(d.before, d.nodeId!, d.handle!, dx, dy, e.shiftKey),
+            : resizeInWorld(
+                d.before,
+                d.nodeId!,
+                d.handle!,
+                dx,
+                dy,
+                e.shiftKey,
+                e.altKey,
+              ),
         );
       } catch (error) {
         setDoc(d.before);
@@ -1269,13 +1462,32 @@ export default function App() {
             localDy = end.y - start.y;
           if (n.type === "text") {
             if (Math.hypot(p.x - d.start.x, p.y - d.start.y) * view.zoom < 4)
-              return { ...n, x: start.x, y: start.y, width: 1, height: n.fontSize * n.lineHeight,
+              return {
+                ...n,
+                x: start.x,
+                y: start.y,
+                width: 1,
+                height: n.fontSize * n.lineHeight,
                 textFlow: { ...n.textFlow!, autoResize: "both" },
-                layoutItem: { ...n.layoutItem, horizontalSizing: "hug", verticalSizing: "hug" } };
-            return { ...n, x: Math.min(start.x, end.x), y: Math.min(start.y, end.y),
-              width: Math.max(1, Math.abs(localDx)), height: Math.max(n.fontSize * n.lineHeight, Math.abs(localDy)),
+                layoutItem: {
+                  ...n.layoutItem,
+                  horizontalSizing: "hug",
+                  verticalSizing: "hug",
+                },
+              };
+            return {
+              ...n,
+              x: Math.min(start.x, end.x),
+              y: Math.min(start.y, end.y),
+              width: Math.max(1, Math.abs(localDx)),
+              height: Math.max(n.fontSize * n.lineHeight, Math.abs(localDy)),
               textFlow: { ...n.textFlow!, autoResize: "fixed" },
-              layoutItem: { ...n.layoutItem, horizontalSizing: "fixed", verticalSizing: "fixed" } };
+              layoutItem: {
+                ...n.layoutItem,
+                horizontalSizing: "fixed",
+                verticalSizing: "fixed",
+              },
+            };
           }
           if (tool === "arrow")
             return { ...n, ...arrowGeometry(start, end, e.shiftKey) };
@@ -1292,20 +1504,7 @@ export default function App() {
                 Math.min(0, ...pts.map((a) => a.y)),
             };
           }
-          let w = Math.abs(localDx),
-            h = Math.abs(localDy);
-          if (e.shiftKey) {
-            const side = Math.max(w, h);
-            w = side;
-            h = side;
-          }
-          return {
-            ...n,
-            x: localDx < 0 ? start.x - w : start.x,
-            y: localDy < 0 ? start.y - h : start.y,
-            width: Math.max(1, w),
-            height: Math.max(1, h),
-          };
+          return { ...n, ...drawingBox(start, end, e.shiftKey, e.altKey) };
         }),
       }));
     }
@@ -1361,7 +1560,7 @@ export default function App() {
       }
     }
     if (JSON.stringify(next) !== JSON.stringify(d.before)) {
-      history.current.push(d.before);
+      history.current.push(d.before, d.selectionBefore);
       setDoc(next);
     }
     if (
@@ -1376,7 +1575,11 @@ export default function App() {
     const d = drag.current;
     if (d) {
       setDoc(d.before);
-      if (d.type === "marquee") setSelected(d.marqueeInitialSelection ?? []);
+      setSelected(
+        d.type === "marquee"
+          ? (d.marqueeInitialSelection ?? [])
+          : (d.selectionBefore ?? []),
+      );
       drag.current = null;
       setMarquee(null);
     }
@@ -1528,7 +1731,7 @@ export default function App() {
         if (file.size > 50 * 1024 * 1024)
           throw Error("Files must be smaller than 50 MB");
         if (/\.(baizefig|json)$/i.test(file.name)) {
-          const parsed = JSON.parse(await file.text());
+          const parsed = removeDesignTokens(JSON.parse(await file.text()));
           validateDocument(parsed);
           parsed.id = id();
           await save(doc);
@@ -1663,6 +1866,7 @@ export default function App() {
     setModal("export");
   }
   function addPage() {
+    setPagesExpanded(true);
     const p = {
       id: id(),
       name: t("Page {number}", { number: doc.pages.length + 1 }),
@@ -1696,7 +1900,7 @@ export default function App() {
       setPage(next.pages[0].id);
       setSelected([]);
       setModal(null);
-      setView({ x: 100, y: 80, zoom: 1 });
+      setView({ x: 0, y: 0, zoom: 1 });
     });
   }
   function createInstance(n: Node) {
@@ -2077,7 +2281,7 @@ export default function App() {
     },
     {
       name: "Create component",
-      key: "⌥ ⌘ K",
+      key: "⌘ K",
       run: () => run({ type: "group", ids: selected, kind: "component" }),
     },
     {
@@ -2234,13 +2438,13 @@ export default function App() {
     },
     {
       name: "Zoom in",
-      run: () => setView((v) => ({ ...v, zoom: Math.min(8, v.zoom * 1.25) })),
+      run: () => zoomTo((z) => z * 1.3, "pointer"),
     },
     {
       name: "Zoom out",
-      run: () => setView((v) => ({ ...v, zoom: Math.max(0.05, v.zoom * 0.8) })),
+      run: () => zoomTo((z) => z / 1.3, "pointer"),
     },
-    { name: "Zoom to 100%", run: () => setView((v) => ({ ...v, zoom: 1 })) },
+    { name: "Zoom to 100%", run: () => setView({ x: 0, y: 0, zoom: 1 }) },
     { name: "Present", run: presentStart },
     ...(["objects", "geometry", "pixel"] as const).map((key) => ({
       name:
@@ -2875,7 +3079,16 @@ export default function App() {
           setModal(null);
           return;
         }
-        cancelDrag();
+        if (drag.current) {
+          if (drag.current.type === "move") pointerUp();
+          else cancelDrag();
+          e.preventDefault();
+          return;
+        }
+        if (context) {
+          setContext(null);
+          return;
+        }
         setContext(null);
         setSelected([]);
         setTool("move");
@@ -3193,7 +3406,8 @@ export default function App() {
               }
             : c,
           (next) => {
-            history.current.push(c.doc);
+            next = removeDesignTokens(next);
+            history.current.push(c.doc, c.selected);
             current.current = { ...c, doc: next };
             setDoc(next);
           },
@@ -3391,7 +3605,22 @@ export default function App() {
                   <span className="spacer" />
                 )}
               </button>
-              <LayerThumbnail doc={doc} node={n} />
+              {(() => {
+                const Icon =
+                  (n.type === "path"
+                    ? Spline
+                    : tools.find((tool) => tool.id === n.type)?.icon) ??
+                  (n.type === "component" || n.type === "instance"
+                    ? Component
+                    : Layers);
+                return (
+                  <Icon
+                    size={12}
+                    strokeWidth={1.25}
+                    className="layer-kind-icon"
+                  />
+                );
+              })()}
               {(n.type === "component" || n.type === "instance") && (
                 <span
                   className="component-badge"
@@ -3485,21 +3714,19 @@ export default function App() {
                   ? "General settings"
                   : modal === "share"
                     ? "Share this design"
-                    : modal === "variables"
-                      ? "Local color variables"
-                      : modal === "assets"
-                        ? "Components & assets"
-                        : modal === "files"
-                          ? "Your local workspace"
-                          : modal === "shortcuts"
-                            ? "Keyboard shortcuts"
-                            : modal === "commands"
-                              ? "Actions"
-                              : modal === "ai"
-                                ? "Create with Baize"
-                                : modal === "bridge"
-                                  ? "Connect external AI"
-                                  : "Rename layer";
+                    : modal === "assets"
+                      ? "Components & assets"
+                      : modal === "files"
+                        ? "Your local workspace"
+                        : modal === "shortcuts"
+                          ? "Keyboard shortcuts"
+                          : modal === "commands"
+                            ? "Actions"
+                            : modal === "ai"
+                              ? "Create with Baize"
+                              : modal === "bridge"
+                                ? "Connect external AI"
+                                : "Rename layer";
   return (
     <div className={`app ${hiddenUI ? "ui-hidden" : ""}`}>
       <input
@@ -3557,107 +3784,35 @@ export default function App() {
       )}
       <div className="workspace">
         {!hiddenUI && (
-          <nav className="app-rail" aria-label={t("Workspace tools")}>
-            <button
-              className="rail-logo"
-              aria-label={t("BaizeFig local files")}
-              onClick={() => void openFiles()}
-            >
-              <img src="/baize.svg" alt="BaizeFig" />
-            </button>
-            <span className="rail-separator" />
-            <button
-              className={`rail-item ${leftTab === "file" ? "active" : ""}`}
-              onClick={() => {
-                setLeftTab("file");
-                setModal(null);
-              }}
-            >
-              <span>
-                <File size={19} />
-              </span>
-              {t("File")}
-            </button>
-            <button
-              className={`rail-item ${leftTab === "assets" ? "active" : ""}`}
-              onClick={() => setLeftTab("assets")}
-              aria-label={t("Assets")}
-            >
-              <span>
-                <Component size={19} />
-              </span>
-              {t("Assets")}
-            </button>
-            {[
-              { label: "Agents", Icon: Sparkles },
-
-              { label: "Cloud", Icon: Cloud },
-              { label: "Variables", Icon: Hexagon },
-            ].map(({ label, Icon }) =>
-              label === "Cloud" ? (
-                <button
-                  key={label}
-                  className={`rail-item ${leftTab === "cloud" ? "active" : ""}`}
-                  aria-label={t("Cloud")}
-                  aria-pressed={leftTab === "cloud"}
-                  onClick={() => {
-                    setLeftTab("cloud");
-                    setModal(null);
-                  }}
-                >
-                  <span>
-                    <Icon size={19} />
-                  </span>
-                  {t("Cloud")}
-                </button>
-              ) : (
-                <div
-                  className="rail-research"
-                  key={label}
-                  title={t("Under research")}
-                >
-                  <button
-                    className="rail-item"
-                    disabled
-                    aria-label={t(label)}
-                    aria-describedby={`research-${label}`}
-                  >
-                    <span>
-                      <Icon size={19} />
-                    </span>
-                    {t(label)}
-                  </button>
-                  <span
-                    className="research-tooltip"
-                    id={`research-${label}`}
-                    role="tooltip"
-                  >
-                    {t("Under research")}
-                  </span>
-                </div>
-              ),
-            )}
-            <div className="rail-bottom">
-              <button
-                className="tiny"
-                aria-label={t("General settings")}
-                title={t("General settings")}
-                onClick={() => setModal("settings")}
-              >
-                <Settings2 size={17} />
-              </button>
-            </div>
-          </nav>
-        )}
-        {!hiddenUI && (
-          <aside className="left-panel">
+          <aside className="left-panel" hidden={leftCollapsed}>
             <div className="file-panel-header">
               <div className="file-title-row">
+                <button
+                  className="workspace-brand"
+                  aria-label={t("Local files")}
+                  onClick={() => void openFiles()}
+                >
+                  <img src="/baize.svg" alt="BaizeFig" />
+                </button>
                 <input
                   className="document-title"
                   aria-label={t("Document name")}
                   value={doc.name}
                   onChange={(e) => setDoc({ ...doc, name: e.target.value })}
+                />
+                <span
+                  className="file-save-indicator"
+                  title={t(saved)}
+                  aria-label={t(saved)}
+                  data-save-state={saved}
+                  style={{
+                    background:
+                      saved === "Saved locally"
+                        ? "#2d9f8f"
+                        : saved === "Save failed"
+                          ? "#d44"
+                          : "#e6b343",
+                  }}
                 />
                 <button
                   className="tiny"
@@ -3668,7 +3823,10 @@ export default function App() {
                     setMenuAnchor(menuAnchor ? null : e.currentTarget)
                   }
                 >
-                  <ChevronDown size={12} />
+                  <MoreHorizontal
+                    size={16}
+                    style={{ transform: "rotate(90deg)" }}
+                  />
                 </button>
                 <button
                   className="tiny collapse-panel"
@@ -3684,8 +3842,44 @@ export default function App() {
                 <span className="save-state">{t(saved)}</span>
               </div>
             </div>
-            {leftTab === "cloud" ? (
+            <div
+              className="workspace-tabs"
+              role="tablist"
+              aria-label={t("Workspace tools")}
+            >
+              <button
+                type="button"
+                className="sidebar-collapse"
+                aria-label={t("Collapse left sidebar")}
+                onClick={() => setLeftCollapsed(true)}
+              >
+                <ChevronRight
+                  size={12}
+                  style={{ transform: "rotate(180deg)" }}
+                />
+              </button>
+              {(
+                [
+                  ["file", "Layers"],
+                  ["assets", "Assets"],
+                  ["smart", "Smart"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={leftTab === id}
+                  className={leftTab === id ? "active" : ""}
+                  onClick={() => setLeftTab(id)}
+                >
+                  {t(label)}
+                </button>
+              ))}
+            </div>
+            {leftTab === "smart" ? (
               <CloudPanel
+                deployment={smartDeployment}
+                onDeploymentChange={setSmartDeployment}
                 status={bridgeStatus}
                 session={cloudSession}
                 serviceAddress={bridgeAddress}
@@ -3793,13 +3987,19 @@ export default function App() {
             ) : (
               <>
                 <div className="page-heading">
-                  <span>{t("Pages")}</span>
                   <button
-                    className="tiny page-search"
-                    aria-label={t("Find and replace")}
-                    onClick={() => setFindOpen((v) => !v)}
+                    className="pages-collapse"
+                    aria-label={t("Pages")}
+                    aria-expanded={pagesExpanded}
+                    onClick={() => setPagesExpanded((v) => !v)}
                   >
-                    <Search size={16} />
+                    <ChevronDown
+                      size={10}
+                      style={{
+                        transform: pagesExpanded ? undefined : "rotate(-90deg)",
+                      }}
+                    />
+                    <span>{t("Pages")}</span>
                   </button>
                   <button
                     className="tiny"
@@ -3809,7 +4009,7 @@ export default function App() {
                     <Plus size={14} />
                   </button>
                 </div>
-                <div className="pages">
+                <div className="pages" hidden={!pagesExpanded}>
                   {doc.pages.map((p) => (
                     <div
                       className={`page ${p.id === page ? "active" : ""}`}
@@ -3906,11 +4106,7 @@ export default function App() {
                         }}
                       >
                         <span>
-                          {p.id === page ? (
-                            <Check size={12} />
-                          ) : (
-                            <span className="spacer" />
-                          )}
+                          <File size={12} />
                         </span>
                         <span
                           onDoubleClick={(e) => {
@@ -3984,16 +4180,16 @@ export default function App() {
                   ))}
                 </div>
                 <div className="layer-heading">
-                  {t("Layers")}{" "}
+                  {doc.pages.find((p) => p.id === page)?.name}{" "}
                   <span>
                     {doc.nodes.filter((n) => n.pageId === page).length}
                   </span>
                   <button
                     className="tiny"
-                    aria-label={t("Import assets")}
-                    onClick={() => fileInput.current?.click()}
+                    aria-label={t("Find and replace")}
+                    onClick={() => setFindOpen((v) => !v)}
                   >
-                    <Plus size={14} />
+                    <Search size={16} />
                   </button>
                 </div>
                 {showLayerSearch && (
@@ -4069,6 +4265,15 @@ export default function App() {
         <main
           className={`canvas-wrap tool-${effectiveTool}${effectiveTool !== "move" ? " cursor-override" : ""}`}
         >
+          {leftCollapsed && !hiddenUI && (
+            <button
+              className="sidebar-expand"
+              aria-label={t("Expand left sidebar")}
+              onClick={() => setLeftCollapsed(false)}
+            >
+              <ChevronRight size={12} />
+            </button>
+          )}
           <div className="canvas-top-note">
             <span className="green-dot" />
             {t("Your canvas. Your possibilities.")}
@@ -4344,116 +4549,39 @@ export default function App() {
                 !editingText &&
                 !editingVector &&
                 !editingCrop &&
-                (tool === "move" || tool === "hand" || tool === "scale" ||
-                  (tool === "text" && first?.textFlow?.autoResize === "fixed")) && (
-                  <g className="selection-overlay">
-                    <rect
-                      x={selectionBox.x}
-                      y={selectionBox.y}
-                      width={selectionBox.width}
-                      height={selectionBox.height}
-                      fill="none"
-                      stroke={
-                        first?.type === "component" ? "#9b65ef" : "#2487ff"
-                      }
-                      strokeWidth={1 / view.zoom}
-                      pointerEvents="none"
-                    />
-                    {tool !== "text" && chosen.length >= 1 &&
-                      !chosen.some(
-                        (n) =>
-                          n.locked || ancestors(doc, n).some((a) => a.locked),
-                      ) &&
-                      ["nw", "n", "ne", "e", "se", "s", "sw", "w"].map((h) => {
-                        const localBox =
-                            chosen.length === 1 && tool !== "scale"
-                              ? nodeSelectionBounds(first)
-                              : selectionBox,
-                          m =
-                            chosen.length === 1 && tool !== "scale"
-                              ? worldTransform(doc, first)
-                              : ([1, 0, 0, 1, 0, 0] as const),
-                          handlePoint = transformPoint(
-                            [...m],
-                            h.includes("e")
-                              ? localBox.x + localBox.width
-                              : h.includes("w")
-                                ? localBox.x
-                                : localBox.x + localBox.width / 2,
-                            h.includes("s")
-                              ? localBox.y + localBox.height
-                              : h.includes("n")
-                                ? localBox.y
-                                : localBox.y + localBox.height / 2,
-                          ),
-                          x = handlePoint.x,
-                          y = handlePoint.y;
-                        return (
-                          <rect
-                            key={h}
-                            aria-label={t("Resize {direction}", {
-                              direction: h,
-                            })}
-                            x={x - 3.5 / view.zoom}
-                            y={y - 3.5 / view.zoom}
-                            width={7 / view.zoom}
-                            height={7 / view.zoom}
-                            fill="#fff"
-                            stroke="#2487ff"
-                            strokeWidth={1 / view.zoom}
-                            style={{ cursor: `${h}-resize` }}
-                            onPointerDown={(e) => pointerDown(e, first.id, h)}
-                          />
-                        );
-                      })}
-                    {!chosen.some(
-                      (n) =>
-                        n.locked || ancestors(doc, n).some((a) => a.locked),
-                    ) && (
-                      <circle
-                        aria-label={t("Rotate selection")}
-                        cx={selectionBox.x + selectionBox.width / 2}
-                        cy={selectionBox.y - 22 / view.zoom}
-                        r={5 / view.zoom}
-                        fill="white"
-                        stroke="#2487ff"
-                        strokeWidth={1 / view.zoom}
-                        style={{ cursor: "crosshair" }}
-                        onPointerDown={(e) =>
-                          pointerDown(e, first.id, "rotate")
-                        }
-                      />
-                    )}
-                    <g pointerEvents="none">
-                      <rect
-                        x={
-                          selectionBox.x +
-                          selectionBox.width / 2 -
-                          40 / view.zoom
-                        }
-                        y={
-                          selectionBox.y + selectionBox.height + 10 / view.zoom
-                        }
-                        width={80 / view.zoom}
-                        height={20 / view.zoom}
-                        rx={4 / view.zoom}
-                        fill="#2487ff"
-                      />
-                      <text
-                        x={selectionBox.x + selectionBox.width / 2}
-                        y={
-                          selectionBox.y + selectionBox.height + 24 / view.zoom
-                        }
-                        fontSize={10 / view.zoom}
-                        textAnchor="middle"
-                        fill="white"
-                      >
-                        {Math.round(selectionBox.width)} ×{" "}
-                        {Math.round(selectionBox.height)}
-                      </text>
-                    </g>
-                  </g>
+                (tool === "move" ||
+                  tool === "hand" ||
+                  tool === "scale" ||
+                  (tool === "text" &&
+                    first?.textFlow?.autoResize === "fixed")) && (
+                  <SelectionOverlay
+                    doc={doc}
+                    nodes={chosen}
+                    box={selectionBox}
+                    zoom={view.zoom}
+                    scaleMode={tool === "scale"}
+                    textMode={tool === "text"}
+                    onPointerDown={pointerDown}
+                  />
                 )}
+              {tab === "prototype" && (
+                <PrototypeConnections
+                  doc={doc}
+                  page={page}
+                  selected={selected}
+                  zoom={view.zoom}
+                  point={point}
+                  onSelect={(id) => setSelected([id])}
+                  onConnect={(source, target) => {
+                    run({
+                      type: "update",
+                      ids: [source.id],
+                      patch: navigationPatch(source, target),
+                    });
+                    setPrototypeTrigger("click");
+                  }}
+                />
+              )}
               {measure && (
                 <MeasureOverlay a={measure.a} b={measure.b} zoom={view.zoom} />
               )}
@@ -4461,8 +4589,8 @@ export default function App() {
               {marquee && (
                 <rect
                   {...marquee}
-                  fill="#2487ff22"
-                  stroke="#2487ff"
+                  fill="#9747ff22"
+                  stroke="#9747ff"
                   strokeWidth={1 / view.zoom}
                   pointerEvents="none"
                 />
@@ -4471,21 +4599,25 @@ export default function App() {
             {rulers && (
               <CanvasAids
                 guides={doc.guides ?? []}
+                selection={selectionBox ?? undefined}
                 page={page}
                 view={view}
-                width={svg.current?.clientWidth ?? 0}
-                height={svg.current?.clientHeight ?? 0}
+                width={canvasSize.width}
+                height={canvasSize.height}
                 onChange={(guides) => change({ ...doc, guides })}
               />
             )}
+            <CanvasFrame
+              width={canvasSize.width}
+              height={canvasSize.height}
+              inset={rulers ? 22 : 0}
+            />
           </svg>
           <div className="zoom-controls">
             <button
               title={t("Zoom out")}
               aria-label={t("Zoom out")}
-              onClick={() =>
-                setView((v) => ({ ...v, zoom: Math.max(0.05, v.zoom / 1.25) }))
-              }
+              onClick={() => zoomTo((z) => z / 1.25)}
             >
               <Minus size={13} />
             </button>
@@ -4499,9 +4631,7 @@ export default function App() {
             <button
               title={t("Zoom in")}
               aria-label={t("Zoom in")}
-              onClick={() =>
-                setView((v) => ({ ...v, zoom: Math.min(8, v.zoom * 1.25) }))
-              }
+              onClick={() => zoomTo((z) => z * 1.25)}
             >
               <Plus size={13} />
             </button>
@@ -4514,9 +4644,34 @@ export default function App() {
               <Maximize size={13} />
             </button>
           </div>
+          {!hiddenUI && (
+            <PaletteDock doc={doc} selected={selected} onChange={change} />
+          )}
           <ToolDock
             items={tools}
             active={effectiveTool}
+            onImage={() => fileInput.current?.click()}
+            extensions={[
+              {
+                label: t("Import assets"),
+                run: () => fileInput.current?.click(),
+              },
+              { label: t("AI design engine"), run: () => setModal("ai") },
+              { label: t("MCP connection"), run: () => setModal("bridge") },
+              {
+                label: t("Smart"),
+                run: () => {
+                  setLeftCollapsed(false);
+                  setLeftTab("smart");
+                },
+              },
+              {
+                label: t("Import .fig file"),
+                run: () => figInput.current?.click(),
+              },
+              { label: t("Local files"), run: () => void openFiles() },
+              { label: t("General settings"), run: () => setModal("settings") },
+            ]}
             onSelect={(id) => {
               pathDrawing.current?.finish();
               if (id !== "move" && id !== "hand") setEditingVector(null);
@@ -4567,6 +4722,18 @@ export default function App() {
                 <ChevronDown size={12} />
               </button>
               <div className="inspector-top-actions">
+                <ZoomControl
+                  zoom={view.zoom}
+                  onZoom={zoomTo}
+                  onFit={() => fit()}
+                  onSelection={() => fit(true)}
+                  hasSelection={chosen.length > 0}
+                  fitShortcut={shortcutLabel("Zoom to fit", platform)}
+                  selectionShortcut={shortcutLabel(
+                    "Zoom to selection",
+                    platform,
+                  )}
+                />
                 <button
                   className="icon-button"
                   aria-label={t("Present")}
@@ -4597,53 +4764,20 @@ export default function App() {
                 {t("Prototype")}
               </button>
               <button
-                className="inspector-zoom"
-                aria-label={t("Zoom menu")}
-                onClick={() => setZoomMenu((v) => !v)}
+                className={tab === "inspect" ? "active" : ""}
+                onClick={() => setTab("inspect")}
               >
-                {Math.round(view.zoom * 100)}%<ChevronDown size={12} />
+                {t("Inspect")}
               </button>
-              {zoomMenu && (
-                <div className="zoom-menu">
-                  {[25, 50, 100, 200].map((z) => (
-                    <button
-                      key={z}
-                      onClick={() => {
-                        setView((v) => ({ ...v, zoom: z / 100 }));
-                        setZoomMenu(false);
-                      }}
-                    >
-                      {z}%
-                    </button>
-                  ))}
-                  <hr />
-                  <button
-                    onClick={() => {
-                      fit();
-                      setZoomMenu(false);
-                    }}
-                  >
-                    {t("Zoom to fit")}
-                    <kbd>{shortcutLabel("Zoom to fit", platform)}</kbd>
-                  </button>
-                  <button
-                    onClick={() => {
-                      fit(true);
-                      setZoomMenu(false);
-                    }}
-                  >
-                    {t("Zoom to selection")}
-                    <kbd>{shortcutLabel("Zoom to selection", platform)}</kbd>
-                  </button>
-                </div>
-              )}
             </div>
             <div
               className={`properties${editingVector ? " is-vector-editing" : ""}`}
             >
               <div id="vector-properties-slot" ref={setVectorPanel} />
               <FontNotice doc={doc} onReplace={() => setModal("fonts")} />
-              {!first ? (
+              {tab === "inspect" ? (
+                <InspectPanel doc={doc} nodes={chosen} />
+              ) : !first ? (
                 <>
                   <section>
                     <div className="section-heading">{t("Page")}</div>
@@ -4661,40 +4795,6 @@ export default function App() {
                       </span>
                       <span>100%</span>
                     </label>
-                  </section>
-                  <section className="local-styles">
-                    <details>
-                      <summary>{t("Styles")}</summary>
-                      <div className="section-heading">
-                        {t("Styles")}
-                        <button
-                          className="tiny"
-                          aria-label={t("Manage variables")}
-                          onClick={() => setModal("variables")}
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                      <p className="muted">{t("Local color variables")}</p>
-                      {(doc.variables ?? []).map((v) => (
-                        <button
-                          className="style-swatch"
-                          key={v.id}
-                          onClick={() => setModal("variables")}
-                        >
-                          <span style={{ background: v.value }} />
-                          {v.name}
-                        </button>
-                      ))}
-                      {!doc.variables?.length && (
-                        <button
-                          className="empty-style"
-                          onClick={() => setModal("variables")}
-                        >
-                          {t("Create a local variable")}
-                        </button>
-                      )}
-                    </details>
                   </section>
                 </>
               ) : tab === "prototype" ? (
@@ -4952,86 +5052,136 @@ export default function App() {
                 </>
               ) : (
                 <>
-                  <section>
-                    <div className="section-heading">
-                      <span>
-                        {selected.length > 1
-                          ? t("{count} selected", { count: selected.length })
-                          : first.componentSetId
-                            ? t("Component set")
-                            : first.type === "component"
-                              ? t("Main component")
-                              : t(
-                                  first.type.charAt(0).toUpperCase() +
-                                    first.type.slice(1),
-                                )}
-                      </span>
-                      <div className="inline">
-                        <button
-                          className="tiny"
-                          aria-label={t("Toggle visibility")}
-                          onClick={() => patch({ visible: !first.visible })}
-                        >
-                          {first.visible ? (
-                            <Eye size={14} />
-                          ) : (
-                            <EyeOff size={14} />
-                          )}
-                        </button>
-                        <button
-                          className="tiny"
-                          aria-label={t("Toggle lock")}
-                          onClick={() => patch({ locked: !first.locked })}
-                        >
-                          {first.locked ? (
-                            <Lock size={14} />
-                          ) : (
-                            <Unlock size={14} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                    <input
-                      className="layer-title-input"
-                      aria-label={t("Layer name")}
-                      key={first.id + first.name}
-                      defaultValue={first.name}
-                      onBlur={(e) => {
-                        if (e.target.value !== first.name)
-                          patch({ name: e.target.value });
-                      }}
-                    />
+                  <section className="geometry-section">
                     <div className="alignment">
-                      {[
-                        { axis: "left", icon: AlignLeft },
-                        { axis: "center", icon: AlignCenter },
-                        { axis: "right", icon: AlignRight },
-                        { axis: "top", icon: AlignStartVertical },
-                        { axis: "middle", icon: AlignCenterVertical },
-                        { axis: "bottom", icon: AlignEndVertical },
-                      ].map((a) => (
+                      {(
+                        ["union", "subtract", "intersect", "exclude"] as const
+                      ).map((mode) => (
                         <button
-                          key={a.axis}
-                          title={t("Align {axis}", { axis: t(a.axis) })}
-                          aria-label={t("Align {axis}", { axis: t(a.axis) })}
+                          key={mode}
+                          title={t(
+                            {
+                              union: "Union",
+                              subtract: "Subtract",
+                              intersect: "Intersect",
+                              exclude: "Exclude",
+                            }[mode],
+                          )}
+                          aria-label={t(
+                            {
+                              union: "Union",
+                              subtract: "Subtract",
+                              intersect: "Intersect",
+                              exclude: "Exclude",
+                            }[mode],
+                          )}
                           disabled={selected.length < 2}
-                          onClick={() =>
-                            run({
-                              type: "align",
-                              ids: selected,
-                              axis: a.axis as "left",
-                            })
-                          }
+                          onClick={() => {
+                            try {
+                              const result = combineShapes(doc, selected, mode);
+                              change(result.doc, [result.id]);
+                            } catch (error) {
+                              notify((error as Error).message);
+                            }
+                          }}
                         >
-                          <a.icon size={16} />
+                          <BooleanIcon operation={mode} />
                         </button>
                       ))}
+                      <button
+                        aria-label={t("Flatten")}
+                        title={t("Flatten")}
+                        onClick={() => vectorOperation("flatten")}
+                      >
+                        <Combine size={16} />
+                      </button>
                       <InspectorPopover
                         key={first.id + "more"}
                         title={t("More actions")}
                         iconOnly
                       >
+                        <div className="alignment-extra">
+                          {[
+                            { axis: "left", icon: AlignLeft },
+                            { axis: "center", icon: AlignCenter },
+                            { axis: "right", icon: AlignRight },
+                            { axis: "top", icon: AlignStartVertical },
+                            { axis: "middle", icon: AlignCenterVertical },
+                            { axis: "bottom", icon: AlignEndVertical },
+                          ].map((a) => (
+                            <button
+                              key={a.axis}
+                              title={t("Align {axis}", { axis: t(a.axis) })}
+                              aria-label={t("Align {axis}", {
+                                axis: t(a.axis),
+                              })}
+                              disabled={selected.length < 2}
+                              onClick={() =>
+                                run({
+                                  type: "align",
+                                  ids: selected,
+                                  axis: a.axis as "left",
+                                })
+                              }
+                            >
+                              <a.icon size={16} />
+                            </button>
+                          ))}
+                        </div>
                         <div className="component-actions">
+                          {" "}
+                          <div className="section-heading">
+                            <span>
+                              {selected.length > 1
+                                ? t("{count} selected", {
+                                    count: selected.length,
+                                  })
+                                : first.componentSetId
+                                  ? t("Component set")
+                                  : first.type === "component"
+                                    ? t("Main component")
+                                    : t(
+                                        first.type.charAt(0).toUpperCase() +
+                                          first.type.slice(1),
+                                      )}
+                            </span>
+                            <div className="inline">
+                              <button
+                                className="tiny"
+                                aria-label={t("Toggle visibility")}
+                                onClick={() =>
+                                  patch({ visible: !first.visible })
+                                }
+                              >
+                                {first.visible ? (
+                                  <Eye size={14} />
+                                ) : (
+                                  <EyeOff size={14} />
+                                )}
+                              </button>
+                              <button
+                                className="tiny"
+                                aria-label={t("Toggle lock")}
+                                onClick={() => patch({ locked: !first.locked })}
+                              >
+                                {first.locked ? (
+                                  <Lock size={14} />
+                                ) : (
+                                  <Unlock size={14} />
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                          <input
+                            className="layer-title-input"
+                            aria-label={t("Layer name")}
+                            key={first.id + first.name}
+                            defaultValue={first.name}
+                            onBlur={(e) => {
+                              if (e.target.value !== first.name)
+                                patch({ name: e.target.value });
+                            }}
+                          />
                           <div className="section-heading">
                             {t("Component")}
                             <Component size={14} />
@@ -5532,49 +5682,22 @@ export default function App() {
                         )}
                       </InspectorPopover>
                     </div>
-                    <ComponentProperties
-                      key={first.id + "component"}
-                      doc={doc}
+                    <LayerAppearance
                       node={first}
-                      selected={selected}
-                      onChange={change}
-                      onSelect={setSelected}
-                    />
-                    <div className="section-heading">{t("Position")}</div>
-                    <div className="field-grid">
-                      <NumberField
-                        label="X"
-                        disabled={instanceGeometryRestricted}
-                        value={first.x}
-                        onChange={(v) => patch({ x: v })}
-                      />
-                      <NumberField
-                        label="Y"
-                        disabled={instanceGeometryRestricted}
-                        value={first.y}
-                        onChange={(v) => patch({ y: v })}
-                      />
-                    </div>
-                    <ConstraintsControl
-                      doc={doc}
-                      node={first}
+                      nodes={chosen}
                       onChange={patch}
-                      disabled={instanceGeometryRestricted}
                     />
-                    <div className="field-grid">
-                      <NumberField
-                        label="↻"
-                        aria="Rotation"
-                        value={nodeRotation(first)}
-                        onChange={(v) => {
-                          try {
-                            change(setSelectionRotation(doc, selected, v));
-                          } catch (error) {
-                            notify((error as Error).message);
-                          }
-                        }}
+                    <InspectorPopover
+                      title={t("Geometry options")}
+                      iconOnly
+                      icon={<CircleDashed size={16} />}
+                    >
+                      <ConstraintsControl
+                        doc={doc}
+                        node={first}
+                        onChange={patch}
+                        disabled={instanceGeometryRestricted}
                       />
-
                       <div className="position-transforms">
                         <button
                           title={t("Flip horizontal")}
@@ -5590,139 +5713,199 @@ export default function App() {
                         >
                           <FlipVertical2 size={16} />
                         </button>
-                      </div>
-                    </div>
-                    {![
-                      "text",
-                      "ellipse",
-                      "line",
-                      "path",
-                      "star",
-                      "polygon",
-                    ].includes(first.type) && (
-                      <div className="field-grid">
-                        <NumberField
-                          label="⌜"
-                          aria="Corner radius"
-                          value={first.radius}
-                          min={0}
-                          onChange={(v) => patch({ radius: v })}
-                        />
-                        {![
-                          "text",
-                          "ellipse",
-                          "line",
-                          "path",
-                          "star",
-                          "polygon",
-                        ].includes(first.type) && (
-                          <InspectorPopover
-                            key={first.id + "corners"}
-                            title={t("Independent corners")}
-                            iconOnly
-                          >
-                            <div className="field-grid">
-                              {(
-                                [
-                                  "Top left",
-                                  "Top right",
-                                  "Bottom right",
-                                  "Bottom left",
-                                ] as const
-                              ).map((label, index) => (
-                                <NumberField
-                                  key={label}
-                                  label={label}
-                                  aria={label}
-                                  min={0}
-                                  value={
-                                    first.fidelity?.corners?.[index] ??
-                                    first.radius
-                                  }
-                                  onChange={(value) => {
-                                    const corners: [
-                                      number,
-                                      number,
-                                      number,
-                                      number,
-                                    ] = [
-                                      ...(first.fidelity?.corners ?? [
-                                        first.radius,
-                                        first.radius,
-                                        first.radius,
-                                        first.radius,
-                                      ]),
-                                    ];
-                                    corners[index] = value;
-                                    patch({
-                                      fidelity: {
-                                        ...(first.fidelity ?? {
-                                          size: [first.width, first.height],
-                                        }),
-                                        corners,
-                                      },
-                                    });
-                                  }}
-                                />
-                              ))}
-                            </div>
-                          </InspectorPopover>
-                        )}
-                      </div>
-                    )}
-                  </section>
-                  <section className="inspector-dimensions">
-                    <div className="section-heading">{t("Layout")}</div>
+                      </div>{" "}
+                      <InspectorPopover
+                        key={first.id + "corners"}
+                        title={t("Independent corners")}
+                        iconOnly
+                      >
+                        <div className="field-grid">
+                          {(
+                            [
+                              "Top left",
+                              "Top right",
+                              "Bottom right",
+                              "Bottom left",
+                            ] as const
+                          ).map((label, index) => (
+                            <NumberField
+                              key={label}
+                              label={label}
+                              aria={label}
+                              min={0}
+                              value={
+                                first.fidelity?.corners?.[index] ?? first.radius
+                              }
+                              onChange={(value) => {
+                                const corners: [
+                                  number,
+                                  number,
+                                  number,
+                                  number,
+                                ] = [
+                                  ...(first.fidelity?.corners ?? [
+                                    first.radius,
+                                    first.radius,
+                                    first.radius,
+                                    first.radius,
+                                  ]),
+                                ];
+                                corners[index] = value;
+                                patch({
+                                  fidelity: {
+                                    ...(first.fidelity ?? {
+                                      size: [first.width, first.height],
+                                    }),
+                                    corners,
+                                  },
+                                });
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </InspectorPopover>{" "}
+                    </InspectorPopover>
+                    <ComponentProperties
+                      key={first.id + "component"}
+                      doc={doc}
+                      node={first}
+                      selected={selected}
+                      onChange={change}
+                      onSelect={setSelected}
+                    />
+                    <button
+                      className="geometry-ratio tiny"
+                      aria-label={t("Lock aspect ratio")}
+                      aria-pressed={chosen.every(
+                        (n) => !!n.constrainProportions,
+                      )}
+                      title={t("Lock aspect ratio")}
+                      onClick={() =>
+                        patch({
+                          constrainProportions: !chosen.every(
+                            (n) => !!n.constrainProportions,
+                          ),
+                        })
+                      }
+                    >
+                      {chosen.every((n) => !!n.constrainProportions) ? (
+                        <Lock size={16} />
+                      ) : (
+                        <Unlock size={16} />
+                      )}
+                    </button>
                     <div className="field-grid">
                       <NumberField
                         label="W"
                         disabled={
                           instanceGeometryRestricted && first.type === "text"
                         }
-                        value={
-                          first.width *
-                          Math.hypot(
-                            ...(first.fidelity?.linear?.slice(0, 2) ?? [1, 0]),
-                          )
-                        }
+                        value={commonNumber(
+                          chosen,
+                          (n) =>
+                            n.width *
+                            Math.hypot(
+                              ...(n.fidelity?.linear?.slice(0, 2) ?? [1, 0]),
+                            ),
+                        )}
                         min={1}
-                        onChange={(v) =>
-                          patch({
-                            width:
-                              v /
-                              Math.hypot(
-                                ...(first.fidelity?.linear?.slice(0, 2) ?? [
-                                  1, 0,
-                                ]),
-                              ),
-                          })
-                        }
+                        onChange={(v) => setVisualDimension("width", v)}
                       />
                       <NumberField
                         label="H"
                         disabled={
                           instanceGeometryRestricted && first.type === "text"
                         }
-                        value={
-                          first.height *
-                          Math.hypot(
-                            ...(first.fidelity?.linear?.slice(2, 4) ?? [0, 1]),
-                          )
-                        }
+                        value={commonNumber(
+                          chosen,
+                          (n) =>
+                            n.height *
+                            Math.hypot(
+                              ...(n.fidelity?.linear?.slice(2, 4) ?? [0, 1]),
+                            ),
+                        )}
                         min={1}
-                        onChange={(v) =>
-                          patch({
-                            height:
-                              v /
-                              Math.hypot(
-                                ...(first.fidelity?.linear?.slice(2, 4) ?? [
-                                  0, 1,
-                                ]),
-                              ),
-                          })
-                        }
+                        onChange={(v) => setVisualDimension("height", v)}
                       />
                     </div>
+
+                    <div className="field-grid">
+                      <NumberField
+                        label="X"
+                        disabled={instanceGeometryRestricted}
+                        value={commonNumber(chosen, (n) => visualPosition(n).x)}
+                        onChange={(v) => setVisualPosition("x", v)}
+                      />
+                      <NumberField
+                        label="Y"
+                        disabled={instanceGeometryRestricted}
+                        value={commonNumber(chosen, (n) => visualPosition(n).y)}
+                        onChange={(v) => setVisualPosition("y", v)}
+                      />
+                    </div>
+                    <div className="field-grid">
+                      <NumberField
+                        label="↻"
+                        icon={
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth=".8"
+                          >
+                            <path d="M3 4v9h9M3 8a5 5 0 0 1 5 5" />
+                          </svg>
+                        }
+                        aria="Rotation"
+                        value={commonNumber(chosen, nodeRotation)}
+                        onChange={(v) => {
+                          try {
+                            change(setSelectionRotation(doc, selected, v));
+                          } catch (error) {
+                            notify((error as Error).message);
+                          }
+                        }}
+                      />
+
+                      {![
+                        "text",
+                        "ellipse",
+                        "line",
+                        "path",
+                        "star",
+                        "polygon",
+                      ].includes(first.type) && (
+                        <>
+                          <NumberField
+                            label="⌜"
+                            icon={
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth=".8"
+                              >
+                                <path
+                                  d="M3 12V8a5 5 0 0 1 5-5h4"
+                                  strokeDasharray="4 2"
+                                />
+                              </svg>
+                            }
+                            aria="Corner radius"
+                            value={commonNumber(chosen, (n) => n.radius)}
+                            min={0}
+                            onChange={(v) => patch({ radius: v })}
+                          />
+                        </>
+                      )}
+                    </div>
+                  </section>
+                  <section className="inspector-dimensions">
+                    <div className="section-heading">{t("Layout")}</div>
                     {container(first) && (
                       <div className="auto-layout-controls">
                         <div className="section-heading">
@@ -5832,19 +6015,22 @@ export default function App() {
                         )}
                       </div>
                     )}
-                    <LayoutProperties
-                      key={first.id}
-                      doc={doc}
-                      node={first}
-                      onChange={patch}
-                      onSizing={(axis, mode) => {
-                        try {
-                          change(setDimensionMode(doc, first.id, axis, mode));
-                        } catch (error) {
-                          notify((error as Error).message);
-                        }
-                      }}
-                    />
+                    <details className="layout-options">
+                      <summary>{t("Layout options")}</summary>
+                      <LayoutProperties
+                        key={first.id}
+                        doc={doc}
+                        node={first}
+                        onChange={patch}
+                        onSizing={(axis, mode) => {
+                          try {
+                            change(setDimensionMode(doc, first.id, axis, mode));
+                          } catch (error) {
+                            notify((error as Error).message);
+                          }
+                        }}
+                      />
+                    </details>
                     {container(first) && (
                       <label className="clip-control">
                         <input
@@ -5869,11 +6055,10 @@ export default function App() {
                       </label>
                     )}
                   </section>
-                  {first.type === "text" && (
+                  {chosen.length === 1 && first.type === "text" && (
                     <section className="typography-section">
                       <div className="section-heading typography-heading">
-                        {t("Typography")}
-                        <Type size={14} />
+                        {t("Text")}
                       </div>
                       {first.fidelity?.textPath && (
                         <div>
@@ -5934,41 +6119,45 @@ export default function App() {
                           </div>
                         </div>
                       )}
-                      <div
-                        id="text-style-editor-slot"
-                        aria-label={t("Text effects panel")}
-                      >
-                        {(editingText?.id !== first.id ||
-                          editingText.documentId !== doc.id) && (
-                          <div
-                            className="text-sidebar-toolbar text-range-toolbar"
-                            role="toolbar"
-                            aria-label={t("Text effects")}
-                          >
-                            {(
-                              [
-                                ["Bold", "B"],
-                                ["Italic", "I"],
-                                ["Underline", "U"],
-                                ["Strikethrough", "S"],
-                                ["Bulleted list", "• ≡"],
-                                ["Numbered list", "1. ≡"],
-                              ] as const
-                            ).map(([name, label]) => (
-                              <button
-                                key={name}
-                                title={t(name)}
-                                aria-label={t(name)}
-                                onClick={() =>
-                                  actions.find((a) => a.name === name)?.run?.()
-                                }
-                              >
-                                {label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <InspectorPopover title={t("Text formatting")} iconOnly>
+                        <div
+                          id="text-style-editor-slot"
+                          aria-label={t("Text effects panel")}
+                        >
+                          {(editingText?.id !== first.id ||
+                            editingText.documentId !== doc.id) && (
+                            <div
+                              className="text-sidebar-toolbar text-range-toolbar"
+                              role="toolbar"
+                              aria-label={t("Text effects")}
+                            >
+                              {(
+                                [
+                                  ["Bold", "B"],
+                                  ["Italic", "I"],
+                                  ["Underline", "U"],
+                                  ["Strikethrough", "S"],
+                                  ["Bulleted list", "• ≡"],
+                                  ["Numbered list", "1. ≡"],
+                                ] as const
+                              ).map(([name, label]) => (
+                                <button
+                                  key={name}
+                                  title={t(name)}
+                                  aria-label={t(name)}
+                                  onClick={() =>
+                                    actions
+                                      .find((a) => a.name === name)
+                                      ?.run?.()
+                                  }
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </InspectorPopover>
                       <FontFamilySelect
                         doc={doc}
                         value={first.fontFamily}
@@ -6033,67 +6222,119 @@ export default function App() {
                       />
                     </section>
                   )}
-                  <LayerAppearance node={first} onChange={patch} />
-                  <FillProperties
-                    key={first.id + "fills"}
-                    node={first}
-                    onChange={patch}
-                    onCrop={(paintIndex) => {
-                      if (
-                        !first.locked &&
-                        !ancestors(doc, first).some((p) => p.locked)
-                      ) {
+
+                  {chosen.length === 1 && first.image && (
+                    <ImageProperties
+                      node={first}
+                      onChange={patch}
+                      onCrop={() => {
                         setEditingText(null);
                         setEditingVector(null);
-                        setEditingCrop({ id: first.id, paintIndex });
-                      }
-                    }}
-                  />
-                  <section>
-                    <div className="section-heading">
-                      {t("Stroke")}
-                      <button
-                        className="tiny"
-                        aria-label={t("Toggle stroke")}
-                        onClick={() =>
-                          patch({ strokeWidth: first.strokeWidth ? 0 : 1 })
-                        }
-                      >
-                        {first.strokeWidth ? (
-                          <Minus size={14} />
-                        ) : (
-                          <Plus size={14} />
-                        )}
-                      </button>
-                    </div>
-                    {first.strokeWidth > 0 && (
-                      <>
-                        <StrokePaintRow node={first} onChange={patch} />
-                        <NumberField
-                          label="Width"
-                          aria="Stroke width"
-                          value={first.strokeWidth}
-                          min={0}
-                          onChange={(v) => patch({ strokeWidth: v })}
-                        />
-                        <StrokeProperties node={first} onChange={patch} />
-                      </>
-                    )}
-                  </section>
-                  {(container(first) || selected.length > 1) && (
-                    <SelectionColors
-                      selectedIds={selected}
-                      doc={doc}
-                      node={first}
-                      onChange={change}
-                      onError={notify}
+                        setEditingCrop({ id: first.id });
+                      }}
                     />
                   )}
-                  <EffectsProperties
-                    key={first.id + "effects"}
-                    node={first}
-                    onChange={patch}
-                  />
+                  {chosen.length > 1 ? (
+                    <MultiSelectionProperties
+                      palette={[
+                        ...new Set(
+                          doc.nodes
+                            .map((n) => n.fill)
+                            .filter((color) => color !== "none"),
+                        ),
+                      ].map((color) => ({ name: color.toUpperCase(), color }))}
+                      nodes={chosen}
+                      onChange={patch}
+                      onGesture={onStyleGesture}
+                    />
+                  ) : (
+                    <>
+                      <FillProperties
+                        palette={[
+                          ...new Set(
+                            doc.nodes
+                              .map((n) => n.fill)
+                              .filter((color) => color !== "none"),
+                          ),
+                        ].map((color) => ({
+                          name: color.toUpperCase(),
+                          color,
+                        }))}
+                        key={first.id + "fills"}
+                        onGesture={onStyleGesture}
+                        node={first}
+                        onChange={patch}
+                        onCrop={(paintIndex) => {
+                          if (
+                            !first.locked &&
+                            !ancestors(doc, first).some((p) => p.locked)
+                          ) {
+                            setEditingText(null);
+                            setEditingVector(null);
+                            setEditingCrop({ id: first.id, paintIndex });
+                          }
+                        }}
+                      />
+                      <section className="stroke-properties">
+                        <div className="section-heading">
+                          {t("Stroke")}
+                          <button
+                            className="tiny"
+                            aria-label={t("Toggle stroke")}
+                            onClick={() =>
+                              patch({ strokeWidth: first.strokeWidth ? 0 : 1 })
+                            }
+                          >
+                            {first.strokeWidth ? (
+                              <Minus size={14} />
+                            ) : (
+                              <Plus size={14} />
+                            )}
+                          </button>
+                        </div>
+                        {first.strokeWidth > 0 && (
+                          <>
+                            <StrokePaintRow
+                              node={first}
+                              onChange={patch}
+                              onGesture={onStyleGesture}
+                            />
+                            <NumberField
+                              label="Width"
+                              aria="Stroke width"
+                              value={first.strokeWidth}
+                              min={0}
+                              onChange={(v) => patch({ strokeWidth: v })}
+                            />
+                            <StrokeProperties node={first} onChange={patch} />
+                          </>
+                        )}
+                      </section>
+                      {(container(first) || selected.length > 1) && (
+                        <SelectionColors
+                          selectedIds={selected}
+                          doc={doc}
+                          node={first}
+                          onChange={change}
+                          onError={notify}
+                        />
+                      )}
+                      <EffectsProperties
+                        key={first.id + "shadow"}
+                        node={first}
+                        group="shadow"
+                        onGesture={onStyleGesture}
+                        onChange={patch}
+                      />
+                      <EffectsProperties
+                        key={first.id + "blur"}
+                        node={first}
+                        group="blur"
+                        onGesture={onStyleGesture}
+                        onChange={patch}
+                      />
+                    </>
+                  )}
                 </>
               )}
               <section className="export-section">
@@ -6333,6 +6574,20 @@ export default function App() {
                     "Choose the language used throughout BaizeFig. Changes take effect immediately.",
                   )}
                 </p>
+                <label className="setting-row">
+                  {t("Theme")}
+                  <select
+                    aria-label={t("Theme")}
+                    value={theme}
+                    onChange={(e) =>
+                      setTheme(e.target.value as "light" | "dark" | "system")
+                    }
+                  >
+                    <option value="light">{t("Light")}</option>
+                    <option value="dark">{t("Dark")}</option>
+                    <option value="system">{t("Follow system")}</option>
+                  </select>
+                </label>
                 <div className="setting-row">
                   <label htmlFor="interface-language">
                     {t("Interface language")}
@@ -6558,247 +6813,6 @@ export default function App() {
                 </p>
               </>
             )}
-            {modal === "variables" && (
-              <>
-                <p className="muted">
-                  {t(
-                    "Local color variables. Bind a fill to reuse the same color across this document.",
-                  )}
-                </p>
-                {(doc.variableCollections ?? []).map((collection) => (
-                  <label className="variable-mode" key={collection.id}>
-                    {collection.name}
-                    <select
-                      aria-label={t("Mode for {name}", {
-                        name: collection.name,
-                      })}
-                      value={collection.activeMode}
-                      onChange={(e) => {
-                        try {
-                          change(
-                            setVariableMode(doc, collection.id, e.target.value),
-                          );
-                        } catch (error) {
-                          notify((error as Error).message);
-                        }
-                      }}
-                    >
-                      {collection.modes.map((mode) => (
-                        <option key={mode.id} value={mode.id}>
-                          {mode.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ))}
-                {(doc.typedVariables ?? []).map((v) => (
-                  <div className="variable-row" key={v.id}>
-                    <span>{v.name}</span>
-                    <input
-                      aria-label={t("Value for {name}", { name: v.name })}
-                      key={`${v.id}-${v.value}`}
-                      type={
-                        v.type === "number"
-                          ? "number"
-                          : v.type === "boolean"
-                            ? "checkbox"
-                            : "text"
-                      }
-                      defaultValue={
-                        v.type !== "boolean" ? String(v.value) : undefined
-                      }
-                      defaultChecked={
-                        v.type === "boolean" ? Boolean(v.value) : undefined
-                      }
-                      onChange={(e) => {
-                        if (v.type === "boolean") {
-                          try {
-                            change(
-                              editTypedVariable(doc, v.id, e.target.checked),
-                            );
-                          } catch (error) {
-                            notify((error as Error).message);
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (v.type !== "boolean") {
-                          try {
-                            change(
-                              editTypedVariable(
-                                doc,
-                                v.id,
-                                v.type === "number"
-                                  ? Number(e.target.value)
-                                  : e.target.value,
-                              ),
-                            );
-                          } catch (error) {
-                            notify((error as Error).message);
-                          }
-                        }
-                      }}
-                    />
-                    <select
-                      aria-label={t("Bind variable {name}", { name: v.name })}
-                      value=""
-                      disabled={!selected.length}
-                      onChange={(e) => {
-                        try {
-                          let next = doc;
-                          for (const node of chosen)
-                            next = execute(next, {
-                              type: "update",
-                              ids: [node.id],
-                              patch: {
-                                bindings: {
-                                  ...node.bindings,
-                                  [e.target.value]: v.id,
-                                },
-                              },
-                            }).doc;
-                          change(next);
-                        } catch (error) {
-                          notify((error as Error).message);
-                        }
-                      }}
-                    >
-                      <option value="">{t("Bind property")}</option>
-                      {Object.entries(bindingTypes)
-                        .filter(
-                          ([key, type]) =>
-                            type === v.type &&
-                            chosen.every((n) => canBindProperty(n, key)),
-                        )
-                        .map(([key]) => (
-                          <option key={key} value={key}>
-                            {t(key)}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                ))}
-                {first &&
-                  (doc.variableCollections ?? []).map((c) => (
-                    <label className="variable-mode" key={`node-${c.id}`}>
-                      <span>
-                        {t("Layer mode")} · {c.name}
-                      </span>
-                      <select
-                        aria-label={t("Layer mode for {name}", {
-                          name: c.name,
-                        })}
-                        value={first.variableModes?.[c.id] ?? ""}
-                        onChange={(e) => {
-                          const modes = { ...first.variableModes };
-                          if (e.target.value) modes[c.id] = e.target.value;
-                          else delete modes[c.id];
-                          patch({ variableModes: modes });
-                        }}
-                      >
-                        <option value="">{t("Inherit")}</option>
-                        {c.modes.map((m) => (
-                          <option key={m.id} value={m.id}>
-                            {m.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ))}
-                <div className="variables-list">
-                  {(doc.variables ?? []).map((v) => (
-                    <div className="variable-row" key={v.id}>
-                      <input
-                        type="color"
-                        aria-label={t("Color {name}", { name: v.name })}
-                        value={v.value}
-                        onChange={(e) => {
-                          try {
-                            change(
-                              editVariableColor(doc, v.id, e.target.value),
-                            );
-                          } catch (error) {
-                            notify((error as Error).message);
-                          }
-                        }}
-                      />
-                      <input
-                        aria-label={t("Name {name}", { name: v.name })}
-                        defaultValue={v.name}
-                        onBlur={(e) => {
-                          if (
-                            e.target.value.trim() &&
-                            e.target.value !== v.name
-                          )
-                            change({
-                              ...doc,
-                              variables: doc.variables?.map((a) =>
-                                a.id === v.id
-                                  ? { ...a, name: e.target.value.trim() }
-                                  : a,
-                              ),
-                            });
-                        }}
-                      />
-                      <code>{v.value}</code>
-                      <button
-                        disabled={!selected.length}
-                        onClick={() => {
-                          run({
-                            type: "update",
-                            ids: selected,
-                            patch: { variableId: v.id, fill: v.value },
-                          });
-                          notify("Variable applied to selection");
-                        }}
-                      >
-                        {t("Apply")}
-                      </button>
-                      <button
-                        aria-label={t("Delete variable {name}", {
-                          name: v.name,
-                        })}
-                        onClick={() => {
-                          try {
-                            change(removeVariable(doc, v.id));
-                          } catch (error) {
-                            notify((error as Error).message);
-                          }
-                        }}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  className="primary"
-                  onClick={() =>
-                    change({
-                      ...doc,
-                      variables: [
-                        ...(doc.variables ?? []),
-                        {
-                          id: id(),
-                          name: t("Color {number}", {
-                            number: (doc.variables?.length ?? 0) + 1,
-                          }),
-                          value: "#0d99ff",
-                        },
-                      ],
-                    })
-                  }
-                >
-                  <Plus size={15} />
-                  {t("Create color variable")}
-                </button>
-                <p className="notice">
-                  {t(
-                    "Color, number, string and boolean variables retain modes and resolvable aliases.",
-                  )}
-                </p>
-              </>
-            )}
             {modal === "export" && (
               <ExportDialog
                 doc={doc}
@@ -6864,7 +6878,7 @@ export default function App() {
                   {!doc.nodes.some((n) => n.type === "component") && (
                     <p className="muted">
                       {t(
-                        "Select layers and create a component with ⌥ ⌘ K / Ctrl Alt K.",
+                        "Select layers and create a component with ⌘ K / Ctrl K.",
                       )}
                     </p>
                   )}
@@ -7240,65 +7254,5 @@ export default function App() {
         </div>
       )}
     </div>
-  );
-}
-function NumberField({
-  label,
-  aria,
-  value,
-  onChange,
-  min = -100000,
-  max = 100000,
-  step = 1,
-  disabled = false,
-}: {
-  label: string;
-  aria?: string;
-  value: number;
-  onChange: (n: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
-  disabled?: boolean;
-}) {
-  const { t } = useI18n();
-  const [draft, setDraft] = useState(String(Math.round(value * 100) / 100));
-  useEffect(() => setDraft(String(Math.round(value * 100) / 100)), [value]);
-  function apply() {
-    const n = Number(draft);
-    if (Number.isFinite(n) && draft.trim()) {
-      const next = Math.min(max, Math.max(min, n));
-      if (next !== value) onChange(next);
-      setDraft(String(next));
-    } else setDraft(String(value));
-  }
-  return (
-    <label
-      className="number-field"
-      title={
-        disabled
-          ? t("Edit the main component to change instance layer geometry")
-          : undefined
-      }
-    >
-      <span>{t(label)}</span>
-      <input
-        type="number"
-        disabled={disabled}
-        aria-label={t(aria ?? label)}
-        value={draft}
-        step={step}
-        min={min}
-        max={max}
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={apply}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            apply();
-            e.currentTarget.blur();
-          }
-        }}
-      />
-    </label>
   );
 }

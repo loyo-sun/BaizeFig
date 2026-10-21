@@ -1,0 +1,32 @@
+
+Running 25 tests using 1 worker
+
+(node:77743) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/ui/experience-completion.spec.ts:31:1 › color controls remain open across paint changes and a drag is one undo step (5.5s)
+  ✓   2 tests/ui/experience-completion.spec.ts:71:1 › sidebar collapse and live window resize keep rulers fitted to the canvas (3.0s)
+  ✓   3 tests/ui/experience-completion.spec.ts:89:1 › corner resize and exterior rotation have separate measured hit regions (2.4s)
+  ✓   4 tests/ui/experience-completion.spec.ts:120:1 › paint opacity and shadow parameters commit a single undoable edit (2.2s)
+  ✓   5 tests/ui/experience-completion.spec.ts:152:1 › prototype port creates a persisted navigation and preview follows it (2.5s)
+  ✓   6 tests/ui/experience-completion.spec.ts:218:1 › inspect displays actual CSS and SVG, fonts support search and keyboard selection (3.0s)
+  ✓   7 tests/ui/experience-completion.spec.ts:259:1 › rotated selection keeps local dimensions and Alt resize keeps the center (2.4s)
+  ✓   8 tests/ui/experience-completion.spec.ts:295:1 › theme follows the operating system without changing document paints (2.3s)
+  ✓   9 tests/ui/experience-completion.spec.ts:315:1 › aspect ratio is persisted, numeric resize is atomic and fill collapse is reversible (2.3s)
+  ✓  10 tests/ui/experience-matrix.spec.ts:12:7 › 1100 en light property and popup bounds (2.0s)
+  ✓  11 tests/ui/experience-matrix.spec.ts:12:7 › 1100 en dark property and popup bounds (2.3s)
+  ✓  12 tests/ui/experience-matrix.spec.ts:12:7 › 1100 zh-CN light property and popup bounds (2.3s)
+  ✓  13 tests/ui/experience-matrix.spec.ts:12:7 › 1100 zh-CN dark property and popup bounds (1.9s)
+  ✓  14 tests/ui/experience-matrix.spec.ts:12:7 › 1440 en light property and popup bounds (2.0s)
+  ✓  15 tests/ui/experience-matrix.spec.ts:12:7 › 1440 en dark property and popup bounds (2.3s)
+  ✓  16 tests/ui/experience-matrix.spec.ts:12:7 › 1440 zh-CN light property and popup bounds (2.0s)
+  ✓  17 tests/ui/experience-matrix.spec.ts:12:7 › 1440 zh-CN dark property and popup bounds (1.8s)
+  ✓  18 tests/ui/experience-matrix.spec.ts:12:7 › 1920 en light property and popup bounds (1.9s)
+  ✓  19 tests/ui/experience-matrix.spec.ts:12:7 › 1920 en dark property and popup bounds (1.9s)
+  ✓  20 tests/ui/experience-matrix.spec.ts:12:7 › 1920 zh-CN light property and popup bounds (1.9s)
+  ✓  21 tests/ui/experience-matrix.spec.ts:12:7 › 1920 zh-CN dark property and popup bounds (1.9s)
+  ✓  22 tests/ui/experience-matrix.spec.ts:87:1 › native Chinese IME composition commits once and survives undo and redo (1.9s)
+  ✓  23 tests/ui/experience-matrix.spec.ts:131:1 › ordinary color and typography palettes apply values without token bindings (2.0s)
+  ✓  24 tests/ui/remove-design-tokens.spec.ts:5:3 › retired design tokens are absent and old designs remain editable: en (2.4s)
+  ✓  25 tests/ui/remove-design-tokens.spec.ts:5:3 › retired design tokens are absent and old designs remain editable: zh-CN (2.2s)
+
+  25 passed (1.0m)

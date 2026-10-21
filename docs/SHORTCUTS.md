@@ -6,15 +6,16 @@
 |---|---|---|
 | Move | V | V |
 | Scale | K | K |
-| Frame | F | F |
+| Frame | B | B |
 | Rectangle | R | R |
-| Ellipse | O | O |
+| Ellipse | E | E |
 | Line | L | L |
-| Pen / polyline | P | P |
 | Text | T | T |
 | Hand | H | H |
+| Pen / polyline | Shift + C | Shift + C |
+| Arrow | Shift + L | Shift + L |
 | Pencil | Shift + P | Shift + P |
-| Actions | ⌘ + K | Ctrl + K |
+| Actions | ⌘ + Shift + P | Ctrl + Shift + P |
 | Undo | ⌘ + Z | Ctrl + Z |
 | Redo | ⌘ + Shift + Z | Ctrl + Shift + Z |
 | Copy | ⌘ + C | Ctrl + C |
@@ -27,7 +28,7 @@
 | Group selection | ⌘ + G | Ctrl + G |
 | Ungroup selection | ⌘ + ⌫ | Ctrl + ⌫ |
 | Frame selection | ⌘ + ⌥ + G | Ctrl + Alt + G |
-| Create component | ⌘ + ⌥ + K | Ctrl + Alt + K |
+| Create component | ⌘ + K | Ctrl + K |
 | Select all | ⌘ + A | Ctrl + A |
 | Select inverse | ⌘ + Shift + A | Ctrl + Shift + A |
 | Copy properties | ⌘ + ⌥ + C | Ctrl + Alt + C |
@@ -46,6 +47,10 @@
 | Flip vertical | Shift + V | Shift + V |
 | Add auto layout | Shift + A | Shift + A |
 | Remove auto layout | ⌥ + Shift + A | Alt + Shift + A |
+| Union | ⌥ + Shift + U | Alt + Shift + U |
+| Subtract | ⌥ + Shift + S | Alt + Shift + S |
+| Intersect | ⌥ + Shift + I | Alt + Shift + I |
+| Exclude | ⌥ + Shift + E | Alt + Shift + E |
 | Flatten | ⌥ + Shift + F | Alt + Shift + F |
 | Outline stroke | ⌘ + ⌥ + O | Ctrl + Alt + O |
 | Show/Hide selection | ⌘ + Shift + H | Ctrl + Shift + H |

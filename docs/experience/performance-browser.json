@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-21T03:00:28.298Z",
+  "method": "Fresh isolated Chrome contexts; same synthetic 1000-layer file; production previews. Event capture to next animation frame is not hardware input latency. JS heap is not process/GPU memory. Report both pre-GC heap and retained heap after explicit CDP garbage collection, identically for both builds.",
+  "runs": [
+    {
+      "name": "before",
+      "url": "http://127.0.0.1:4338",
+      "bootMs": 1325,
+      "importMs": 347,
+      "inputSamples": 26,
+      "inputToFrameP95": 33.40000009536743,
+      "worstFrame": 33.29999999999973,
+      "preGCHeapMiB": 21.622304916381836,
+      "heapMiB": 17.86764907836914,
+      "metrics": {
+        "Nodes": 7973,
+        "LayoutDuration": 0.100181,
+        "ScriptDuration": 0.821238,
+        "TaskDuration": 1.456257,
+        "JSHeapUsedSize": 18735588
+      },
+      "externalOrigins": [],
+      "diagnostics": "Performance diagnostics\nClose\n\nMeasurements apply only to this device and browser. Input latency measures event handling to the next animation frame, not hardware latency. Runs stop after 30 seconds.\n\n1000 Layers · 1 Undo checkpoints · 2.3 MiB Estimated history size\n\nLast save: 19.9 ms · Last restore: 0 ms\n\nStart measurement"
+    },
+    {
+      "name": "after",
+      "url": "http://127.0.0.1:4329",
+      "bootMs": 1254,
+      "importMs": 259,
+      "inputSamples": 27,
+      "inputToFrameP95": 27.800000190734863,
+      "worstFrame": 16.800000000000182,
+      "preGCHeapMiB": 36.1927433013916,
+      "heapMiB": 14.820671081542969,
+      "metrics": {
+        "Nodes": 5720,
+        "LayoutDuration": 0.105079,
+        "ScriptDuration": 0.819422,
+        "TaskDuration": 1.300009,
+        "JSHeapUsedSize": 15540600
+      },
+      "externalOrigins": [],
+      "diagnostics": "Performance diagnostics\nClose\n\nMeasurements apply only to this device and browser. Input latency measures event handling to the next animation frame, not hardware latency. Runs stop after 30 seconds.\n\n1000 Layers · 1 Undo checkpoints · 2.3 MiB Estimated history size\n\nLast save: 4.7 ms · Last restore: 0 ms\n\nStart measurement"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import {
   type Sizing,
 } from "./layoutSizing";
 import { useI18n } from "./LanguageContext";
+import { NumberField } from "./NumberField";
 export function LayoutProperties({
   doc,
   node,
@@ -37,21 +38,14 @@ export function LayoutProperties({
     optional = false,
     min = 0,
   ) => (
-    <label>
-      {t(label)}
-      <input
-        aria-label={t(label)}
-        type="number"
-        min={min}
-        value={value ?? ""}
-        placeholder={optional ? t("Automatic") : undefined}
-        onChange={(e) => {
-          if (e.target.value === "") {
-            if (optional) apply(undefined);
-          } else apply(Number(e.target.value));
-        }}
-      />
-    </label>
+    <NumberField
+      label={label}
+      value={value ?? null}
+      min={min}
+      onChange={apply}
+      onClear={optional ? () => apply(undefined) : undefined}
+      placeholder={optional ? t("Automatic") : undefined}
+    />
   );
   const options = (
     label: string,

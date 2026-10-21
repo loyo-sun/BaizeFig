@@ -1,0 +1,299 @@
+.smart-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--ui-surface);
+  color: var(--workspace-ink);
+  scrollbar-gutter: stable;
+}
+.smart-panel .cloud-panel-header {
+  padding: 20px 16px 0;
+}
+.smart-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.smart-heading-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) 9%, var(--ui-surface));
+}
+.smart-heading h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--ui-ink);
+}
+.smart-heading p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--ui-muted);
+}
+.smart-panel .cloud-panel-header > p {
+  margin: 14px 0 16px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ui-muted);
+}
+.smart-deployment {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--ui-field);
+  border-radius: 10px;
+}
+.smart-panel .smart-deployment button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 6px;
+  font-size: 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--workspace-ink);
+  cursor: pointer;
+}
+.smart-panel .smart-deployment button[aria-checked="true"] {
+  background: var(--ui-surface);
+  color: var(--ui-accent);
+  box-shadow: 0 1px 3px #0000000c;
+  font-weight: 500;
+}
+.smart-panel .cloud-panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 12px 24px;
+}
+.smart-panel .cloud-card {
+  min-width: 0;
+  padding: 14px 12px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+}
+.smart-panel .cloud-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.smart-panel .cloud-card-heading > div {
+  min-width: 0;
+  flex: 1;
+}
+.smart-panel .cloud-service-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) 8%, var(--ui-surface));
+}
+.smart-panel .cloud-card h3 {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ui-ink);
+}
+.smart-panel .cloud-card-heading p {
+  margin: 2px 0 0;
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--ui-muted);
+}
+.smart-account-state {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 3px 6px;
+  font-size: 10px;
+  line-height: 16px;
+  color: var(--ui-muted);
+  background: var(--ui-field);
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.smart-panel .cloud-card-content {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ui-border);
+  min-width: 0;
+}
+.smart-panel .cloud-card-content > p {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--workspace-ink);
+}
+.smart-panel .cloud-card button,
+.smart-panel .cloud-panel-footer button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--ui-field);
+  color: var(--workspace-ink);
+  font-size: 12px;
+  cursor: pointer;
+}
+.smart-panel .cloud-card button:hover,
+.smart-panel .cloud-panel-footer button:hover {
+  background: var(--ui-selected);
+}
+.smart-panel .cloud-card button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.smart-panel .cloud-card button.cloud-primary {
+  background: var(--ui-accent);
+  border-color: var(--ui-accent);
+  color: var(--ui-surface);
+  font-weight: 500;
+}
+.smart-panel .cloud-card button.cloud-primary:hover {
+  filter: brightness(0.94);
+}
+.smart-panel .cloud-card-content p.cloud-fine-print {
+  font-size: 10px;
+  line-height: 1.7;
+  margin: 10px 0 0;
+  color: var(--ui-muted);
+}
+.smart-panel .cloud-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 112px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  color: var(--ui-muted);
+  background: var(--ui-field);
+  font-size: 10px;
+  line-height: 14px;
+  overflow-wrap: anywhere;
+}
+.smart-panel .cloud-status i {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.smart-panel .cloud-status.is-connected {
+  color: var(--ui-accent);
+  background: color-mix(in srgb, var(--ui-accent) 9%, var(--ui-surface));
+}
+.smart-panel .cloud-field-label {
+  display: block;
+  font-size: 10px;
+  line-height: 16px;
+  color: var(--ui-muted);
+}
+.smart-panel .cloud-address-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 6px;
+}
+.smart-panel .cloud-address-row code {
+  padding: 8px;
+  background: var(--ui-field);
+  border: 1px solid var(--ui-border);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--workspace-ink);
+}
+.smart-panel .cloud-address-row button {
+  align-self: flex-end;
+  width: auto;
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: 10px;
+}
+.smart-panel .cloud-card-content .cloud-empty-address {
+  margin: 6px 0 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--ui-muted);
+}
+.smart-panel .cloud-mcp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--ui-border);
+}
+.smart-panel .cloud-card button.cloud-danger {
+  color: #d94848;
+  background: transparent;
+}
+.smart-panel .cloud-account-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 20px;
+}
+.smart-panel .cloud-account-row > span {
+  color: var(--ui-muted);
+}
+.smart-panel .cloud-account-row strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+  font-weight: 500;
+  color: var(--ui-ink);
+}
+.smart-panel .cloud-account-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  color: var(--ui-accent);
+  font-size: 11px;
+  text-decoration: none;
+}
+.smart-panel .cloud-panel-footer {
+  padding: 0 4px;
+}
+.smart-panel .cloud-panel-footer button {
+  background: transparent;
+  color: var(--ui-muted);
+}
+.smart-panel .cloud-panel-footer p {
+  margin: 10px 4px 0;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.7;
+  color: var(--ui-muted);
+}
+.smart-panel :is(button, a):focus-visible {
+  outline: 2px solid var(--ui-accent);
+  outline-offset: 2px;
+}

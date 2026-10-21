@@ -1,3 +1,4 @@
+import { applyCompositeBindings } from "./compositeTokens";
 import { equalData } from "./equalData";
 import { type Document, type Node, ancestors, relayout } from "./core";
 import { applyConstraints } from "./layout";
@@ -406,6 +407,7 @@ export function editTypedVariable(
   variable.value = value;
   if (variable.values && collection)
     variable.values[collection.activeMode] = { value };
+  applyCompositeBindings(doc);
   applyTypedBindings(doc);
   reflowVariableGeometry(original, doc);
   return doc;

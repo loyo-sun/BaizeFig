@@ -1,0 +1,12 @@
+
+Running 5 tests using 1 worker
+
+(node:65072) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/ui/drawing-experience.spec.ts:233:1 › selected geometry exports actual SVG and PNG without the reference environment (3.3s)
+  ✓  2 tests/ui/editor.spec.ts:9:1 › draw, edit, duplicate, undo, persist, export and recover a design (4.3s)
+  ✓  3 tests/ui/experience-completion.spec.ts:31:1 › color controls remain open across paint changes and a drag is one undo step (3.2s)
+  ✓  4 tests/ui/experience-completion.spec.ts:214:1 › inspect displays actual CSS and SVG, fonts support search and keyboard selection (3.7s)
+  ✓  5 tests/ui/experience-workflows.spec.ts:271:1 › vector editing moves a real point, keeps local undo and survives export (2.5s)
+
+  5 passed (23.6s)

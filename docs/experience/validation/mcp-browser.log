@@ -1,0 +1,13 @@
+
+Running 6 tests using 1 worker
+
+(node:65241) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/ui/mcp.spec.ts:15:3 › sdk: live paired design, preview, edit, screenshot, retry, undo and revoke (4.8s)
+  ✓  2 tests/ui/mcp.spec.ts:15:3 › json-rpc: live paired design, preview, edit, screenshot, retry, undo and revoke (4.8s)
+  ✓  3 tests/ui/mcp.spec.ts:296:1 › left Cloud panel replaces Tools and opens local deployment without an account (1.3s)
+  ✓  4 tests/ui/mcp.spec.ts:368:1 › unified wizard exports generic guides and keeps deployment secrets private (1.3s)
+  ✓  5 tests/ui/mcp.spec.ts:438:1 › OAuth access is approved in the real canvas and revoked on disconnect (1.2s)
+  ✓  6 tests/ui/mcp.spec.ts:572:1 › local automatic pairing requires no token and edits the real canvas (1.4s)
+
+  6 passed (17.1s)

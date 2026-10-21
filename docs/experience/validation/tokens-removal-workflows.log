@@ -1,0 +1,15 @@
+
+Running 8 tests using 1 worker
+
+(node:78666) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  1 tests/ui/editor.spec.ts:9:1 › draw, edit, duplicate, undo, persist, export and recover a design (5.2s)
+  ✓  2 tests/ui/editor.spec.ts:67:1 › text editing ignores drawing shortcuts and rejects unsupported Sketch imports honestly (2.1s)
+  ✓  3 tests/ui/experience-workflows.spec.ts:31:1 › nested flex and grid edits preserve geometry, one-step history and native reload (3.7s)
+  ✓  4 tests/ui/experience-workflows.spec.ts:110:1 › image fit, crop cancellation and replacement retain layer size and undo (2.3s)
+  ✓  5 tests/ui/experience-workflows.spec.ts:191:1 › component child text overrides survive reopen and reset independently (3.6s)
+  ✓  6 tests/ui/experience-workflows.spec.ts:271:1 › vector editing moves a real point, keeps local undo and survives export (2.4s)
+  ✓  7 tests/ui/remove-design-tokens.spec.ts:5:3 › retired design tokens are absent and old designs remain editable: en (2.5s)
+  ✓  8 tests/ui/remove-design-tokens.spec.ts:5:3 › retired design tokens are absent and old designs remain editable: zh-CN (2.3s)
+
+  8 passed (26.7s)

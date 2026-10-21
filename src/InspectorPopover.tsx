@@ -7,10 +7,12 @@ export function InspectorPopover({
   title,
   children,
   iconOnly = false,
+  icon,
 }: {
   title: string;
   children: ReactNode;
   iconOnly?: boolean;
+  icon?: ReactNode;
 }) {
   const id = useId();
   const { t } = useI18n();
@@ -22,7 +24,7 @@ export function InspectorPopover({
         title={title}
         aria-label={title}
       >
-        <SlidersHorizontal size={14} />
+        {icon ?? <SlidersHorizontal size={14} />}
         {!iconOnly && <span>{title}</span>}
       </button>
       <div

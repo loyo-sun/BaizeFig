@@ -1,0 +1,142 @@
+{
+  "date": "2026-10-21",
+  "plan": "https://app.notion.com/p/3ff41f73948881b8be88ff6266f03768",
+  "branch": "codex/penpot-experience",
+  "baseline": "20804018143d986c8002b870fc9c60cc689de22b",
+  "status": "Core implementation and functional acceptance complete; strict pixel parity NOT passed; W7 proposal delivered",
+  "preview": "http://127.0.0.1:4318",
+  "scope": {
+    "implemented": [
+      "W1",
+      "W2",
+      "W3",
+      "W4",
+      "W5",
+      "W6"
+    ],
+    "acceptance": "W8 executed with explicit visual limitations",
+    "W7": "service proposal only, per user confirmation"
+  },
+  "validation": {
+    "unitPassed": 451,
+    "unitSkipped": 1,
+    "unitFilesPassed": 95,
+    "browserCorePassed": 47,
+    "browserMcpPassed": 6,
+    "browserUniqueTotalPassed": 53,
+    "mcpTransportPassed": 9,
+    "build": "passed",
+    "independentReplayPassed": 7,
+    "unitRetry": "First concurrent run:450 passed,1 glyph cache timeout,1 skipped. Unchanged test thresholds; isolated serial full rerun:451 passed,1 skipped.",
+    "transportRetry": "Sandbox denied local listen; rerun with normal local permissions:9 passed.",
+    "skips": [
+      "Full 1337-root external .fig long run not repeated; 20-page matrix, largest subtree, all networks and cached glyphs were tested."
+    ],
+    "platform": "macOS Chrome; other OS/browsers not exercised"
+  },
+  "pixel": {
+    "viewport": [
+      1440,
+      1000
+    ],
+    "dpr": 1,
+    "zoom": 1,
+    "masks": [],
+    "different_pixels_between_repeat_captures": 0,
+    "metrics": {
+      "full": {
+        "box": [
+          0,
+          0,
+          1440,
+          1000
+        ],
+        "different_percent": 1.3257638888888887,
+        "mean_absolute_rgb": 0.6452960648148148
+      },
+      "left": {
+        "box": [
+          0,
+          0,
+          340,
+          1000
+        ],
+        "different_percent": 1.7020588235294116,
+        "mean_absolute_rgb": 0.9651019607843138
+      },
+      "right": {
+        "box": [
+          1122,
+          0,
+          1440,
+          1000
+        ],
+        "different_percent": 2.672641509433962,
+        "mean_absolute_rgb": 1.383517819706499
+      },
+      "common_canvas": {
+        "box": [
+          358,
+          100,
+          1122,
+          900
+        ],
+        "different_percent": 0.09522251308900524,
+        "mean_absolute_rgb": 0.06016088568935427
+      },
+      "toolbar": {
+        "box": [
+          567,
+          28,
+          873,
+          88
+        ],
+        "different_percent": 6.748366013071895,
+        "mean_absolute_rgb": 4.001125635439361
+      },
+      "geometry": {
+        "box": [
+          1134,
+          180,
+          1382,
+          284
+        ],
+        "different_percent": 1.2949751861042185,
+        "mean_absolute_rgb": 0.7521841397849462
+      }
+    },
+    "limitations": "Core workflows implemented and tested; raw differences remain, so strict pixel parity has not passed. Brand is intentionally different. Remaining labels, icons, property controls and workflow differences are included in raw differences. Do not interpret a raw pixel difference as completion percentage."
+  },
+  "remainingVisual": [
+    "Independent icons and brand differ",
+    "Ruler labels and selection dimension badge differ",
+    "Not every property popover, vector toolbar and intermediate state has identical pixels"
+  ],
+  "penpotReference": "stopped with dedicated VM; data retained",
+  "W7": "https://app.notion.com/p/40041f739488812981ccc892ba6b1617",
+  "publication": "No release, push or pull request",
+  "acceptancePage": "https://app.notion.com/p/40041f7394888147b707e2ad08a02c82",
+  "notionVerified": true,
+  "latestScopeChange": {
+    "request": "Completely remove design-token feature",
+    "status": "UI, authoring, alias and binding entry points removed; old files materialized to ordinary attributes",
+    "historicalMetrics": "Pixel/performance numbers predate removal; not re-certified for current UI",
+    "record": "tokens-removal.md",
+    "validation": {
+      "build": "passed",
+      "unitPassed": 446,
+      "unitSkipped": 10,
+      "browserUniquePassed": 31,
+      "legacyAndStorageFinalPassed": 7
+    }
+  },
+  "smartTab": {
+    "status": "implemented",
+    "tab": "智能 / Smart",
+    "content": "Existing cloud services",
+    "build": "passed",
+    "browserPassed": 10,
+    "i18nPassed": 6,
+    "record": "smart-tab.md"
+  }
+}

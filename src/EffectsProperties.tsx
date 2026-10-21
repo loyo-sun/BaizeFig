@@ -1,3 +1,5 @@
+import { ColorSwatch, type StyleGesture } from "./ColorSwatch";
+import { CommitNumberInput } from "./CommitNumberInput";
 import { InspectorPopover } from "./InspectorPopover";
 import {
   ArrowDown,
@@ -21,8 +23,12 @@ export const effectNames = {
 export function EffectsProperties({
   node,
   onChange,
+  group,
+  onGesture,
 }: {
   node: Node;
+  onGesture?: StyleGesture;
+  group?: "shadow" | "blur";
   onChange: (patch: Partial<Node>) => void;
 }) {
   const { t } = useI18n();
@@ -52,18 +58,37 @@ export function EffectsProperties({
     save(next);
   };
   return (
-    <section className="effects-properties" aria-label={t("Effects")}>
+    <section
+      className="effects-properties"
+      aria-label={t(
+        group === "shadow" ? "Shadow" : group === "blur" ? "Blur" : "Effects",
+      )}
+    >
       <div className="section-heading">
-        {t("Effects")}
+        {t(
+          group === "shadow" ? "Shadow" : group === "blur" ? "Blur" : "Effects",
+        )}
         <button
-          title={t("Add effect")}
-          aria-label={t("Add effect")}
+          title={t(
+            group === "shadow"
+              ? "Add shadow"
+              : group === "blur"
+                ? "Add blur"
+                : "Add effect",
+          )}
+          aria-label={t(
+            group === "shadow"
+              ? "Add shadow"
+              : group === "blur"
+                ? "Add blur"
+                : "Add effect",
+          )}
           disabled={effects.length >= 100}
           onClick={() =>
             save([
               ...effects,
               {
-                type: "drop-shadow",
+                type: group === "blur" ? "blur" : "drop-shadow",
                 color: "#00000040",
                 radius: 4,
                 spread: 0,
@@ -77,90 +102,84 @@ export function EffectsProperties({
           <Plus size={14} />
         </button>
       </div>
-      {effects.map((effect, index) => (
-        <div className="effect-card" key={index}>
-          <div className="effect-toolbar">
-            <select
-              aria-label={t("Effect type")}
-              value={effect.type}
-              onChange={(e) =>
-                update(index, {
-                  type: e.target.value as ImportedEffect["type"],
-                })
-              }
-            >
-              {Object.entries(effectNames).map(([value, name]) => (
-                <option value={value} key={value}>
-                  {t(name)}
-                </option>
-              ))}
-            </select>
-            <button
-              title={t(effect.visible ? "Hide effect" : "Show effect")}
-              aria-label={t(effect.visible ? "Hide effect" : "Show effect")}
-              onClick={() => update(index, { visible: !effect.visible })}
-            >
-              {effect.visible ? <Eye size={14} /> : <EyeOff size={14} />}
-            </button>
-            <button
-              title={t("Duplicate effect")}
-              aria-label={t("Duplicate effect")}
-              disabled={effects.length >= 100}
-              onClick={() =>
-                save([
-                  ...effects.slice(0, index + 1),
-                  { ...effect },
-                  ...effects.slice(index + 1),
-                ])
-              }
-            >
-              <Copy size={14} />
-            </button>
-            <button
-              title={t("Remove effect")}
-              aria-label={t("Remove effect")}
-              onClick={() => save(effects.filter((_, i) => i !== index))}
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
-          <InspectorPopover title={t(effectNames[effect.type])} iconOnly>
-            <div className="effect-fields">
-              {(effect.type === "drop-shadow" ||
-                effect.type === "inner-shadow") && (
-                <>
-                  <label>
-                    {t("Effect color")}
-                    <input
-                      aria-label={t("Effect color")}
-                      type="color"
-                      value={effect.color.slice(0, 7)}
-                      onChange={(e) =>
-                        update(index, {
-                          color:
-                            e.target.value +
-                            (effect.color.length === 9
-                              ? effect.color.slice(7)
-                              : "ff"),
-                        })
-                      }
-                    />
-                  </label>
-                  <label>
-                    {t("Opacity")}
-                    <input
-                      aria-label={t("Effect opacity")}
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={Math.round(
-                        (effect.color.length === 9
-                          ? parseInt(effect.color.slice(7), 16) / 255
-                          : 1) * 100,
-                      )}
-                      onChange={(e) => {
-                        const v = e.target.valueAsNumber;
-                        if (Number.isFinite(v))
+      {effects.map((effect, index) =>
+        group &&
+        (group === "blur") !==
+          (effect.type === "blur" ||
+            effect.type === "background-blur") ? null : (
+          <div className="effect-card" key={index}>
+            <div className="effect-toolbar">
+              <select
+                aria-label={t("Effect type")}
+                value={effect.type}
+                onChange={(e) =>
+                  update(index, {
+                    type: e.target.value as ImportedEffect["type"],
+                  })
+                }
+              >
+                {Object.entries(effectNames).map(([value, name]) => (
+                  <option value={value} key={value}>
+                    {t(name)}
+                  </option>
+                ))}
+              </select>
+              <button
+                title={t(effect.visible ? "Hide effect" : "Show effect")}
+                aria-label={t(effect.visible ? "Hide effect" : "Show effect")}
+                onClick={() => update(index, { visible: !effect.visible })}
+              >
+                {effect.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+              </button>
+              <button
+                title={t("Duplicate effect")}
+                aria-label={t("Duplicate effect")}
+                disabled={effects.length >= 100}
+                onClick={() =>
+                  save([
+                    ...effects.slice(0, index + 1),
+                    { ...effect },
+                    ...effects.slice(index + 1),
+                  ])
+                }
+              >
+                <Copy size={14} />
+              </button>
+              <button
+                title={t("Remove effect")}
+                aria-label={t("Remove effect")}
+                onClick={() => save(effects.filter((_, i) => i !== index))}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+            <InspectorPopover title={t(effectNames[effect.type])} iconOnly>
+              <div className="effect-fields">
+                {(effect.type === "drop-shadow" ||
+                  effect.type === "inner-shadow") && (
+                  <>
+                    <label>
+                      {t("Effect color")}
+                      <ColorSwatch
+                        label={t("Effect color")}
+                        value={effect.color}
+                        onChange={(color) => update(index, { color })}
+                        onGesture={onGesture}
+                      />
+                    </label>
+                    <label>
+                      {t("Opacity")}
+                      <CommitNumberInput
+                        aria-label={t("Effect opacity")}
+                        type="number"
+                        min={0}
+                        max={100}
+                        value={Math.round(
+                          (effect.color.length === 9
+                            ? parseInt(effect.color.slice(7), 16) / 255
+                            : 1) * 100,
+                        )}
+                        onValueChange={(v) => {
                           update(index, {
                             color:
                               effect.color.slice(0, 7) +
@@ -168,69 +187,66 @@ export function EffectsProperties({
                                 .toString(16)
                                 .padStart(2, "0"),
                           });
-                      }}
-                    />
-                  </label>
-                </>
-              )}
-              {(
-                [
-                  "radius",
-                  ...(effect.type.endsWith("shadow")
-                    ? ["spread", "x", "y"]
-                    : []),
-                ] as const
-              ).map((field) => (
-                <label key={field}>
-                  {t(
-                    field === "radius"
-                      ? "Blur radius"
-                      : field === "spread"
-                        ? "Spread"
-                        : field.toUpperCase(),
-                  )}
-                  <input
-                    aria-label={t(
+                        }}
+                      />
+                    </label>
+                  </>
+                )}
+                {(
+                  [
+                    "radius",
+                    ...(effect.type.endsWith("shadow")
+                      ? ["spread", "x", "y"]
+                      : []),
+                  ] as const
+                ).map((field) => (
+                  <label key={field}>
+                    {t(
                       field === "radius"
                         ? "Blur radius"
                         : field === "spread"
                           ? "Spread"
-                          : `Effect ${field.toUpperCase()}`,
+                          : field.toUpperCase(),
                     )}
-                    type="number"
-                    step="any"
-                    min={field === "radius" ? 0 : undefined}
-                    value={effect[field as "radius" | "spread" | "x" | "y"]}
-                    onChange={(e) => {
-                      const v = e.target.valueAsNumber;
-                      if (Number.isFinite(v) && (field !== "radius" || v >= 0))
-                        update(index, { [field]: v });
-                    }}
-                  />
-                </label>
-              ))}
-            </div>
-            <div className="effect-order">
-              <button
-                title={t("Move effect up")}
-                aria-label={t("Move effect up")}
-                disabled={index === 0}
-                onClick={() => move(index, -1)}
-              >
-                <ArrowUp size={14} />
-              </button>
-              <button
-                title={t("Move effect down")}
-                aria-label={t("Move effect down")}
-                disabled={index === effects.length - 1}
-                onClick={() => move(index, 1)}
-              >
-                <ArrowDown size={14} />
-              </button>
-            </div>
-          </InspectorPopover>
-        </div>
-      ))}
+                    <CommitNumberInput
+                      aria-label={t(
+                        field === "radius"
+                          ? "Blur radius"
+                          : field === "spread"
+                            ? "Spread"
+                            : `Effect ${field.toUpperCase()}`,
+                      )}
+                      type="number"
+                      step="any"
+                      min={field === "radius" ? 0 : undefined}
+                      value={effect[field as "radius" | "spread" | "x" | "y"]}
+                      onValueChange={(v) => update(index, { [field]: v })}
+                    />
+                  </label>
+                ))}
+              </div>
+              <div className="effect-order">
+                <button
+                  title={t("Move effect up")}
+                  aria-label={t("Move effect up")}
+                  disabled={index === 0}
+                  onClick={() => move(index, -1)}
+                >
+                  <ArrowUp size={14} />
+                </button>
+                <button
+                  title={t("Move effect down")}
+                  aria-label={t("Move effect down")}
+                  disabled={index === effects.length - 1}
+                  onClick={() => move(index, 1)}
+                >
+                  <ArrowDown size={14} />
+                </button>
+              </div>
+            </InspectorPopover>
+          </div>
+        ),
+      )}
     </section>
   );
 }

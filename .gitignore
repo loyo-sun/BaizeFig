@@ -7,3 +7,6 @@ playwright-report/
 .DS_Store
 *.log
 *.tsbuildinfo
+
+# Keep reproducible acceptance logs with the experience evidence.
+!docs/experience/validation/*.log

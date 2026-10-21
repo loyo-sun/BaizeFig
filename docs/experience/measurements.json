@@ -1,0 +1,146 @@
+[
+  {
+    "selector": "left-panel",
+    "x": 0,
+    "y": 0,
+    "width": 318,
+    "height": 1000,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "workspace-tabs",
+    "x": 12,
+    "y": 52,
+    "width": 294,
+    "height": 36,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "tool-dock grouped-dock",
+    "x": 567.5,
+    "y": 28,
+    "width": 305,
+    "height": 60,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "right-panel",
+    "x": 1122,
+    "y": 0,
+    "width": 318,
+    "height": 1000,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "right-tabs",
+    "x": 1134,
+    "y": 48,
+    "width": 294,
+    "height": 36,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 0,
+    "y": 0,
+    "width": 0,
+    "height": 0,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 1134,
+    "y": 180,
+    "width": 122,
+    "height": 32,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 1260,
+    "y": 180,
+    "width": 122,
+    "height": 32,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 1134,
+    "y": 216,
+    "width": 122,
+    "height": 32,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 1260,
+    "y": 216,
+    "width": 122,
+    "height": 32,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 1134,
+    "y": 252,
+    "width": 122,
+    "height": 32,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  },
+  {
+    "selector": "number-field",
+    "x": 1260,
+    "y": 252,
+    "width": 122,
+    "height": 32,
+    "font": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+    "fontSize": "12px"
+  }
+]

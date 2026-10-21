@@ -1,0 +1,73 @@
+{
+  "viewport": [
+    1440,
+    1000
+  ],
+  "dpr": 1,
+  "zoom": 1,
+  "masks": [],
+  "different_pixels_between_repeat_captures": 0,
+  "metrics": {
+    "full": {
+      "box": [
+        0,
+        0,
+        1440,
+        1000
+      ],
+      "different_percent": 1.3257638888888887,
+      "mean_absolute_rgb": 0.6452960648148148
+    },
+    "left": {
+      "box": [
+        0,
+        0,
+        340,
+        1000
+      ],
+      "different_percent": 1.7020588235294116,
+      "mean_absolute_rgb": 0.9651019607843138
+    },
+    "right": {
+      "box": [
+        1122,
+        0,
+        1440,
+        1000
+      ],
+      "different_percent": 2.672641509433962,
+      "mean_absolute_rgb": 1.383517819706499
+    },
+    "common_canvas": {
+      "box": [
+        358,
+        100,
+        1122,
+        900
+      ],
+      "different_percent": 0.09522251308900524,
+      "mean_absolute_rgb": 0.06016088568935427
+    },
+    "toolbar": {
+      "box": [
+        567,
+        28,
+        873,
+        88
+      ],
+      "different_percent": 6.748366013071895,
+      "mean_absolute_rgb": 4.001125635439361
+    },
+    "geometry": {
+      "box": [
+        1134,
+        180,
+        1382,
+        284
+      ],
+      "different_percent": 1.2949751861042185,
+      "mean_absolute_rgb": 0.7521841397849462
+    }
+  },
+  "limitations": "Core workflows implemented and tested; raw differences remain, so strict pixel parity has not passed. Brand is intentionally different. Remaining labels, icons, property controls and workflow differences are included in raw differences. Do not interpret a raw pixel difference as completion percentage."
+}

@@ -1,0 +1,24 @@
+{
+  "before": {
+    "Width": "200",
+    "Height": "120",
+    "X axis": "182",
+    "Y axis": "280",
+    "Rotation": "0"
+  },
+  "centered": {
+    "Width": "220",
+    "Height": "130",
+    "X axis": "172",
+    "Y axis": "275",
+    "Rotation": "0"
+  },
+  "focusedAfterEnter": {
+    "tag": "BODY",
+    "aria": null
+  },
+  "rotated": {
+    "tag": "BODY",
+    "aria": null
+  }
+}

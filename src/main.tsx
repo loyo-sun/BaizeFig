@@ -1,3 +1,4 @@
+import "@fontsource-variable/work-sans/wght.css";
 import "@fontsource-variable/inter/wght.css";
 import "@fontsource-variable/inter/wght-italic.css";
 import { ensureBundledFonts } from "./bundledFonts";
@@ -16,3 +17,13 @@ void ensureBundledFonts().finally(() =>
     </React.StrictMode>,
   ),
 );
+
+import "./experience.css";
+
+import "./themes.css";
+
+import "./colorPicker.css";
+
+import "./quickPalette.css";
+
+import "./smartPanel.css";

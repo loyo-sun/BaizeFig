@@ -1,4 +1,8 @@
 import {
+  applyCompositeBindings,
+  freezeCompositeReferences,
+} from "./compositeTokens";
+import {
   inheritedModes,
   applyTypedBindings,
   reflowVariableGeometry,
@@ -62,6 +66,7 @@ export function setVariableMode(
     if (node.variableId)
       node.fill = resolveVariable(doc, node.variableId, new Set(), node);
   const previous = structuredClone(doc);
+  applyCompositeBindings(doc);
   applyTypedBindings(doc);
   reflowVariableGeometry(previous, doc);
   return doc;
@@ -71,6 +76,7 @@ function refresh(doc: Document): Document {
   for (const n of designNodes(doc))
     if (n.variableId) n.fill = resolveVariable(doc, n.variableId, new Set(), n);
   const previous = structuredClone(doc);
+  applyCompositeBindings(doc);
   applyTypedBindings(doc);
   reflowVariableGeometry(previous, doc);
   return doc;
@@ -96,6 +102,7 @@ export function removeVariable(original: Document, id: string): Document {
   const doc = structuredClone(original),
     v = doc.variables?.find((v) => v.id === id);
   if (!v) return doc;
+  freezeCompositeReferences(doc, id);
   for (const dependent of doc.variables ?? [])
     for (const [mode, value] of Object.entries(dependent.values ?? {}))
       if ("alias" in value && value.alias === id) {

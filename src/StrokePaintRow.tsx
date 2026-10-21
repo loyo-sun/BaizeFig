@@ -1,11 +1,15 @@
+import { ColorSwatch, type StyleGesture } from "./ColorSwatch";
 import { Eye, EyeOff, Minus } from "lucide-react";
 import type { Node } from "./core";
 import { useI18n } from "./LanguageContext";
+import { CommitNumberInput } from "./CommitNumberInput";
 export function StrokePaintRow({
   node,
   onChange,
+  onGesture,
 }: {
   node: Node;
+  onGesture?: StyleGesture;
   onChange: (patch: Partial<Node>) => void;
 }) {
   const { t } = useI18n();
@@ -15,11 +19,11 @@ export function StrokePaintRow({
   const opacity = f.hiddenStrokeOpacity ?? f.strokeOpacity ?? 1;
   return (
     <div className="paint-row">
-      <input
-        type="color"
-        aria-label={t("Stroke color")}
-        value={node.stroke === "none" ? "#202a24" : node.stroke.slice(0, 7)}
-        onChange={(e) => onChange({ stroke: e.target.value })}
+      <ColorSwatch
+        label={t("Stroke color")}
+        value={node.stroke === "none" ? "#202a24" : node.stroke}
+        onChange={(stroke) => onChange({ stroke })}
+        onGesture={onGesture}
       />
       <input
         className="paint-hex"
@@ -38,26 +42,23 @@ export function StrokePaintRow({
         }}
       />
       <label className="paint-opacity">
-        <input
+        <CommitNumberInput
           type="number"
           min={0}
           max={100}
           aria-label={t("Stroke opacity")}
           value={Math.round(opacity * 100)}
-          onChange={(e) => {
-            const v = e.target.valueAsNumber;
-            if (Number.isFinite(v))
-              onChange({
-                fidelity: {
-                  ...f,
-                  ...(f.hiddenStrokeOpacity === undefined
-                    ? { strokeOpacity: Math.max(0, Math.min(100, v)) / 100 }
-                    : {
-                        hiddenStrokeOpacity:
-                          Math.max(0, Math.min(100, v)) / 100,
-                      }),
-                },
-              });
+          onValueChange={(v) => {
+            onChange({
+              fidelity: {
+                ...f,
+                ...(f.hiddenStrokeOpacity === undefined
+                  ? { strokeOpacity: Math.max(0, Math.min(100, v)) / 100 }
+                  : {
+                      hiddenStrokeOpacity: Math.max(0, Math.min(100, v)) / 100,
+                    }),
+              },
+            });
           }}
         />
         <span>%</span>

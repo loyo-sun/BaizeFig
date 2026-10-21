@@ -1,0 +1,101 @@
+{
+  "penpot": {
+    "style": {
+      "family": "worksans, vazirmatn, sans-serif",
+      "size": "14px",
+      "weight": "400",
+      "lineHeight": "0px",
+      "letterSpacing": "normal",
+      "fontKerning": "auto",
+      "fontFeatureSettings": "normal",
+      "fontSmoothing": "auto",
+      "textRendering": "auto",
+      "fontSynthesis": "weight style small-caps"
+    },
+    "faces": [
+      {
+        "family": "worksans",
+        "weight": "normal",
+        "status": "loaded"
+      }
+    ],
+    "metrics": [
+      {
+        "text": "200",
+        "width": 25.577972412109375,
+        "ascent": 9.380000114440918
+      },
+      {
+        "text": "B1B2B5",
+        "width": 49.19596862792969,
+        "ascent": 9.380000114440918
+      },
+      {
+        "text": "LAYOUT",
+        "width": 53.26995849609375,
+        "ascent": 9.380000114440918
+      }
+    ],
+    "platform": {
+      "fonts": [
+        {
+          "familyName": "Work Sans",
+          "postScriptName": "WorkSans-Regular",
+          "isCustomFont": true,
+          "glyphCount": 3
+        }
+      ]
+    }
+  },
+  "baize": {
+    "style": {
+      "family": "\"Work Sans Variable\", \"PingFang SC\", sans-serif",
+      "size": "14px",
+      "weight": "400",
+      "lineHeight": "0px",
+      "letterSpacing": "normal",
+      "fontKerning": "auto",
+      "fontFeatureSettings": "normal",
+      "fontSmoothing": "antialiased",
+      "textRendering": "auto",
+      "fontSynthesis": "none"
+    },
+    "faces": [
+      {
+        "family": "Work Sans Variable",
+        "weight": "100 900",
+        "status": "unloaded"
+      },
+      {
+        "family": "Work Sans Variable",
+        "weight": "100 900",
+        "status": "unloaded"
+      },
+      {
+        "family": "Work Sans Variable",
+        "weight": "100 900",
+        "status": "loaded"
+      }
+    ],
+    "metrics": [
+      {
+        "text": "200",
+        "width": 25.577972412109375,
+        "ascent": 9.380000114440918
+      },
+      {
+        "text": "B1B2B5",
+        "width": 49.19596862792969,
+        "ascent": 9.380000114440918
+      },
+      {
+        "text": "LAYOUT",
+        "width": 53.26995849609375,
+        "ascent": 9.380000114440918
+      }
+    ],
+    "platform": {
+      "fonts": []
+    }
+  }
+}

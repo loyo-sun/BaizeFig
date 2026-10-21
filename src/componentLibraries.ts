@@ -28,6 +28,8 @@ export interface LibraryPackage {
   variables?: Document["variables"];
   variableCollections?: Document["variableCollections"];
   typedVariables?: Document["typedVariables"];
+  compositeTokens?: Document["compositeTokens"];
+  tokenThemes?: Document["tokenThemes"];
 }
 export interface LibrarySubscription {
   id: string;
@@ -80,6 +82,8 @@ export function validateLibraryPackage(
     d.variables = p.variables;
     d.variableCollections = p.variableCollections;
     d.typedVariables = p.typedVariables;
+    d.compositeTokens = p.compositeTokens;
+    d.tokenThemes = p.tokenThemes;
     validateDocument(d);
     for (const n of entry.nodes)
       if (n.type === "instance" && n.componentId && !refs.has(n.componentId))
@@ -167,6 +171,8 @@ export function publishLibrary(
     variables: structuredClone(doc.variables),
     variableCollections: structuredClone(doc.variableCollections),
     typedVariables: structuredClone(doc.typedVariables),
+    compositeTokens: structuredClone(doc.compositeTokens),
+    tokenThemes: structuredClone(doc.tokenThemes),
   };
   validateLibraryPackage(pack);
   return pack;
@@ -231,6 +237,42 @@ export function useLibrary(
     collectionId: v.collectionId ? colRef(v.collectionId) : undefined,
     values: values(v.values, v.collectionId),
   }));
+  const remapTokenValue = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(remapTokenValue);
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value).map(([k, v]) => [
+          k,
+          k === "token" && typeof v === "string"
+            ? varRef(v)
+            : remapTokenValue(v),
+        ]),
+      );
+    return value;
+  };
+  const composite = (pack.compositeTokens ?? []).map((token) => ({
+    ...structuredClone(token),
+    id: varRef(token.id),
+    collectionId: token.collectionId ? colRef(token.collectionId) : undefined,
+    value: remapTokenValue(token.value) as typeof token.value,
+    values: token.values
+      ? Object.fromEntries(
+          Object.entries(token.values).map(([mode, entry]) => [
+            modeRef(token.collectionId ?? "", mode),
+            "alias" in entry
+              ? { alias: varRef(entry.alias) }
+              : { value: remapTokenValue(entry.value) as typeof token.value },
+          ]),
+        )
+      : undefined,
+  }));
+  const themes = (pack.tokenThemes ?? []).map((theme) => ({
+    ...theme,
+    id: varRef(theme.id),
+    modes: Object.fromEntries(
+      Object.entries(theme.modes).map(([c, m]) => [colRef(c), modeRef(c, m)]),
+    ),
+  }));
   const mergeById = <T extends { id: string }>(
     old: T[] | undefined,
     next: T[],
@@ -241,8 +283,14 @@ export function useLibrary(
   doc.variableCollections = mergeById(doc.variableCollections, collections);
   doc.variables = mergeById(doc.variables, variables);
   doc.typedVariables = mergeById(doc.typedVariables, typed);
+  doc.compositeTokens = mergeById(doc.compositeTokens, composite);
+  doc.tokenThemes = mergeById(doc.tokenThemes, themes);
   function remapVariables(n: Partial<Node>) {
     if (n.variableId) n.variableId = varRef(n.variableId);
+    if (n.compositeBindings)
+      n.compositeBindings = Object.fromEntries(
+        Object.entries(n.compositeBindings).map(([k, v]) => [k, varRef(v)]),
+      );
     if (n.bindings)
       n.bindings = Object.fromEntries(
         Object.entries(n.bindings).map(([key, value]) => [key, varRef(value)]),

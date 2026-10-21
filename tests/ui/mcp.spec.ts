@@ -4,9 +4,9 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 // @ts-expect-error server is intentionally plain JavaScript, shared with Node deployment.
 import { createBridge } from "../../bridge/server.mjs";
 async function openMcp(page: Page) {
-  await page.getByRole("button", { name: "Cloud", exact: true }).click();
+  await page.getByRole("button", { name: "Extensions", exact: true }).click();
   await page
-    .getByRole("button", { name: "MCP connection", exact: true })
+    .getByRole("menuitem", { name: "MCP connection", exact: true })
     .click();
 }
 const token = "integration-access-" + "a".repeat(40);
@@ -58,7 +58,7 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
         localStorage.setItem("baizefig.ui.language", "en"),
       );
       await page.goto("/");
-      await expect(page.getByText("Saved locally")).toBeVisible();
+      await expect(page.getByLabel("Saved locally")).toBeVisible();
       await page
         .getByRole("button", { name: "Local files", exact: true })
         .click();
@@ -235,7 +235,7 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
       // Return to the completed design for the recorded preview.
       await page.keyboard.press("ControlOrMeta+Shift+z");
       await page.keyboard.press("ControlOrMeta+Shift+z");
-      await expect(page.getByText("Saved locally")).toBeVisible();
+      await expect(page.getByLabel("Saved locally")).toBeVisible();
       await page.screenshot({
         path: `test-results/mcp-${implementation}-design.png`,
         fullPage: true,
@@ -293,7 +293,7 @@ for (const implementation of ["sdk", "json-rpc"] as const) {
   });
 }
 
-test("left Cloud panel replaces Tools and opens local deployment without an account", async ({
+test("Smart tab contains cloud services and opens local deployment without an account", async ({
   page,
 }) => {
   await page.addInitScript(() =>
@@ -306,7 +306,7 @@ test("left Cloud panel replaces Tools and opens local deployment without an acco
   await expect(
     page.getByRole("button", { name: "Tools", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Cloud", exact: true }).click();
+  await page.getByRole("tab", { name: "Smart", exact: true }).click();
   await expect(
     page.getByRole("region", { name: "Cloud services", exact: true }),
   ).toBeVisible();
@@ -327,15 +327,20 @@ test("left Cloud panel replaces Tools and opens local deployment without an acco
     name: "Cloud services",
     exact: true,
   });
-  const deploymentSelect = panel.getByRole("combobox", {
-    name: "Deployment method",
+  const cloudChoice = panel.getByRole("radio", {
+    name: "LoyoCloud",
+    exact: true,
   });
-  await expect(deploymentSelect).toHaveValue("cloud");
+  const selfChoice = panel.getByRole("radio", {
+    name: "Your own deployment",
+    exact: true,
+  });
+  await expect(cloudChoice).toHaveAttribute("aria-checked", "true");
   await expect(
     panel.getByRole("button", { name: "Configure deployment", exact: true }),
   ).toHaveCount(0);
-  await deploymentSelect.selectOption("self");
-  await expect(deploymentSelect).toHaveValue("self");
+  await selfChoice.click();
+  await expect(selfChoice).toHaveAttribute("aria-checked", "true");
   await expect(
     panel.getByRole("button", { name: "Sign in to LoyoCloud", exact: true }),
   ).toHaveCount(0);
@@ -345,11 +350,11 @@ test("left Cloud panel replaces Tools and opens local deployment without an acco
   await expect(
     panel.getByRole("button", { name: "MCP connection", exact: true }),
   ).toBeVisible();
-  await deploymentSelect.selectOption("cloud");
+  await cloudChoice.click();
   await expect(
     panel.getByRole("button", { name: "Sign in to LoyoCloud", exact: true }),
   ).toBeVisible();
-  await deploymentSelect.selectOption("self");
+  await selfChoice.click();
   await page
     .getByRole("button", { name: "Configure deployment", exact: true })
     .click();

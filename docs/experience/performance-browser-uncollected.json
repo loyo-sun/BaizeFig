@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-21T02:55:29.034Z",
+  "method": "Fresh isolated Chrome contexts; same synthetic 1000-layer file; production previews. Event capture to next animation frame is not hardware input latency. JS heap is not process/GPU memory.",
+  "runs": [
+    {
+      "name": "before",
+      "url": "http://127.0.0.1:4338",
+      "bootMs": 1200,
+      "importMs": 217,
+      "inputSamples": 26,
+      "inputToFrameP95": 34.799999952316284,
+      "worstFrame": 16.800000000000182,
+      "heapMiB": 21.59928321838379,
+      "metrics": {
+        "Nodes": 7977,
+        "LayoutDuration": 0.108305,
+        "ScriptDuration": 0.799002,
+        "TaskDuration": 1.34725,
+        "JSHeapUsedSize": 21165892
+      },
+      "externalOrigins": [],
+      "diagnostics": "Performance diagnostics\nClose\n\nMeasurements apply only to this device and browser. Input latency measures event handling to the next animation frame, not hardware latency. Runs stop after 30 seconds.\n\n1000 Layers · 1 Undo checkpoints · 2.3 MiB Estimated history size\n\nLast save: 4.3 ms · Last restore: 0 ms\n\nStart measurement"
+    },
+    {
+      "name": "after",
+      "url": "http://127.0.0.1:4329",
+      "bootMs": 1068,
+      "importMs": 247,
+      "inputSamples": 26,
+      "inputToFrameP95": 27,
+      "worstFrame": 16.800000000000182,
+      "heapMiB": 36.6263427734375,
+      "metrics": {
+        "Nodes": 23573,
+        "LayoutDuration": 0.066206,
+        "ScriptDuration": 0.742796,
+        "TaskDuration": 1.099749,
+        "JSHeapUsedSize": 36796216
+      },
+      "externalOrigins": [],
+      "diagnostics": "Performance diagnostics\nClose\n\nMeasurements apply only to this device and browser. Input latency measures event handling to the next animation frame, not hardware latency. Runs stop after 30 seconds.\n\n1000 Layers · 1 Undo checkpoints · 2.3 MiB Estimated history size\n\nLast save: 5.8 ms · Last restore: 0 ms\n\nStart measurement"
+    }
+  ]
+}

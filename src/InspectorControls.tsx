@@ -2,6 +2,7 @@ import { selectionColors, replaceSelectionColor } from "./selectionColors";
 import { Eye, EyeOff } from "lucide-react";
 import { type Document, type Node } from "./core";
 import { useI18n } from "./LanguageContext";
+import { CommitNumberInput } from "./CommitNumberInput";
 export function ConstraintsControl({
   doc,
   node,
@@ -96,9 +97,11 @@ export function ConstraintsControl({
 }
 export function LayerAppearance({
   node,
+  nodes = [node],
   onChange,
 }: {
   node: Node;
+  nodes?: Node[];
   onChange: (p: Partial<Node>) => void;
 }) {
   const { t } = useI18n();
@@ -108,7 +111,15 @@ export function LayerAppearance({
       <div className="appearance-row">
         <select
           aria-label={t("Blend mode")}
-          value={node.fidelity?.blendMode ?? "normal"}
+          value={
+            nodes.every(
+              (n) =>
+                (n.fidelity?.blendMode ?? "normal") ===
+                (node.fidelity?.blendMode ?? "normal"),
+            )
+              ? (node.fidelity?.blendMode ?? "normal")
+              : "mixed"
+          }
           onChange={(e) =>
             onChange({
               fidelity: {
@@ -118,6 +129,9 @@ export function LayerAppearance({
             })
           }
         >
+          <option value="mixed" disabled>
+            {t("Mixed")}
+          </option>
           {[
             "normal",
             "multiply",
@@ -142,20 +156,20 @@ export function LayerAppearance({
           ))}
         </select>
         <label>
-          <input
+          <span className="opacity-unit">%</span>
+          <CommitNumberInput
             type="number"
             aria-label={t("Opacity")}
             min={0}
             max={100}
-            value={Math.round(node.opacity * 100)}
-            onChange={(e) =>
-              onChange({
-                opacity:
-                  Math.min(100, Math.max(0, Number(e.target.value))) / 100,
-              })
+            value={
+              nodes.every((n) => n.opacity === node.opacity)
+                ? Math.round(node.opacity * 100)
+                : null
             }
+            placeholder={t("Mixed")}
+            onValueChange={(v) => onChange({ opacity: v / 100 })}
           />
-          %
         </label>
         <button
           title={t("Toggle visibility")}

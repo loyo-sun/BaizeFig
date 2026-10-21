@@ -1,0 +1,42 @@
+[
+  {
+    "name": "alt-shift",
+    "zoomLabel": "100%",
+    "g": {
+      "Width": "400",
+      "Height": "400",
+      "X axis": "-18",
+      "Y axis": "80"
+    }
+  },
+  {
+    "name": "alt-reverse",
+    "zoomLabel": "100%",
+    "g": {
+      "Width": "400",
+      "Height": "240",
+      "X axis": "182",
+      "Y axis": "280"
+    }
+  },
+  {
+    "name": "alt-at-77-percent",
+    "zoomLabel": "77%",
+    "g": {
+      "Width": "520",
+      "Height": "312",
+      "X axis": "-213",
+      "Y axis": "-32"
+    }
+  },
+  {
+    "name": "alt-reset-100-percent",
+    "zoomLabel": "100%",
+    "g": {
+      "Width": "400",
+      "Height": "240",
+      "X axis": "-18",
+      "Y axis": "160"
+    }
+  }
+]

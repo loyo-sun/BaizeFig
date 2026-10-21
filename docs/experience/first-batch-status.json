@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-21",
+  "plan": "https://app.notion.com/p/3ff41f73948881b8be88ff6266f03768",
+  "branch": "codex/penpot-experience",
+  "status": "First implementation of W0-W3, full parity pending",
+  "preview": "http://127.0.0.1:4318",
+  "validation": {
+    "unitPassed": 427,
+    "unitSkipped": 10,
+    "unitFilesPassed": 88,
+    "browserPassed": 18,
+    "build": "passed",
+    "independentReplayPassed": 4
+  },
+  "pixel": {
+    "viewport": [
+      1440,
+      1000
+    ],
+    "dpr": 1,
+    "zoom": 1,
+    "masks": [],
+    "different_pixels_between_repeat_captures": 0,
+    "metrics": {
+      "full": {
+        "box": [
+          0,
+          0,
+          1440,
+          1000
+        ],
+        "different_percent": 5.262291666666666,
+        "mean_absolute_rgb": 1.4825365740740741
+      },
+      "left": {
+        "box": [
+          0,
+          0,
+          340,
+          1000
+        ],
+        "different_percent": 6.450588235294117,
+        "mean_absolute_rgb": 2.3536156862745097
+      },
+      "right": {
+        "box": [
+          1122,
+          0,
+          1440,
+          1000
+        ],
+        "different_percent": 8.703144654088051,
+        "mean_absolute_rgb": 2.792545073375262
+      },
+      "common_canvas": {
+        "box": [
+          358,
+          100,
+          1122,
+          900
+        ],
+        "different_percent": 0.6876636125654451,
+        "mean_absolute_rgb": 0.1294753490401396
+      },
+      "toolbar": {
+        "box": [
+          567,
+          28,
+          873,
+          88
+        ],
+        "different_percent": 17.75599128540305,
+        "mean_absolute_rgb": 5.945515613652868
+      },
+      "geometry": {
+        "box": [
+          1134,
+          180,
+          1382,
+          284
+        ],
+        "different_percent": 3.7957506203473947,
+        "mean_absolute_rgb": 1.0618150330851943
+      }
+    },
+    "limitations": "First batch, not full UI parity. Brand is intentionally different. Remaining labels, icons, property controls and workflow differences are included in raw differences. Do not interpret a raw pixel difference as completion percentage."
+  },
+  "remaining": [
+    "W1-W3 residual pixel and state calibration",
+    "W4 properties/text/images",
+    "W5 layouts/components/vectors",
+    "W6 remaining workflows",
+    "W7 separately scoped services"
+  ],
+  "penpotReference": "stopped, data retained"
+}

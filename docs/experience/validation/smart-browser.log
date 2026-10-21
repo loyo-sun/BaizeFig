@@ -1,0 +1,17 @@
+
+Running 10 tests using 1 worker
+
+(node:79919) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/ui/mcp.spec.ts:15:3 › sdk: live paired design, preview, edit, screenshot, retry, undo and revoke (5.1s)
+  ✓   2 tests/ui/mcp.spec.ts:15:3 › json-rpc: live paired design, preview, edit, screenshot, retry, undo and revoke (4.4s)
+  ✓   3 tests/ui/mcp.spec.ts:296:1 › Smart tab contains cloud services and opens local deployment without an account (1.2s)
+  ✓   4 tests/ui/mcp.spec.ts:372:1 › unified wizard exports generic guides and keeps deployment secrets private (1.2s)
+  ✓   5 tests/ui/mcp.spec.ts:442:1 › OAuth access is approved in the real canvas and revoked on disconnect (1.1s)
+  ✓   6 tests/ui/mcp.spec.ts:576:1 › local automatic pairing requires no token and edits the real canvas (1.4s)
+  ✓   7 tests/ui/smart-panel.spec.ts:8:3 › Smart tab integrates cloud services: zh-CN light 1440 (1.9s)
+  ✓   8 tests/ui/smart-panel.spec.ts:8:3 › Smart tab integrates cloud services: zh-CN dark 1100 (1.9s)
+  ✓   9 tests/ui/smart-panel.spec.ts:8:3 › Smart tab integrates cloud services: en light 1100 (2.1s)
+  ✓  10 tests/ui/smart-panel.spec.ts:8:3 › Smart tab integrates cloud services: en dark 1440 (2.0s)
+
+  10 passed (24.0s)
