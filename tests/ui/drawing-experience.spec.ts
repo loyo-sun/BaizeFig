@@ -90,9 +90,7 @@ test("drag Escape commits the last move as one undoable transaction", async ({
   await expect(field(page, "X")).toHaveValue("182");
   await expect(field(page, "Y")).toHaveValue("280");
 });
-test("workspace measurements, main menu and inspect", async ({
-  page,
-}) => {
+test("workspace measurements, main menu and inspect", async ({ page }) => {
   for (const [selector, x, width] of [
     [".left-panel", 0, 318],
     [".right-panel", 1122, 318],
@@ -102,7 +100,7 @@ test("workspace measurements, main menu and inspect", async ({
     expect(box.width).toBe(width);
   }
   const toolbar = (await page.locator(".tool-dock").boundingBox())!;
-  expect(toolbar.x + toolbar.width/2).toBeCloseTo(720,0);
+  expect(toolbar.x + toolbar.width / 2).toBeCloseTo(720, 0);
   expect(toolbar.width).toBeLessThan(400);
   await draw(page);
   const input = (await field(page, "W").boundingBox())!;
@@ -114,10 +112,10 @@ test("workspace measurements, main menu and inspect", async ({
   await page.getByRole("button", { name: "Design", exact: true }).click();
   await page.getByRole("button", { name: "Main menu", exact: true }).click();
   await page
-    .getByRole("menuitem", { name: "Help and account", exact: true })
+    .getByRole("menuitem", { name: "Help and settings", exact: true })
     .click();
   await expect(
-    page.getByRole("menuitem", { name: "MCP connection", exact: true }),
+    page.getByRole("menuitem", { name: "Help documentation", exact: true }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toBeHidden();

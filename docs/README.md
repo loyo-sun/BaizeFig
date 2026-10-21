@@ -2,6 +2,7 @@
 
 白泽 · **通万物、识万象。**
 
+- [用户帮助中心（含 MCP 配置）](../public/help/index.html)
 - [开发与接入指南](DEVELOPMENT.md)
 - [自部署 MCP 指南](MCP.md)
 - [架构与命令协议](ARCHITECTURE.md)

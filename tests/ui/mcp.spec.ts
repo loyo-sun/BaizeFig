@@ -4,12 +4,12 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 // @ts-expect-error server is intentionally plain JavaScript, shared with Node deployment.
 import { createBridge } from "../../bridge/server.mjs";
 async function openMcp(page: Page) {
-  await page.getByRole("button", { name: "Main menu", exact: true }).click();
+  await page.keyboard.press("ControlOrMeta+Shift+p");
   await page
-    .getByRole("menuitem", { name: "Help and account", exact: true })
-    .click();
+    .getByRole("textbox", { name: "Search actions", exact: true })
+    .fill("MCP connection");
   await page
-    .getByRole("menuitem", { name: "MCP connection", exact: true })
+    .getByRole("button", { name: "MCP connection", exact: true })
     .click();
 }
 const token = "integration-access-" + "a".repeat(40);

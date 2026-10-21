@@ -2344,6 +2344,15 @@ export default function App() {
     { name: "Zoom to selection", key: "⇧ 2", run: () => fit(true) },
     { name: "AI design engine", key: "", run: () => setModal("ai") },
     { name: "MCP connection", key: "", run: () => setModal("bridge") },
+    {
+      name: "Help documentation",
+      run: () =>
+        window.open(
+          `${import.meta.env.BASE_URL}help/index.html`,
+          "_blank",
+          "noopener,noreferrer",
+        ),
+    },
     { name: "Keyboard shortcuts", key: "?", run: () => setModal("shortcuts") },
     {
       name: "Actions",
@@ -3067,13 +3076,10 @@ export default function App() {
       "Nudge amount",
       "General settings",
     ]),
-    actionItem("Libraries"),
-    actionItem("Open in desktop app"),
-    sub("AI balance", ["AI design engine"]),
-    sub("Help and account", [
+    sub("Help and settings", [
+      "Help documentation",
       "Performance diagnostics",
       "Keyboard shortcuts",
-      "MCP connection",
       "General settings",
     ]),
   ];
@@ -3875,7 +3881,14 @@ export default function App() {
       }}
     >
       <small className="release-version" title={`BaizeFig ${release.version}`}>
-        {release.displayVersion}
+        <span>{release.displayVersion}</span>
+        <a
+          href={`${import.meta.env.BASE_URL}help/index.html`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t("Help center")}
+        </a>
       </small>
       <input
         ref={fileInput}
