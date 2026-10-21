@@ -1,3 +1,4 @@
+import { createWelcomeDocument } from "./welcomeDocument";
 import release from "../package.json";
 import { InlineNameInput } from "./InlineNameInput";
 import { CloudWorkspace } from "./CloudWorkspace";
@@ -232,7 +233,6 @@ import {
   makeNode,
   id,
   emptyDocument,
-  demoDocument,
   execute,
   History,
   absolute,
@@ -330,7 +330,7 @@ export default function App() {
   const [workspaceTab, setWorkspaceTab] = useState<"local" | "cloud">("local");
   const [pagesExpanded, setPagesExpanded] = useState(true);
   const [doc, setDocumentState] = useState<Document>(() =>
-    removeDesignTokens(demoDocument()),
+    createWelcomeDocument(),
   );
   const setDoc = useCallback(
     (next: Document | ((previous: Document) => Document)) => {
@@ -419,6 +419,7 @@ export default function App() {
     ? ("mac" as const)
     : ("other" as const);
   const [ready, setReady] = useState(false);
+  const [fitWelcomeOnReady, setFitWelcomeOnReady] = useState(false);
   const [snapOptions, setSnapOptions] = useState<SnapOptions>(() => {
     try {
       const saved = JSON.parse(
@@ -676,6 +677,8 @@ export default function App() {
           committedDocument.current = found;
           setDoc(found);
           setPage(found.pages[0].id);
+        } else if (alive) {
+          setFitWelcomeOnReady(true);
         }
       })
       .catch(() =>
@@ -1068,6 +1071,14 @@ export default function App() {
       y: (rect.height - b.height * zoom) / 2 - b.y * zoom,
     });
   };
+  useEffect(() => {
+    if (!ready || !fitWelcomeOnReady) return;
+    const frame = requestAnimationFrame(() => {
+      fit();
+      setFitWelcomeOnReady(false);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [ready, fitWelcomeOnReady]);
   const point = (e: { clientX: number; clientY: number }) => {
     const rect = svg.current!.getBoundingClientRect();
     return {
