@@ -127,6 +127,8 @@ it("uses literal Ctrl+Alt+N for new files on every platform", () => {
     expect(
       shortcutMatches(event("KeyN", "CAS"), shortcut, "physical", platform),
     ).toBe(false);
-    expect(shortcutLabel(shortcut.name, platform)).toContain("Ctrl");
+    expect(shortcutLabel(shortcut.name, platform)).toBe(
+      platform === "mac" ? "⌃ Control + ⌥ Option + N" : "Ctrl + Alt + N",
+    );
   }
 });

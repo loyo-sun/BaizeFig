@@ -205,6 +205,8 @@ function codeKey(code: string, shift = false) {
   );
 }
 export function shortcutLabel(name: string, platform: "mac" | "other" = "mac") {
+  if (name === "New design file" && platform === "mac")
+    return "⌃ Control + ⌥ Option + N";
   const raw = shortcutRegistry.find((s) => s.name === name);
   const s = raw ? platformShortcut(raw, platform) : undefined;
   if (name === "Pick color" && platform === "other") return "I";

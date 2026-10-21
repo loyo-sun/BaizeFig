@@ -7217,7 +7217,12 @@ export default function App() {
                       <button onClick={() => setModal("versions")}>
                         {t("Version history")}
                       </button>
-                      <button className="primary" onClick={newDoc}>
+                      <button
+                        className="primary"
+                        onClick={newDoc}
+                        title={shortcutLabel("New design file", platform)}
+                        aria-keyshortcuts="Control+Alt+N"
+                      >
                         <FilePlus2 size={16} />
                         {t("New design file")}
                       </button>
