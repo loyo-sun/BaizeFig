@@ -3466,3 +3466,5 @@ html[lang="zh-CN"] .layer-title-input {
   border-color: #6b946f;
   color: var(--green);
 }
+
+.app > .release-version { position: fixed; left: 14px; bottom: 10px; z-index: 65; padding: 4px 7px; border-radius: 4px; background: var(--panel, #fff); color: #727782; font-size: 10px; line-height: 1.4; pointer-events: none; }

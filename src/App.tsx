@@ -1,3 +1,4 @@
+import release from "../package.json";
 import { CloudWorkspace } from "./CloudWorkspace";
 import { equalData } from "./equalData";
 import { SelectionOverlay } from "./SelectionOverlay";
@@ -3873,6 +3874,9 @@ export default function App() {
           setHoverSidebar(null);
       }}
     >
+      <small className="release-version" title={`BaizeFig ${release.version}`}>
+        {release.displayVersion}
+      </small>
       <input
         ref={fileInput}
         type="file"

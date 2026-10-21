@@ -1,3 +1,7 @@
+import { readFileSync } from "node:fs";
+const release = JSON.parse(
+  readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+);
 import { createOAuth } from "./oauth.mjs";
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { createServer } from "node:http";
@@ -156,7 +160,10 @@ export function createBridge(options = {}) {
     });
   }
   function mcpServer(target) {
-    const server = new McpServer({ name: "baizefig", version: "0.1.0" });
+    const server = new McpServer({
+      name: "baizefig",
+      version: release.version,
+    });
     for (const [name, schema] of Object.entries(toolSchemas)) {
       server.registerTool(
         name,
