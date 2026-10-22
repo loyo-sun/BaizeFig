@@ -42,7 +42,7 @@ Choose a button, connect your hosting account, and deploy. The repository includ
 
 Download the **Apple Silicon / arm64 DMG** from [GitHub Releases](https://github.com/loyo-sun/BaizeFig/releases), open it, and drag BaizeFig into Applications. This release is unsigned and not notarized. If macOS blocks opening it, use **System Settings → Privacy & Security → Open Anyway** after reviewing the download source; do not disable system-wide security protections.
 
-The app includes offline editing and a local MCP runtime. In **Desktop → Local MCP management** (currently labeled **桌面 → 本机 MCP 管理**), install/start the service and copy the client configuration. Then open the canvas MCP connection dialog and choose **连接桌面本机 MCP**. Stop or uninstall the service from the same management window. Node.js does not need to be installed separately.
+The app includes offline editing and a local MCP runtime. Open the local MCP manager from the desktop menu, install and start the service, and copy the client configuration. Then open the canvas MCP connection dialog and connect to the built-in desktop MCP service. Stop or uninstall the service from the same management window. Node.js does not need to be installed separately.
 
 The app checks GitHub Releases on launch and periodically. New versions trigger a download prompt; replace the application manually after quitting it. Local designs remain in the app's data directory. Browser files are separate: export from the browser, then import into the app. See the [desktop guide](docs/DESKTOP.md).
 
