@@ -49,7 +49,21 @@ Choose a button, connect your hosting account, and deploy. The repository includ
 
 ### Download the Mac app
 
-Download the **Apple Silicon / arm64 DMG** from [GitHub Releases](https://github.com/loyo-sun/BaizeFig/releases), open it, and drag BaizeFig into Applications. This release is unsigned and not notarized. If macOS blocks opening it, use **System Settings → Privacy & Security → Open Anyway** after reviewing the download source; do not disable system-wide security protections.
+Download the **Apple Silicon / arm64 DMG** from [GitHub Releases](https://github.com/loyo-sun/BaizeFig/releases), open it, and drag BaizeFig into Applications. This release uses a local ad-hoc signature, without an Apple Developer ID certificate or notarization. If macOS blocks opening it, use **System Settings → Privacy & Security → Open Anyway** after reviewing the download source; do not disable system-wide security protections.
+
+If macOS still reports that the app is damaged, first verify the installed bundle:
+
+```sh
+codesign --verify --deep --strict --verbose=2 /Applications/BaizeFig.app
+```
+
+For an app downloaded from this repository, **only after that check succeeds**, you can remove the download quarantine flag for this app alone, then open it again:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/BaizeFig.app
+```
+
+If verification fails, install v0.0.1b2 or later instead of overriding the failed check. No system-wide Gatekeeper settings need to be changed.
 
 The app includes offline editing and a local MCP runtime. Open the local MCP manager from the desktop menu, install and start the service, and copy the client configuration. Then open the canvas MCP connection dialog and connect to the built-in desktop MCP service. Stop or uninstall the service from the same management window. Node.js does not need to be installed separately.
 
@@ -85,7 +99,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://127.0.0.1:4318`. Use `npm run build` for a web build and `npm run desktop:mac` for an unsigned Apple Silicon desktop package. For web-only dependency installation, use `BAIZEFIG_SKIP_DESKTOP_DOWNLOAD=1 npm ci` to skip downloading Electron.
+Open `http://127.0.0.1:4318`. Use `npm run build` for a web build and `npm run desktop:mac` for an ad-hoc signed Apple Silicon desktop package. For web-only dependency installation, use `BAIZEFIG_SKIP_DESKTOP_DOWNLOAD=1 npm ci` to skip downloading Electron.
 
 [Development](docs/DEVELOPMENT.md) · [Desktop packaging](docs/DESKTOP.md) · [MCP deployment](docs/MCP.md) · [Architecture](docs/ARCHITECTURE.md) · [Keyboard shortcuts](docs/SHORTCUTS.md) · [Performance](docs/PERFORMANCE.md)
 

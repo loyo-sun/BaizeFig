@@ -1,27 +1,23 @@
 ## English
 
-BaizeFig now has an Apple Silicon Mac desktop app: a local-first design canvas with offline editing and built-in local MCP.
+Apple Silicon installation fix for v0.0.1b1.
 
-- Offline editing, autosave, and save-before-quit protection.
-- Install, start, stop, or uninstall local MCP; no separate Node.js installation.
-- Pair the open canvas and grant editing/export permissions separately.
-- Automatic GitHub release checks and a download prompt. Quit and replace the app manually to update; local designs remain in the data directory.
-- English default README, Chinese translation, Netlify/Vercel deployment buttons, and a deployment/service comparison.
+- Replace the skipped signing step with a complete local ad-hoc signature for the app, helpers, and embedded frameworks. No Apple Developer account, certificate, or notarization is required.
+- Verify bundle signatures strictly before generating the installers, failing the build if verification fails.
+- Keep offline editing, local MCP management, local designs, and GitHub update prompts.
 
-**Download:** use the `mac-arm64.dmg` for M-series Macs; the ZIP contains the same app. This release is unsigned and not notarized. If macOS blocks it, review the download source and use System Settings → Privacy & Security → Open Anyway.
+Download the `mac-arm64.dmg`, quit BaizeFig, and replace the app in Applications. v0.0.1b1 remains available as a historical release; install b2 manually if b1 cannot open.
 
-Intel Mac and Windows share the cross-platform codebase, but are not included in this release because no real-device testing is available. Testers are welcome through GitHub Issues.
+This app is not Developer ID signed or notarized. macOS may still require manual approval. If it reports “damaged,” verify the installed app with `codesign --verify --deep --strict --verbose=2 /Applications/BaizeFig.app`; only if verification succeeds and the download is from this repository, remove this app's download quarantine flag with `xattr -dr com.apple.quarantine /Applications/BaizeFig.app`. No system-wide security settings need to change.
 
 ## 简体中文
 
-BaizeFig 推出 Apple Silicon Mac 桌面版，支持本地优先设计、离线编辑与内置本机 MCP。
+修复 v0.0.1b1 在 Apple Silicon Mac 上安装后可能提示“已损坏”的问题。
 
-- 离线编辑、自动保存，以及退出前等待保存完成。
-- 本机 MCP 安装、启动、停止与卸载，无需单独安装 Node.js。
-- 配对当前画布，编辑和导出分别授权。
-- 自动检查 GitHub 新版本并提示下载，退出后手动替换应用，本地作品保留。
-- 英文默认 README、中文版本、一键部署按钮与运行方式对比表。
+- 从完全跳过签名改为完整的本地临时签名（ad-hoc），覆盖应用、Helper 和内嵌框架，无需 Apple 开发者账号、证书或公证。
+- 生成安装包前严格验证签名，失败则终止打包。
+- 保留离线编辑、本机 MCP 管理、本地作品和 GitHub 更新提示。
 
-**下载：** M 系列 Mac 请选择 `mac-arm64.dmg`，ZIP 提供相同应用。本版本不使用 Apple 签名与公证；如被系统阻止，核对来源后可在「系统设置 → 隐私与安全性」选择「仍要打开」。
+下载 `mac-arm64.dmg`，退出 BaizeFig 后替换「应用程序」中的旧版。b1 作为历史版本保留；如果 b1 无法打开，请手动安装 b2。
 
-Intel Mac 和 Windows 使用同一跨平台代码基础，但因缺少真机验证，不包含在此次发行中。欢迎通过 GitHub Issues 参与实际测试。
+此版本没有 Apple 开发者认证或公证，macOS 仍可能要求手动确认。若仍提示“已损坏”，先运行 `codesign --verify --deep --strict --verbose=2 /Applications/BaizeFig.app`；仅在校验通过、且确认为本仓库下载的应用后，运行 `xattr -dr com.apple.quarantine /Applications/BaizeFig.app` 清除此应用的下载隔离标记，无需关闭系统整体安全检查。

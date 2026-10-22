@@ -49,7 +49,21 @@ BaizeFig 仍在持续开发。Figma 文件属于兼容性导入，不能无损�
 
 ### 下载 Mac 本地版
 
-从 [GitHub Releases](https://github.com/loyo-sun/BaizeFig/releases) 下载 **Apple Silicon／arm64 DMG**，打开后将 BaizeFig 拖入「应用程序」。此版本不使用 Apple 签名与公证；如果 macOS 阻止打开，核对下载来源后，可在「系统设置 → 隐私与安全性」中选择「仍要打开」，无需关闭系统整体安全保护。
+从 [GitHub Releases](https://github.com/loyo-sun/BaizeFig/releases) 下载 **Apple Silicon／arm64 DMG**，打开后将 BaizeFig 拖入「应用程序」。此版本使用不需要证书的本地临时签名（ad-hoc），未使用 Apple 开发者证书或公证；如果 macOS 阻止打开，核对下载来源后，可在「系统设置 → 隐私与安全性」中选择「仍要打开」，无需关闭系统整体安全保护。
+
+如果仍出现“已损坏”提示，先验证安装后的应用完整性：
+
+```sh
+codesign --verify --deep --strict --verbose=2 /Applications/BaizeFig.app
+```
+
+确认应用来自本仓库，且**上述校验通过后**，可仅移除这个应用的下载隔离标记，再重新打开：
+
+```sh
+xattr -dr com.apple.quarantine /Applications/BaizeFig.app
+```
+
+若校验失败，请安装 v0.0.1b2 或更新版本，不要跳过失败的校验。无需修改系统整体的 Gatekeeper 设置。
 
 应用自带离线编辑和本机 MCP 运行环境。在「桌面 → 本机 MCP 管理」中安装、启动服务并复制客户端配置，再回到画布的 MCP 连接窗口，点击「连接桌面本机 MCP」。同一管理窗口支持停止和卸载服务，不需要另外安装 Node.js。
 
@@ -85,7 +99,7 @@ npm ci
 npm run dev
 ```
 
-打开 `http://127.0.0.1:4318`。运行 `npm run build` 构建网页，运行 `npm run desktop:mac` 构建未签名的 Apple Silicon 安装包。只开发网页时，可使用 `BAIZEFIG_SKIP_DESKTOP_DOWNLOAD=1 npm ci` 跳过 Electron 下载。
+打开 `http://127.0.0.1:4318`。运行 `npm run build` 构建网页，运行 `npm run desktop:mac` 构建本地临时签名的 Apple Silicon 安装包。只开发网页时，可使用 `BAIZEFIG_SKIP_DESKTOP_DOWNLOAD=1 npm ci` 跳过 Electron 下载。
 
 [开发指南](docs/DEVELOPMENT.md) · [桌面封装](docs/DESKTOP.md) · [MCP 部署](docs/MCP.md) · [架构说明](docs/ARCHITECTURE.md) · [快捷键](docs/SHORTCUTS.md) · [性能记录](docs/PERFORMANCE.md)
 

@@ -24,10 +24,14 @@ jobs:
       - run: npm run build
       - run: npm run test:desktop
       - run: npm run test:desktop:ui
-      - name: Build unsigned Apple Silicon package
+      - name: Build and verify ad-hoc signed Apple Silicon package
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: node scripts/package-mac.mjs
+      - name: Test packaged Apple Silicon application
+        env:
+          BAIZEFIG_DESKTOP_EXECUTABLE: ${{ github.workspace }}/desktop-release/mac-arm64/BaizeFig.app/Contents/MacOS/BaizeFig
+        run: npm run test:desktop:ui
       - uses: actions/upload-artifact@v4
         with:
           name: BaizeFig-mac-arm64

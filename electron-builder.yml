@@ -1,6 +1,7 @@
 appId: com.loyo.baizefig
 productName: BaizeFig
 icon: desktop/icon.png
+electronDist: node_modules/electron/dist
 directories:
   output: desktop-release
 files:
@@ -10,14 +11,15 @@ files:
   - package.json
   - "!desktop/**/*.test.*"
 asar: true
+afterSign: scripts/verify-mac-signature.cjs
 artifactName: "${productName}-${env.BAIZEFIG_RELEASE_VERSION}-${os}-${arch}.${ext}"
 mac:
   category: public.app-category.graphics-design
   target:
     - dmg
     - zip
-  identity: null
-  hardenedRuntime: false
+  identity: "-"
+  hardenedRuntime: true
   notarize: false
 publish:
   provider: github
