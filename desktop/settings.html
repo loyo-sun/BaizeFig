@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'"
+    />
+    <title>BaizeFig · 桌面设置</title>
+    <link rel="stylesheet" href="/desktop/settings.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="badge">BAIZEFIG DESKTOP</span>
+        <h1>桌面设置</h1>
+        <p id="version"></p>
+      </header>
+      <section>
+        <h2>本机 MCP</h2>
+        <p>
+          让本机 AI 客户端连接当前画布。无需单独安装 Node.js；离线 AI
+          需要本地模型和支持 MCP 的客户端。
+        </p>
+        <p id="status" role="status"></p>
+        <div class="actions">
+          <button data-mcp="install">安装本机 MCP</button
+          ><button data-mcp="start">启动</button
+          ><button data-mcp="stop">停止</button
+          ><button data-mcp="uninstall" class="danger">卸载本机 MCP</button>
+        </div>
+        <p class="muted">
+          安装会启用内置服务并随应用启动。卸载会停止服务、撤销本机凭据，并移除本应用登记的客户端连接；内置程序随
+          BaizeFig 保留，可随时重新安装。
+        </p>
+      </section>
+      <section>
+        <h2>连接 AI 客户端</h2>
+        <ol>
+          <li>先安装并启动上方的本机 MCP。</li>
+          <li>
+            返回画布，打开「云 → MCP 连接」，点击「连接桌面本机
+            MCP」。编辑和导出仍需单独授权。
+          </li>
+          <li>
+            复制下方配置，合并到 AI 客户端的 MCP 设置；或选择已有的 MCP JSON
+            配置文件安装连接，然后重启客户端连接。
+          </li>
+        </ol>
+        <div class="actions">
+          <button id="copy">复制配置</button
+          ><button data-client="install">安装到配置文件…</button
+          ><button data-client="remove">从配置文件移除…</button>
+        </div>
+        <pre id="config"></pre>
+        <p class="muted">
+          文件安装仅支持使用 mcpServers 字段的 JSON
+          配置。其他格式请使用客户端设置入口手动添加。Mac
+          请先把应用移入「应用程序」，Windows 请先完成安装，再添加连接。
+        </p>
+        <p id="clients" class="muted"></p>
+      </section>
+      <section>
+        <h2>应用更新</h2>
+        <p>
+          通过 GitHub Releases
+          检查新版本。离线编辑不受影响；检查和下载更新需要联网。
+        </p>
+        <button id="update">检查更新</button>
+      </section>
+      <p id="message" role="alert"></p>
+    </main>
+    <script src="/desktop/settings.js"></script>
+  </body>
+</html>

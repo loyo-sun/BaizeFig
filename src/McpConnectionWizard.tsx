@@ -25,6 +25,7 @@ export function McpConnectionWizard(p: {
   onWrite: (value: boolean) => void;
   onExport: (value: boolean) => void;
   onConnect: (automatic: boolean) => void;
+  onDesktopConnect?: () => Promise<void>;
   onDisconnect: () => void;
   approvals: OAuthApproval[];
   onApproval: (id: string, allowed: boolean) => void;
@@ -78,6 +79,21 @@ export function McpConnectionWizard(p: {
         <span className={p.status === "Connected" ? "green-dot" : "gray-dot"} />
         {t(p.status)}
       </div>
+      {window.baizefigDesktop && (
+        <section aria-label="桌面本机 MCP">
+          <p>使用应用内置的 MCP 服务，无需另装 Node.js。请保持当前画布打开。</p>
+          <button
+            disabled={locked}
+            className="primary"
+            onClick={() => void p.onDesktopConnect?.()}
+          >
+            连接桌面本机 MCP
+          </button>
+          <button onClick={() => void window.baizefigDesktop!.manage()}>
+            安装、卸载与客户端配置
+          </button>
+        </section>
+      )}
       {remote ? (
         <section aria-label={t("Unified remote connection")}>
           <ol className="bridge-steps">
@@ -181,7 +197,7 @@ export function McpConnectionWizard(p: {
             {t("Online MCP")}
           </button>
         </div>
-        {!remote && (
+        {!remote && !window.baizefigDesktop && (
           <>
             <p>
               {t(

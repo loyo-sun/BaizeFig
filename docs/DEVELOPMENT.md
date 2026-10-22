@@ -4,7 +4,7 @@
 
 ## 运行
 
-需要 Node.js 20.19+ 或 22.12+。
+需要 Node.js 22.12+。网页专用部署可设置 `BAIZEFIG_SKIP_DESKTOP_DOWNLOAD=1` 跳过 Electron 下载。
 
 ```sh
 npm ci

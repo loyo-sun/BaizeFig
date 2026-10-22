@@ -33,7 +33,12 @@ import { useCloudSession } from "./useCloudSession";
 import { CloudPanel } from "./CloudPanel";
 import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
-import { EditorMcp, McpError, bridgeWebSocketUrl } from "./mcp";
+import {
+  EditorMcp,
+  McpError,
+  bridgeWebSocketUrl,
+  bridgeNeedsNetwork,
+} from "./mcp";
 import {
   createIndependentMain,
   createMultipleComponents,
@@ -580,7 +585,11 @@ export default function App() {
   }, [doc.id, cloudActive, cloudSession?.token]);
   useEffect(() => {
     const offline = () => {
-      if (!bridgeIntent.current) return;
+      if (
+        !bridgeIntent.current ||
+        !bridgeNeedsNetwork(bridgeIntent.current.address)
+      )
+        return;
       disconnectBridge(false);
       setBridgeStatus("Waiting for network");
     };
@@ -720,6 +729,16 @@ export default function App() {
       );
     }
   }, []);
+  useEffect(() => {
+    if (!ready || !window.baizefigDesktop) return;
+    return window.baizefigDesktop.onSave(async () => {
+      (document.activeElement as HTMLElement | null)?.blur();
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      const snapshot = current.current.doc;
+      await persistCurrent(snapshot);
+      return committedDocument.current === current.current.doc;
+    });
+  }, [ready, persistCurrent]);
   useEffect(() => {
     if (!ready) return;
     if (doc === committedDocument.current) {
@@ -3503,7 +3522,7 @@ export default function App() {
       notify("Cloud session expired. Please sign in again.");
       return;
     }
-    if (!navigator.onLine) {
+    if (!navigator.onLine && bridgeNeedsNetwork(intent.address)) {
       setBridgeStatus("Waiting for network");
       return;
     }
@@ -3543,7 +3562,7 @@ export default function App() {
     if (!saved) bridgeAttempt.current = 0;
     disconnectBridge(false, !!saved || !!socket.current);
     bridgeIntent.current = intent;
-    if (!navigator.onLine) {
+    if (!navigator.onLine && bridgeNeedsNetwork(intent.address)) {
       setBridgeStatus("Waiting for network");
       return;
     }
@@ -7533,6 +7552,30 @@ export default function App() {
                 onAddress={setBridgeAddress}
                 onToken={setBridgeToken}
                 onConnect={connectBridge}
+                onDesktopConnect={
+                  window.baizefigDesktop
+                    ? async () => {
+                        try {
+                          const local = await window.baizefigDesktop!.status();
+                          if (!local.running) {
+                            await window.baizefigDesktop!.manage();
+                            notify("请先在桌面设置中安装并启动本机 MCP");
+                            return;
+                          }
+                          setBridgeRemote(false);
+                          setBridgeAddress(local.endpoint);
+                          setBridgeToken(local.pairingToken);
+                          connectBridge(false, undefined, {
+                            address: bridgeWebSocketUrl(local.endpoint),
+                            token: local.pairingToken,
+                            automatic: false,
+                          });
+                        } catch (e) {
+                          notify((e as Error).message);
+                        }
+                      }
+                    : undefined
+                }
                 onDisconnect={() => disconnectBridge()}
                 notify={notify}
                 onWrite={(value) => {

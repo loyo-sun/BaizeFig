@@ -43,6 +43,17 @@ export function bridgeWebSocketUrl(address: string) {
   return url.href;
 }
 
+/** Loopback MCP works even when the operating system reports no internet. */
+export function bridgeNeedsNetwork(address: string) {
+  try {
+    return !["localhost", "127.0.0.1", "[::1]"].includes(
+      new URL(address).hostname,
+    );
+  } catch {
+    return true;
+  }
+}
+
 type Context = {
   doc: Document;
   page: string;

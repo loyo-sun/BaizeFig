@@ -1,0 +1,26 @@
+appId: com.loyo.baizefig
+productName: BaizeFig
+icon: desktop/icon.png
+directories:
+  output: desktop-release
+files:
+  - dist/**/*
+  - desktop/**/*
+  - bridge/**/*
+  - package.json
+  - "!desktop/**/*.test.*"
+asar: true
+artifactName: "${productName}-${env.BAIZEFIG_RELEASE_VERSION}-${os}-${arch}.${ext}"
+mac:
+  category: public.app-category.graphics-design
+  target:
+    - dmg
+    - zip
+  identity: null
+  hardenedRuntime: false
+  notarize: false
+publish:
+  provider: github
+  owner: loyo-sun
+  repo: BaizeFig
+  releaseType: release

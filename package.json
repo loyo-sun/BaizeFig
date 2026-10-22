@@ -1,6 +1,6 @@
 {
   "name": "baizefig",
-  "version": "0.0.1-bate.0",
+  "version": "0.0.1-beta.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -16,7 +16,13 @@
     "test:mcp": "node --test tests/mcp-contracts.test.mjs tests/mcp-transport.test.mjs tests/mcp-oauth.test.mjs tests/mcp-setup.test.mjs",
     "test:mcp:ui": "playwright test --config playwright.mcp.config.ts",
     "mcp:connect": "node scripts/connect-client.mjs",
-    "release:version": "node scripts/release-version.mjs"
+    "release:version": "node scripts/release-version.mjs",
+    "desktop:dev": "npm run build && electron .",
+    "desktop:pack": "npm run build && node scripts/package-mac.mjs --dir",
+    "desktop:mac": "npm run build && node scripts/package-mac.mjs",
+    "test:desktop": "node --test tests/desktop-config.test.mjs tests/desktop-adapter.test.mjs tests/desktop-releases.test.mjs",
+    "test:desktop:ui": "node scripts/desktop-smoke.mjs",
+    "postinstall": "node scripts/install-desktop-runtime.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
@@ -33,6 +39,7 @@
     "pdf-lib": "^1.17.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "semver": "^7.8.5",
     "ws": "^8.18.0",
     "zod": "^3.25.0"
   },
@@ -42,15 +49,20 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.4.0",
+    "electron": "^45.0.0",
+    "electron-builder": "^26.15.3",
     "fake-indexeddb": "^6.2.5",
     "prettier": "^3.9.10",
+    "test-dom-jsdom": "npm:jsdom@^29.1.1",
     "typescript": "^5.8.0",
     "vite": "^6.1.0",
-    "vitest": "^4.1.11",
-    "test-dom-jsdom": "npm:jsdom@^29.1.1"
+    "vitest": "^4.1.11"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=22.12.0"
   },
-  "displayVersion": "bate v0.01"
+  "displayVersion": "v0.0.1b1",
+  "main": "desktop/main.mjs",
+  "description": "BaizeFig local-first design editor with local MCP",
+  "author": "Loyo"
 }

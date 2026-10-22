@@ -1,11 +1,16 @@
 import { readFile, writeFile } from "node:fs/promises";
+import { normalizeVersion } from "../desktop/releases.mjs";
 const [version, displayVersion] = process.argv.slice(2);
 if (
   !/^\d+\.\d+\.\d+(?:-[a-z][a-z0-9.-]*)?$/.test(version ?? "") ||
-  !/^[a-z]+ v\d+\.\d+(?:\.\d+)?$/.test(displayVersion ?? "")
+  !/^(?:[a-z]+ v\d+\.\d+(?:\.\d+)?|v\d+\.\d+\.\d+(?:[ab]\d+)?)$/.test(
+    displayVersion ?? "",
+  ) ||
+  (displayVersion?.startsWith("v") &&
+    normalizeVersion(displayVersion) !== version)
 ) {
   throw new Error(
-    'Usage: node scripts/release-version.mjs 0.0.2-bate.0 "bate v0.02"',
+    'Usage: node scripts/release-version.mjs 0.0.1-beta.1 "v0.0.1b1"',
   );
 }
 const root = new URL("../", import.meta.url);
