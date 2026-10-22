@@ -1,12 +1,9 @@
 <div align="center">
-  <img src="public/baize.svg" width="72" alt="BaizeFig" />
   <h1>BaizeFig · 白泽</h1>
   <p>A local-first design canvas you can connect to your own AI tools.</p>
   <p><strong>English</strong> · <a href="README.zh-CN.md">简体中文</a></p>
   <p><a href="https://baizefig.netlify.app/">Try in your browser</a> · <a href="https://github.com/loyo-sun/BaizeFig/releases">Download for Mac</a> · <a href="https://github.com/loyo-sun/BaizeFig/issues">Feedback</a></p>
 </div>
-
-![BaizeFig design workspace](docs/design-preview.png)
 
 ## Why I built this
 
@@ -35,8 +32,8 @@ Open [baizefig.netlify.app](https://baizefig.netlify.app/). Start drawing, impor
 
 ### Deploy your own editor
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/loyo-sun/BaizeFig)
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Floyo-sun%2FBaizeFig)
+[Deploy to Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/loyo-sun/BaizeFig)
+[Deploy with Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Floyo-sun%2FBaizeFig)
 
 Choose a button, connect your hosting account, and deploy. The repository includes the build settings for both platforms. **These buttons deploy the web editor, not a persistent MCP server or cloud document storage.** To add remote MCP, connect LoyoCloud or deploy the [MCP service](docs/MCP.md) separately. Your hosting provider's account requirements and usage limits apply.
 
