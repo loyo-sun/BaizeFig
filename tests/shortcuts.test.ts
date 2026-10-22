@@ -132,3 +132,24 @@ it("uses literal Ctrl+Alt+N for new files on every platform", () => {
     );
   }
 });
+
+it("ungroups with literal Ctrl and either Delete key on both platforms", () => {
+  const shortcut = shortcutRegistry.find(
+    (s) => s.name === "Ungroup selection",
+  )!;
+  for (const platform of ["mac", "other"] as const) {
+    for (const code of ["Delete", "Backspace"]) {
+      for (const layout of ["physical", "character"] as const) {
+        expect(
+          shortcutMatches(event(code, "C"), shortcut, layout, platform),
+        ).toBe(true);
+        expect(shortcutMatches(event(code), shortcut, layout, platform)).toBe(
+          false,
+        );
+        expect(
+          shortcutMatches(event(code, "CA"), shortcut, layout, platform),
+        ).toBe(false);
+      }
+    }
+  }
+});

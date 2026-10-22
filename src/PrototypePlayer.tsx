@@ -50,10 +50,13 @@ export function PrototypePlayer({
       const scale = Math.min(1, (windowSize.width - 80) / Math.max(1, n.width));
       result[id] = {
         width: n.width,
-        height: Math.min(
-          n.height,
-          Math.max(1, windowSize.height - 150) / Math.max(0.01, scale),
-        ),
+        height:
+          n.prototypeScroll && n.prototypeScroll !== "none"
+            ? Math.min(
+                n.height,
+                Math.max(1, windowSize.height) / Math.max(0.01, scale),
+              )
+            : n.height,
       };
     }
     return result;
@@ -207,9 +210,12 @@ export function PrototypePlayer({
         aria-label={t("Prototype preview")}
         data-prototype-root={id}
         viewBox={`0 0 ${viewport.width} ${viewport.height}`}
+        preserveAspectRatio={
+          id === state.frameId ? "xMidYMid slice" : "xMidYMid meet"
+        }
         style={{
-          width: viewport.width * scale,
-          height: viewport.height * scale,
+          width: id === state.frameId ? "100vw" : viewport.width * scale,
+          height: id === state.frameId ? "100vh" : viewport.height * scale,
           flex: "none",
           animation:
             state.transition?.type === "dissolve"

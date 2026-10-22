@@ -1,0 +1,104 @@
+.frame-preset-panel {
+  padding: 16px 12px !important;
+  border-bottom: 1px solid var(--ui-border, #e8eaed);
+}
+.frame-preset-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--workspace-ink, #263346);
+}
+.frame-preset-heading strong {
+  font-weight: 600;
+}
+.frame-preset-heading > span {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: #9299a3;
+}
+.frame-preset-hint,
+.frame-preset-print {
+  font-size: 10px;
+  line-height: 1.7;
+  color: #87909d;
+  margin: 12px 0;
+}
+.frame-preset-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 28px;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.frame-preset-fields .number-field {
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  background: var(--ui-surface, #f4f5f7);
+  border-radius: 5px;
+}
+.frame-preset-fields .number-field input {
+  width: 100%;
+  min-width: 0;
+  font-size: 11px;
+}
+.frame-preset-swap {
+  padding: 0;
+  border: 0;
+  background: var(--ui-surface, #f4f5f7);
+  border-radius: 5px;
+  cursor: pointer;
+  color: #738097;
+}
+.frame-preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.frame-preset-list > button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  gap: 8px;
+  color: var(--workspace-ink, #344b6a);
+}
+.frame-preset-list > button span {
+  font-size: 11px;
+  font-weight: 500;
+}
+.frame-preset-list > button small {
+  font-size: 10px;
+  color: #9299a3;
+  white-space: nowrap;
+}
+.frame-preset-list > button:hover {
+  background: var(--ui-surface, #f4f5f7);
+}
+.frame-preset-list > button.active {
+  background: #f3edff;
+  border-color: #e5d7ff;
+  color: #7b2cf6;
+}
+.frame-preset-list > button.active small {
+  color: #9b75c4;
+}
+.frame-preset-create {
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: #813bfa;
+  color: #fff;
+  padding: 10px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.frame-preset-create:hover {
+  background: #6d28d9;
+}

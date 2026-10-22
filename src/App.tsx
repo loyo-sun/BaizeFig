@@ -1,3 +1,5 @@
+import { UserRound } from "lucide-react";
+import { FramePresetPanel, type FrameSize } from "./FramePresetPanel";
 import { createWelcomeDocument } from "./welcomeDocument";
 import release from "../package.json";
 import { InlineNameInput } from "./InlineNameInput";
@@ -450,6 +452,12 @@ export default function App() {
   const [page, setPage] = useState(doc.pages[0].id),
     [selected, setSelected] = useState<string[]>([]),
     [tool, setTool] = useState<Tool>("move");
+  const [frameSize, setFrameSize] = useState<FrameSize>({
+    id: "desktop",
+    name: "桌面标准",
+    width: 1440,
+    height: 900,
+  });
   const [view, setView] = useState({ x: 0, y: 0, zoom: 1 }),
     [modal, setModal] = useState<Modal>(null),
     [tab, setTab] = useState<"design" | "prototype" | "inspect">("design");
@@ -1163,6 +1171,8 @@ export default function App() {
       return;
     }
     if (editingText || editingCrop) return;
+    e.preventDefault();
+    window.getSelection()?.removeAllRanges();
     if (colorPicking && e.button === 0) {
       e.preventDefault();
       e.stopPropagation();
@@ -1607,7 +1617,14 @@ export default function App() {
             };
           }
           return n.width < 3 && n.height < 3
-            ? { ...n, width: 160, height: 100 }
+            ? n.type === "frame"
+              ? {
+                  ...n,
+                  width: frameSize.width,
+                  height: frameSize.height,
+                  name: frameSize.name,
+                }
+              : { ...n, width: 160, height: 100 }
             : n;
         }),
       };
@@ -1773,20 +1790,54 @@ export default function App() {
       }
     }
   }
+  const presentationFullscreen = useRef(false);
+  useEffect(() => {
+    const changed = () => {
+      if (presentationFullscreen.current && !document.fullscreenElement) {
+        presentationFullscreen.current = false;
+        setPresent(null);
+      }
+    };
+    document.addEventListener("fullscreenchange", changed);
+    return () => document.removeEventListener("fullscreenchange", changed);
+  }, []);
+  useEffect(() => {
+    if (!present && presentationFullscreen.current) {
+      presentationFullscreen.current = false;
+      if (document.fullscreenElement)
+        void document.exitFullscreen().catch(() => {});
+    }
+  }, [present]);
   function presentStart() {
+    const containingFrame =
+      first &&
+      ancestors(doc, first).find(
+        (n) => n.type === "frame" && !n.componentSetId,
+      );
     const frame =
       first?.type === "frame" && !first.componentSetId
         ? first
-        : doc.nodes.find(
+        : (containingFrame ??
+          doc.nodes.find(
             (n) =>
               n.pageId === page &&
               n.type === "frame" &&
               !n.parentId &&
               !n.componentSetId &&
               n.visible,
-          );
-    if (frame) setPresent(frame.id);
-    else notify("Create a frame to start a prototype");
+          ));
+    if (frame) {
+      setPresent(frame.id);
+      if (
+        !document.fullscreenElement &&
+        document.documentElement.requestFullscreen
+      ) {
+        presentationFullscreen.current = true;
+        void document.documentElement.requestFullscreen().catch(() => {
+          presentationFullscreen.current = false;
+        });
+      }
+    } else notify("Create a frame to start a prototype");
   }
   async function importFiles(files: FileList | File[] | null) {
     if (!files?.length || importInFlight.current) return;
@@ -2005,6 +2056,27 @@ export default function App() {
     window.addEventListener("keydown", onNewFile, true);
     return () => window.removeEventListener("keydown", onNewFile, true);
   });
+  function createPresetFrame() {
+    const rect = svg.current?.getBoundingClientRect();
+    if (!rect) return;
+    run({
+      type: "create",
+      nodes: [
+        makeNode("frame", page, {
+          name: frameSize.name,
+          x: Math.round(
+            (rect.width / 2 - view.x) / view.zoom - frameSize.width / 2,
+          ),
+          y: Math.round(
+            (rect.height / 2 - view.y) / view.zoom - frameSize.height / 2,
+          ),
+          width: frameSize.width,
+          height: frameSize.height,
+        }),
+      ],
+    });
+    setTool("move");
+  }
   function createInstance(n: Node) {
     try {
       const b = bounds(doc, [n]);
@@ -4589,7 +4661,11 @@ export default function App() {
             <g transform={`translate(${view.x} ${view.y}) scale(${view.zoom})`}>
               {doc.nodes
                 .filter(
-                  (n) => n.pageId === page && !n.parentId && n.type === "frame",
+                  (n) =>
+                    n.pageId === page &&
+                    !n.parentId &&
+                    n.type === "frame" &&
+                    n.visible,
                 )
                 .map((n) => (
                   <text
@@ -4597,8 +4673,19 @@ export default function App() {
                     x={n.x}
                     y={n.y - 12 / view.zoom}
                     fontSize={11 / view.zoom}
-                    fill="#69716b"
-                    pointerEvents="none"
+                    fill={selected.includes(n.id) ? "#9747ff" : "#69716b"}
+                    data-frame-label={n.id}
+                    aria-label={`${t("Select frame")} ${n.name}`}
+                    pointerEvents={
+                      tool === "move" || tool === "scale"
+                        ? "bounding-box"
+                        : "none"
+                    }
+                    style={{ cursor: n.locked ? "default" : "move" }}
+                    onPointerDown={(e) => {
+                      setSelectionScope(null);
+                      pointerDown(e, n.id);
+                    }}
                   >
                     {n.name}
                   </text>
@@ -4910,12 +4997,18 @@ export default function App() {
               aria-label={t("Workspace")}
               onClick={() => void openFiles()}
             >
-              <img
-                className="profile-avatar"
-                src="/baize.svg"
-                alt="BaizeFig"
-                style={{ background: "#000", borderRadius: 7 }}
-              />
+              <span
+                className="profile-avatar user-initial-avatar"
+                aria-label={cloudSession?.user.username ?? t("Local")}
+              >
+                {cloudSession?.user.username ? (
+                  Array.from(
+                    cloudSession.user.username.trim(),
+                  )[0]?.toUpperCase()
+                ) : (
+                  <UserRound size={15} />
+                )}
+              </span>
               <ChevronDown size={12} />
             </button>
             <div className="inspector-top-actions">
@@ -4969,7 +5062,13 @@ export default function App() {
           >
             <div id="vector-properties-slot" ref={setVectorPanel} />
             <FontNotice doc={doc} onReplace={() => setModal("fonts")} />
-            {tab === "inspect" ? (
+            {tool === "frame" ? (
+              <FramePresetPanel
+                value={frameSize}
+                onChange={setFrameSize}
+                onCreate={createPresetFrame}
+              />
+            ) : tab === "inspect" ? (
               <InspectPanel doc={doc} nodes={chosen} />
             ) : !first ? (
               <>

@@ -868,6 +868,36 @@ export function execute(
       const selected: string[] = [];
       for (const n of roots(doc, command.ids).filter(writable)) {
         if (!container(n)) continue;
+        // Keep the container's visible backing instead of losing white artwork on it.
+        if (n.fill !== "none" || n.strokeWidth > 0) {
+          const backing = makeNode("rectangle", n.pageId, {
+            name: n.name + " / Background",
+            parentId: n.parentId,
+            width: n.width,
+            height: n.height,
+            fill: n.fill,
+            stroke: n.stroke,
+            strokeWidth: n.strokeWidth,
+            radius: n.radius,
+            opacity: n.opacity,
+            fidelity: n.fidelity ? structuredClone(n.fidelity) : undefined,
+          });
+          setWorldTransform(doc, backing, worldTransform(doc, n));
+          doc.nodes.splice(doc.nodes.indexOf(n), 0, backing);
+          selected.push(backing.id);
+        }
+        // Released instance children must stop referring to their removed owner.
+        if (n.type === "instance") {
+          for (const child of doc.nodes.filter(
+            (c) => c.componentOwner === n.id,
+          )) {
+            delete child.componentOwner;
+            delete child.componentPath;
+            delete child.componentOverrides;
+            delete child.componentClears;
+            delete child.componentSlot;
+          }
+        }
         for (const c of doc.nodes.filter((c) => c.parentId === n.id)) {
           const matrix = worldTransform(doc, c);
           c.parentId = n.parentId;

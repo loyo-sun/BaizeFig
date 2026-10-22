@@ -53,7 +53,7 @@ export const shortcutRegistry: Shortcut[] = [
   binding("Duplicate selection", "KeyD", "M"),
   binding("Delete", "Backspace"),
   binding("Group selection", "KeyG", "M"),
-  binding("Ungroup selection", "Backspace", "M"),
+  { ...binding("Ungroup selection", "Delete", "C"), aliases: ["Backspace"] },
   binding("Frame selection", "KeyG", "MA"),
   binding("Create component", "KeyK", "M"),
   binding("Select all", "KeyA", "M"),
@@ -164,13 +164,16 @@ export function shortcutMatches(
     code &&
     !!s.alt === e.altKey &&
     !!s.shift === e.shiftKey &&
-    (literalCtrl
-      ? e.ctrlKey && !e.metaKey
-      : s.mod
-        ? platform === "mac"
-          ? e.metaKey && !e.ctrlKey
-          : e.ctrlKey && !e.metaKey
-        : !e.metaKey && !e.ctrlKey)
+    (s.name === "Ungroup selection"
+      ? (e.ctrlKey && !e.metaKey) ||
+        (platform === "mac" && e.metaKey && !e.ctrlKey)
+      : literalCtrl
+        ? e.ctrlKey && !e.metaKey
+        : s.mod
+          ? platform === "mac"
+            ? e.metaKey && !e.ctrlKey
+            : e.ctrlKey && !e.metaKey
+          : !e.metaKey && !e.ctrlKey)
   );
 }
 function codeKey(code: string, shift = false) {
@@ -205,6 +208,7 @@ function codeKey(code: string, shift = false) {
   );
 }
 export function shortcutLabel(name: string, platform: "mac" | "other" = "mac") {
+  if (name === "Ungroup selection" && platform === "mac") return "⌘ + ⌫";
   if (name === "New design file" && platform === "mac")
     return "⌃ Control + ⌥ Option + N";
   const raw = shortcutRegistry.find((s) => s.name === name);

@@ -41,7 +41,7 @@ export function CommandMenu({
   const { t } = useI18n(),
     root = useRef<HTMLDivElement>(null),
     [path, setPath] = useState<number[]>([]),
-    [focus, setFocus] = useState({ level: 0, index: 0 }),
+    [focus, setFocus] = useState({ level: 0, index: point ? -1 : 0 }),
     [positions, setPositions] = useState<{ left: number; top: number }[]>([]);
   const columns = [items];
   for (let l = 0; l < path.length; l++) {
@@ -76,11 +76,13 @@ export function CommandMenu({
     if (JSON.stringify(next) !== JSON.stringify(positions)) setPositions(next);
   });
   useEffect(() => {
-    root.current
-      ?.querySelector<HTMLElement>(
-        `[data-level="${focus.level}"][data-index="${focus.index}"]`,
-      )
-      ?.focus();
+    if (focus.index < 0) root.current?.focus();
+    else
+      root.current
+        ?.querySelector<HTMLElement>(
+          `[data-level="${focus.level}"][data-index="${focus.index}"]`,
+        )
+        ?.focus();
   }, [focus, positions.length]);
   useEffect(() => {
     const outside = (e: PointerEvent) => {
@@ -106,6 +108,7 @@ export function CommandMenu({
     <div
       ref={root}
       className="command-menu-root"
+      tabIndex={-1}
       onKeyDown={(e) => {
         e.stopPropagation();
         const level = Number(
@@ -116,7 +119,7 @@ export function CommandMenu({
           ),
           list = columns[level],
           item = list?.[index];
-        if (!item) return;
+        if (!list) return;
         const n = list.length;
         let next = index;
         if (e.key === "Escape" || e.key === "Tab") {
@@ -130,7 +133,7 @@ export function CommandMenu({
         else if (e.key === "End") next = n - 1;
         else if (e.key === "ArrowRight") {
           e.preventDefault();
-          if (item.children) {
+          if (item?.children) {
             setPath([...path.slice(0, level), index]);
             setFocus({ level: level + 1, index: 0 });
           }
@@ -144,10 +147,10 @@ export function CommandMenu({
           return;
         } else if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          if (item.children) {
+          if (item?.children) {
             setPath([...path.slice(0, level), index]);
             setFocus({ level: level + 1, index: 0 });
-          } else if (!item.disabled && item.run) {
+          } else if (item && !item.disabled && item.run) {
             close();
             item.run();
           }
@@ -201,8 +204,14 @@ export function CommandMenu({
                   ? t(item.reason ?? "Unavailable in current context")
                   : undefined
               }
-              className={path[level] === index ? "active" : ""}
+              className={
+                path[level] === index ||
+                (focus.level === level && focus.index === index)
+                  ? "active"
+                  : ""
+              }
               onPointerEnter={() => {
+                setFocus({ level, index });
                 setPath(
                   item.children
                     ? [...path.slice(0, level), index]
@@ -211,10 +220,10 @@ export function CommandMenu({
               }}
               onFocus={() => setFocus({ level, index })}
               onClick={() => {
-                if (item.children) {
+                if (item?.children) {
                   setPath([...path.slice(0, level), index]);
                   setFocus({ level: level + 1, index: 0 });
-                } else if (!item.disabled && item.run) {
+                } else if (item && !item.disabled && item.run) {
                   close();
                   item.run();
                 }
