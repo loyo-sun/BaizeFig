@@ -65,10 +65,10 @@ it("uses screenshot order semantics, ungroup, and zoom keys", () => {
 it("supports character layouts, distinguishes command and literal Ctrl, and rejects extra modifiers", () => {
   const pen = shortcutRegistry.find((s) => s.name === "Pen / polyline")!;
   expect(
-    shortcutMatches({ ...event("KeyQ", "S"), key: "C" }, pen, "character"),
+    shortcutMatches({ ...event("KeyQ"), key: "P" }, pen, "character"),
   ).toBe(true);
   expect(
-    shortcutMatches({ ...event("KeyQ", "S"), key: "C" }, pen, "physical"),
+    shortcutMatches({ ...event("KeyQ"), key: "P" }, pen, "physical"),
   ).toBe(false);
   const pick = shortcutRegistry.find((s) => s.name === "Pick color")!;
   expect(shortcutMatches(event("KeyC", "M"), pick)).toBe(false);

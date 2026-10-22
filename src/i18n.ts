@@ -45,6 +45,7 @@ export const zhCN: Record<string, string> = {
   "Apply color": "应用颜色",
   "There are no recent colors yet": "还没有最近使用的颜色",
   Description: "描述",
+  "Prototype description": "说明",
   "Selected image": "所选图片",
   "Replace image": "替换图片",
   "Replacement image file": "替换图片文件",

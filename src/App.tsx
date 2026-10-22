@@ -1,3 +1,4 @@
+import { PrototypeNotes } from "./PrototypeNotes";
 import { UserRound } from "lucide-react";
 import { FramePresetPanel, type FrameSize } from "./FramePresetPanel";
 import { createWelcomeDocument } from "./welcomeDocument";
@@ -305,7 +306,7 @@ const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "ellipse", label: "Ellipse", key: "E", icon: Circle },
   { id: "line", label: "Line", key: "L", icon: Minus },
   { id: "arrow", label: "Arrow", key: "⇧ L", icon: ArrowRight },
-  { id: "pen", label: "Pen / polyline", key: "⇧ C", icon: Spline },
+  { id: "pen", label: "Pen / polyline", key: "P", icon: PenTool },
   { id: "pencil", label: "Pencil", key: "⇧ P", icon: Pencil },
   { id: "text", label: "Text", key: "T", icon: Type },
   { id: "hand", label: "Hand", key: "H", icon: Hand },
@@ -5081,6 +5082,31 @@ export default function App() {
           >
             <div id="vector-properties-slot" ref={setVectorPanel} />
             <FontNotice doc={doc} onReplace={() => setModal("fonts")} />
+            {tab === "prototype" && (
+              <section>
+                <div className="section-heading">
+                  {t("Prototype description")}
+                </div>
+                <PrototypeNotes
+                  key={first?.id ?? page}
+                  value={
+                    (first ?? doc.pages.find((p) => p.id === page))
+                      ?.prototypeNotes ?? ""
+                  }
+                  label={t("Prototype description")}
+                  onChange={(prototypeNotes) =>
+                    first
+                      ? patch({ prototypeNotes })
+                      : change({
+                          ...doc,
+                          pages: doc.pages.map((p) =>
+                            p.id === page ? { ...p, prototypeNotes } : p,
+                          ),
+                        })
+                  }
+                />
+              </section>
+            )}
             {tool === "frame" ? (
               <FramePresetPanel
                 value={frameSize}

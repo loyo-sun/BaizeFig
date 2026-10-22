@@ -164,12 +164,14 @@ export interface Node {
   variableModes?: Record<string, string>;
   bindings?: Partial<Record<BindingProperty, string>>;
   interactions?: PrototypeInteraction[];
+  prototypeNotes?: string;
   prototypeScroll?: "none" | "horizontal" | "vertical" | "both";
   targetId?: string;
   variableId?: string;
   compositeBindings?: Partial<Record<"shadow" | "typography", string>>;
 }
 export interface Page {
+  prototypeNotes?: string;
   id: string;
   name: string;
 }
@@ -636,6 +638,7 @@ export function execute(
             "targetId",
             "interactions",
             "prototypeScroll",
+            "prototypeNotes",
             "variableId",
             "compositeBindings",
             "variableModes",
