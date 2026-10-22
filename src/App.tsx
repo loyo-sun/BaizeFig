@@ -946,6 +946,28 @@ export default function App() {
       notify((error as Error).message);
     }
   };
+  const prototypeDescription = (
+    <section>
+      <div className="section-heading">{t("Prototype description")}</div>
+      <PrototypeNotes
+        key={first?.id ?? page}
+        value={
+          (first ?? doc.pages.find((p) => p.id === page))?.prototypeNotes ?? ""
+        }
+        label={t("Prototype description")}
+        onChange={(prototypeNotes) =>
+          first
+            ? patch({ prototypeNotes })
+            : change({
+                ...doc,
+                pages: doc.pages.map((p) =>
+                  p.id === page ? { ...p, prototypeNotes } : p,
+                ),
+              })
+        }
+      />
+    </section>
+  );
   function setVisualPosition(axis: "x" | "y", value: number) {
     try {
       let next = doc;
@@ -5082,31 +5104,6 @@ export default function App() {
           >
             <div id="vector-properties-slot" ref={setVectorPanel} />
             <FontNotice doc={doc} onReplace={() => setModal("fonts")} />
-            {tab === "prototype" && (
-              <section>
-                <div className="section-heading">
-                  {t("Prototype description")}
-                </div>
-                <PrototypeNotes
-                  key={first?.id ?? page}
-                  value={
-                    (first ?? doc.pages.find((p) => p.id === page))
-                      ?.prototypeNotes ?? ""
-                  }
-                  label={t("Prototype description")}
-                  onChange={(prototypeNotes) =>
-                    first
-                      ? patch({ prototypeNotes })
-                      : change({
-                          ...doc,
-                          pages: doc.pages.map((p) =>
-                            p.id === page ? { ...p, prototypeNotes } : p,
-                          ),
-                        })
-                  }
-                />
-              </section>
-            )}
             {tool === "frame" ? (
               <FramePresetPanel
                 value={frameSize}
@@ -5132,6 +5129,7 @@ export default function App() {
                     <span>100%</span>
                   </label>
                 </section>
+                {tab === "prototype" && prototypeDescription}
               </>
             ) : tab === "prototype" ? (
               <>
@@ -5375,6 +5373,7 @@ export default function App() {
                     {t("Present prototype")}
                   </button>
                 </section>
+                {prototypeDescription}
                 <section>
                   <p className="muted">
                     {t(
