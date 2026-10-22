@@ -2,9 +2,11 @@
   <img src="public/baize.svg" width="72" alt="BaizeFig 白泽" />
   <h1>BaizeFig · 白泽</h1>
   <p>A local-first design canvas you can connect to your own AI tools.<br>本地优先的设计画布，连接你选择的 AI 工具。</p>
-  <p>English & 简体中文 · 中英文对照</p>
   <p><a href="https://baizefig.netlify.app/">Try in your browser / 在线体验</a> · <a href="https://github.com/loyo-sun/BaizeFig/releases">Download for Mac / 下载 Mac 版</a> · <a href="https://github.com/loyo-sun/BaizeFig/issues">Feedback / 反馈问题</a></p>
 </div>
+
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/loyo-sun/BaizeFig)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Floyo-sun%2FBaizeFig)
 
 ## Why I built this / 为什么做白泽
 
@@ -20,7 +22,11 @@ I wanted a design tool where I could choose the model and client, deploy the edi
 
 After v0.0.1, BaizeFig will receive only small updates, while I focus more on a project management app that uses software to coordinate projects, people, and agents to get work done.
 
+Future iterations of BaizeFig will extend beyond design. I want it to become one tool spanning ideas, design, and presentations, with AI powering the tools so people only need to make decisions and fine-tune the results. Once I am satisfied with the result, I will change the version number to v1.
+
 v0.0.1 发布后，白泽只会进行小幅迭代，我会将更多精力投入项目管理应用，希望通过软件协调项目、人和 Agent，共同完成工作。
+
+BaizeFig 后续的迭代不会局限于设计。我希望它成为贯穿「想法—设计—汇报」的整体工具，由 AI 赋能工具，让人专注于决策和微调。完成我认为满意的版本后，我会将版本号改为 v1。
 
 ## What it does / 产品特点
 
