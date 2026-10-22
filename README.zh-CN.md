@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="public/baize.svg" width="72" alt="BaizeFig 白泽" />
   <h1>BaizeFig · 白泽</h1>
   <p>本地优先的设计画布，连接你选择的 AI 工具。</p>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
@@ -32,8 +33,8 @@ BaizeFig 仍在持续开发。Figma 文件属于兼容性导入，不能无损�
 
 ### 一键部署自己的编辑器
 
-[一键部署到 Netlify](https://app.netlify.com/start/deploy?repository=https://github.com/loyo-sun/BaizeFig)
-[一键部署到 Vercel](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Floyo-sun%2FBaizeFig)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/loyo-sun/BaizeFig)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Floyo-sun%2FBaizeFig)
 
 点击按钮，连接对应托管平台的账号并部署。仓库已提供两个平台的构建配置。**一键部署的是网页编辑器，不会同时部署常驻 MCP 服务，也不提供云端作品存储。** 如需远程 MCP，可连接 LoyoCloud，或另行[部署 MCP 服务](docs/MCP.md)。账号要求与使用额度以托管平台为准。
 
