@@ -13,13 +13,10 @@ test("prototype description formats Markdown while typing and survives reload", 
   await page.keyboard.press("Enter");
   await page.keyboard.type("**Bold**");
   await expect(notes.locator("strong,b")).toHaveText("Bold");
-  await notes.locator("h2").first().click();
-  await page.getByRole("button", { name: "H3", exact: true }).click();
-  await expect(notes.locator("h3")).toContainText("Heading");
   await expect(page.getByLabel("已保存到本地", { exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "原型", exact: true }).click();
-  await expect(notes.locator("h3")).toContainText("Heading");
+  await expect(notes.locator("h2")).toContainText("Heading");
 });
 
 test("prototype notes support typed ordered and unordered lists", async ({

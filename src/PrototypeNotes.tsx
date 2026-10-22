@@ -57,26 +57,6 @@ export function PrototypeNotes({
   };
   return (
     <>
-      <div className="notes-toolbar" role="toolbar" aria-label={label}>
-        {[
-          ["H1", "formatBlock", "h1"],
-          ["H2", "formatBlock", "h2"],
-          ["H3", "formatBlock", "h3"],
-          ["B", "bold"],
-          ["1.", "insertOrderedList"],
-          ["•", "insertUnorderedList"],
-        ].map(([text, cmd, arg]) => (
-          <button
-            key={text}
-            type="button"
-            aria-label={text}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => command(cmd, arg)}
-          >
-            {text}
-          </button>
-        ))}
-      </div>
       <div
         ref={ref}
         className="prototype-notes"
