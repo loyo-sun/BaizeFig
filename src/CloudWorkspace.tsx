@@ -31,21 +31,26 @@ export function CloudWorkspace({
 }) {
   const { t } = useI18n();
   return (
-    <section className="cloud-workspace" aria-label={t("Cloud workspace")}>
+    <section
+      className={`cloud-workspace ${session ? "has-session" : ""}`}
+      aria-label={t("Cloud workspace")}
+    >
       <span className="cloud-workspace-icon">
         <Cloud size={28} />
       </span>
       <h3>{t("Cloud workspace")}</h3>
       {session ? (
-        <div className="workspace-account">
+        <>
           <CloudFiles session={session} document={document} onOpen={onOpen} />
-          <span>{t("Signed in")}</span>
-          <strong>{session.user.username}</strong>
-          <button onClick={onSignOut}>
-            <LogOut size={14} />
-            {t("Sign out of cloud")}
-          </button>
-        </div>
+          <div className="workspace-account">
+            <span>{t("Signed in")}</span>
+            <strong>{session.user.username}</strong>
+            <button onClick={onSignOut}>
+              <LogOut size={14} />
+              {t("Sign out of cloud")}
+            </button>
+          </div>
+        </>
       ) : (
         <>
           {restoreError && (

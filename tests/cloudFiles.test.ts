@@ -11,6 +11,7 @@ test("cloud list navigates folders and opens the selected document in the editor
   });
   vi.stubGlobal("window", dom.window);
   vi.stubGlobal("document", dom.window.document);
+  vi.stubGlobal("localStorage", dom.window.localStorage);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const doc = emptyDocument();
   const onOpen = vi.fn().mockResolvedValue(undefined);
@@ -29,13 +30,15 @@ test("cloud list navigates folders and opens the selected document in the editor
               },
             ],
           }
-        : { file: { head_id: "head" }, versions: [], content: doc },
+        : url.endsWith("/thumbnail")
+          ? { thumbnail: "data:image/png;base64,aGVsbG8=", headId: "head" }
+          : { file: { head_id: "head" }, versions: [], content: doc },
   }));
   vi.stubGlobal("fetch", fetcher);
   const root = createRoot(document.getElementById("root")!);
   const click = async (label: string) => {
     const b = [...document.querySelectorAll("button")].find(
-      (b) => b.textContent === label,
+      (b) => b.textContent === label || b.getAttribute("aria-label") === label,
     )!;
     expect(b).toBeTruthy();
     await act(async () => {
@@ -60,7 +63,16 @@ test("cloud list navigates folders and opens the selected document in the editor
     });
     expect(document.body.textContent).toContain("项目");
     expect(document.body.textContent).not.toContain("设计.baizefig");
-    await click("📁 项目");
+    await click("项目");
+    expect(document.querySelector(".cloud-file-grid")).toBeTruthy();
+    expect(
+      document.querySelector('img[alt="设计 缩略图"]')?.getAttribute("src"),
+    ).toBe("data:image/png;base64,aGVsbG8=");
+    await click("列表模式");
+    expect(document.querySelector(".cloud-file-list")).toBeTruthy();
+    expect(document.querySelector(".cloud-thumbnail")).toBeNull();
+    expect(localStorage.getItem("baizefig.cloud.view")).toBe("list");
+    await click("图标模式");
     expect(document.body.textContent).toContain("设计.baizefig");
     await click("打开编辑");
     expect(onOpen).toHaveBeenCalledWith(doc);

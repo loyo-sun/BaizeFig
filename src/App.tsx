@@ -335,6 +335,7 @@ export default function App() {
   const [hoverSidebar, setHoverSidebar] = useState<"left" | "right" | null>(
     null,
   );
+  const [localFileView, setLocalFileView] = useState<"grid" | "list">("grid");
   const [workspaceTab, setWorkspaceTab] = useState<"local" | "cloud">("local");
   const [pagesExpanded, setPagesExpanded] = useState(true);
   const [doc, setDocumentState] = useState<Document>(() =>
@@ -6846,7 +6847,7 @@ export default function App() {
       )}
       {modal && (
         <div
-          className="modal-backdrop"
+          className={`modal-backdrop ${modal === "files" ? "workspace-fullscreen" : ""}`}
           onPointerDown={(e) => {
             if (e.target === e.currentTarget) setModal(null);
           }}
@@ -7373,11 +7374,12 @@ export default function App() {
                     onOpen={async (next) => {
                       if (!(await save(current.current.doc))) throw Error("无法保存当前文件");
                       validateDocument(next);
-                      await save(next);
+                      if (!(await save(next))) throw Error("无法保存云文件到本地");
                       committedDocument.current = next;
                       current.current.doc = next;
                       history.current = new History();
                       setDoc(next); setPage(next.pages[0].id); setSelected([]); setCollapsed(new Set());
+                      setModal(null);
                     }}
                     session={cloudSession}
                     signingIn={cloudSigningIn || cloudLogin.restoring}
@@ -7439,7 +7441,8 @@ export default function App() {
                         )}
                       </p>
                     )}
-                    <div className="file-grid">
+                    <div role="group" aria-label="文件显示方式" className="local-view-switch"><button aria-pressed={localFileView === "grid"} onClick={()=>setLocalFileView("grid")}>图标模式</button><button aria-pressed={localFileView === "list"} onClick={()=>setLocalFileView("list")}>列表模式</button></div>
+                    <div className={`file-grid ${localFileView === "list" ? "local-file-list" : ""}`}>
                       {(showTrash
                         ? trashedFiles.map((record) => record.document)
                         : documents

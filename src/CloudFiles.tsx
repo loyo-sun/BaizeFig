@@ -1,3 +1,12 @@
+import { CloudThumbnail } from "./CloudThumbnail";
+import {
+  LayoutGrid,
+  List,
+  Folder,
+  RefreshCw,
+  Plus,
+  CloudUpload,
+} from "lucide-react";
 import { svgString, raster } from "./Canvas";
 import { useEffect, useState } from "react";
 import type { CloudSession } from "./cloud";
@@ -19,6 +28,22 @@ export function CloudFiles({
   document: Document;
   onOpen: (doc: Document) => Promise<void>;
 }) {
+  const [view, setView] = useState<"grid" | "list">(() => {
+    try {
+      return localStorage.getItem("baizefig.cloud.view") === "list"
+        ? "list"
+        : "grid";
+    } catch {
+      return "grid";
+    }
+  });
+  const [search, setSearch] = useState("");
+  const changeView = (next: "grid" | "list") => {
+    setView(next);
+    try {
+      localStorage.setItem("baizefig.cloud.view", next);
+    } catch {}
+  };
   const [files, setFiles] = useState<File[]>([]),
     [folders, setFolders] = useState<Folder[]>([]),
     [parent, setParent] = useState<string | null>(null),
@@ -75,148 +100,266 @@ export function CloudFiles({
     setHeads((h) => ({ ...h, [file.id]: d.file.head_id }));
   }
   return (
-    <div aria-busy={busy}>
-      <p>云文件 · 列表模式</p>
+    <div className="cloud-files" aria-busy={busy}>
+      <div className="cloud-files-heading">
+        <div>
+          <h3>所有云文件</h3>
+          <p>在文件夹中整理设计，打开文件继续创作。</p>
+        </div>
+        <div
+          className="cloud-view-switch"
+          role="group"
+          aria-label="文件显示方式"
+        >
+          <button
+            aria-label="图标模式"
+            aria-pressed={view === "grid"}
+            onClick={() => changeView("grid")}
+          >
+            <LayoutGrid size={16} />
+          </button>
+          <button
+            aria-label="列表模式"
+            aria-pressed={view === "list"}
+            onClick={() => changeView("list")}
+          >
+            <List size={16} />
+          </button>
+        </div>
+      </div>
       {error && <p role="alert">{error}</p>}
-      <fieldset disabled={busy}>
-        <button onClick={() => void run(load)}>刷新</button>
-        <button onClick={() => setParent(null)}>根目录</button>
-        {parent && (
+      <fieldset disabled={busy} className="cloud-files-body">
+        <div className="cloud-toolbar">
+          <input
+            type="search"
+            aria-label="搜索当前文件夹"
+            placeholder="搜索文件或文件夹"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <button onClick={() => void run(load)}>
+            <RefreshCw size={14} />
+            刷新
+          </button>
           <button
             onClick={() =>
-              setParent(folders.find((f) => f.id === parent)?.parent_id || null)
+              void run(async () => {
+                const name = prompt("文件夹名称");
+                if (name) {
+                  await api("/folders", { name, parentId: parent });
+                  await load();
+                }
+              })
             }
           >
-            上一级
+            <Plus size={14} />
+            新建文件夹
           </button>
-        )}
-        <button
-          onClick={() =>
-            void run(async () => {
-              const name = prompt("文件夹名称");
-              if (name) {
-                await api("/folders", { name, parentId: parent });
+          <button
+            onClick={() =>
+              void run(async () => {
+                const preview = await Promise.all(
+                  document.pages.map(async (page) => {
+                    const blob = await raster(
+                      await svgString(document, page.id),
+                      0.5,
+                    );
+                    return await new Promise<string>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = () => resolve(String(reader.result));
+                      reader.onerror = reject;
+                      reader.readAsDataURL(blob);
+                    });
+                  }),
+                );
+                const d = await api("/files/" + document.id + "/save", {
+                  content: document,
+                  preview,
+                  headId: heads[document.id] || null,
+                });
+                setHeads((h) => ({ ...h, [document.id]: d.headId }));
                 await load();
-              }
-            })
-          }
-        >
-          新建文件夹
-        </button>
-        <button
-          onClick={() =>
-            void run(async () => {
-              const preview = await Promise.all(
-                document.pages.map(async (page) => {
-                  const blob = await raster(
-                    await svgString(document, page.id),
-                    0.5,
-                  );
-                  return await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(String(reader.result));
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                  });
-                }),
-              );
-              const d = await api("/files/" + document.id + "/save", {
-                content: document,
-                preview,
-                headId: heads[document.id] || null,
-              });
-              setHeads((h) => ({ ...h, [document.id]: d.headId }));
-              await load();
-            })
-          }
-        >
-          保存当前文件到云端
-        </button>
-        <table>
+              })
+            }
+          >
+            <CloudUpload size={14} />
+            保存当前文件到云端
+          </button>
+        </div>
+        <nav className="cloud-breadcrumb" aria-label="文件路径">
+          <button onClick={() => setParent(null)}>云空间</button>
+          {(() => {
+            const chain: Folder[] = [];
+            let cursor = parent;
+            while (cursor) {
+              const f = folders.find((x) => x.id === cursor);
+              if (!f) break;
+              chain.unshift(f);
+              cursor = f.parent_id;
+            }
+            return chain.map((f) => (
+              <span key={f.id}>
+                {" "}
+                / <button onClick={() => setParent(f.id)}>{f.name}</button>
+              </span>
+            ));
+          })()}
+        </nav>
+        <table className={`cloud-file-table cloud-file-${view}`}>
           <thead>
             <tr>
               <th>名称</th>
+              <th>更新时间</th>
               <th>操作</th>
             </tr>
           </thead>
           <tbody>
             {folders
-              .filter((f) => f.parent_id === parent)
+              .filter(
+                (f) =>
+                  f.parent_id === parent &&
+                  f.name.toLowerCase().includes(search.toLowerCase()),
+              )
               .map((f) => (
                 <tr key={f.id}>
                   <td>
-                    <button onClick={() => setParent(f.id)}>📁 {f.name}</button>
+                    <button
+                      className="cloud-file-open cloud-folder-open"
+                      onClick={() => setParent(f.id)}
+                    >
+                      <span className="cloud-folder-picture">
+                        <Folder size={view === "grid" ? 44 : 18} />
+                      </span>
+                      <strong>{f.name}</strong>
+                    </button>
                   </td>
-                  <td>文件夹</td>
+                  <td className="cloud-file-date">文件夹</td>
+                  <td className="cloud-file-actions">—</td>
                 </tr>
               ))}
             {files
-              .filter((f) => f.folder_id === parent)
+              .filter(
+                (f) =>
+                  f.folder_id === parent &&
+                  f.name.toLowerCase().includes(search.toLowerCase()),
+              )
               .map((f) => (
                 <tr key={f.id}>
-                  <td>{f.name}.baizefig</td>
                   <td>
-                    <button onClick={() => void run(() => open(f))}>
-                      打开编辑
-                    </button>
                     <button
-                      onClick={() =>
-                        void run(async () => {
-                          setSelected(f);
-                          setVersions((await api("/files/" + f.id)).versions);
-                        })
-                      }
+                      className="cloud-file-open"
+                      onClick={() => void run(() => open(f))}
                     >
-                      属性与版本
+                      {view === "grid" && (
+                        <CloudThumbnail
+                          session={session}
+                          id={f.id}
+                          head={f.head_id}
+                          name={f.name}
+                        />
+                      )}
+                      <strong>{f.name}.baizefig</strong>
                     </button>
-                    <button
-                      onClick={() =>
-                        void run(async () => {
-                          const target = prompt(
-                            "目标文件夹 ID（留空为根目录）\n" +
-                              folders
-                                .map((x) => x.name + ": " + x.id)
-                                .join("\n"),
-                          );
-                          if (target !== null) {
-                            await api("/files/" + f.id + "/move", {
-                              folderId: target || null,
-                            });
-                            await load();
+                  </td>
+                  <td className="cloud-file-date">
+                    {f.updated_at
+                      ? new Date(f.updated_at).toLocaleDateString()
+                      : "—"}
+                  </td>
+                  <td className="cloud-file-actions">
+                    <details>
+                      <summary>更多操作</summary>
+                      <div className="cloud-file-menu">
+                        <button onClick={() => void run(() => open(f))}>
+                          打开编辑
+                        </button>
+                        <button
+                          onClick={() =>
+                            void run(async () => {
+                              setSelected(f);
+                              setVersions(
+                                (await api("/files/" + f.id)).versions,
+                              );
+                            })
                           }
-                        })
-                      }
-                    >
-                      移动
-                    </button>
-                    <button
-                      onClick={() =>
-                        void run(async () => {
-                          const d = await api("/files/" + f.id + "/share", {});
-                          prompt("只读分享地址", session.base + d.url);
-                        })
-                      }
-                    >
-                      分享
-                    </button>
-                    <button
-                      onClick={() =>
-                        void run(async () => {
-                          await api("/files/" + f.id + "/share", {
-                            revoke: true,
-                          });
-                        })
-                      }
-                    >
-                      撤销分享
-                    </button>
+                        >
+                          属性与版本
+                        </button>
+                        <button
+                          onClick={() =>
+                            void run(async () => {
+                              const target = prompt(
+                                "目标文件夹 ID（留空为根目录）\n" +
+                                  folders
+                                    .map((x) => x.name + ": " + x.id)
+                                    .join("\n"),
+                              );
+                              if (target !== null) {
+                                await api("/files/" + f.id + "/move", {
+                                  folderId: target || null,
+                                });
+                                await load();
+                              }
+                            })
+                          }
+                        >
+                          移动
+                        </button>
+                        <button
+                          onClick={() =>
+                            void run(async () => {
+                              const d = await api(
+                                "/files/" + f.id + "/share",
+                                {},
+                              );
+                              prompt("只读分享地址", session.base + d.url);
+                            })
+                          }
+                        >
+                          分享
+                        </button>
+                        <button
+                          onClick={() =>
+                            void run(async () => {
+                              await api("/files/" + f.id + "/share", {
+                                revoke: true,
+                              });
+                            })
+                          }
+                        >
+                          撤销分享
+                        </button>
+                      </div>
+                    </details>
                   </td>
                 </tr>
               ))}
           </tbody>
         </table>
+        {!folders.some(
+          (f) =>
+            f.parent_id === parent &&
+            f.name.toLowerCase().includes(search.toLowerCase()),
+        ) &&
+          !files.some(
+            (f) =>
+              f.folder_id === parent &&
+              f.name.toLowerCase().includes(search.toLowerCase()),
+          ) && (
+            <p className="cloud-empty">
+              {search
+                ? "没有匹配的文件"
+                : "此文件夹还没有文件，保存当前设计即可开始。"}
+            </p>
+          )}
         {selected && (
-          <section>
+          <section className="cloud-file-properties">
+            <button
+              className="cloud-properties-close"
+              onClick={() => setSelected(null)}
+            >
+              关闭详情
+            </button>
             <h4>{selected.name}.baizefig</h4>
             <p>
               文件 ID：{selected.id}
