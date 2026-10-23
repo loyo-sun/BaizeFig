@@ -1,9 +1,71 @@
+import { detectDeviceLanguage } from "./deviceEnvironment";
 export type Language = "zh-CN" | "en";
-export const DEFAULT_LANGUAGE: Language = "zh-CN";
+export const DEFAULT_LANGUAGE: Language = "en";
 export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Unable to remember the save location. Check browser storage permissions.": "无法保存默认位置，请检查浏览器存储权限",
+  "Sign in to your cloud account again before saving.": "请重新登录云账号后保存",
+  "Saved to cloud": "已保存到云端",
+  "Unable to save the current file": "无法保存当前文件",
+  "Unable to save the cloud file locally": "无法保存云文件到本地",
+  "Install and start local MCP in desktop settings first.": "请先在桌面设置中安装并启动本机 MCP",
+  "Cloud save failed": "云端保存失败",
+  "The file was saved to cloud, but moving it failed. Check its location in the cloud workspace.": "文件已保存到云端，但移动到目标文件夹失败，请在云工作区检查位置",
+  "The file was saved to cloud, but removing the previous version failed. Check version history.": "文件已保存到云端，但旧版本清理失败，请在版本管理中检查",
+  "The cloud file has changed. Reopen it before saving.": "云端已有新版本，请重新打开后保存",
+  "Cloud space request failed ({status})": "云空间操作失败（{status}）",
+
+  "Default save location": "默认保存位置",
+  "Ask every time": "每次询问",
+  "Choose a folder for the first cloud save. Later saves replace the current cloud version; local saves download a file.": "云端首次保存时选择路径，后续直接覆盖当前云文件；本地保存将下载文件。",
+  "Icon view": "图标模式",
+  "Save file": "保存文件",
+  "Where would you like to save?": "保存到哪里？",
+  "Choose a location for this save.": "选择本次保存的位置。",
+  "Download a .baizefig file": "下载 .baizefig 文件",
+  "Save to LoyoCloud": "保存到 LoyoCloud",
+  "Choose a cloud folder": "选择云端文件夹",
+  "Save path": "保存路径",
+  "Cloud space": "云空间",
+  "Loading folders…": "正在加载文件夹…",
+  "Retry": "重试",
+  "This folder has no subfolders": "当前文件夹没有子文件夹",
+  "Use as default save location (change in Preferences)": "设为默认保存位置（可在偏好设置中修改）",
+  "All cloud files": "所有云文件",
+  "Organize designs in folders and open a file to keep creating.": "在文件夹中整理设计，打开文件继续创作。",
+  "File view": "文件显示方式",
+  "Search this folder": "搜索当前文件夹",
+  "Search files or folders": "搜索文件或文件夹",
+  "Refresh": "刷新",
+  "Folder name": "文件夹名称",
+  "New folder": "新建文件夹",
+  "Save current file to cloud": "保存当前文件到云端",
+  "File path": "文件路径",
+  "Name": "名称",
+  "Updated": "更新时间",
+  "Folder": "文件夹",
+  "Open to edit": "打开编辑",
+  "Properties and versions": "属性与版本",
+  "Read-only share URL": "只读分享地址",
+  "Revoke share": "撤销分享",
+  "No matching files": "没有匹配的文件",
+  "This folder is empty. Save the current design to get started.": "此文件夹还没有文件，保存当前设计即可开始。",
+  "Close details": "关闭详情",
+  "Open this version": "打开此版本",
+  "Delete historical version": "删除历史版本",
+  "Open a historical version and save to create a new version while keeping the history.": "打开历史版本后，点击保存会创建新版本，保留原有历史。",
+  "No preview": "暂无预览",
+  "Save to: Cloud space": "文件将保存到：云空间",
+  "File ID": "文件 ID",
+  "Target folder ID (leave empty for root)": "目标文件夹 ID（留空为根目录）",
+  "{name} thumbnail": "{name} 缩略图",
+
+  "V to select · Space to pan · {modifier} + scroll to zoom": "V 选择 · Space 平移 · {modifier} + 滚轮缩放",
+  "Hold {modifier} while dragging to temporarily disable snapping.": "拖动时按住 {modifier} 暂时关闭吸附。",
+  "Shortcuts use {modifier} on this device.": "当前设备使用 {modifier} 组合快捷键。",
+  "Select layers and create a component with {shortcut}.": "选中图层，按 {shortcut} 创建组件。",
   "Suggested commands": "备选操作",
   "No matching commands": "没有匹配的指令",
   "↑ ↓ to select · Enter to run · Esc to close": "↑ ↓ 选择 · Enter 执行 · Esc 关闭",
@@ -1869,9 +1931,9 @@ export function readLanguage(storage?: Pick<Storage, "getItem">): Language {
     const saved = (storage ?? globalThis.localStorage)?.getItem(
       LANGUAGE_STORAGE_KEY,
     );
-    return saved === "en" ? "en" : DEFAULT_LANGUAGE;
+    return saved === "en" || saved === "zh-CN" ? saved : detectDeviceLanguage();
   } catch {
-    return DEFAULT_LANGUAGE;
+    return detectDeviceLanguage();
   }
 }
 export function writeLanguage(

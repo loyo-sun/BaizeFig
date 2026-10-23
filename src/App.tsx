@@ -1,3 +1,4 @@
+import { detectShortcutPlatform } from "./deviceEnvironment";
 import { CommandPalette } from "./CommandPalette";
 import {
   PreferencesLayout,
@@ -448,9 +449,7 @@ export default function App() {
   const [keyboardLayout, setKeyboardLayout] =
     useState<KeyboardLayout>(readKeyboardLayout);
   const [keyboardError, setKeyboardError] = useState(false);
-  const platform = /Mac|iPhone|iPad/.test(navigator.platform)
-    ? ("mac" as const)
-    : ("other" as const);
+  const platform = detectShortcutPlatform();
   const [ready, setReady] = useState(false);
   const [fitWelcomeOnReady, setFitWelcomeOnReady] = useState(false);
   const [snapOptions, setSnapOptions] = useState<SnapOptions>(() => {
@@ -1137,7 +1136,9 @@ export default function App() {
       storeSaveDestination(value);
       setSaveDestination(value);
     } catch {
-      notify("无法保存默认位置，请检查浏览器存储权限");
+      notify(
+        "Unable to remember the save location. Check browser storage permissions.",
+      );
     }
   };
   async function saveToDestination(
@@ -1153,7 +1154,7 @@ export default function App() {
       if (where === "local") localExport();
       else {
         if (!cloudSession || cloudSession.expiresAt <= Date.now())
-          throw Error("请重新登录云账号后保存");
+          throw Error("Sign in to your cloud account again before saving.");
         const binding = readCloudBinding(cloudSession, doc.id);
         let headId = binding?.headId || null;
         if (!binding) {
@@ -1165,7 +1166,7 @@ export default function App() {
           }
         }
         await saveCloudDocument(cloudSession, doc, folderId, headId, true);
-        notify("已保存到云端");
+        notify("Saved to cloud");
       }
       if (makeDefault) configureSaveDestination(where);
       setSavePrompt(null);
@@ -5098,7 +5099,9 @@ export default function App() {
           </button>
           <div className="canvas-bottom-note">
             {tool === "move"
-              ? t("V to select · Space to pan · ⌘ / Ctrl + scroll to zoom")
+              ? t("V to select · Space to pan · {modifier} + scroll to zoom", {
+                  modifier: platform === "mac" ? "⌘" : "Ctrl",
+                })
               : tool === "pen"
                 ? t(
                     "Click to add points · Drag for curves · Click first point to close · Enter / Esc to finish",
@@ -7010,9 +7013,9 @@ export default function App() {
                     content: (
                       <>
                         <label className="setting-row">
-                          默认保存位置
+                          {t("Default save location")}
                           <select
-                            aria-label="默认保存位置"
+                            aria-label={t("Default save location")}
                             value={saveDestination}
                             onChange={(e) =>
                               configureSaveDestination(
@@ -7020,13 +7023,15 @@ export default function App() {
                               )
                             }
                           >
-                            <option value="ask">每次询问</option>
-                            <option value="local">本地</option>
-                            <option value="cloud">云端</option>
+                            <option value="ask">{t("Ask every time")}</option>
+                            <option value="local">{t("Local")}</option>
+                            <option value="cloud">{t("Cloud")}</option>
                           </select>
                         </label>
                         <p className="muted">
-                          云端首次保存时选择路径，后续直接覆盖当前云文件；本地保存将下载文件。
+                          {t(
+                            "Choose a folder for the first cloud save. Later saves replace the current cloud version; local saves download a file.",
+                          )}
                         </p>
                       </>
                     ),
@@ -7226,7 +7231,8 @@ export default function App() {
                         )}
                         <p className="muted">
                           {t(
-                            "Hold Ctrl or Command while dragging to temporarily disable snapping.",
+                            "Hold {modifier} while dragging to temporarily disable snapping.",
+                            { modifier: platform === "mac" ? "⌘" : "Ctrl" },
                           )}
                         </p>
                         {snapSaveError && (
@@ -7283,9 +7289,9 @@ export default function App() {
                         )}
 
                         <p className="muted">
-                          {t(
-                            "Familiar keys. A canvas of your own. ⌘ on Mac, Ctrl on Windows/Linux.",
-                          )}
+                          {t("Shortcuts use {modifier} on this device.", {
+                            modifier: platform === "mac" ? "⌘" : "Ctrl",
+                          })}
                         </p>
                         <div className="shortcut-list">
                           {shortcutRegistry.map(({ name }) => (
@@ -7431,7 +7437,10 @@ export default function App() {
                   {!doc.nodes.some((n) => n.type === "component") && (
                     <p className="muted">
                       {t(
-                        "Select layers and create a component with ⌘ K / Ctrl K.",
+                        "Select layers and create a component with {shortcut}.",
+                        {
+                          shortcut: shortcutLabel("Create component", platform),
+                        },
                       )}
                     </p>
                   )}
@@ -7480,7 +7489,12 @@ export default function App() {
               </>
             )}
             {modal === "commands" && (
-              <CommandPalette actions={actions} query={query} onQueryChange={setQuery} onClose={()=>setModal(null)}/>
+              <CommandPalette
+                actions={actions}
+                query={query}
+                onQueryChange={setQuery}
+                onClose={() => setModal(null)}
+              />
             )}
             {modal === "files" && (
               <>
@@ -7509,10 +7523,10 @@ export default function App() {
                     document={doc}
                     onOpen={async (next) => {
                       if (!(await save(current.current.doc)))
-                        throw Error("无法保存当前文件");
+                        throw Error("Unable to save the current file");
                       validateDocument(next);
                       if (!(await save(next)))
-                        throw Error("无法保存云文件到本地");
+                        throw Error("Unable to save the cloud file locally");
                       committedDocument.current = next;
                       current.current.doc = next;
                       history.current = new History();
@@ -7580,20 +7594,20 @@ export default function App() {
                     )}
                     <div
                       role="group"
-                      aria-label="文件显示方式"
+                      aria-label={t("File view")}
                       className="local-view-switch"
                     >
                       <button
                         aria-pressed={localFileView === "grid"}
                         onClick={() => setLocalFileView("grid")}
                       >
-                        图标模式
+                        {t("Icon view")}
                       </button>
                       <button
                         aria-pressed={localFileView === "list"}
                         onClick={() => setLocalFileView("list")}
                       >
-                        列表模式
+                        {t("List view")}
                       </button>
                     </div>
                     <div
@@ -7783,7 +7797,9 @@ export default function App() {
                           const local = await window.baizefigDesktop!.status();
                           if (!local.running) {
                             await window.baizefigDesktop!.manage();
-                            notify("请先在桌面设置中安装并启动本机 MCP");
+                            notify(
+                              "Install and start local MCP in desktop settings first.",
+                            );
                             return;
                           }
                           setBridgeRemote(false);

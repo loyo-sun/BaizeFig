@@ -1,3 +1,4 @@
+import { useI18n } from "./LanguageContext";
 import { useEffect, useState } from "react";
 import { FileImage } from "lucide-react";
 import type { CloudSession } from "./cloud";
@@ -12,6 +13,7 @@ export function CloudThumbnail({
   head: string | null;
   name: string;
 }) {
+  const { t } = useI18n();
   const [source, setSource] = useState<string | null>(null),
     [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -41,14 +43,14 @@ export function CloudThumbnail({
       {source && !failed ? (
         <img
           src={source}
-          alt={name + " 缩略图"}
+          alt={t("{name} thumbnail", { name })}
           loading="lazy"
           onError={() => setFailed(true)}
         />
       ) : (
         <span className="thumbnail-empty">
           <FileImage size={32} />
-          <small>暂无预览</small>
+          <small>{t("No preview")}</small>
         </span>
       )}
     </span>

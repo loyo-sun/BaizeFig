@@ -78,14 +78,14 @@ try {
   await page.getByText("demo_user", { exact: true }).waitFor();
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   await page.keyboard.press("ControlOrMeta+s");
-  const dialog = page.getByRole("dialog", { name: "保存文件", exact: true });
+  const dialog = page.getByRole("dialog", { name: "Save file", exact: true });
   await dialog.waitFor();
-  await dialog.getByRole("radio", { name: "云端", exact: false }).check();
+  await dialog.getByRole("radio", { name: "Cloud", exact: false }).check();
   await dialog
     .getByRole("button", { name: "📁 项目设计", exact: true })
     .click();
   await dialog.getByRole("checkbox").check();
-  await dialog.getByRole("button", { name: "保存", exact: true }).click();
+  await dialog.getByRole("button", { name: "Save", exact: true }).click();
   await dialog.waitFor({ state: "detached" });
   assert.equal(saves, 1);
   assert.equal(requests[0].folderId, "folder1");
@@ -106,10 +106,10 @@ try {
   await page
     .getByRole("combobox", { name: "Search actions", exact: true })
     .fill("Preferences");
+  await page.getByRole("option", { name: "Preferences", exact: true }).click();
   await page
-    .getByRole("option", { name: "Preferences", exact: true })
-    .click();
-  await page.getByLabel("默认保存位置", { exact: true }).selectOption("local");
+    .getByLabel("Default save location", { exact: true })
+    .selectOption("local");
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
   const download = page.waitForEvent("download");
   await page.keyboard.press("ControlOrMeta+s");
@@ -126,7 +126,7 @@ try {
   await local.keyboard.press("ControlOrMeta+s");
   assert.ok((await localDownload).suggestedFilename().endsWith(".baizefig"));
   assert.equal(
-    await local.getByRole("dialog", { name: "保存文件", exact: true }).count(),
+    await local.getByRole("dialog", { name: "Save file", exact: true }).count(),
     0,
   );
   await plain.close();

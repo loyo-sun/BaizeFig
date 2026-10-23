@@ -56,7 +56,7 @@ export async function cloudRequest(
   const result = await response.json();
   if (!response.ok)
     throw Object.assign(
-      Error(result.error_description || result.error || "云端保存失败"),
+      Error(result.error_description || result.error || "Cloud save failed"),
       { status: response.status },
     );
   return result;
@@ -102,7 +102,7 @@ export async function saveCloudDocument(
       rememberCloudBinding(session, doc.id, result.headId, folderId);
     } catch {
       throw Error(
-        "文件已保存到云端，但移动到目标文件夹失败，请在云工作区检查位置",
+        "The file was saved to cloud, but moving it failed. Check its location in the cloud workspace.",
       );
     }
   }
@@ -114,7 +114,9 @@ export async function saveCloudDocument(
         {},
       );
     } catch {
-      throw Error("文件已保存到云端，但旧版本清理失败，请在版本管理中检查");
+      throw Error(
+        "The file was saved to cloud, but removing the previous version failed. Check version history.",
+      );
     }
   }
   return result;

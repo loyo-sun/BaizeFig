@@ -67,12 +67,14 @@ it("supports character layouts, distinguishes command and literal Ctrl, and reje
   expect(
     shortcutMatches({ ...event("KeyQ"), key: "P" }, pen, "character"),
   ).toBe(true);
-  expect(
-    shortcutMatches({ ...event("KeyQ"), key: "P" }, pen, "physical"),
-  ).toBe(false);
+  expect(shortcutMatches({ ...event("KeyQ"), key: "P" }, pen, "physical")).toBe(
+    false,
+  );
   const pick = shortcutRegistry.find((s) => s.name === "Pick color")!;
   expect(shortcutMatches(event("KeyC", "M"), pick)).toBe(false);
-  expect(shortcutMatches(event("KeyC", "C"), pick)).toBe(true);
+  expect(shortcutMatches(event("KeyC", "C"), pick, "physical", "mac")).toBe(
+    true,
+  );
   expect(shortcutMatches(event("KeyP", "A"), pen)).toBe(false);
 });
 it("keeps root and flipped submenu inside viewport boundaries", () => {
@@ -152,4 +154,12 @@ it("ungroups with literal Ctrl and either Delete key on both platforms", () => {
       }
     }
   }
+});
+
+it("defaults unspecified shortcut hints and matching to Ctrl", () => {
+  const save = shortcutRegistry.find((s) => s.name === "Save")!;
+  expect(shortcutLabel("Save")).toBe("Ctrl + S");
+  expect(shortcutMatches(event("KeyS", "C"), save)).toBe(true);
+  expect(shortcutMatches(event("KeyS", "M"), save)).toBe(false);
+  expect(shortcutLabel("Save", "mac")).toBe("⌘ + S");
 });

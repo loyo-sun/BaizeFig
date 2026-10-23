@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
 import {
@@ -11,17 +11,24 @@ import {
 } from "../src/i18n";
 
 describe("interface language preferences", () => {
-  it("defaults to Chinese for new users and unsupported preferences", () => {
-    expect(DEFAULT_LANGUAGE).toBe("zh-CN");
+  afterEach(() => vi.unstubAllGlobals());
+  it("uses the primary device language when there is no valid saved preference", () => {
+    expect(DEFAULT_LANGUAGE).toBe("en");
+    vi.stubGlobal("navigator", { languages: ["zh-TW"], language: "zh-TW" });
     expect(readLanguage({ getItem: () => null })).toBe("zh-CN");
     expect(readLanguage({ getItem: () => "de" })).toBe("zh-CN");
+    vi.stubGlobal("navigator", { languages: ["fr-FR"], language: "fr-FR" });
+    expect(readLanguage({ getItem: () => null })).toBe("en");
     expect(
       readLanguage({
         getItem: () => {
           throw Error("Storage blocked");
         },
       }),
-    ).toBe("zh-CN");
+    ).toBe("en");
+    expect(readLanguage({ getItem: () => "zh-CN" })).toBe("zh-CN");
+    vi.stubGlobal("navigator", { languages: ["zh-CN"] });
+    expect(readLanguage({ getItem: () => "en" })).toBe("en");
   });
   it("restores saved English and supports switching back to Chinese", () => {
     const values = new Map<string, string>();

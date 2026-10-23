@@ -136,7 +136,7 @@ export function shortcutMatches(
   >,
   s: Shortcut,
   layout: KeyboardLayout = "physical",
-  platform: "mac" | "other" = "mac",
+  platform: "mac" | "other" = "other",
 ) {
   s = platformShortcut(s, platform);
   if (s.name === "Pick color" && platform === "other")
@@ -207,7 +207,7 @@ function codeKey(code: string, shift = false) {
     )[code] ?? code
   );
 }
-export function shortcutLabel(name: string, platform: "mac" | "other" = "mac") {
+export function shortcutLabel(name: string, platform: "mac" | "other" = "other") {
   if (name === "Ungroup selection" && platform === "mac") return "⌘ + ⌫";
   if (name === "New design file" && platform === "mac")
     return "⌃ Control + ⌥ Option + N";

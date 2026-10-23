@@ -4,6 +4,12 @@ import React, { act } from "react";
 import { createRoot } from "react-dom/client";
 import { CloudFiles } from "../src/CloudFiles";
 import { emptyDocument } from "../src/core";
+vi.mock("../src/LanguageContext", () => ({
+  useI18n: () => ({
+    t: (s: string, v: Record<string, string> = {}) =>
+      s.replace(/\{(\w+)\}/g, (_, k) => v[k] || _),
+  }),
+}));
 vi.mock("../src/Canvas", () => ({ svgString: vi.fn(), raster: vi.fn() }));
 test("cloud list navigates folders and opens the selected document in the editor", async () => {
   const dom = new JSDOM('<div id="root"></div>', {
@@ -66,15 +72,15 @@ test("cloud list navigates folders and opens the selected document in the editor
     await click("项目");
     expect(document.querySelector(".cloud-file-grid")).toBeTruthy();
     expect(
-      document.querySelector('img[alt="设计 缩略图"]')?.getAttribute("src"),
+      document.querySelector('img[alt="设计 thumbnail"]')?.getAttribute("src"),
     ).toBe("data:image/png;base64,aGVsbG8=");
-    await click("列表模式");
+    await click("List view");
     expect(document.querySelector(".cloud-file-list")).toBeTruthy();
     expect(document.querySelector(".cloud-thumbnail")).toBeNull();
     expect(localStorage.getItem("baizefig.cloud.view")).toBe("list");
-    await click("图标模式");
+    await click("Icon view");
     expect(document.body.textContent).toContain("设计.baizefig");
-    await click("打开编辑");
+    await click("Open to edit");
     expect(onOpen).toHaveBeenCalledWith(doc);
     expect(fetcher.mock.calls[0][0]).toBe("https://cloud.test/api/v1/space");
   } finally {

@@ -86,7 +86,7 @@ try {
   await page.reload();
   await page.getByRole("button", { name: "Workspace", exact: true }).click();
   await page.getByRole("tab", { name: "Cloud workspace", exact: true }).click();
-  await page.getByAltText("官网首页 缩略图", { exact: true }).waitFor();
+  await page.getByAltText("官网首页 thumbnail", { exact: true }).waitFor();
   await page.waitForTimeout(300);
   const box = await page.locator(".modal-files").boundingBox();
   assert.equal(box.x, 0);
@@ -99,11 +99,11 @@ try {
   const output = new URL("../test-results/workspace-redesign/", import.meta.url)
     .pathname;
   await page.screenshot({ path: output + "cloud-grid.png" });
-  await page.getByRole("button", { name: "列表模式", exact: true }).click();
+  await page.getByRole("button", { name: "List view", exact: true }).click();
   assert.equal(await page.locator(".cloud-file-list").count(), 1);
   assert.equal(await page.locator(".cloud-thumbnail").count(), 0);
   await page.screenshot({ path: output + "cloud-list.png" });
-  await page.getByRole("button", { name: "图标模式", exact: true }).click();
+  await page.getByRole("button", { name: "Icon view", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   assert.ok(
     await page
@@ -112,7 +112,7 @@ try {
   );
   await page.screenshot({ path: output + "cloud-mobile.png" });
   await page.getByRole("tab", { name: "Local workspace", exact: true }).click();
-  await page.getByRole("button", { name: "列表模式", exact: true }).click();
+  await page.getByRole("button", { name: "List view", exact: true }).click();
   assert.equal(await page.locator(".local-file-list").count(), 1);
   assert.ok(
     await page

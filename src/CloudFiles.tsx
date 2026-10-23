@@ -1,3 +1,4 @@
+import { useI18n } from "./LanguageContext";
 import { rememberCloudBinding, readCloudBinding } from "./saveDestination";
 import { CloudThumbnail } from "./CloudThumbnail";
 import {
@@ -29,6 +30,7 @@ export function CloudFiles({
   document: Document;
   onOpen: (doc: Document) => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [view, setView] = useState<"grid" | "list">(() => {
     try {
       return localStorage.getItem("baizefig.cloud.view") === "list"
@@ -66,8 +68,8 @@ export function CloudFiles({
     if (!r.ok)
       throw Error(
         r.status === 409
-          ? "云端已有新版本，请重新打开后保存"
-          : "云空间操作失败 (" + r.status + ")",
+          ? t("The cloud file has changed. Reopen it before saving.")
+          : t("Cloud space request failed ({status})", { status: r.status }),
       );
     return r.json();
   }
@@ -110,23 +112,25 @@ export function CloudFiles({
     <div className="cloud-files" aria-busy={busy}>
       <div className="cloud-files-heading">
         <div>
-          <h3>所有云文件</h3>
-          <p>在文件夹中整理设计，打开文件继续创作。</p>
+          <h3>{t("All cloud files")}</h3>
+          <p>
+            {t("Organize designs in folders and open a file to keep creating.")}
+          </p>
         </div>
         <div
           className="cloud-view-switch"
           role="group"
-          aria-label="文件显示方式"
+          aria-label={t("File view")}
         >
           <button
-            aria-label="图标模式"
+            aria-label={t("Icon view")}
             aria-pressed={view === "grid"}
             onClick={() => changeView("grid")}
           >
             <LayoutGrid size={16} />
           </button>
           <button
-            aria-label="列表模式"
+            aria-label={t("List view")}
             aria-pressed={view === "list"}
             onClick={() => changeView("list")}
           >
@@ -134,24 +138,24 @@ export function CloudFiles({
           </button>
         </div>
       </div>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{t(error)}</p>}
       <fieldset disabled={busy} className="cloud-files-body">
         <div className="cloud-toolbar">
           <input
             type="search"
-            aria-label="搜索当前文件夹"
-            placeholder="搜索文件或文件夹"
+            aria-label={t("Search this folder")}
+            placeholder={t("Search files or folders")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <button onClick={() => void run(load)}>
             <RefreshCw size={14} />
-            刷新
+            {t("Refresh")}
           </button>
           <button
             onClick={() =>
               void run(async () => {
-                const name = prompt("文件夹名称");
+                const name = prompt(t("Folder name"));
                 if (name) {
                   await api("/folders", { name, parentId: parent });
                   await load();
@@ -160,7 +164,7 @@ export function CloudFiles({
             }
           >
             <Plus size={14} />
-            新建文件夹
+            {t("New folder")}
           </button>
           <button
             onClick={() =>
@@ -199,11 +203,11 @@ export function CloudFiles({
             }
           >
             <CloudUpload size={14} />
-            保存当前文件到云端
+            {t("Save current file to cloud")}
           </button>
         </div>
-        <nav className="cloud-breadcrumb" aria-label="文件路径">
-          <button onClick={() => setParent(null)}>云空间</button>
+        <nav className="cloud-breadcrumb" aria-label={t("File path")}>
+          <button onClick={() => setParent(null)}>{t("Cloud space")}</button>
           {(() => {
             const chain: Folder[] = [];
             let cursor = parent;
@@ -224,9 +228,9 @@ export function CloudFiles({
         <table className={`cloud-file-table cloud-file-${view}`}>
           <thead>
             <tr>
-              <th>名称</th>
-              <th>更新时间</th>
-              <th>操作</th>
+              <th>{t("Name")}</th>
+              <th>{t("Updated")}</th>
+              <th>{t("Actions")}</th>
             </tr>
           </thead>
           <tbody>
@@ -249,7 +253,7 @@ export function CloudFiles({
                       <strong>{f.name}</strong>
                     </button>
                   </td>
-                  <td className="cloud-file-date">文件夹</td>
+                  <td className="cloud-file-date">{t("Folder")}</td>
                   <td className="cloud-file-actions">—</td>
                 </tr>
               ))}
@@ -284,10 +288,10 @@ export function CloudFiles({
                   </td>
                   <td className="cloud-file-actions">
                     <details>
-                      <summary>更多操作</summary>
+                      <summary>{t("More actions")}</summary>
                       <div className="cloud-file-menu">
                         <button onClick={() => void run(() => open(f))}>
-                          打开编辑
+                          {t("Open to edit")}
                         </button>
                         <button
                           onClick={() =>
@@ -299,13 +303,14 @@ export function CloudFiles({
                             })
                           }
                         >
-                          属性与版本
+                          {t("Properties and versions")}
                         </button>
                         <button
                           onClick={() =>
                             void run(async () => {
                               const target = prompt(
-                                "目标文件夹 ID（留空为根目录）\n" +
+                                t("Target folder ID (leave empty for root)") +
+                                  "\n" +
                                   folders
                                     .map((x) => x.name + ": " + x.id)
                                     .join("\n"),
@@ -319,7 +324,7 @@ export function CloudFiles({
                             })
                           }
                         >
-                          移动
+                          {t("Move")}
                         </button>
                         <button
                           onClick={() =>
@@ -328,11 +333,14 @@ export function CloudFiles({
                                 "/files/" + f.id + "/share",
                                 {},
                               );
-                              prompt("只读分享地址", session.base + d.url);
+                              prompt(
+                                t("Read-only share URL"),
+                                session.base + d.url,
+                              );
                             })
                           }
                         >
-                          分享
+                          {t("Share")}
                         </button>
                         <button
                           onClick={() =>
@@ -343,7 +351,7 @@ export function CloudFiles({
                             })
                           }
                         >
-                          撤销分享
+                          {t("Revoke share")}
                         </button>
                       </div>
                     </details>
@@ -364,8 +372,10 @@ export function CloudFiles({
           ) && (
             <p className="cloud-empty">
               {search
-                ? "没有匹配的文件"
-                : "此文件夹还没有文件，保存当前设计即可开始。"}
+                ? t("No matching files")
+                : t(
+                    "This folder is empty. Save the current design to get started.",
+                  )}
             </p>
           )}
         {selected && (
@@ -374,19 +384,19 @@ export function CloudFiles({
               className="cloud-properties-close"
               onClick={() => setSelected(null)}
             >
-              关闭详情
+              {t("Close details")}
             </button>
             <h4>{selected.name}.baizefig</h4>
             <p>
-              文件 ID：{selected.id}
+              {t("File ID")}: {selected.id}
               <br />
-              更新时间：{selected.updated_at}
+              {t("Updated")}: {selected.updated_at}
             </p>
             {versions.map((v) => (
               <p key={v.id}>
                 {v.created_at}{" "}
                 <button onClick={() => void run(() => open(selected, v.id))}>
-                  打开此版本
+                  {t("Open this version")}
                 </button>
                 <button
                   onClick={() =>
@@ -405,11 +415,15 @@ export function CloudFiles({
                     })
                   }
                 >
-                  删除历史版本
+                  {t("Delete historical version")}
                 </button>
               </p>
             ))}
-            <p>打开历史版本后，点击保存会创建新版本，保留原有历史。</p>
+            <p>
+              {t(
+                "Open a historical version and save to create a new version while keeping the history.",
+              )}
+            </p>
           </section>
         )}
       </fieldset>

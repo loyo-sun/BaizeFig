@@ -1,3 +1,4 @@
+import { useI18n } from "./LanguageContext";
 import { useEffect, useState } from "react";
 import type { CloudSession } from "./cloud";
 import { cloudRequest } from "./saveDestination";
@@ -22,6 +23,7 @@ export function SaveDestinationDialog({
   ) => void;
   onCancel: () => void;
 }) {
+  const { t } = useI18n();
   const [where, setWhere] = useState<"local" | "cloud">(initialWhere),
     [makeDefault, setMakeDefault] = useState(false),
     [parent, setParent] = useState<string | null>(initialFolderId),
@@ -78,10 +80,10 @@ export function SaveDestinationDialog({
         className="modal save-destination-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="保存文件"
+        aria-label={t("Save file")}
       >
-        <h2>保存到哪里？</h2>
-        <p className="muted">选择本次保存的位置。</p>
+        <h2>{t("Where would you like to save?")}</h2>
+        <p className="muted">{t("Choose a location for this save.")}</p>
         <fieldset disabled={busy}>
           <div className="save-location-options">
             <label>
@@ -92,7 +94,8 @@ export function SaveDestinationDialog({
                 checked={where === "local"}
                 onChange={() => setWhere("local")}
               />
-              本地<span>下载 .baizefig 文件</span>
+              {t("Local")}
+              <span>{t("Download a .baizefig file")}</span>
             </label>
             <label>
               <input
@@ -101,14 +104,17 @@ export function SaveDestinationDialog({
                 checked={where === "cloud"}
                 onChange={() => setWhere("cloud")}
               />
-              云端<span>保存到 LoyoCloud</span>
+              {t("Cloud")}
+              <span>{t("Save to LoyoCloud")}</span>
             </label>
           </div>
           {where === "cloud" && (
             <section className="save-folder-picker">
-              <h3>选择云端文件夹</h3>
-              <nav aria-label="保存路径">
-                <button onClick={() => setParent(null)}>云空间</button>
+              <h3>{t("Choose a cloud folder")}</h3>
+              <nav aria-label={t("Save path")}>
+                <button onClick={() => setParent(null)}>
+                  {t("Cloud space")}
+                </button>
                 {chain.map((f) => (
                   <span key={f.id}>
                     {" "}
@@ -117,11 +123,13 @@ export function SaveDestinationDialog({
                 ))}
               </nav>
               {loading ? (
-                <p role="status">正在加载文件夹…</p>
+                <p role="status">{t("Loading folders…")}</p>
               ) : folderError ? (
                 <p role="alert">
-                  {folderError}{" "}
-                  <button onClick={() => setRetry((x) => x + 1)}>重试</button>
+                  {t(folderError)}{" "}
+                  <button onClick={() => setRetry((x) => x + 1)}>
+                    {t("Retry")}
+                  </button>
                 </p>
               ) : (
                 <div className="save-folder-list">
@@ -133,12 +141,15 @@ export function SaveDestinationDialog({
                       </button>
                     ))}
                   {!folders.some((f) => f.parent_id === parent) && (
-                    <p className="muted">当前文件夹没有子文件夹</p>
+                    <p className="muted">
+                      {t("This folder has no subfolders")}
+                    </p>
                   )}
                 </div>
               )}
               <p>
-                文件将保存到：云空间{chain.map((f) => " / " + f.name).join("")}
+                {t("Save to: Cloud space")}
+                {chain.map((f) => " / " + f.name).join("")}
               </p>
             </section>
           )}
@@ -148,17 +159,17 @@ export function SaveDestinationDialog({
               checked={makeDefault}
               onChange={(e) => setMakeDefault(e.target.checked)}
             />
-            设为默认保存位置（可在偏好设置中修改）
+            {t("Use as default save location (change in Preferences)")}
           </label>
-          {error && <p role="alert">{error}</p>}
+          {error && <p role="alert">{t(error)}</p>}
           <div className="save-dialog-actions">
-            <button onClick={onCancel}>取消</button>
+            <button onClick={onCancel}>{t("Cancel")}</button>
             <button
               className="primary"
               disabled={where === "cloud" && (loading || !!folderError)}
               onClick={() => onSave(where, makeDefault, parent)}
             >
-              {busy ? "正在保存…" : "保存"}
+              {busy ? t("Saving…") : t("Save")}
             </button>
           </div>
         </fieldset>

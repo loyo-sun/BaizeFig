@@ -54,7 +54,7 @@ try {
   const tab = (name) => dialog.getByRole("tab", { name, exact: true });
   assert.equal(await dialog.getByRole("tab").count(), 6);
   await dialog
-    .getByLabel("默认保存位置", { exact: true })
+    .getByLabel("Default save location", { exact: true })
     .selectOption("local");
   assert.equal(
     await page.evaluate(() =>
@@ -98,7 +98,7 @@ try {
   });
   await search.fill("云端");
   assert.equal(await dialog.getByRole("tab").count(), 1);
-  await dialog.getByLabel("默认保存位置", { exact: true }).waitFor();
+  await dialog.getByLabel("Default save location", { exact: true }).waitFor();
   await search.fill("nothing-matches");
   await dialog.getByText("No matching settings", { exact: true }).waitFor();
   await search.fill("");
