@@ -1494,3 +1494,22 @@ it("reports an explicit component dependency limit instead of an invalid documen
   const source=[nodes[0],nodes[1],...Array.from({length:2001},(_,i)=>({guid:g(100+i),type:"SYMBOL",parentIndex:{guid:g(1)},size:{x:10,y:10}}))];
   expect(()=>importFigArchive(readFigArchive(stream({nodeChanges:source} as any)))).toThrow("Figma component library exceeds import limits");
 });
+
+it('imports native clipboard fragments without a document or canvas while keeping hierarchy',async()=>{
+ const {prepareFigClipboard}=await import('../src/figImport');
+ const fragment=nodes.filter(n=>n.type!=='DOCUMENT'&&n.type!=='CANVAS');
+ const archive=readFigArchive(stream({nodeChanges:fragment}));
+ prepareFigClipboard(archive);
+ const result=importFigArchive(archive,'clipboard.fig');
+ expect(result.document.pages).toHaveLength(1);
+ expect(result.document.nodes.length).toBeGreaterThan(0);
+ validateDocument(result.document);
+ const {pasteNodes}=await import('../src/clipboard');
+ const {emptyDocument,History}=await import('../src/core');
+ const destination=emptyDocument();
+ const pasted=pasteNodes(destination,destination.pages[0].id,{nodes:result.document.nodes},[]);
+ expect(pasted.doc.id).toBe(destination.id);
+ expect(pasted.doc.nodes.length).toBeGreaterThan(0);
+ const history=new History();history.push(destination);
+ expect(history.undo(pasted.doc).nodes).toEqual(destination.nodes);
+});

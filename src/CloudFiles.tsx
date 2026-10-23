@@ -1,3 +1,5 @@
+import { FileActions } from "./FileActions";
+import { FileDetails, MoveFileDialog, folderPath } from "./FileDetails";
 import { useI18n } from "./LanguageContext";
 import { rememberCloudBinding, readCloudBinding } from "./saveDestination";
 import { CloudThumbnail } from "./CloudThumbnail";
@@ -19,6 +21,9 @@ type File = {
   folder_id: string | null;
   head_id: string | null;
   updated_at: string;
+  created_at?: string;
+  deleted_at?: string;
+  size_bytes?: number;
 };
 type Folder = { id: string; name: string; parent_id: string | null };
 export function CloudFiles({
@@ -40,6 +45,8 @@ export function CloudFiles({
       return "grid";
     }
   });
+  const [trash, setTrash] = useState(false);
+  const [moving, setMoving] = useState<File | null>(null);
   const [search, setSearch] = useState("");
   const changeView = (next: "grid" | "list") => {
     setView(next);
@@ -74,9 +81,9 @@ export function CloudFiles({
     return r.json();
   }
   async function load() {
-    const d = await api("");
+    const d = await api(trash ? "/trash" : "");
     setFiles(d.files);
-    setFolders(d.folders);
+    setFolders(d.folders || []);
   }
   async function run(fn: () => Promise<void>) {
     setBusy(true);
@@ -93,7 +100,7 @@ export function CloudFiles({
     setHeads({});
     setParent(null);
     void run(load);
-  }, [session.token]);
+  }, [session.token, trash]);
   async function open(file: File, version?: string) {
     const d = await api(
       "/files/" + file.id + (version ? "?version=" + version : ""),
@@ -112,7 +119,15 @@ export function CloudFiles({
     <div className="cloud-files" aria-busy={busy}>
       <div className="cloud-files-heading">
         <div>
-          <h3>{t("All cloud files")}</h3>
+          <h3>{trash ? "回收站" : t("All cloud files")}</h3>
+          <button
+            onClick={() => {
+              setTrash(!trash);
+              setParent(null);
+            }}
+          >
+            {trash ? "返回文件" : "回收站（保留 30 天）"}
+          </button>
           <p>
             {t("Organize designs in folders and open a file to keep creating.")}
           </p>
@@ -230,6 +245,7 @@ export function CloudFiles({
             <tr>
               <th>{t("Name")}</th>
               <th>{t("Updated")}</th>
+              <th>创建时间</th>
               <th>{t("Actions")}</th>
             </tr>
           </thead>
@@ -254,13 +270,14 @@ export function CloudFiles({
                     </button>
                   </td>
                   <td className="cloud-file-date">{t("Folder")}</td>
+                  <td>—</td>
                   <td className="cloud-file-actions">—</td>
                 </tr>
               ))}
             {files
               .filter(
                 (f) =>
-                  f.folder_id === parent &&
+                  (trash || f.folder_id === parent) &&
                   f.name.toLowerCase().includes(search.toLowerCase()),
               )
               .map((f) => (
@@ -268,6 +285,7 @@ export function CloudFiles({
                   <td>
                     <button
                       className="cloud-file-open"
+                      disabled={trash}
                       onClick={() => void run(() => open(f))}
                     >
                       {view === "grid" && (
@@ -283,15 +301,48 @@ export function CloudFiles({
                   </td>
                   <td className="cloud-file-date">
                     {f.updated_at
-                      ? new Date(f.updated_at).toLocaleDateString()
+                      ? new Date(f.updated_at).toLocaleString()
+                      : "—"}
+                  </td>
+                  <td className="cloud-file-created cloud-file-date">
+                    {f.created_at
+                      ? new Date(f.created_at).toLocaleString()
                       : "—"}
                   </td>
                   <td className="cloud-file-actions">
-                    <details>
-                      <summary>{t("More actions")}</summary>
-                      <div className="cloud-file-menu">
+                    {trash ? (
+                      <>
+                        <button
+                          onClick={() =>
+                            void run(async () => {
+                              await api("/files/" + f.id + "/restore", {});
+                              await load();
+                            })
+                          }
+                        >
+                          恢复
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm("彻底删除此文件？此操作无法恢复。"))
+                              void run(async () => {
+                                await api("/files/" + f.id + "/purge", {});
+                                await load();
+                              });
+                          }}
+                        >
+                          彻底删除
+                        </button>
+                        <p>
+                          删除于{" "}
+                          {f.deleted_at &&
+                            new Date(f.deleted_at).toLocaleString()}
+                        </p>
+                      </>
+                    ) : (
+                      <FileActions>
                         <button onClick={() => void run(() => open(f))}>
-                          {t("Open to edit")}
+                          打开
                         </button>
                         <button
                           onClick={() =>
@@ -303,58 +354,26 @@ export function CloudFiles({
                             })
                           }
                         >
-                          {t("Properties and versions")}
+                          属性
                         </button>
+                        <button onClick={() => setMoving(f)}>移动</button>
                         <button
-                          onClick={() =>
-                            void run(async () => {
-                              const target = prompt(
-                                t("Target folder ID (leave empty for root)") +
-                                  "\n" +
-                                  folders
-                                    .map((x) => x.name + ": " + x.id)
-                                    .join("\n"),
-                              );
-                              if (target !== null) {
-                                await api("/files/" + f.id + "/move", {
-                                  folderId: target || null,
-                                });
+                          onClick={() => {
+                            if (
+                              confirm(
+                                `删除「${f.name}」？文件将移入回收站，保留 30 天。`,
+                              )
+                            )
+                              void run(async () => {
+                                await api("/files/" + f.id + "/delete", {});
                                 await load();
-                              }
-                            })
-                          }
-                        >
-                          {t("Move")}
-                        </button>
-                        <button
-                          onClick={() =>
-                            void run(async () => {
-                              const d = await api(
-                                "/files/" + f.id + "/share",
-                                {},
-                              );
-                              prompt(
-                                t("Read-only share URL"),
-                                session.base + d.url,
-                              );
-                            })
-                          }
-                        >
-                          {t("Share")}
-                        </button>
-                        <button
-                          onClick={() =>
-                            void run(async () => {
-                              await api("/files/" + f.id + "/share", {
-                                revoke: true,
                               });
-                            })
-                          }
+                          }}
                         >
-                          {t("Revoke share")}
+                          删除
                         </button>
-                      </div>
-                    </details>
+                      </FileActions>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -367,7 +386,7 @@ export function CloudFiles({
         ) &&
           !files.some(
             (f) =>
-              f.folder_id === parent &&
+              (trash || f.folder_id === parent) &&
               f.name.toLowerCase().includes(search.toLowerCase()),
           ) && (
             <p className="cloud-empty">
@@ -379,52 +398,88 @@ export function CloudFiles({
             </p>
           )}
         {selected && (
-          <section className="cloud-file-properties">
-            <button
-              className="cloud-properties-close"
-              onClick={() => setSelected(null)}
-            >
-              {t("Close details")}
-            </button>
-            <h4>{selected.name}.baizefig</h4>
-            <p>
-              {t("File ID")}: {selected.id}
-              <br />
-              {t("Updated")}: {selected.updated_at}
-            </p>
-            {versions.map((v) => (
-              <p key={v.id}>
-                {v.created_at}{" "}
-                <button onClick={() => void run(() => open(selected, v.id))}>
-                  {t("Open this version")}
-                </button>
-                <button
-                  onClick={() =>
-                    void run(async () => {
-                      await api(
-                        "/files/" +
-                          selected.id +
-                          "/versions/" +
-                          v.id +
-                          "/delete",
-                        {},
-                      );
-                      setVersions(
-                        (await api("/files/" + selected.id)).versions,
-                      );
-                    })
-                  }
-                >
-                  {t("Delete historical version")}
-                </button>
-              </p>
-            ))}
-            <p>
-              {t(
-                "Open a historical version and save to create a new version while keeping the history.",
-              )}
-            </p>
-          </section>
+          <FileDetails
+            name={selected.name}
+            size={
+              selected.size_bytes === undefined
+                ? undefined
+                : Number(selected.size_bytes)
+            }
+            created={selected.created_at}
+            updated={selected.updated_at}
+            location={folderPath(folders, selected.folder_id, "云工作区")}
+            onClose={() => setSelected(null)}
+          >
+            <details>
+              <summary>历史版本与分享</summary>
+              {versions.map((v) => (
+                <p key={v.id}>
+                  {new Date(v.created_at).toLocaleString()}{" "}
+                  <button onClick={() => void run(() => open(selected, v.id))}>
+                    打开版本
+                  </button>
+                  {v.id !== selected.head_id && (
+                    <button
+                      onClick={() => {
+                        if (confirm("删除这个历史版本？"))
+                          void run(async () => {
+                            await api(
+                              "/files/" +
+                                selected.id +
+                                "/versions/" +
+                                v.id +
+                                "/delete",
+                              {},
+                            );
+                            setVersions(
+                              (await api("/files/" + selected.id)).versions,
+                            );
+                          });
+                      }}
+                    >
+                      删除版本
+                    </button>
+                  )}
+                </p>
+              ))}
+              <button
+                onClick={() =>
+                  void run(async () => {
+                    const d = await api("/files/" + selected.id + "/share", {});
+                    prompt("只读分享地址", session.base + d.url);
+                  })
+                }
+              >
+                分享
+              </button>
+              <button
+                onClick={() =>
+                  void run(async () => {
+                    await api("/files/" + selected.id + "/share", {
+                      revoke: true,
+                    });
+                  })
+                }
+              >
+                撤销分享
+              </button>
+            </details>
+          </FileDetails>
+        )}
+        {moving && (
+          <MoveFileDialog
+            folders={folders}
+            root="云工作区"
+            initial={moving.folder_id}
+            onClose={() => setMoving(null)}
+            onMove={(id) =>
+              void run(async () => {
+                await api("/files/" + moving.id + "/move", { folderId: id });
+                setMoving(null);
+                await load();
+              })
+            }
+          />
         )}
       </fieldset>
     </div>

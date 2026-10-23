@@ -43,3 +43,30 @@ it("orders concurrent save/delete transactions so the deleted file stays deleted
   expect((await listDocuments()).some((a) => a.id === d.id)).toBe(false);
   expect((await listTrash()).some((r) => r.document.id === d.id)).toBe(true);
 });
+
+it("records local dates and folders and permanently deletes without restoring stale autosaves", async () => {
+  const {
+    localFileMetadata,
+    localFolders,
+    addLocalFolder,
+    moveLocalFile,
+    permanentlyDeleteLocalFile,
+  } = await import("../src/storage");
+  const d = emptyDocument();
+  await save(d);
+  const original = await localFileMetadata(d.id);
+  expect(original.createdAt).toBeGreaterThan(0);
+  await addLocalFolder("移动目标", null);
+  const folder = (await localFolders()).find((f) => f.name === "移动目标")!;
+  await moveLocalFile(d.id, folder.id);
+  await save({ ...d, name: "changed" });
+  const meta = await localFileMetadata(d.id);
+  expect(meta.createdAt).toBe(original.createdAt);
+  expect(meta.folderId).toBe(folder.id);
+  expect(meta.updatedAt).toBeGreaterThanOrEqual(original.updatedAt!);
+  await permanentlyDeleteLocalFile(d.id);
+  expect((await listTrash()).some((r) => r.document.id === d.id)).toBe(false);
+  await restoreDocument(d.id);
+  expect((await listDocuments()).some((f) => f.id === d.id)).toBe(false);
+  expect(await save(d)).toBe(false);
+});

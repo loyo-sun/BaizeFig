@@ -201,7 +201,7 @@ export function CropEditor({
             width={node.width}
             height={node.height}
             fill="transparent"
-            stroke="#0d99ff"
+            stroke="#287F71"
             vectorEffect="non-scaling-stroke"
             onPointerDown={(e) => down(e)}
             style={{ cursor: "move" }}
@@ -214,7 +214,7 @@ export function CropEditor({
               width={10}
               height={10}
               fill="white"
-              stroke="#0d99ff"
+              stroke="#287F71"
               vectorEffect="non-scaling-stroke"
               aria-label={t("Scale crop image")}
               onPointerDown={(e) => down(e, i)}

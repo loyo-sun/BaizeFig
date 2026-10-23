@@ -1,5 +1,6 @@
 import {
   importFigArchive,
+  prepareFigClipboard,
   readFigArchive,
   figPageSummaries,
 } from "./figImport";
@@ -16,6 +17,7 @@ self.onmessage = (
     if (event.data.bytes) {
       archive = readFigArchive(event.data.bytes);
       filename = event.data.filename ?? filename;
+      if(filename==="clipboard.fig")prepareFigClipboard(archive);
       const pages = figPageSummaries(archive);
       if (archive.message.nodeChanges.length > 20000) {
         self.postMessage({ pages });

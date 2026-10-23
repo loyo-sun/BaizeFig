@@ -12,7 +12,7 @@
   cursor: text;
 }
 .prototype-notes:focus {
-  outline: 1px solid var(--ui-selection, #0d99ff);
+  outline: 1px solid var(--ui-selection, #287F71);
 }
 .prototype-notes h1 {
   font-size: 18px;

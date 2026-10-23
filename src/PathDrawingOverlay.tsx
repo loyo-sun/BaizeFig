@@ -350,7 +350,7 @@ export const PathDrawingOverlay = forwardRef<
       <g pointerEvents="none">
         {closeTarget && !dragging.current && !anchorDrag.current && (
           <circle data-pen-close-hint="" cx={closeTarget.x} cy={closeTarget.y}
-            r={8 / zoom} fill="#0d99ff22" stroke="#0d99ff" strokeWidth={1.5 / zoom} />
+            r={8 / zoom} fill="#287F7122" stroke="#287F71" strokeWidth={1.5 / zoom} />
         )}
         {paths.map((p, i) => (
           <path key={i} d={p.d} fill="none" stroke="#202a24" strokeWidth={1} />
@@ -363,7 +363,7 @@ export const PathDrawingOverlay = forwardRef<
             <path
               d={`M${last.x} ${last.y} C${last.x + last.outgoing.x} ${last.y + last.outgoing.y} ${hover.x + (closeTarget ? closeTarget.incoming.x : 0)} ${hover.y + (closeTarget ? closeTarget.incoming.y : 0)} ${hover.x} ${hover.y}`}
               fill="none"
-              stroke="#0d99ff"
+              stroke="#287F71"
               strokeWidth={1 / zoom}
               strokeDasharray={`${4 / zoom} ${3 / zoom}`}
             />
@@ -383,7 +383,7 @@ export const PathDrawingOverlay = forwardRef<
                     cy={a.y + a[kind].y}
                     r={4 / zoom}
                     fill="white"
-                    stroke="#0d99ff"
+                    stroke="#287F71"
                     strokeWidth={1 / zoom}
                     onPointerDown={(e) => {
                       if (temporaryHand || e.button !== 0) return;
@@ -448,7 +448,7 @@ export const PathDrawingOverlay = forwardRef<
               width={6 / zoom}
               height={6 / zoom}
               fill="white"
-              stroke="#0d99ff"
+              stroke="#287F71"
               strokeWidth={1 / zoom}
             />
           </g>
@@ -477,7 +477,7 @@ export function PenHandleGuides({
               y1={a.y}
               x2={a.x + a[kind].x}
               y2={a.y + a[kind].y}
-              stroke="#0d99ff"
+              stroke="#287F71"
               strokeWidth={1 / zoom}
             />
           ),

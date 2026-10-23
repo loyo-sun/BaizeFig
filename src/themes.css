@@ -1,4 +1,4 @@
-:root { --ui-surface: #fff; --ui-field: #f3f4f6; --ui-ink: #111; --ui-muted: #7b8da5; --ui-border: #e8eaed; --ui-toolbar: #fff; --ui-selected: #eef0f2; --ui-accent: #6911d4; --ui-ruler: #fff; --ui-ruler-text: #495e74; --ui-ruler-selection: #ddc2f9; --ui-handle: #fff; }
+:root { --ui-surface: #fff; --ui-field: #f3f4f6; --ui-ink: #111; --ui-muted: #7b8da5; --ui-border: #e8eaed; --ui-toolbar: #fff; --ui-selected: #eef0f2; --ui-accent: #287F71; --ui-ruler: #fff; --ui-ruler-text: #495e74; --ui-ruler-selection: #ddc2f9; --ui-handle: #fff; }
 :root[data-ui-theme="dark"] { --ui-surface: #18181b; --ui-field: #29292e; --ui-ink: #f0f0f2; --ui-muted: #a3a3ae; --ui-border: #303036; --ui-toolbar: #1e1e22; --ui-selected: #303036; --ui-accent: #b88bff; --ui-ruler: #18181b; --ui-ruler-text: #c7c7d1; --ui-ruler-selection: #5b347e; --ui-handle: #18181b; --line: #303036; --green: #b88bff; --accent: #3e2b52; --workspace-ink: #c7c7d1; --workspace-field: #29292e; --muted: #a3a3ae; color: #f0f0f2; }
 [data-ui-theme="dark"] :is(.app,.left-panel,.right-panel,.modal,.command-menu,.context-menu,.dock-menu,.zoom-menu,.inspector-popover,.local-assets,.library-manager,.find-panel) { background: var(--ui-surface); color: var(--ui-ink); border-color: var(--ui-border); }
 [data-ui-theme="dark"] :is(.properties,.workspace-tabs,.right-tabs,.file-panel-header,.file-title-row,.layer-heading,.page-heading,.inspect-panel) { color: var(--ui-ink); border-color: var(--ui-border); }
@@ -15,8 +15,8 @@
 [data-ui-theme="dark"] .canvas-wrap { background: #242428; }
 [data-ui-theme="dark"] .properties :is(input,select):focus { border-color: var(--ui-accent); }
 
-:root {--ui-selection:#8c33eb}
-:root[data-ui-theme="dark"] {--ui-surface:#18181a;--ui-field:#212426;--ui-ink:#fff;--ui-muted:#8f9da3;--ui-border:#2e3434;--ui-toolbar:#18181a;--ui-selected:#2e3434;--ui-accent:#7efff5;--ui-ruler:#18181a;--ui-ruler-text:#8f9da3;--ui-ruler-selection:#115049;--ui-handle:#fff;--ui-selection:#00d1b8;--workspace-ink:#8f9da3;--workspace-field:#212426}
+:root {--ui-selection:#287F71}
+:root[data-ui-theme="dark"] {--ui-surface:#18181a;--ui-field:#212426;--ui-ink:#fff;--ui-muted:#8f9da3;--ui-border:#2e3434;--ui-toolbar:#18181a;--ui-selected:#2e3434;--ui-accent:#7efff5;--ui-ruler:#18181a;--ui-ruler-text:#8f9da3;--ui-ruler-selection:#115049;--ui-handle:#fff;--ui-selection:#287F71;--workspace-ink:#8f9da3;--workspace-field:#212426}
 [data-ui-theme="dark"] :is(.workspace-tabs,.right-tabs) {background:#000}
 :root {--ui-canvas-border:#eef0f2}
 :root[data-ui-theme="dark"] {--ui-canvas-border:#2e3434}

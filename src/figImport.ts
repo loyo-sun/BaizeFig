@@ -1890,3 +1890,12 @@ export function importFigArchive(
     },
   };
 }
+
+export function prepareFigClipboard(archive:ReturnType<typeof readFigArchive>){
+ const source:Raw[]=archive.message.nodeChanges;
+ if(source.some(n=>n.type==="CANVAS"))return;
+ const canvasGuid={sessionID:2147483647,localID:2147483647};
+ const ids=new Set(source.filter(n=>n.type!=="DOCUMENT").map(n=>guid(n.guid)));
+ for(const node of source){if(node.type!=="DOCUMENT"&&!ids.has(guid(node.parentIndex?.guid)))node.parentIndex={guid:canvasGuid,position:node.parentIndex?.position||"!"};}
+ source.push({guid:canvasGuid,type:"CANVAS",name:"粘贴的 Figma 图层"});
+}

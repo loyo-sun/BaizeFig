@@ -1,0 +1,1364 @@
+{
+  "format": "baizefig",
+  "version": 1,
+  "id": "bfe0b43f-3bf1-4ca0-abbd-275cc27a9595",
+  "name": "BaizeFig · LOGO & ICON 原始矢量物料",
+  "pages": [
+    {
+      "id": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "name": "LOGO & ICON"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "33547f9f-2cd6-4c2b-b088-df78385c510b",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": null,
+      "type": "component",
+      "name": "品牌 / 白泽ICON / 黑底白色",
+      "x": 48,
+      "y": 150,
+      "width": 200,
+      "height": 200,
+      "rotation": 0,
+      "fill": "#000",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 44,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "1:1 黑底白色白泽标志。双角、兽面、慧眼与五官均为独立矢量图层。"
+    },
+    {
+      "id": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "33547f9f-2cd6-4c2b-b088-df78385c510b",
+      "type": "group",
+      "name": "白泽 / 矢量图形",
+      "x": 20,
+      "y": 17,
+      "width": 160,
+      "height": 160,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "5177c267-8e91-4fc2-84cd-22df3262698b",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "path",
+      "name": "角 / 左",
+      "x": 24.8,
+      "y": 23.200000000000003,
+      "width": 25.600000000000005,
+      "height": 49.599999999999994,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 11.2,
+          "y": 49.599999999999994
+        },
+        {
+          "x": 0,
+          "y": 31.200000000000003
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 19.2,
+          "y": 13.600000000000001
+        },
+        {
+          "x": 25.600000000000005,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "0ebce9c0-8373-48bd-b356-2fcd269859cf",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "path",
+      "name": "角 / 右",
+      "x": 109.60000000000001,
+      "y": 23.200000000000003,
+      "width": 25.60000000000001,
+      "height": 49.599999999999994,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 14.399999999999991,
+          "y": 49.599999999999994
+        },
+        {
+          "x": 25.60000000000001,
+          "y": 31.200000000000003
+        },
+        {
+          "x": 25.60000000000001,
+          "y": 0
+        },
+        {
+          "x": 6.3999999999999915,
+          "y": 13.600000000000001
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "5dc0fc89-9787-42cf-b557-4d5c68da52d4",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "path",
+      "name": "轮廓 / 兽面",
+      "x": 22.400000000000002,
+      "y": 68,
+      "width": 115.19999999999999,
+      "height": 76.80000000000001,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 10.4,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 13.599999999999998,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 15.200000000000003
+        },
+        {
+          "x": 8,
+          "y": 47.2
+        },
+        {
+          "x": 30.400000000000002,
+          "y": 64.80000000000001
+        },
+        {
+          "x": 57.599999999999994,
+          "y": 76.80000000000001
+        },
+        {
+          "x": 84.8,
+          "y": 64.80000000000001
+        },
+        {
+          "x": 107.19999999999999,
+          "y": 47.2
+        },
+        {
+          "x": 115.19999999999999,
+          "y": 15.200000000000003
+        },
+        {
+          "x": 101.6,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "group",
+      "name": "五官 / 眉眼与鼻口",
+      "x": 0,
+      "y": 0,
+      "width": 160,
+      "height": 160,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "124c3d53-e789-4e21-8efe-3f27df5fcfd0",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "path",
+      "name": "眉 / 左",
+      "x": 37.6,
+      "y": 80.80000000000001,
+      "width": 28.000000000000007,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 8,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 6.3999999999999915
+        },
+        {
+          "x": 16.800000000000004,
+          "y": 0
+        },
+        {
+          "x": 28.000000000000007,
+          "y": 10.399999999999991
+        }
+      ]
+    },
+    {
+      "id": "6c8b69ec-c14f-4bca-b4a3-002eca4cfb81",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "path",
+      "name": "眉 / 右",
+      "x": 94.4,
+      "y": 80.80000000000001,
+      "width": 28,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 8,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 28,
+          "y": 6.3999999999999915
+        },
+        {
+          "x": 11.200000000000003,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 10.399999999999991
+        }
+      ]
+    },
+    {
+      "id": "e5ea43cb-29d9-4795-a55a-1f2e72a65a26",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "ellipse",
+      "name": "瞳 / 左",
+      "x": 48,
+      "y": 93.60000000000001,
+      "width": 9.6,
+      "height": 9.6,
+      "rotation": 0,
+      "fill": "#FFFFFF",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "3b24ab7a-8c6b-4c42-a4f0-5f5fe6432b5a",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "ellipse",
+      "name": "瞳 / 右",
+      "x": 102.4,
+      "y": 93.60000000000001,
+      "width": 9.6,
+      "height": 9.6,
+      "rotation": 0,
+      "fill": "#FFFFFF",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "c2fcb433-2bbb-4817-b405-494d6476c635",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "path",
+      "name": "口 / 洞见",
+      "x": 69.60000000000001,
+      "y": 112,
+      "width": 20.799999999999997,
+      "height": 6.400000000000006,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 7.2,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 10.399999999999991,
+          "y": 6.400000000000006
+        },
+        {
+          "x": 20.799999999999997,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "bc964764-219d-475c-8334-60f677933abe",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "640f6163-2a1a-403b-83bc-4f1307ab72ea",
+      "type": "path",
+      "name": "鼻 / 中轴",
+      "x": 80,
+      "y": 117.60000000000001,
+      "width": 1,
+      "height": 10.399999999999991,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 5.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 10.399999999999991
+        }
+      ]
+    },
+    {
+      "id": "f716ffe5-8eaf-41fe-ad79-b6f9c6bf907d",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8996c2b7-d603-49d1-9c73-95d2831ed156",
+      "type": "path",
+      "name": "慧眼 / 菱形",
+      "x": 68,
+      "y": 51.2,
+      "width": 24,
+      "height": 22.400000000000006,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#FFFFFF",
+      "strokeWidth": 5.6,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 12,
+          "y": 0
+        },
+        {
+          "x": 24,
+          "y": 11.200000000000003
+        },
+        {
+          "x": 12,
+          "y": 22.400000000000006
+        },
+        {
+          "x": 0,
+          "y": 11.200000000000003
+        },
+        {
+          "x": 12,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": null,
+      "type": "component",
+      "name": "品牌 / BaizeFig / 定制字标",
+      "x": 320,
+      "y": 160,
+      "width": 422,
+      "height": 92,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "componentDescription": "逐字母定制的几何线性字标；每个字母独立分组，i 的菱形点呼应慧眼。"
+    },
+    {
+      "id": "6f37044e-97f8-4acd-ab1b-f642d1fa4ff2",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / B",
+      "x": 4,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "18df0faa-e1d1-4cdc-9e2e-97764e859668",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "6f37044e-97f8-4acd-ab1b-f642d1fa4ff2",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 0,
+      "width": 35,
+      "height": 64,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 64
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 35,
+          "y": 9
+        },
+        {
+          "x": 35,
+          "y": 23
+        },
+        {
+          "x": 24,
+          "y": 32
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "7636b395-5618-46dd-b474-d7d918ec2e7d",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "6f37044e-97f8-4acd-ab1b-f642d1fa4ff2",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 0,
+      "y": 32,
+      "width": 38,
+      "height": 32,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 38,
+          "y": 8
+        },
+        {
+          "x": 38,
+          "y": 22
+        },
+        {
+          "x": 26,
+          "y": 32
+        },
+        {
+          "x": 0,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "1db1b302-87bc-4c69-b96c-a6e0d4b60741",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / a",
+      "x": 58,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "874379a9-10af-4ab4-9ef2-2e63753e22b2",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "1db1b302-87bc-4c69-b96c-a6e0d4b60741",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 44,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 34,
+          "y": 7
+        },
+        {
+          "x": 25,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 33
+        },
+        {
+          "x": 11,
+          "y": 44
+        },
+        {
+          "x": 24,
+          "y": 44
+        },
+        {
+          "x": 34,
+          "y": 33
+        }
+      ]
+    },
+    {
+      "id": "dc42e774-e9cf-422c-b2c4-b55d4d3c266b",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "1db1b302-87bc-4c69-b96c-a6e0d4b60741",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 34,
+      "y": 18,
+      "width": 1,
+      "height": 46,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 46
+        }
+      ]
+    },
+    {
+      "id": "b00f70e3-3dee-4d64-a4ad-78a32cef8f81",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / i",
+      "x": 112,
+      "y": 3,
+      "width": 18,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "393e90c5-423e-4cc8-aedb-e13708d6c5e4",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "b00f70e3-3dee-4d64-a4ad-78a32cef8f81",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 8,
+      "y": 22,
+      "width": 1,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        }
+      ]
+    },
+    {
+      "id": "d9e59d52-859f-48d7-aa06-dc92a192edff",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "b00f70e3-3dee-4d64-a4ad-78a32cef8f81",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 0,
+      "width": 12,
+      "height": 12,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 6,
+          "y": 0
+        },
+        {
+          "x": 12,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 12
+        },
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "3cb4d6fb-fe72-41f9-9b70-dbe49c610fa2",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / z",
+      "x": 142,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "dfeeed6f-20cf-40e0-b9f8-218afa980d88",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "3cb4d6fb-fe72-41f9-9b70-dbe49c610fa2",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 20,
+      "width": 34,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 34,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        },
+        {
+          "x": 34,
+          "y": 42
+        }
+      ]
+    },
+    {
+      "id": "9c15b2c3-d726-4f6e-bbfc-9168e07e8dbf",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / e",
+      "x": 196,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "94d4af45-af89-4935-902b-41064afd7839",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "9c15b2c3-d726-4f6e-bbfc-9168e07e8dbf",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 44,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 22
+        },
+        {
+          "x": 34,
+          "y": 22
+        },
+        {
+          "x": 34,
+          "y": 11
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 33
+        },
+        {
+          "x": 11,
+          "y": 44
+        },
+        {
+          "x": 32,
+          "y": 44
+        }
+      ]
+    },
+    {
+      "id": "4e0f5284-f796-4755-9f93-ab2127a75eb8",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / F",
+      "x": 250,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "3c1a8c2a-eba5-4f85-88f7-0e0df6cc20cf",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "4e0f5284-f796-4755-9f93-ab2127a75eb8",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 0,
+      "width": 38,
+      "height": 64,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 64
+        },
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 38,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "b0c0477b-7d24-4740-bdb4-27e1a1527add",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "4e0f5284-f796-4755-9f93-ab2127a75eb8",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 0,
+      "y": 30,
+      "width": 30,
+      "height": 1,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 30,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / i",
+      "x": 304,
+      "y": 3,
+      "width": 18,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "6b005600-26ef-46cf-9bac-1cda6ad4ee48",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 8,
+      "y": 22,
+      "width": 1,
+      "height": 42,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 42
+        }
+      ]
+    },
+    {
+      "id": "ab4e81ba-c056-4258-8c27-c10e8eb962b1",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "0ce15cd1-b0e5-4fc5-bad1-dd1c70fd8ad4",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 0,
+      "width": 12,
+      "height": 12,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 6,
+          "y": 0
+        },
+        {
+          "x": 12,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 12
+        },
+        {
+          "x": 0,
+          "y": 6
+        },
+        {
+          "x": 6,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "eb9ba86e-179e-4a79-9e60-76c57195965d",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "8b6979d6-79f4-486b-862c-c2f5cbe325b4",
+      "type": "group",
+      "name": "字母 / g",
+      "x": 334,
+      "y": 3,
+      "width": 42,
+      "height": 86,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#202a24",
+      "strokeWidth": 0,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4
+    },
+    {
+      "id": "ee99e804-1a96-444c-8a40-4cf8f94d2fad",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "eb9ba86e-179e-4a79-9e60-76c57195965d",
+      "type": "path",
+      "name": "笔画 / 1",
+      "x": 0,
+      "y": 18,
+      "width": 34,
+      "height": 43,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 34,
+          "y": 4
+        },
+        {
+          "x": 24,
+          "y": 0
+        },
+        {
+          "x": 10,
+          "y": 0
+        },
+        {
+          "x": 0,
+          "y": 11
+        },
+        {
+          "x": 0,
+          "y": 32
+        },
+        {
+          "x": 10,
+          "y": 43
+        },
+        {
+          "x": 24,
+          "y": 43
+        },
+        {
+          "x": 34,
+          "y": 32
+        }
+      ]
+    },
+    {
+      "id": "39c51306-a184-4aae-8a9d-4f27863ecd0d",
+      "pageId": "7561cebe-c9a3-4e1f-b846-5edf10c5a18f",
+      "parentId": "eb9ba86e-179e-4a79-9e60-76c57195965d",
+      "type": "path",
+      "name": "笔画 / 2",
+      "x": 2,
+      "y": 18,
+      "width": 32,
+      "height": 68,
+      "rotation": 0,
+      "fill": "none",
+      "stroke": "#161A17",
+      "strokeWidth": 3.5,
+      "radius": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "text": "Text",
+      "fontSize": 24,
+      "fontFamily": "Inter, Arial, sans-serif",
+      "fontWeight": 400,
+      "textAlign": "left",
+      "lineHeight": 1.4,
+      "points": [
+        {
+          "x": 32,
+          "y": 0
+        },
+        {
+          "x": 32,
+          "y": 58
+        },
+        {
+          "x": 22,
+          "y": 68
+        },
+        {
+          "x": 0,
+          "y": 68
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,6 @@
+import {figmaClipboardBytes,clipboardPlainText} from "./externalClipboard";
+import { LocalFiles } from "./LocalFiles";
+import { permanentlyDeleteLocalFile } from "./storage";
 import { detectShortcutPlatform } from "./deviceEnvironment";
 import { CommandPalette } from "./CommandPalette";
 import {
@@ -1087,7 +1090,7 @@ export default function App() {
     setFileBusy(true);
     try {
       if (target.id === doc.id) await save(doc);
-      await trashDocument(target.id);
+      await permanentlyDeleteLocalFile(target.id);
       const remaining = await listDocuments();
       if (target.id === doc.id) {
         const next = remaining[0] ?? emptyDocument();
@@ -1106,7 +1109,7 @@ export default function App() {
       }
       setDocuments(remaining);
       setTrashedFiles(await listTrash());
-      notify("File moved to trash");
+      notify("文件已删除");
     } catch (error) {
       notify((error as Error).message);
     } finally {
@@ -2010,7 +2013,7 @@ export default function App() {
       }
     } else notify("Create a frame to start a prototype");
   }
-  async function importFiles(files: FileList | File[] | null) {
+  async function importFiles(files: FileList | File[] | null, pastedSvg = false) {
     if (!files?.length || importInFlight.current) return;
     importInFlight.current = true;
     let next = doc;
@@ -2036,6 +2039,11 @@ export default function App() {
         if (/\.svg$/i.test(file.name) || file.type === "image/svg+xml") {
           const { importSvg } = await import("./svgImport");
           const result = importSvg(await file.text(), page, file.name);
+          if (pastedSvg) {
+            const root = result.nodes.find(n => n.id === result.rootId)!;
+            root.type = "group";
+            if (root.fidelity) root.fidelity.clipsContent = false;
+          }
           next = execute(next, { type: "create", nodes: result.nodes }).doc;
           selection.push(result.rootId);
           svgResults.layers += result.report.layers;
@@ -3514,19 +3522,45 @@ export default function App() {
         ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
       )
         return;
+      const data=e.clipboardData;
+      if(!data)return;
+      const plain=data.getData("text/plain");
+      const html=data.getData("text/html");
       try {
-        const parsed = JSON.parse(e.clipboardData?.getData("text/plain") ?? "");
-        if (
-          parsed.format === "baizefig-clipboard" &&
-          Array.isArray(parsed.nodes)
-        ) {
-          e.preventDefault();
-          clipboard.current = parsed;
-          void paste("normal", parsed);
+        const parsed=JSON.parse(plain);
+        if(parsed?.format==="baizefig-clipboard" && Array.isArray(parsed.nodes)){
+          e.preventDefault();clipboard.current=parsed;void paste("normal",parsed);return;
         }
-      } catch {
-        /* Plain text remains available in the canvas text editor. */
+      }catch{ /* External text is not our internal layer format. */ }
+      const svgText=data.getData("image/svg+xml")||plain;
+      const svgMatch=svgText.match(/^\s*(?:<\?xml[\s\S]*?\?>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg\b/i);
+      if(svgMatch){e.preventDefault();void importFiles([new window.File([svgText],"粘贴的图形.svg",{type:"image/svg+xml"})],true);return;}
+      const images=Array.from(data.items).filter(item=>item.kind==="file"&&item.type.startsWith("image/")).map(item=>item.getAsFile()).filter((f):f is globalThis.File=>!!f);
+      if(html.includes("<!--(figma)")){
+        e.preventDefault();
+        void (async()=>{
+          const sourceId=doc.id;
+          try{
+            const bytes=figmaClipboardBytes(html);
+            if(!bytes)throw Error("未读取到 Figma 图层");
+            const imported=await importFigFile(new window.File([bytes as BlobPart],"clipboard.fig"));
+            if(latestDocument.current.id!==sourceId)return;
+            const result=pasteNodes(latestDocument.current,page,{nodes:imported.document.nodes},[],"normal");
+            change(result.doc,result.selection);
+            if(imported.report.warnings.length)notify(imported.report.warnings.join("；"));
+          }catch(error){if(images.length){void importFiles(images,true);notify("该设计暂不能完整解析，已粘贴为图片");}else notify((error as Error).message);}
+        })();return;
       }
+      if(images.length){e.preventDefault();void importFiles(images,true);return;}
+      if(html){const svg=new DOMParser().parseFromString(html,"text/html").querySelector("svg");if(svg){e.preventDefault();void importFiles([new window.File([svg.outerHTML],"粘贴的图形.svg",{type:"image/svg+xml"})],true);return;}}
+      const text=plain||(html?clipboardPlainText(html):"");
+      if(text){
+        e.preventDefault();
+        if(text.length>1000000){notify("粘贴文字过长");return;}
+        const node=makeNode("text",page,{name:text.slice(0,40),text,x:80,y:80,width:Math.min(600,Math.max(160,text.split("\n")[0].length*14)),height:Math.max(34,text.split("\n").length*34),fontSize:24,fill:"#202020",textFlow:{autoResize:"height",verticalAlign:"top",letterSpacing:0}});
+        const result=execute(doc,{type:"create",nodes:[node]});change(result.doc,[node.id]);
+      }
+
     };
     window.addEventListener("paste", pasteEvent);
     window.addEventListener("keydown", down);
@@ -4973,7 +5007,7 @@ export default function App() {
                       width={box.width}
                       height={box.height}
                       fill="none"
-                      stroke="#0d99ff"
+                      stroke="#287F71"
                       strokeWidth={1 / view.zoom}
                       pointerEvents="none"
                     />
@@ -7548,15 +7582,8 @@ export default function App() {
                   />
                 ) : (
                   <>
-                    <p className="muted">
-                      {t(
-                        "Stored in this browser. Export a local copy to keep a backup.",
-                      )}
-                    </p>
-                    <div className="file-actions">
-                      <button onClick={() => setModal("versions")}>
-                        {t("Version history")}
-                      </button>
+                    <LocalFiles actions={<>
+
                       <button
                         className="primary"
                         onClick={newDoc}
@@ -7570,110 +7597,10 @@ export default function App() {
                         <Upload size={16} />
                         {t("Import")}
                       </button>
-                    </div>
-                    <div className="file-list-tabs">
-                      <button
-                        className={!showTrash ? "active" : ""}
-                        onClick={() => setShowTrash(false)}
-                      >
-                        {t("Files")}
-                      </button>
-                      <button
-                        className={showTrash ? "active" : ""}
-                        onClick={() => setShowTrash(true)}
-                      >
-                        {t("Trash")} {`(${trashedFiles.length})`}
-                      </button>
-                    </div>
-                    {showTrash && (
-                      <p className="muted">
-                        {t(
-                          "Deleted files stay in this browser trash and can be restored. Original files on your computer are unchanged.",
-                        )}
-                      </p>
-                    )}
-                    <div
-                      role="group"
-                      aria-label={t("File view")}
-                      className="local-view-switch"
-                    >
-                      <button
-                        aria-pressed={localFileView === "grid"}
-                        onClick={() => setLocalFileView("grid")}
-                      >
-                        {t("Icon view")}
-                      </button>
-                      <button
-                        aria-pressed={localFileView === "list"}
-                        onClick={() => setLocalFileView("list")}
-                      >
-                        {t("List view")}
-                      </button>
-                    </div>
-                    <div
-                      className={`file-grid ${localFileView === "list" ? "local-file-list" : ""}`}
-                    >
-                      {(showTrash
-                        ? trashedFiles.map((record) => record.document)
-                        : documents
-                      ).map((d) => (
-                        <article className="file-card-shell" key={d.id}>
-                          <button
-                            className="file-card"
-                            disabled={fileBusy || showTrash}
-                            onClick={() => {
-                              void save(doc)
-                                .then(async () => {
-                                  const latest = await getDocument(d.id);
-                                  setDoc(latest);
-                                  setPage(latest.pages[0].id);
-                                  setSelected([]);
-                                  history.current = new History();
-                                  setModal(null);
-                                })
-                                .catch((error) =>
-                                  setPersistentSaveError(
-                                    (error as Error).message,
-                                  ),
-                                );
-                            }}
-                          >
-                            <div className="file-preview" aria-hidden="true">
-                              <svg viewBox="0 0 1200 850">
-                                <Scene doc={d} pageId={d.pages[0].id} />
-                              </svg>
-                            </div>
-                            <strong>{d.name}</strong>
-                            <span>
-                              {t("{pages} page · {layers} layers", {
-                                pages: d.pages.length,
-                                layers: d.nodes.length,
-                              })}
-                            </span>
-                          </button>
-                          <button
-                            className="file-card-action"
-                            disabled={fileBusy}
-                            aria-label={t(
-                              showTrash
-                                ? "Restore {name}"
-                                : "Delete file {name}",
-                              { name: d.name },
-                            )}
-                            onClick={() =>
-                              void (showTrash
-                                ? restoreLocalFile(d.id)
-                                : deleteLocalFile(d))
-                            }
-                          >
-                            {showTrash ? t("Restore") : <Trash2 size={16} />}
-                          </button>
-                        </article>
-                      ))}
-                    </div>
-                    {showTrash && !trashedFiles.length && (
-                      <p className="muted">{t("Trash is empty")}</p>
-                    )}
+                    </>} onDelete={deleteLocalFile} onOpen={d=>{
+                      void save(doc).then(async()=>{const latest=await getDocument(d.id);setDoc(latest);setPage(latest.pages[0].id);setSelected([]);history.current=new History();setModal(null);}).catch(error=>setPersistentSaveError((error as Error).message));
+                    }}/>
+
                   </>
                 )}
               </>

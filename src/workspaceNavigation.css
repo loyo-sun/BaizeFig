@@ -895,7 +895,96 @@
 [data-ui-theme="dark"] .preferences-search input {
   background: transparent;
 }
-.modal-commands .action-list { max-height: min(50dvh,480px); overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 4px; }
-.modal-commands .action-list > button[aria-selected="true"] { background: var(--ui-selected); color: var(--ui-accent); box-shadow: inset 3px 0 var(--ui-accent); }
-.modal-commands .action-list > button:disabled { opacity: .4; }
-.command-keyboard-hint,.command-empty { color: var(--ui-muted); font-size: 11px; padding: 10px 0 0; }
+.modal-commands .action-list {
+  max-height: min(50dvh, 480px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 4px;
+}
+.modal-commands .action-list > button[aria-selected="true"] {
+  background: var(--ui-selected);
+  color: var(--ui-accent);
+  box-shadow: inset 3px 0 var(--ui-accent);
+}
+.modal-commands .action-list > button:disabled {
+  opacity: 0.4;
+}
+.command-keyboard-hint,
+.command-empty {
+  color: var(--ui-muted);
+  font-size: 11px;
+  padding: 10px 0 0;
+}
+.workspace-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #0005;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.workspace-dialog {
+  width: min(520px, 90vw);
+  max-height: 80vh;
+  overflow: auto;
+  background: var(--ui-surface, #fff);
+  color: var(--ui-ink, #111);
+  border: 1px solid var(--ui-border, #ddd);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 80px #0004;
+}
+.workspace-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.workspace-file-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  overflow-wrap: anywhere;
+}
+.workspace-dialog dl > div {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+.workspace-dialog dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.workspace-folder-choices {
+  display: flex;
+  flex-direction: column;
+  min-height: 100px;
+  margin: 20px 0;
+}
+.workspace-folder-choices button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+}
+.workspace-file-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.workspace-local-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.workspace-local-table td,
+.workspace-local-table th {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--ui-border, #ddd);
+}
+/* Shared workspace structure for local and cloud files. */
+.workspace-actions{position:relative}.workspace-actions summary{list-style:none}.workspace-actions summary::before{content:'▸';margin-right:6px}.workspace-actions[open] summary::before{content:'▾'}.workspace-actions[open]{z-index:20}.workspace-actions .cloud-file-menu{top:100%;min-width:150px}.cloud-file-grid .cloud-file-created{display:none}.local-workspace-preview{height:160px;background:var(--ui-field);display:flex;justify-content:center;align-items:center;border-radius:11px 11px 0 0;overflow:hidden}.local-workspace-preview svg{width:100%;height:100%;padding:12px;box-sizing:border-box}.cloud-file-list td{height:54px}.cloud-file-list td:first-child{width:54%}.cloud-file-list .cloud-file-open{padding:8px 12px}.cloud-file-grid .cloud-file-date{align-self:center;font-size:11px}.cloud-file-grid td.cloud-file-actions{grid-column:2;grid-row:2}.cloud-file-grid tbody{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}.cloud-files .cloud-toolbar{margin-bottom:20px}.cloud-files .cloud-breadcrumb{margin:20px 0 26px}.workspace-actions summary:hover{color:var(--ui-accent)}
+.cloud-toolbar input{order:-1}.cloud-file-grid .cloud-folder-open{min-height:0}.cloud-file-grid .cloud-folder-picture{flex-shrink:0}.cloud-file-list .cloud-folder-open{gap:10px}.cloud-files-heading{margin-bottom:26px}
+.workspace-dialog-close{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0!important;border:0!important;background:transparent!important}.workspace-dialog-close:hover{background:var(--ui-field)!important;border-radius:6px}.workspace-file-summary>img{flex-shrink:0;border-radius:11px;border:1px solid #e8eaed}

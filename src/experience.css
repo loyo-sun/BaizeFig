@@ -81,7 +81,7 @@ button:focus-visible {
   font-weight: 500;
 }
 .workspace-tabs button.active {
-  color: #6911d4;
+  color: #287F71;
   background: #f0f1f4;
 }
 .page-heading {
@@ -102,7 +102,7 @@ button:focus-visible {
 }
 .page.active {
   background: #eef0f2;
-  color: #6911d4;
+  color: #287F71;
 }
 .layer-heading {
   height: 48px;
@@ -118,7 +118,7 @@ button:focus-visible {
 .layer.selected,
 .layer.in-selection {
   background: #eef0f2;
-  color: #6911d4;
+  color: #287F71;
 }
 .empty-layers,
 .left-footer,
@@ -170,7 +170,7 @@ button:focus-visible {
 }
 .right-tabs > button.active {
   background: #f0f1f4;
-  color: #6911d4;
+  color: #287F71;
 }
 .zoom-control > .inspector-zoom {
   font-size: 12px;
@@ -261,7 +261,7 @@ button:focus-visible {
 }
 .grouped-dock .dock-group > button[aria-pressed="true"] {
   background: #eef0f2;
-  color: #6911d4;
+  color: #287F71;
 }
 .grouped-dock .dock-group > .dock-chevron {
   position: absolute;
@@ -310,7 +310,7 @@ button:focus-visible {
 .tool-dock .dock-menu button:hover,
 .tool-dock .dock-menu button:focus-visible {
   background: #f0e7ff;
-  color: #6911d4;
+  color: #287F71;
 }
 .tool-dock .extensions-menu {
   left: auto;
@@ -323,7 +323,7 @@ button:focus-visible {
 }
 :root {
   --line: #e8eaed;
-  --green: #6911d4;
+  --green: #287F71;
   --accent: #f0e7ff;
   --muted: #7b8da5;
   --workspace-ink: #495e74;

@@ -106,7 +106,7 @@ export function CanvasAids({
               x2={g.axis === "x" ? p : width}
               y1={g.axis === "y" ? p : 22}
               y2={g.axis === "y" ? p : height}
-              stroke="#0d99ff"
+              stroke="#287F71"
               strokeWidth={1}
               strokeDasharray="5 3"
             />

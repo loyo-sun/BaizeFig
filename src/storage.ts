@@ -72,6 +72,18 @@ export async function save(doc: Document): Promise<boolean> {
       "This file changed in another tab. Export your work or save a separate copy.",
     );
   }
+  const meta = await tx.objectStore("settings").get("file-meta:" + doc.id);
+  await tx
+    .objectStore("settings")
+    .put(
+      {
+        ...meta,
+        createdAt: meta?.createdAt || (previous ? undefined : Date.now()),
+        updatedAt: Date.now(),
+        folderId: meta?.folderId || null,
+      },
+      "file-meta:" + doc.id,
+    );
   await tx.objectStore("documents").put(doc);
   await tx.objectStore("revisions").put(revision + 1, doc.id);
   await tx.objectStore("settings").put(doc.id, "last-document");
@@ -114,7 +126,9 @@ export async function listDocuments(): Promise<Document[]> {
   return docs.map(removeDesignTokens);
 }
 export async function listTrash(): Promise<TrashRecord[]> {
-  return (await database()).getAll("trash");
+  return (await (await database()).getAll("trash")).filter(
+    (record) => !record.permanent,
+  );
 }
 export async function trashDocument(id: string): Promise<void> {
   const db = await database(),
@@ -144,7 +158,7 @@ export async function restoreDocument(id: string): Promise<void> {
     tx = db.transaction(["documents", "trash", "revisions"], "readwrite"),
     record = (await tx.objectStore("trash").get(id)) as TrashRecord | undefined;
   void tx.done.catch(() => {});
-  if (record) {
+  if (record && !(record as TrashRecord & { permanent?: boolean }).permanent) {
     await tx.objectStore("documents").put(record.document);
     await tx.objectStore("trash").delete(id);
     const revision = (await tx.objectStore("revisions").get(id)) ?? 0;
@@ -465,4 +479,59 @@ export async function saveRecoveryCopy(doc: Document): Promise<Document> {
   validateDocument(copy);
   await save(copy);
   return copy;
+}
+
+export interface LocalFileMetadata {
+  createdAt?: number;
+  updatedAt?: number;
+  folderId: string | null;
+}
+export async function localFileMetadata(
+  id: string,
+): Promise<LocalFileMetadata> {
+  return (
+    (await (await database()).get("settings", "file-meta:" + id)) || {
+      folderId: null,
+    }
+  );
+}
+export async function localFolders(): Promise<
+  import("./FileDetails").WorkspaceFolder[]
+> {
+  return (await (await database()).get("settings", "file-folders")) || [];
+}
+export async function addLocalFolder(name: string, parent_id: string | null) {
+  const folders = await localFolders();
+  folders.push({ id: crypto.randomUUID(), name, parent_id });
+  await (await database()).put("settings", folders, "file-folders");
+}
+export async function moveLocalFile(id: string, folderId: string | null) {
+  const db = await database();
+  await db.put(
+    "settings",
+    { ...(await localFileMetadata(id)), folderId },
+    "file-meta:" + id,
+  );
+}
+export async function permanentlyDeleteLocalFile(id: string) {
+  await trashDocument(id);
+  const db = await database(),
+    tx = db.transaction(["trash", "versions", "branches"], "readwrite");
+  const record = await tx.objectStore("trash").get(id);
+  // Retain only a deletion marker to prevent delayed autosave from resurrecting the file.
+  if (record)
+    await tx
+      .objectStore("trash")
+      .put({ document: { id }, deletedAt: Date.now(), permanent: true });
+  for (const version of await tx
+    .objectStore("versions")
+    .index("documentId")
+    .getAll(id))
+    await tx.objectStore("versions").delete(version.id);
+  for (const branch of await tx
+    .objectStore("branches")
+    .index("mainId")
+    .getAll(id))
+    await tx.objectStore("branches").delete(branch.id);
+  await tx.done;
 }
