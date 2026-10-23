@@ -116,7 +116,7 @@ export function LocalFiles({
         <thead>
           <tr>
             <th>名称</th>
-            <th>更新时间</th>
+            <th>文件类型</th><th>更新时间</th>
             <th>创建时间</th>
             <th>操作</th>
           </tr>
@@ -160,7 +160,7 @@ export function LocalFiles({
                     <strong>{f.name}</strong>
                   </button>
                 </td>
-                <td className="cloud-file-date">文件夹</td>
+                <td className="cloud-file-type">文件夹</td><td className="cloud-file-date">—</td>
                 <td className="cloud-file-date">—</td>
                 <td>—</td>
               </WorkspaceRow>
@@ -198,9 +198,10 @@ export function LocalFiles({
                         </svg>
                       </div>
                     )}
-                    <strong>{d.name}.baizefig</strong>
+                    <strong>{d.name.replace(/\.baizefig$/i, "")}</strong>
                   </button>
                 </td>
+                <td className="cloud-file-type">设计文件</td>
                 <td className="cloud-file-date">
                   {fileDate(meta[d.id]?.updatedAt)}
                 </td>

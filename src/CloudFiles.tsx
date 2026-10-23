@@ -218,7 +218,7 @@ export function CloudFiles({
           <thead>
             <tr>
               <th>{t("Name")}</th>
-              <th>{t("Updated")}</th>
+              <th>文件类型</th><th>{t("Updated")}</th>
               <th>创建时间</th>
               <th>{t("Actions")}</th>
             </tr>
@@ -268,7 +268,7 @@ export function CloudFiles({
                       <strong>{f.name}</strong>
                     </button>
                   </td>
-                  <td className="cloud-file-date">{t("Folder")}</td>
+                  <td className="cloud-file-type">文件夹</td><td className="cloud-file-date">—</td>
                   <td>—</td>
                   <td className="cloud-file-actions">
                     <FileActions>
@@ -365,9 +365,10 @@ export function CloudFiles({
                           name={f.name}
                         />
                       )}
-                      <strong>{f.name}.baizefig</strong>
+                      <strong>{f.name.replace(/\.baizefig$/i, "")}</strong>
                     </button>
                   </td>
+                  <td className="cloud-file-type">设计文件</td>
                   <td className="cloud-file-date">
                     {f.updated_at
                       ? new Date(f.updated_at).toLocaleString()
