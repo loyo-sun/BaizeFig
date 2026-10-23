@@ -8,12 +8,10 @@ import {
   listDocuments,
   localFileMetadata,
   localFolders,
-  moveLocalFile,
   type LocalFileMetadata,
 } from "./storage";
 import {
   FileDetails,
-  MoveFileDialog,
   folderPath,
   fileDate,
   type WorkspaceFolder,
@@ -42,7 +40,6 @@ export function LocalFiles({
     }),
     [search, setSearch] = useState(""),
     [details, setDetails] = useState<Document | null>(null),
-    [moving, setMoving] = useState<Document | null>(null),
     [error, setError] = useState("");
   const changeView = (next: "grid" | "list") => {
     setView(next);
@@ -129,26 +126,7 @@ export function LocalFiles({
                 f.name.toLowerCase().includes(search.toLowerCase()),
             )
             .map((f) => (
-              <WorkspaceRow
-                key={f.id}
-                onDragOver={(e) => {
-                  if (
-                    e.dataTransfer.types.includes(
-                      "application/x-baizefig-local-file",
-                    )
-                  ) {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                  }
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const id = e.dataTransfer.getData(
-                    "application/x-baizefig-local-file",
-                  );
-                  if (id) void run(() => moveLocalFile(id, f.id));
-                }}
-              >
+              <WorkspaceRow key={f.id}>
                 <td>
                   <button
                     className="cloud-file-open cloud-folder-open"
@@ -172,17 +150,7 @@ export function LocalFiles({
                 d.name.toLowerCase().includes(search.toLowerCase()),
             )
             .map((d) => (
-              <WorkspaceRow
-                key={d.id}
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData(
-                    "application/x-baizefig-local-file",
-                    d.id,
-                  );
-                  e.dataTransfer.effectAllowed = "move";
-                }}
-              >
+              <WorkspaceRow key={d.id}>
                 <td>
                   <button
                     className="cloud-file-open"
@@ -211,7 +179,6 @@ export function LocalFiles({
                 <td className="cloud-file-actions">
                   <FileActions>
                     <button onClick={() => setDetails(d)}>属性</button>
-                    <button onClick={() => setMoving(d)}>移动</button>
                     <button
                       onClick={() => {
                         if (
@@ -244,20 +211,7 @@ export function LocalFiles({
           onClose={() => setDetails(null)}
         />
       )}{" "}
-      {moving && (
-        <MoveFileDialog
-          folders={folders}
-          root="本地工作区"
-          initial={parent}
-          onClose={() => setMoving(null)}
-          onMove={(id) =>
-            void run(async () => {
-              await moveLocalFile(moving.id, id);
-              setMoving(null);
-            })
-          }
-        />
-      )}
+
     </div>
   );
 }
