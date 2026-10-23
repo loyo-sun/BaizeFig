@@ -4,6 +4,7 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Search commands by Chinese, English or pinyin…": "搜索指令，支持中文、英文、拼音或首字母…",
   "Search commands": "搜索命令",
   "Paste special": "特殊粘贴",
   "Selection": "选择",

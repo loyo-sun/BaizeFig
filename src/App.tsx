@@ -1,3 +1,4 @@
+import { matchesCommand } from "./commandSearch";
 import {
   PreferencesLayout,
   type PreferencesSection,
@@ -7484,7 +7485,7 @@ export default function App() {
                   <Search size={17} />
                   <input
                     autoFocus
-                    placeholder={t("Search actions…")}
+                    placeholder={t("Search commands by Chinese, English or pinyin…")}
                     aria-label={t("Search actions")}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -7492,11 +7493,7 @@ export default function App() {
                 </div>
                 <div className="action-list">
                   {actions
-                    .filter((a) =>
-                      [a.name, t(a.name)].some((name) =>
-                        name.toLowerCase().includes(query.toLowerCase()),
-                      ),
-                    )
+                    .filter((a) => matchesCommand(a.name, query, t(a.name)))
                     .map((a) => (
                       <button
                         key={a.name}
