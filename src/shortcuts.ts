@@ -62,7 +62,7 @@ export const shortcutRegistry: Shortcut[] = [
   binding("Paste properties", "KeyV", "MA"),
   binding("Pick color", "KeyC", "C"),
   binding("Save", "KeyS", "M"),
-  binding("Import file or image", "KeyO", "M"),
+  binding("Import", "KeyO", "M"),
   binding("Place image", "KeyK", "CS"),
   binding("Export", "KeyE", "MS"),
   binding("Find and replace", "KeyF", "M"),

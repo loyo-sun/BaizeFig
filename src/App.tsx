@@ -376,7 +376,6 @@ export default function App() {
   const newDocumentInFlight = useRef(false);
   const latestDocument = useRef(doc);
   latestDocument.current = doc;
-  const figInput = useRef<HTMLInputElement>(null);
   const styleClipboard = useRef<StyleProperties | null>(null);
   const [defaultStyles, setDefaultStyles] = useState(readDefaultStyles);
   const [colorPicking, setColorPicking] = useState(false);
@@ -2087,7 +2086,6 @@ export default function App() {
     } finally {
       importInFlight.current = false;
       setImportBusy(false);
-      if (figInput.current) figInput.current.value = "";
       if (fileInput.current) fileInput.current.value = "";
     }
   }
@@ -2529,7 +2527,7 @@ export default function App() {
     { name: "New design file", key: "", run: newDoc },
     { name: "Open file browser", key: "", run: () => void openFiles() },
     {
-      name: "Import file or image",
+      name: "Import",
       key: "⌘ O",
       run: () => fileInput.current?.click(),
     },
@@ -2668,7 +2666,6 @@ export default function App() {
         ),
     },
     { name: "Place image", run: () => fileInput.current?.click() },
-    { name: "Import Figma (.fig)", run: () => figInput.current?.click() },
     { name: "Export", run: () => void exportAsset() },
     {
       name: "Export frames to PDF",
@@ -3131,8 +3128,7 @@ export default function App() {
     sub("File", [
       "New design file",
       sub("New", ["New design file"]),
-      "Import file or image",
-      "Import Figma (.fig)",
+      "Import",
       "Place image",
       "Duplicate file",
       { ...actionItem("Save"), name: saveMenuName },
@@ -4172,13 +4168,6 @@ export default function App() {
         multiple
         hidden
         accept=".baizefig,.json,.fig,.sketch,.pdf,.svg,.png,.jpg,.jpeg,.webp,.gif"
-        onChange={(e) => void importFiles(e.target.files)}
-      />
-      <input
-        ref={figInput}
-        type="file"
-        hidden
-        accept=".fig"
         onChange={(e) => void importFiles(e.target.files)}
       />
       {showPerformance && (
@@ -7454,10 +7443,6 @@ export default function App() {
                       >
                         <FilePlus2 size={16} />
                         {t("New design file")}
-                      </button>
-                      <button onClick={() => figInput.current?.click()}>
-                        <Upload size={16} />
-                        {t("Import Figma (.fig)")}
                       </button>
                       <button onClick={() => fileInput.current?.click()}>
                         <Upload size={16} />
