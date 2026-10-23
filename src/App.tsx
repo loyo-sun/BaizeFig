@@ -741,6 +741,36 @@ export default function App() {
     });
   }, [ready, persistCurrent]);
   useEffect(() => {
+    if (!ready || !window.baizefigDesktop) return;
+    return window.baizefigDesktop.onOpenFile(async (file) => {
+      try {
+        if (file.error) throw Error(file.error);
+        const parsed = removeDesignTokens(JSON.parse(file.content!));
+        validateDocument(parsed);
+        // Persist the active design before switching, including pending edits.
+        (document.activeElement as HTMLElement | null)?.blur();
+        await new Promise<void>((resolve) => setTimeout(resolve, 0));
+        if (!(await save(current.current.doc)))
+          throw Error("Unable to save current document");
+        parsed.id = id();
+        await save(parsed);
+        committedDocument.current = parsed;
+        current.current.doc = parsed;
+        history.current = new History();
+        setDoc(parsed);
+        setPage(parsed.pages[0].id);
+        setSelected([]);
+        setCollapsed(new Set());
+        setModal(null);
+        setSaved("Saved locally");
+        setPersistentSaveError("");
+        notify("Document imported");
+      } catch (error) {
+        notify(`${file.name}: ${(error as Error).message}`);
+      }
+    });
+  }, [ready, notify]);
+  useEffect(() => {
     if (!ready) return;
     if (doc === committedDocument.current) {
       setSaved("Saved locally");
@@ -7339,6 +7369,16 @@ export default function App() {
                 </div>
                 {workspaceTab === "cloud" ? (
                   <CloudWorkspace
+                    document={doc}
+                    onOpen={async (next) => {
+                      if (!(await save(current.current.doc))) throw Error("无法保存当前文件");
+                      validateDocument(next);
+                      await save(next);
+                      committedDocument.current = next;
+                      current.current.doc = next;
+                      history.current = new History();
+                      setDoc(next); setPage(next.pages[0].id); setSelected([]); setCollapsed(new Set());
+                    }}
                     session={cloudSession}
                     signingIn={cloudSigningIn || cloudLogin.restoring}
                     restoring={cloudLogin.restoring}

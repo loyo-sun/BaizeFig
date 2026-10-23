@@ -1,8 +1,12 @@
-import { Cloud, Construction, LogOut } from "lucide-react";
+import { CloudFiles } from "./CloudFiles";
+import type { Document } from "./core";
+import { Cloud, LogOut } from "lucide-react";
 import type { CloudSession } from "./cloud";
 import { CloudSessionOptions } from "./CloudSessionOptions";
 import { useI18n } from "./LanguageContext";
 export function CloudWorkspace({
+  document,
+  onOpen,
   session,
   signingIn,
   restoring,
@@ -13,6 +17,8 @@ export function CloudWorkspace({
   onSignIn,
   onSignOut,
 }: {
+  document: Document;
+  onOpen: (doc: Document) => Promise<void>;
   session: CloudSession | null;
   signingIn: boolean;
   restoring: boolean;
@@ -30,17 +36,9 @@ export function CloudWorkspace({
         <Cloud size={28} />
       </span>
       <h3>{t("Cloud workspace")}</h3>
-      <p className="workspace-coming-soon">
-        <Construction size={15} />
-        {t("In development")}
-      </p>
-      <p>
-        {t(
-          "Cloud files and team workspaces are in development. Your local files stay in this browser.",
-        )}
-      </p>
       {session ? (
         <div className="workspace-account">
+          <CloudFiles session={session} document={document} onOpen={onOpen} />
           <span>{t("Signed in")}</span>
           <strong>{session.user.username}</strong>
           <button onClick={onSignOut}>

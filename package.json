@@ -20,7 +20,8 @@
     "desktop:dev": "npm run build && electron .",
     "desktop:pack": "npm run build && node scripts/package-mac.mjs --dir",
     "desktop:mac": "npm run build && node scripts/package-mac.mjs",
-    "test:desktop": "node --test tests/desktop-config.test.mjs tests/desktop-adapter.test.mjs tests/desktop-releases.test.mjs",
+    "test:desktop": "node --test tests/desktop-open-files.test.mjs tests/desktop-config.test.mjs tests/desktop-adapter.test.mjs tests/desktop-releases.test.mjs",
+    "test:desktop:files": "node scripts/desktop-file-open-smoke.mjs",
     "test:desktop:ui": "node scripts/desktop-smoke.mjs",
     "postinstall": "node scripts/install-desktop-runtime.mjs"
   },

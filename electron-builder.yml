@@ -13,6 +13,11 @@ files:
 asar: true
 afterSign: scripts/verify-mac-signature.cjs
 artifactName: "${productName}-${env.BAIZEFIG_RELEASE_VERSION}-${os}-${arch}.${ext}"
+fileAssociations:
+  - ext: baizefig
+    name: BaizeFig Design Document
+    role: Editor
+    mimeType: application/x-baizefig
 mac:
   category: public.app-category.graphics-design
   target:

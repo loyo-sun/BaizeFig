@@ -15,6 +15,7 @@ import { join, resolve, relative, isAbsolute } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { createFileOpenQueue } from "./open-files.mjs";
 import { readJson, atomicJson, updateClientConfig } from "./config.mjs";
 import { findMacUpdate, releasesApi } from "./releases.mjs";
 
@@ -55,6 +56,19 @@ const serialize = (fn) => {
   operation = task.catch(() => {});
   return task;
 };
+const fileOpens = createFileOpenQueue(() => {
+  if (window && !window.isDestroyed()) {
+    if (window.isMinimized()) window.restore();
+    window.show();
+    window.focus();
+    window.webContents.send("desktop:files-available");
+  }
+});
+// macOS can deliver these before app.whenReady() and before the editor loads.
+app.on("open-file", (event, path) => {
+  event.preventDefault();
+  fileOpens.enqueue(path);
+});
 const save = () => atomicJson(statePath, state);
 async function flushDocument() {
   if (!window || window.isDestroyed()) return;
@@ -323,6 +337,7 @@ async function setup() {
       return;
     if (pendingSave?.id === id) pendingSave.finish(ok === true);
   });
+  handle("desktop:next-file", () => fileOpens.next());
   handle("desktop:status", publicStatus);
   handle("desktop:manage", openSettings);
   handle("desktop:mcp", (action) =>
@@ -458,7 +473,9 @@ async function setup() {
 }
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
-  app.on("second-instance", () => {
+  process.argv.slice(1).forEach((path) => fileOpens.enqueue(path));
+  app.on("second-instance", (_event, argv) => {
+    argv.forEach((path) => fileOpens.enqueue(path));
     window?.restore();
     window?.focus();
   });

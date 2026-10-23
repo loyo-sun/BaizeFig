@@ -2,6 +2,13 @@ export {};
 declare global {
   interface Window {
     baizefigDesktop?: {
+      onOpenFile(
+        callback: (file: {
+          name: string;
+          content?: string;
+          error?: string;
+        }) => Promise<void>,
+      ): () => void;
       onSave(callback: () => Promise<boolean>): () => void;
       status(): Promise<{
         installed: boolean;

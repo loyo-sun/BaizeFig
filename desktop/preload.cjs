@@ -1,5 +1,21 @@
 const { contextBridge, ipcRenderer } = require("electron");
 let saveDocument;
+let openDocument;
+let draining = false;
+async function drainFiles() {
+  if (draining || !openDocument) return;
+  draining = true;
+  try {
+    while (openDocument) {
+      const file = await ipcRenderer.invoke("desktop:next-file");
+      if (!file) break;
+      await openDocument(file);
+    }
+  } finally {
+    draining = false;
+  }
+}
+ipcRenderer.on("desktop:files-available", () => void drainFiles());
 ipcRenderer.on("desktop:save-before-quit", async (_event, id) => {
   try {
     ipcRenderer.send(
@@ -12,6 +28,13 @@ ipcRenderer.on("desktop:save-before-quit", async (_event, id) => {
   }
 });
 contextBridge.exposeInMainWorld("baizefigDesktop", {
+  onOpenFile: (callback) => {
+    openDocument = callback;
+    void drainFiles();
+    return () => {
+      if (openDocument === callback) openDocument = undefined;
+    };
+  },
   onSave: (callback) => {
     saveDocument = callback;
     return () => {
