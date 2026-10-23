@@ -195,11 +195,11 @@ export function CloudFiles({
             {trash ? "返回文件" : "回收站"}
           </button>
         </div>
-        <nav className="cloud-breadcrumb" aria-label={t("File path")}>
+        {parent && <nav className="cloud-breadcrumb" aria-label={t("File path")}>
           <button onClick={() => setParent(null)}>{t("Cloud space")}</button>
           {(() => {
             const chain: Folder[] = [];
-            let cursor = parent;
+            let cursor: string | null = parent;
             while (cursor) {
               const f = folders.find((x) => x.id === cursor);
               if (!f) break;
@@ -213,7 +213,7 @@ export function CloudFiles({
               </span>
             ));
           })()}
-        </nav>
+        </nav>}
         <table className={`cloud-file-table cloud-file-${view}`}>
           <thead>
             <tr>
@@ -300,7 +300,6 @@ export function CloudFiles({
                         </>
                       ) : (
                         <>
-                          <button onClick={() => setParent(f.id)}>打开</button>
                           <button
                             onClick={() =>
                               void run(async () =>

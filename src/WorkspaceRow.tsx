@@ -83,7 +83,7 @@ export function WorkspaceRow({ children, ...props }: ComponentProps<"tr">) {
                   setMenu(null);
                 }}
               >
-                <span dangerouslySetInnerHTML={{ __html: b.innerHTML }} />
+                <span>{b.textContent}</span>
               </button>
             ))}
           </div>,
