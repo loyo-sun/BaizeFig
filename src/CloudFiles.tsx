@@ -1,3 +1,4 @@
+import { rememberCloudBinding, readCloudBinding } from "./saveDestination";
 import { CloudThumbnail } from "./CloudThumbnail";
 import {
   LayoutGrid,
@@ -97,6 +98,12 @@ export function CloudFiles({
     );
     validateDocument(d.content);
     await onOpen(d.content);
+    rememberCloudBinding(
+      session,
+      file.id,
+      d.file.head_id,
+      d.file.folder_id || null,
+    );
     setHeads((h) => ({ ...h, [file.id]: d.file.head_id }));
   }
   return (
@@ -175,8 +182,17 @@ export function CloudFiles({
                 const d = await api("/files/" + document.id + "/save", {
                   content: document,
                   preview,
-                  headId: heads[document.id] || null,
+                  headId:
+                    readCloudBinding(session, document.id)?.headId ||
+                    heads[document.id] ||
+                    null,
                 });
+                rememberCloudBinding(
+                  session,
+                  document.id,
+                  d.headId,
+                  files.find((f) => f.id === document.id)?.folder_id || null,
+                );
                 setHeads((h) => ({ ...h, [document.id]: d.headId }));
                 await load();
               })

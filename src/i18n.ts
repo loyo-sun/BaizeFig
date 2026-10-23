@@ -4,6 +4,7 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  Save: "保存",
   "Select frame": "选中画板",
   Rename: "重命名",
   "Not found": "未找到",
@@ -1646,6 +1647,8 @@ export const zhCN: Record<string, string> = {
   "Layer outlines": "图层轮廓",
   "Show / hide UI": "显示 / 隐藏界面",
   "Save local copy": "保存本地副本",
+  "Save to cloud": "保存到云端",
+  "Save to local": "保存到本地",
   "Open / import": "打开 / 导入",
   "H / hold Space": "H / 按住 Space",
   "⌘ / Ctrl D / Alt drag": "⌘ / Ctrl D / Alt 拖拽",

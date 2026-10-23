@@ -1,3 +1,5 @@
+import { SaveDestinationDialog } from "./SaveDestinationDialog";
+import { readSaveDestination, storeSaveDestination, readCloudBinding, cloudRequest, saveCloudDocument, type SaveDestination } from "./saveDestination";
 import { PrototypeNotes } from "./PrototypeNotes";
 import { UserRound } from "lucide-react";
 import { FramePresetPanel, type FrameSize } from "./FramePresetPanel";
@@ -335,6 +337,11 @@ export default function App() {
   const [hoverSidebar, setHoverSidebar] = useState<"left" | "right" | null>(
     null,
   );
+  const [saveDestination,setSaveDestination]=useState<SaveDestination>(readSaveDestination);
+  const [savePrompt,setSavePrompt]=useState<'local'|'cloud'|null>(null);
+  const [destinationError,setDestinationError]=useState('');
+  const [destinationBusy,setDestinationBusy]=useState(false);
+  const destinationSaving=useRef(false);
   const [localFileView, setLocalFileView] = useState<"grid" | "list">("grid");
   const [workspaceTab, setWorkspaceTab] = useState<"local" | "cloud">("local");
   const [pagesExpanded, setPagesExpanded] = useState(true);
@@ -521,6 +528,7 @@ export default function App() {
     active: cloudActive,
     setActive: setCloudActive,
   } = cloudLogin;
+  useEffect(()=>{setSavePrompt(null);setDestinationError('')},[cloudSession?.token]);
   const [cloudSigningIn, setCloudSigningIn] = useState(false);
   const [bridgeRemote, setBridgeRemote] = useState(true);
   const [oauthApprovals, setOauthApprovals] = useState<OAuthApproval[]>([]);
@@ -1105,6 +1113,39 @@ export default function App() {
     download(JSON.stringify(doc, null, 2), `${doc.name}.baizefig`);
     notify("Local copy exported");
   };
+  const configureSaveDestination=(value:SaveDestination)=>{
+    try {storeSaveDestination(value);setSaveDestination(value)} catch {notify('无法保存默认位置，请检查浏览器存储权限')}
+  };
+  async function saveToDestination(where:'local'|'cloud',makeDefault=false,folderId:string|null=null){
+    if(destinationSaving.current)return;
+    destinationSaving.current=true;setDestinationBusy(true);setDestinationError('');
+    try {
+      if(where==='local')localExport();
+      else {
+        if(!cloudSession||cloudSession.expiresAt<=Date.now())throw Error('请重新登录云账号后保存');
+        const binding=readCloudBinding(cloudSession,doc.id);
+        let headId=binding?.headId||null;
+        if(!binding){try{headId=(await cloudRequest(cloudSession,'/files/'+doc.id)).file.head_id}catch(e){if((e as {status?:number}).status!==404)throw e}}
+        await saveCloudDocument(cloudSession,doc,folderId,headId,true);
+        notify('已保存到云端');
+      }
+      if(makeDefault)configureSaveDestination(where);
+      setSavePrompt(null);
+    } catch(e){const message=(e as Error).message;setDestinationError(message);notify(message)}
+    finally{destinationSaving.current=false;setDestinationBusy(false)}
+  }
+  const requestSave=()=>{
+    if(destinationSaving.current||savePrompt)return;
+    setDestinationError('');
+    if(!cloudSession||saveDestination==='local'){void saveToDestination('local');return}
+    if(saveDestination==='cloud'){
+      const binding=readCloudBinding(cloudSession,doc.id);
+      if(binding){void saveToDestination('cloud',false,binding.folderId);return}
+      setSavePrompt('cloud');return;
+    }
+    setSavePrompt('local');
+  };
+  const saveMenuName=saveDestination==='ask'?'Save':saveDestination==='cloud'&&cloudSession?'Save to cloud':'Save to local';
   const zoomTo = (
     value: number | ((current: number) => number),
     anchor: "center" | "pointer" = "center",
@@ -2492,7 +2533,7 @@ export default function App() {
       key: "⌘ O",
       run: () => fileInput.current?.click(),
     },
-    { name: "Save local copy", key: "⌘ S", run: localExport },
+    { name: "Save", key: "⌘ S", run: requestSave },
     {
       name: "Undo",
       key: "⌘ Z",
@@ -3094,7 +3135,7 @@ export default function App() {
       "Import Figma (.fig)",
       "Place image",
       "Duplicate file",
-      "Save local copy",
+      { ...actionItem("Save"), name: saveMenuName },
       "Save to version history",
       "Version history",
       "Export",
@@ -3347,7 +3388,7 @@ export default function App() {
         setTool("move");
         return;
       }
-      if (modal || present || menuAnchor || editingCrop) return;
+      if (savePrompt || modal || present || menuAnchor || editingCrop) return;
       if (
         e.key === " " &&
         !e.shiftKey &&
@@ -6845,6 +6886,7 @@ export default function App() {
           </div>
         </div>
       )}
+      {savePrompt && cloudSession && <SaveDestinationDialog initialFolderId={readCloudBinding(cloudSession,doc.id)?.folderId||null} initialWhere={savePrompt} session={cloudSession} busy={destinationBusy} error={destinationError} onCancel={()=>{if(!destinationBusy)setSavePrompt(null)}} onSave={(where,makeDefault,folderId)=>void saveToDestination(where,makeDefault,folderId)}/> }
       {modal && (
         <div
           className={`modal-backdrop ${modal === "files" ? "workspace-fullscreen" : ""}`}
@@ -6936,6 +6978,8 @@ export default function App() {
             )}
             {modal === "settings" && (
               <section className="general-settings">
+                <label className="setting-row">默认保存位置<select aria-label="默认保存位置" value={saveDestination} onChange={e=>configureSaveDestination(e.target.value as SaveDestination)}><option value="ask">每次询问</option><option value="local">本地</option><option value="cloud">云端</option></select></label>
+                <p className="muted">云端首次保存时选择路径，后续直接覆盖当前云文件；本地保存将下载文件。</p>
                 <p className="muted">
                   {t(
                     "Choose the language used throughout BaizeFig. Changes take effect immediately.",
