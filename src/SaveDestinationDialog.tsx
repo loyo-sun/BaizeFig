@@ -148,7 +148,7 @@ export function SaveDestinationDialog({
               checked={makeDefault}
               onChange={(e) => setMakeDefault(e.target.checked)}
             />
-            设为默认保存位置（可在通用设置中修改）
+            设为默认保存位置（可在偏好设置中修改）
           </label>
           {error && <p role="alert">{error}</p>}
           <div className="save-dialog-actions">

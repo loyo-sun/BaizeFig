@@ -1,5 +1,16 @@
+import {
+  PreferencesLayout,
+  type PreferencesSection,
+} from "./PreferencesLayout";
 import { SaveDestinationDialog } from "./SaveDestinationDialog";
-import { readSaveDestination, storeSaveDestination, readCloudBinding, cloudRequest, saveCloudDocument, type SaveDestination } from "./saveDestination";
+import {
+  readSaveDestination,
+  storeSaveDestination,
+  readCloudBinding,
+  cloudRequest,
+  saveCloudDocument,
+  type SaveDestination,
+} from "./saveDestination";
 import { PrototypeNotes } from "./PrototypeNotes";
 import { UserRound } from "lucide-react";
 import { FramePresetPanel, type FrameSize } from "./FramePresetPanel";
@@ -287,7 +298,6 @@ type Tool =
 type Modal =
   | "export"
   | "files"
-  | "shortcuts"
   | "commands"
   | "ai"
   | "bridge"
@@ -298,7 +308,6 @@ type Modal =
   | "settings"
   | "branches"
   | "versions"
-  | "fonts"
   | null;
 const tools: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "move", label: "Move", key: "V", icon: MousePointer2 },
@@ -337,11 +346,18 @@ export default function App() {
   const [hoverSidebar, setHoverSidebar] = useState<"left" | "right" | null>(
     null,
   );
-  const [saveDestination,setSaveDestination]=useState<SaveDestination>(readSaveDestination);
-  const [savePrompt,setSavePrompt]=useState<'local'|'cloud'|null>(null);
-  const [destinationError,setDestinationError]=useState('');
-  const [destinationBusy,setDestinationBusy]=useState(false);
-  const destinationSaving=useRef(false);
+  const [settingsSection, setSettingsSection] =
+    useState<PreferencesSection>("general");
+  function openPreferences(section: PreferencesSection = "general") {
+    setSettingsSection(section);
+    setModal("settings");
+  }
+  const [saveDestination, setSaveDestination] =
+    useState<SaveDestination>(readSaveDestination);
+  const [savePrompt, setSavePrompt] = useState<"local" | "cloud" | null>(null);
+  const [destinationError, setDestinationError] = useState("");
+  const [destinationBusy, setDestinationBusy] = useState(false);
+  const destinationSaving = useRef(false);
   const [localFileView, setLocalFileView] = useState<"grid" | "list">("grid");
   const [workspaceTab, setWorkspaceTab] = useState<"local" | "cloud">("local");
   const [pagesExpanded, setPagesExpanded] = useState(true);
@@ -527,7 +543,10 @@ export default function App() {
     active: cloudActive,
     setActive: setCloudActive,
   } = cloudLogin;
-  useEffect(()=>{setSavePrompt(null);setDestinationError('')},[cloudSession?.token]);
+  useEffect(() => {
+    setSavePrompt(null);
+    setDestinationError("");
+  }, [cloudSession?.token]);
   const [cloudSigningIn, setCloudSigningIn] = useState(false);
   const [bridgeRemote, setBridgeRemote] = useState(true);
   const [oauthApprovals, setOauthApprovals] = useState<OAuthApproval[]>([]);
@@ -1112,39 +1131,76 @@ export default function App() {
     download(JSON.stringify(doc, null, 2), `${doc.name}.baizefig`);
     notify("Local copy exported");
   };
-  const configureSaveDestination=(value:SaveDestination)=>{
-    try {storeSaveDestination(value);setSaveDestination(value)} catch {notify('无法保存默认位置，请检查浏览器存储权限')}
-  };
-  async function saveToDestination(where:'local'|'cloud',makeDefault=false,folderId:string|null=null){
-    if(destinationSaving.current)return;
-    destinationSaving.current=true;setDestinationBusy(true);setDestinationError('');
+  const configureSaveDestination = (value: SaveDestination) => {
     try {
-      if(where==='local')localExport();
-      else {
-        if(!cloudSession||cloudSession.expiresAt<=Date.now())throw Error('请重新登录云账号后保存');
-        const binding=readCloudBinding(cloudSession,doc.id);
-        let headId=binding?.headId||null;
-        if(!binding){try{headId=(await cloudRequest(cloudSession,'/files/'+doc.id)).file.head_id}catch(e){if((e as {status?:number}).status!==404)throw e}}
-        await saveCloudDocument(cloudSession,doc,folderId,headId,true);
-        notify('已保存到云端');
-      }
-      if(makeDefault)configureSaveDestination(where);
-      setSavePrompt(null);
-    } catch(e){const message=(e as Error).message;setDestinationError(message);notify(message)}
-    finally{destinationSaving.current=false;setDestinationBusy(false)}
-  }
-  const requestSave=()=>{
-    if(destinationSaving.current||savePrompt)return;
-    setDestinationError('');
-    if(!cloudSession||saveDestination==='local'){void saveToDestination('local');return}
-    if(saveDestination==='cloud'){
-      const binding=readCloudBinding(cloudSession,doc.id);
-      if(binding){void saveToDestination('cloud',false,binding.folderId);return}
-      setSavePrompt('cloud');return;
+      storeSaveDestination(value);
+      setSaveDestination(value);
+    } catch {
+      notify("无法保存默认位置，请检查浏览器存储权限");
     }
-    setSavePrompt('local');
   };
-  const saveMenuName=saveDestination==='ask'?'Save':saveDestination==='cloud'&&cloudSession?'Save to cloud':'Save to local';
+  async function saveToDestination(
+    where: "local" | "cloud",
+    makeDefault = false,
+    folderId: string | null = null,
+  ) {
+    if (destinationSaving.current) return;
+    destinationSaving.current = true;
+    setDestinationBusy(true);
+    setDestinationError("");
+    try {
+      if (where === "local") localExport();
+      else {
+        if (!cloudSession || cloudSession.expiresAt <= Date.now())
+          throw Error("请重新登录云账号后保存");
+        const binding = readCloudBinding(cloudSession, doc.id);
+        let headId = binding?.headId || null;
+        if (!binding) {
+          try {
+            headId = (await cloudRequest(cloudSession, "/files/" + doc.id)).file
+              .head_id;
+          } catch (e) {
+            if ((e as { status?: number }).status !== 404) throw e;
+          }
+        }
+        await saveCloudDocument(cloudSession, doc, folderId, headId, true);
+        notify("已保存到云端");
+      }
+      if (makeDefault) configureSaveDestination(where);
+      setSavePrompt(null);
+    } catch (e) {
+      const message = (e as Error).message;
+      setDestinationError(message);
+      notify(message);
+    } finally {
+      destinationSaving.current = false;
+      setDestinationBusy(false);
+    }
+  }
+  const requestSave = () => {
+    if (destinationSaving.current || savePrompt) return;
+    setDestinationError("");
+    if (!cloudSession || saveDestination === "local") {
+      void saveToDestination("local");
+      return;
+    }
+    if (saveDestination === "cloud") {
+      const binding = readCloudBinding(cloudSession, doc.id);
+      if (binding) {
+        void saveToDestination("cloud", false, binding.folderId);
+        return;
+      }
+      setSavePrompt("cloud");
+      return;
+    }
+    setSavePrompt("local");
+  };
+  const saveMenuName =
+    saveDestination === "ask"
+      ? "Save"
+      : saveDestination === "cloud" && cloudSession
+        ? "Save to cloud"
+        : "Save to local";
   const zoomTo = (
     value: number | ((current: number) => number),
     anchor: "center" | "pointer" = "center",
@@ -2455,7 +2511,7 @@ export default function App() {
     {
       name: "Font availability and replacement",
       key: "",
-      run: () => setModal("fonts"),
+      run: () => openPreferences("fonts"),
     },
     { name: "Create branch", run: () => setModal("branches") },
     {
@@ -2502,7 +2558,7 @@ export default function App() {
       key: "",
       run: () => arrangeSelection(c.mode),
     })),
-    { name: "General settings", key: "", run: () => setModal("settings") },
+    { name: "Preferences", key: "", run: () => openPreferences() },
     ...[
       { name: "Desktop frame · 1440 × 900", width: 1440, height: 900 },
       { name: "iPhone frame · 393 × 852", width: 393, height: 852 },
@@ -2600,7 +2656,11 @@ export default function App() {
           "noopener,noreferrer",
         ),
     },
-    { name: "Keyboard shortcuts", key: "?", run: () => setModal("shortcuts") },
+    {
+      name: "Keyboard shortcuts",
+      key: "?",
+      run: () => openPreferences("keyboard"),
+    },
     {
       name: "Actions",
       run: () => {
@@ -3025,7 +3085,7 @@ export default function App() {
         setSelected([]);
       },
     },
-    { name: "Keyboard layout", run: () => setModal("settings") },
+    { name: "Keyboard layout", run: () => openPreferences("keyboard") },
     { name: "Libraries", run: () => setModal("assets") },
     {
       name: "Manage slots",
@@ -3123,20 +3183,15 @@ export default function App() {
       .map((n) => (typeof n === "string" ? actionItem(n) : n)),
   });
   const menuItems: MenuItem[] = [
-    { ...actionItem("Open file browser"), name: "Back to files" },
-    actionItem("Actions"),
+    { ...actionItem("Open file browser"), name: "Workspace" },
+    { ...actionItem("Actions"), name: "Search commands" },
     sub("File", [
       "New design file",
-      sub("New", ["New design file"]),
       "Import",
-      "Place image",
-      "Duplicate file",
       { ...actionItem("Save"), name: saveMenuName },
-      "Save to version history",
       "Version history",
-      "Export",
-      "Export frames to PDF",
       "Create branch",
+      "Export",
     ]),
     sub("Edit", [
       "Undo",
@@ -3144,95 +3199,117 @@ export default function App() {
       "Cut",
       "Copy",
       "Paste",
+      sub("Paste special", ["Paste over selection", "Paste to replace"]),
       sub("Copy as", ["Copy as CSS", "Copy as SVG", "Copy as PNG"]),
-      "Paste over selection",
-      "Paste to replace",
       "Duplicate selection",
       "Delete",
-      "Find",
-      "Find next",
-      "Find previous",
       "Find and replace",
-      "Set default properties",
-      "Copy properties",
-      "Paste properties",
-      "Pick color",
-      "Select all",
-      "Select none",
-      "Select inverse",
-      "Select matching layers",
-      sub("Select all with", [
+      sub("Selection", [
+        "Select all",
+        "Select none",
+        "Select inverse",
         "Select all text",
         "Select all frames",
         "Select all images",
       ]),
+      sub("Properties", [
+        "Copy properties",
+        "Paste properties",
+        "Set default properties",
+        "Pick color",
+      ]),
     ]),
     sub("View", [
-      "Pixel grid",
-      "Layout guides",
-      "Rulers",
-      "Show slices",
-      "Comments",
-      "Annotations",
-      sub("Outlines", ["Layer outlines", "Mask outlines", "Frame outlines"]),
-      "Pixel preview",
-      "Memory usage",
-      "Additional labels",
-      "Minimize left navigation bar",
-      "Minimize UI",
-      "Show/Hide UI",
-      "Multiplayer cursors",
-      "Switch to Draw",
-      "Switch to Dev Mode",
-      sub("Panels", ["General settings", "Keyboard shortcuts"]),
       "Zoom in",
       "Zoom out",
       "Zoom to 100%",
       "Zoom to fit",
       "Zoom to selection",
-      "Previous page",
-      "Next page",
-      "Zoom to previous frame",
+      sub("Page navigation", ["Previous page", "Next page"]),
+      "Pixel grid",
+      "Layout guides",
+      "Rulers",
+      "Layer outlines",
+      "Show/Hide UI",
     ]),
     sub("Object", [
       "Frame selection",
       "Group selection",
       "Ungroup selection",
-      "Wrap in new section",
-      "Convert to section",
-      "Convert to frame",
-      "Restore default thumbnail",
-      "Use as mask",
-      "Add auto layout",
-      sub("More layout options", ["Layout rules", "Remove auto layout"]),
-      "Create component",
-      sub("Slots", ["Manage slots"]),
-      "Reset instance",
-      "Detach instance",
-      sub("Main component", ["Go to main component"]),
-      "Bring to front",
-      "Bring forward",
-      "Send backward",
-      "Send to back",
-      "Flip horizontal",
-      "Flip vertical",
-      "Rotate 180°",
-      "Rotate 90° left",
-      "Rotate 90° right",
-      "Flatten",
-      "Outline stroke",
-      sub("Boolean groups", ["Union", "Subtract", "Intersect", "Exclude"]),
+      sub("Auto layout", [
+        "Add auto layout",
+        "Remove auto layout",
+        "Layout rules",
+      ]),
+      sub("Components", [
+        "Create component",
+        "Manage slots",
+        "Go to main component",
+        "Reset instance",
+        "Detach instance",
+      ]),
+      sub("Layer order", [
+        "Bring to front",
+        "Bring forward",
+        "Send backward",
+        "Send to back",
+      ]),
+      sub("Transform", [
+        "Flip horizontal",
+        "Flip vertical",
+        "Rotate 90° left",
+        "Rotate 90° right",
+        "Rotate 180°",
+      ]),
+      sub("Vector", [
+        "Edit vector",
+        "Split vector into layers",
+        "Flatten",
+        "Outline stroke",
+      ]),
+      sub("Boolean groups", [
+        "Union",
+        "Subtract",
+        "Intersect",
+        "Exclude",
+        "Use as mask",
+      ]),
       "Show/Hide selection",
       "Lock/Unlock selection",
-      "Hide other layers",
       "Collapse layers",
-      "Remove fill",
-      "Remove stroke",
-      "Swap fill and stroke",
+      sub("Appearance", [
+        "Remove fill",
+        "Remove stroke",
+        "Swap fill and stroke",
+      ]),
       "Remove interactions",
-      "Delete contents",
+    ]),
+    sub("Arrange", [
+      "Align left",
+      "Align horizontal centers",
+      "Align right",
+      "Align top",
+      "Align vertical centers",
+      "Align bottom",
+      sub("Spacing", [
+        "Distribute horizontal spacing",
+        "Distribute vertical spacing",
+        "Pack horizontal",
+        "Pack vertical",
+      ]),
+      sub("Distribute", [
+        "Distribute left",
+        "Distribute horizontal centers",
+        "Distribute right",
+        "Distribute top",
+        "Distribute vertical centers",
+        "Distribute bottom",
+      ]),
+      "Tidy up",
+      "Round to pixel",
     ]),
     sub("Text", [
+      "Font availability and replacement",
       "Bold",
       "Italic",
       "Underline",
@@ -3270,62 +3347,11 @@ export default function App() {
         "Spell check: 简体中文",
       ]),
     ]),
-    sub("Arrange", [
-      ...arrangeCommands.map((c) => c.name),
-      "Align left",
-      "Align horizontal centers",
-      "Align right",
-      "Align top",
-      "Align vertical centers",
-      "Align bottom",
-    ]),
-    sub("Vector", [
-      "Edit vector",
-      "Split vector into layers",
-      "Join selection",
-      "Smooth join selection",
-      "Delete and heal selection",
-      "Split vector",
-      "Simplify vector",
-      "Offset vector",
-    ]),
-    sub("Plugins", ["Run last plugin", "Manage plugins"]),
-    sub("Widgets", ["Manage widgets", "Select all widgets"]),
-    sub("Preferences", [
-      "Snap to geometry",
-      "Snap to objects",
-      "Snap to pixel grid",
-      "Keep tool selected after use",
-      "Highlight layers on hover",
-      "Rename duplicated layers",
-      "Show dimensions on objects",
-      "Hide canvas UI during changes",
-      "Use smart quotes/symbols",
-      "Flip objects while resizing",
-      "Keyboard zooms into selection",
-      "Invert zoom direction",
-      "Ctrl+click opens right click menus",
-      "Use number keys for opacity",
-      "Use old shortcuts for outlines",
-      "Use ⌘⌥↑/↓ to rotate layers",
-      "Play audio notifications in AI chat",
-      "Open links in desktop app",
-      "Show Agents on canvas",
-      "Use scroll wheel zoom",
-      "Right-click and drag to pan",
-      "Theme",
-      "Color profile",
-      "Keyboard layout",
-      "Accessibility settings",
-      "Permissions and helpers",
-      "Nudge amount",
-      "General settings",
-    ]),
-    sub("Help and settings", [
+    actionItem("Preferences"),
+    sub("Help", [
       "Help documentation",
-      "Performance diagnostics",
       "Keyboard shortcuts",
-      "General settings",
+      "Performance diagnostics",
     ]),
   ];
 
@@ -4108,31 +4134,27 @@ export default function App() {
       ? "Export"
       : modal === "svg-report"
         ? "Editable SVG import"
-        : modal === "fonts"
-          ? "Font availability and replacement"
-          : modal === "branches"
-            ? "Design branches"
-            : modal === "versions"
-              ? "Version history"
-              : modal === "fig-report"
-                ? "Figma import result"
-                : modal === "settings"
-                  ? "General settings"
-                  : modal === "share"
-                    ? "Share this design"
-                    : modal === "assets"
-                      ? "Components & assets"
-                      : modal === "files"
-                        ? "Workspace"
-                        : modal === "shortcuts"
-                          ? "Keyboard shortcuts"
-                          : modal === "commands"
-                            ? "Actions"
-                            : modal === "ai"
-                              ? "Create with Baize"
-                              : modal === "bridge"
-                                ? "Connect external AI"
-                                : "Rename layer";
+        : modal === "branches"
+          ? "Design branches"
+          : modal === "versions"
+            ? "Version history"
+            : modal === "fig-report"
+              ? "Figma import result"
+              : modal === "settings"
+                ? "Preferences"
+                : modal === "share"
+                  ? "Share this design"
+                  : modal === "assets"
+                    ? "Components & assets"
+                    : modal === "files"
+                      ? "Workspace"
+                      : modal === "commands"
+                        ? "Actions"
+                        : modal === "ai"
+                          ? "Create with Baize"
+                          : modal === "bridge"
+                            ? "Connect external AI"
+                            : "Rename layer";
   return (
     <div
       className={`app ${hiddenUI ? "ui-hidden" : ""}`}
@@ -4648,7 +4670,7 @@ export default function App() {
               <button
                 className="tiny"
                 aria-label={t("Keyboard shortcuts")}
-                onClick={() => setModal("shortcuts")}
+                onClick={() => openPreferences("keyboard")}
               >
                 <Keyboard size={15} />
               </button>
@@ -5069,7 +5091,7 @@ export default function App() {
           <button
             className="help-fab"
             aria-label={t("Keyboard shortcuts and help")}
-            onClick={() => setModal("shortcuts")}
+            onClick={() => openPreferences("keyboard")}
           >
             <HelpCircle size={21} />
           </button>
@@ -5164,7 +5186,7 @@ export default function App() {
             className={`properties${editingVector ? " is-vector-editing" : ""}`}
           >
             <div id="vector-properties-slot" ref={setVectorPanel} />
-            <FontNotice doc={doc} onReplace={() => setModal("fonts")} />
+            <FontNotice doc={doc} onReplace={() => openPreferences("fonts")} />
             {tool === "frame" ? (
               <FramePresetPanel
                 value={frameSize}
@@ -6875,7 +6897,23 @@ export default function App() {
           </div>
         </div>
       )}
-      {savePrompt && cloudSession && <SaveDestinationDialog initialFolderId={readCloudBinding(cloudSession,doc.id)?.folderId||null} initialWhere={savePrompt} session={cloudSession} busy={destinationBusy} error={destinationError} onCancel={()=>{if(!destinationBusy)setSavePrompt(null)}} onSave={(where,makeDefault,folderId)=>void saveToDestination(where,makeDefault,folderId)}/> }
+      {savePrompt && cloudSession && (
+        <SaveDestinationDialog
+          initialFolderId={
+            readCloudBinding(cloudSession, doc.id)?.folderId || null
+          }
+          initialWhere={savePrompt}
+          session={cloudSession}
+          busy={destinationBusy}
+          error={destinationError}
+          onCancel={() => {
+            if (!destinationBusy) setSavePrompt(null);
+          }}
+          onSave={(where, makeDefault, folderId) =>
+            void saveToDestination(where, makeDefault, folderId)
+          }
+        />
+      )}
       {modal && (
         <div
           className={`modal-backdrop ${modal === "files" ? "workspace-fullscreen" : ""}`}
@@ -6902,15 +6940,6 @@ export default function App() {
                 <X size={19} />
               </button>
             </div>
-            {modal === "fonts" && (
-              <FontManager
-                doc={doc}
-                onReplace={(next) => {
-                  if (JSON.stringify(next) !== JSON.stringify(doc))
-                    change(next);
-                }}
-              />
-            )}
             {modal === "branches" && (
               <DesignBranches
                 doc={doc}
@@ -6966,208 +6995,331 @@ export default function App() {
               </section>
             )}
             {modal === "settings" && (
-              <section className="general-settings">
-                <label className="setting-row">默认保存位置<select aria-label="默认保存位置" value={saveDestination} onChange={e=>configureSaveDestination(e.target.value as SaveDestination)}><option value="ask">每次询问</option><option value="local">本地</option><option value="cloud">云端</option></select></label>
-                <p className="muted">云端首次保存时选择路径，后续直接覆盖当前云文件；本地保存将下载文件。</p>
-                <p className="muted">
-                  {t(
-                    "Choose the language used throughout BaizeFig. Changes take effect immediately.",
-                  )}
-                </p>
-                <label className="setting-row">
-                  {t("Theme")}
-                  <select
-                    aria-label={t("Theme")}
-                    value={theme}
-                    onChange={(e) =>
-                      setTheme(e.target.value as "light" | "dark" | "system")
-                    }
-                  >
-                    <option value="light">{t("Light")}</option>
-                    <option value="dark">{t("Dark")}</option>
-                    <option value="system">{t("Follow system")}</option>
-                  </select>
-                </label>
-                <div className="setting-row">
-                  <label htmlFor="interface-language">
-                    {t("Interface language")}
-                  </label>
-                  <select
-                    id="interface-language"
-                    value={language}
-                    onChange={(e) => setLanguage(e.target.value as Language)}
-                  >
-                    <option value="zh-CN">简体中文</option>
-                    <option value="en">English</option>
-                  </select>
-                </div>
-                <p className="notice">
-                  {t(
-                    "Language is saved on this browser and does not change design content, layer names or files.",
-                  )}
-                </p>
-                {persistenceError && (
-                  <p className="settings-error" role="alert">
-                    {t(
-                      "Your language preference could not be saved. It will apply for this session only.",
-                    )}
-                  </p>
-                )}
-                <label className="setting-row">
-                  {t("Keyboard layout")}
-                  <select
-                    aria-label={t("Keyboard layout")}
-                    value={keyboardLayout}
-                    onChange={(e) => {
-                      const layout = e.target.value as KeyboardLayout;
-                      setKeyboardLayout(layout);
-                      try {
-                        localStorage.setItem(
-                          "baizefig-keyboard-layout",
-                          layout,
-                        );
-                        setKeyboardError(false);
-                      } catch {
-                        setKeyboardError(true);
-                      }
-                    }}
-                  >
-                    <option value="physical">
-                      {t("Physical keys (QWERTY positions)")}
-                    </option>
-                    <option value="character">{t("Typed characters")}</option>
-                  </select>
-                </label>
-                {keyboardError && (
-                  <p role="alert">
-                    {t("Keyboard preference applies for this session only.")}
-                  </p>
-                )}
-                <h3>{t("Canvas aids")}</h3>
-                <label className="setting-row">
-                  {t("Rulers and guides")}
-                  <input
-                    type="checkbox"
-                    checked={rulers}
-                    onChange={(e) => setRulers(e.target.checked)}
-                  />
-                </label>
-                <label className="setting-row">
-                  {t("Canvas grid")}
-                  <input
-                    type="checkbox"
-                    checked={layoutGrid}
-                    onChange={(e) => setLayoutGrid(e.target.checked)}
-                  />
-                </label>
-                <NumberField
-                  label="Grid spacing"
-                  min={1}
-                  max={1000}
-                  value={gridStep}
-                  onChange={setGridStep}
-                />
-                <p className="muted">
-                  {t(
-                    "Drag from a ruler to create a guide. Drag it outside the canvas to remove it. Hold Alt over another layer to measure gaps.",
-                  )}
-                </p>
-                <div className="arrange-grid">
-                  <button
-                    onClick={() =>
-                      change({
-                        ...doc,
-                        guides: [
-                          ...(doc.guides ?? []),
-                          { id: id(), pageId: page, axis: "x", position: 0 },
-                        ],
-                      })
-                    }
-                  >
-                    {t("Add vertical guide")}
-                  </button>
-                  <button
-                    onClick={() =>
-                      change({
-                        ...doc,
-                        guides: [
-                          ...(doc.guides ?? []),
-                          { id: id(), pageId: page, axis: "y", position: 0 },
-                        ],
-                      })
-                    }
-                  >
-                    {t("Add horizontal guide")}
-                  </button>
-                </div>
-                {(doc.guides ?? [])
-                  .filter((g) => g.pageId === page)
-                  .map((g) => (
-                    <div className="setting-row" key={g.id}>
-                      <NumberField
-                        label={g.axis.toUpperCase()}
-                        value={g.position}
-                        onChange={(position) =>
-                          change({
-                            ...doc,
-                            guides: doc.guides!.map((a) =>
-                              a.id === g.id ? { ...a, position } : a,
-                            ),
-                          })
-                        }
-                      />
-                      <button
-                        aria-label={t("Delete guide")}
-                        onClick={() =>
-                          change({
-                            ...doc,
-                            guides: doc.guides!.filter((a) => a.id !== g.id),
-                          })
-                        }
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                <h3>{t("Snapping")}</h3>
-                {(["objects", "geometry", "pixel"] as const).map((key) => (
-                  <label className="setting-row" key={key}>
-                    {t(
-                      key === "objects"
-                        ? "Snap to objects"
-                        : key === "geometry"
-                          ? "Snap to geometry"
-                          : "Snap to pixel grid",
-                    )}
-                    <input
-                      type="checkbox"
-                      checked={snapOptions[key]}
-                      onChange={(e) =>
-                        setSnapOptions({
-                          ...snapOptions,
-                          [key]: e.target.checked,
-                        })
-                      }
-                    />
-                  </label>
-                ))}
-                <p className="muted">
-                  {t(
-                    "Hold Ctrl or Command while dragging to temporarily disable snapping.",
-                  )}
-                </p>
-                {snapSaveError && (
-                  <p role="alert">
-                    {t("Snapping preferences apply for this session only.")}
-                  </p>
-                )}
-                <button
-                  className="primary settings-done"
-                  onClick={() => setModal(null)}
-                >
-                  {t("Done")}
-                </button>
-              </section>
+              <PreferencesLayout
+                active={settingsSection}
+                onChange={setSettingsSection}
+                onClose={() => setModal(null)}
+                sections={[
+                  {
+                    id: "general",
+                    title: "General",
+                    description: "Choose where your design files are saved.",
+                    keywords:
+                      "保存 默认 本地 云端 文件 save default local cloud",
+                    content: (
+                      <>
+                        <label className="setting-row">
+                          默认保存位置
+                          <select
+                            aria-label="默认保存位置"
+                            value={saveDestination}
+                            onChange={(e) =>
+                              configureSaveDestination(
+                                e.target.value as SaveDestination,
+                              )
+                            }
+                          >
+                            <option value="ask">每次询问</option>
+                            <option value="local">本地</option>
+                            <option value="cloud">云端</option>
+                          </select>
+                        </label>
+                        <p className="muted">
+                          云端首次保存时选择路径，后续直接覆盖当前云文件；本地保存将下载文件。
+                        </p>
+                      </>
+                    ),
+                  },
+                  {
+                    id: "appearance",
+                    title: "Appearance",
+                    description: "Set the theme and interface language.",
+                    keywords:
+                      "主题 外观 语言 深色 浅色 theme language dark light",
+                    content: (
+                      <>
+                        <label className="setting-row">
+                          {t("Theme")}
+                          <select
+                            aria-label={t("Theme")}
+                            value={theme}
+                            onChange={(e) =>
+                              setTheme(
+                                e.target.value as "light" | "dark" | "system",
+                              )
+                            }
+                          >
+                            <option value="light">{t("Light")}</option>
+                            <option value="dark">{t("Dark")}</option>
+                            <option value="system">{t("Follow system")}</option>
+                          </select>
+                        </label>
+                        <div className="setting-row">
+                          <label htmlFor="interface-language">
+                            {t("Interface language")}
+                          </label>
+                          <select
+                            id="interface-language"
+                            value={language}
+                            onChange={(e) =>
+                              setLanguage(e.target.value as Language)
+                            }
+                          >
+                            <option value="zh-CN">简体中文</option>
+                            <option value="en">English</option>
+                          </select>
+                        </div>
+                        <p className="notice">
+                          {t(
+                            "Language is saved on this browser and does not change design content, layer names or files.",
+                          )}
+                        </p>
+                        {persistenceError && (
+                          <p className="settings-error" role="alert">
+                            {t(
+                              "Your language preference could not be saved. It will apply for this session only.",
+                            )}
+                          </p>
+                        )}
+                      </>
+                    ),
+                  },
+                  {
+                    id: "canvas",
+                    title: "Canvas aids",
+                    description:
+                      "Manage grids, rulers and guides for this document.",
+                    keywords:
+                      "画布 标尺 网格 参考线 间距 canvas grid guides rulers spacing",
+                    content: (
+                      <>
+                        <label className="setting-row">
+                          {t("Rulers and guides")}
+                          <input
+                            type="checkbox"
+                            checked={rulers}
+                            onChange={(e) => setRulers(e.target.checked)}
+                          />
+                        </label>
+                        <label className="setting-row">
+                          {t("Canvas grid")}
+                          <input
+                            type="checkbox"
+                            checked={layoutGrid}
+                            onChange={(e) => setLayoutGrid(e.target.checked)}
+                          />
+                        </label>
+                        <NumberField
+                          label="Grid spacing"
+                          min={1}
+                          max={1000}
+                          value={gridStep}
+                          onChange={setGridStep}
+                        />
+                        <p className="muted">
+                          {t(
+                            "Drag from a ruler to create a guide. Drag it outside the canvas to remove it. Hold Alt over another layer to measure gaps.",
+                          )}
+                        </p>
+                        <div className="arrange-grid">
+                          <button
+                            onClick={() =>
+                              change({
+                                ...doc,
+                                guides: [
+                                  ...(doc.guides ?? []),
+                                  {
+                                    id: id(),
+                                    pageId: page,
+                                    axis: "x",
+                                    position: 0,
+                                  },
+                                ],
+                              })
+                            }
+                          >
+                            {t("Add vertical guide")}
+                          </button>
+                          <button
+                            onClick={() =>
+                              change({
+                                ...doc,
+                                guides: [
+                                  ...(doc.guides ?? []),
+                                  {
+                                    id: id(),
+                                    pageId: page,
+                                    axis: "y",
+                                    position: 0,
+                                  },
+                                ],
+                              })
+                            }
+                          >
+                            {t("Add horizontal guide")}
+                          </button>
+                        </div>
+                        {(doc.guides ?? [])
+                          .filter((g) => g.pageId === page)
+                          .map((g) => (
+                            <div className="setting-row" key={g.id}>
+                              <NumberField
+                                label={g.axis.toUpperCase()}
+                                value={g.position}
+                                onChange={(position) =>
+                                  change({
+                                    ...doc,
+                                    guides: doc.guides!.map((a) =>
+                                      a.id === g.id ? { ...a, position } : a,
+                                    ),
+                                  })
+                                }
+                              />
+                              <button
+                                aria-label={t("Delete guide")}
+                                onClick={() =>
+                                  change({
+                                    ...doc,
+                                    guides: doc.guides!.filter(
+                                      (a) => a.id !== g.id,
+                                    ),
+                                  })
+                                }
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                      </>
+                    ),
+                  },
+                  {
+                    id: "snapping",
+                    title: "Snapping",
+                    description: "Control how layers snap while moving.",
+                    keywords: "吸附 对象 几何 像素 snap objects geometry pixel",
+                    content: (
+                      <>
+                        {(["objects", "geometry", "pixel"] as const).map(
+                          (key) => (
+                            <label className="setting-row" key={key}>
+                              {t(
+                                key === "objects"
+                                  ? "Snap to objects"
+                                  : key === "geometry"
+                                    ? "Snap to geometry"
+                                    : "Snap to pixel grid",
+                              )}
+                              <input
+                                type="checkbox"
+                                checked={snapOptions[key]}
+                                onChange={(e) =>
+                                  setSnapOptions({
+                                    ...snapOptions,
+                                    [key]: e.target.checked,
+                                  })
+                                }
+                              />
+                            </label>
+                          ),
+                        )}
+                        <p className="muted">
+                          {t(
+                            "Hold Ctrl or Command while dragging to temporarily disable snapping.",
+                          )}
+                        </p>
+                        {snapSaveError && (
+                          <p role="alert">
+                            {t(
+                              "Snapping preferences apply for this session only.",
+                            )}
+                          </p>
+                        )}
+                      </>
+                    ),
+                  },
+                  {
+                    id: "keyboard",
+                    title: "Keyboard shortcuts",
+                    description:
+                      "Choose your keyboard layout and look up shortcuts.",
+                    keywords: "键盘 布局 快捷键 keyboard shortcuts layout",
+                    content: (
+                      <>
+                        <label className="setting-row">
+                          {t("Keyboard layout")}
+                          <select
+                            aria-label={t("Keyboard layout")}
+                            value={keyboardLayout}
+                            onChange={(e) => {
+                              const layout = e.target.value as KeyboardLayout;
+                              setKeyboardLayout(layout);
+                              try {
+                                localStorage.setItem(
+                                  "baizefig-keyboard-layout",
+                                  layout,
+                                );
+                                setKeyboardError(false);
+                              } catch {
+                                setKeyboardError(true);
+                              }
+                            }}
+                          >
+                            <option value="physical">
+                              {t("Physical keys (QWERTY positions)")}
+                            </option>
+                            <option value="character">
+                              {t("Typed characters")}
+                            </option>
+                          </select>
+                        </label>
+                        {keyboardError && (
+                          <p role="alert">
+                            {t(
+                              "Keyboard preference applies for this session only.",
+                            )}
+                          </p>
+                        )}
+
+                        <p className="muted">
+                          {t(
+                            "Familiar keys. A canvas of your own. ⌘ on Mac, Ctrl on Windows/Linux.",
+                          )}
+                        </p>
+                        <div className="shortcut-list">
+                          {shortcutRegistry.map(({ name }) => (
+                            <div key={name}>
+                              <span className="shortcut-group">
+                                {t("Shortcut")}
+                              </span>
+                              <span>{t(name)}</span>
+                              <kbd>{shortcutLabel(name, platform)}</kbd>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ),
+                  },
+                  {
+                    id: "fonts",
+                    title: "Fonts",
+                    description:
+                      "Check available fonts and replace missing fonts.",
+                    keywords: "字体 管理 缺失 替换 fonts missing replace",
+                    content: (
+                      <>
+                        <FontManager
+                          doc={doc}
+                          onReplace={(next) => {
+                            if (JSON.stringify(next) !== JSON.stringify(doc))
+                              change(next);
+                          }}
+                        />
+                      </>
+                    ),
+                  },
+                ]}
+              />
             )}
             {modal === "share" && (
               <>
@@ -7326,24 +7478,6 @@ export default function App() {
                 </button>
               </>
             )}
-            {modal === "shortcuts" && (
-              <>
-                <p className="muted">
-                  {t(
-                    "Familiar keys. A canvas of your own. ⌘ on Mac, Ctrl on Windows/Linux.",
-                  )}
-                </p>
-                <div className="shortcut-list">
-                  {shortcutRegistry.map(({ name }) => (
-                    <div key={name}>
-                      <span className="shortcut-group">{t("Shortcut")}</span>
-                      <span>{t(name)}</span>
-                      <kbd>{shortcutLabel(name, platform)}</kbd>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
             {modal === "commands" && (
               <>
                 <div className="command-search">
@@ -7405,13 +7539,18 @@ export default function App() {
                   <CloudWorkspace
                     document={doc}
                     onOpen={async (next) => {
-                      if (!(await save(current.current.doc))) throw Error("无法保存当前文件");
+                      if (!(await save(current.current.doc)))
+                        throw Error("无法保存当前文件");
                       validateDocument(next);
-                      if (!(await save(next))) throw Error("无法保存云文件到本地");
+                      if (!(await save(next)))
+                        throw Error("无法保存云文件到本地");
                       committedDocument.current = next;
                       current.current.doc = next;
                       history.current = new History();
-                      setDoc(next); setPage(next.pages[0].id); setSelected([]); setCollapsed(new Set());
+                      setDoc(next);
+                      setPage(next.pages[0].id);
+                      setSelected([]);
+                      setCollapsed(new Set());
                       setModal(null);
                     }}
                     session={cloudSession}
@@ -7470,8 +7609,27 @@ export default function App() {
                         )}
                       </p>
                     )}
-                    <div role="group" aria-label="文件显示方式" className="local-view-switch"><button aria-pressed={localFileView === "grid"} onClick={()=>setLocalFileView("grid")}>图标模式</button><button aria-pressed={localFileView === "list"} onClick={()=>setLocalFileView("list")}>列表模式</button></div>
-                    <div className={`file-grid ${localFileView === "list" ? "local-file-list" : ""}`}>
+                    <div
+                      role="group"
+                      aria-label="文件显示方式"
+                      className="local-view-switch"
+                    >
+                      <button
+                        aria-pressed={localFileView === "grid"}
+                        onClick={() => setLocalFileView("grid")}
+                      >
+                        图标模式
+                      </button>
+                      <button
+                        aria-pressed={localFileView === "list"}
+                        onClick={() => setLocalFileView("list")}
+                      >
+                        列表模式
+                      </button>
+                    </div>
+                    <div
+                      className={`file-grid ${localFileView === "list" ? "local-file-list" : ""}`}
+                    >
                       {(showTrash
                         ? trashedFiles.map((record) => record.document)
                         : documents

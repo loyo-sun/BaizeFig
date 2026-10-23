@@ -4,6 +4,28 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Search commands": "搜索命令",
+  "Paste special": "特殊粘贴",
+  "Selection": "选择",
+  "Properties": "属性操作",
+  "Page navigation": "页面导航",
+  "Layer order": "层叠顺序",
+  "Transform": "变换",
+  "Distribute": "分布",
+  "General": "常规",
+  "Appearance": "外观",
+  "Fonts": "字体",
+  "Search settings": "搜索设置",
+  "Settings categories": "设置分类",
+  "No matching settings": "没有匹配的设置",
+  "Changes take effect immediately": "设置即时生效",
+  "Choose where your design files are saved.": "选择设计文件的默认保存位置。",
+  "Set the theme and interface language.": "调整主题与界面语言。",
+  "Manage grids, rulers and guides for this document.": "管理当前文档的网格、标尺与参考线。",
+  "Control how layers snap while moving.": "设置移动图层时的吸附方式。",
+  "Choose your keyboard layout and look up shortcuts.": "选择键盘布局，查看快捷键。",
+  "Check available fonts and replace missing fonts.": "检查字体可用性并替换缺失字体。",
+
   Save: "保存",
   "Select frame": "选中画板",
   Rename: "重命名",

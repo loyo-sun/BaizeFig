@@ -105,9 +105,9 @@ try {
   await page.keyboard.press("ControlOrMeta+Shift+p");
   await page
     .getByRole("textbox", { name: "Search actions", exact: true })
-    .fill("General settings");
+    .fill("Preferences");
   await page
-    .getByRole("button", { name: "General settings", exact: true })
+    .getByRole("button", { name: "Preferences", exact: true })
     .click();
   await page.getByLabel("默认保存位置", { exact: true }).selectOption("local");
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
