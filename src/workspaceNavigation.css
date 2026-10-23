@@ -895,3 +895,7 @@
 [data-ui-theme="dark"] .preferences-search input {
   background: transparent;
 }
+.modal-commands .action-list { max-height: min(50dvh,480px); overflow-y: auto; overscroll-behavior: contain; scroll-padding-block: 4px; }
+.modal-commands .action-list > button[aria-selected="true"] { background: var(--ui-selected); color: var(--ui-accent); box-shadow: inset 3px 0 var(--ui-accent); }
+.modal-commands .action-list > button:disabled { opacity: .4; }
+.command-keyboard-hint,.command-empty { color: var(--ui-muted); font-size: 11px; padding: 10px 0 0; }

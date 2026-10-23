@@ -19,7 +19,7 @@ try {
       })
       .waitFor();
     await page.keyboard.press("ControlOrMeta+Shift+p");
-    const input = page.getByRole("textbox", {
+    const input = page.getByRole("combobox", {
       name: language === "en" ? "Search actions" : "搜索操作",
       exact: true,
     });
@@ -34,7 +34,7 @@ try {
       await input.fill(query);
       await page
         .locator(".action-list")
-        .getByRole("button", {
+        .getByRole("option", {
           name: language === "en" ? "Preferences" : "偏好设置",
           exact: true,
         })
@@ -44,7 +44,7 @@ try {
       await input.fill(query);
       await page
         .locator(".action-list")
-        .getByRole("button", {
+        .getByRole("option", {
           name: language === "en" ? "Save" : "保存",
           exact: false,
         })
@@ -54,7 +54,7 @@ try {
     await input.fill("chongzuo");
     await page
       .locator(".action-list")
-      .getByRole("button", {
+      .getByRole("option", {
         name: language === "en" ? "Redo" : "重做",
         exact: false,
       })
@@ -64,7 +64,7 @@ try {
     await input.fill("phsz");
     await page
       .locator(".action-list")
-      .getByRole("button", {
+      .getByRole("option", {
         name: language === "en" ? "Preferences" : "偏好设置",
         exact: true,
       })

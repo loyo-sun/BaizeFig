@@ -1,4 +1,4 @@
-import { matchesCommand } from "./commandSearch";
+import { CommandPalette } from "./CommandPalette";
 import {
   PreferencesLayout,
   type PreferencesSection,
@@ -7480,35 +7480,7 @@ export default function App() {
               </>
             )}
             {modal === "commands" && (
-              <>
-                <div className="command-search">
-                  <Search size={17} />
-                  <input
-                    autoFocus
-                    placeholder={t("Search commands by Chinese, English or pinyin…")}
-                    aria-label={t("Search actions")}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                </div>
-                <div className="action-list">
-                  {actions
-                    .filter((a) => matchesCommand(a.name, query, t(a.name)))
-                    .map((a) => (
-                      <button
-                        key={a.name}
-                        disabled={a.disabled}
-                        onClick={() => {
-                          setModal(null);
-                          a.run();
-                        }}
-                      >
-                        <span>{t(a.name)}</span>
-                        <kbd>{a.key}</kbd>
-                      </button>
-                    ))}
-                </div>
-              </>
+              <CommandPalette actions={actions} query={query} onQueryChange={setQuery} onClose={()=>setModal(null)}/>
             )}
             {modal === "files" && (
               <>

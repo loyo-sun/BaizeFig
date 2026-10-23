@@ -104,10 +104,10 @@ try {
   await page.keyboard.press("Escape");
   await page.keyboard.press("ControlOrMeta+Shift+p");
   await page
-    .getByRole("textbox", { name: "Search actions", exact: true })
+    .getByRole("combobox", { name: "Search actions", exact: true })
     .fill("Preferences");
   await page
-    .getByRole("button", { name: "Preferences", exact: true })
+    .getByRole("option", { name: "Preferences", exact: true })
     .click();
   await page.getByLabel("默认保存位置", { exact: true }).selectOption("local");
   await page.getByRole("button", { name: "Close dialog", exact: true }).click();
