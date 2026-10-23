@@ -1,3 +1,4 @@
+import { WorkspaceRow } from "./WorkspaceRow";
 import { FileActions } from "./FileActions";
 import { FileDetails, MoveFileDialog, folderPath } from "./FileDetails";
 import { useI18n } from "./LanguageContext";
@@ -10,6 +11,7 @@ import {
   RefreshCw,
   Plus,
   CloudUpload,
+  Trash2,
 } from "lucide-react";
 import { svgString, raster } from "./Canvas";
 import { useEffect, useState } from "react";
@@ -25,7 +27,15 @@ type File = {
   deleted_at?: string;
   size_bytes?: number;
 };
-type Folder = { id: string; name: string; parent_id: string | null };
+type Folder = {
+  id: string;
+  name: string;
+  parent_id: string | null;
+  created_at?: string;
+  updated_at?: string;
+  size_bytes?: number;
+  deleted_at?: string;
+};
 export function CloudFiles({
   session,
   document,
@@ -45,6 +55,8 @@ export function CloudFiles({
       return "grid";
     }
   });
+  const [folderDetails, setFolderDetails] = useState<Folder | null>(null);
+  const [folderMoving, setFolderMoving] = useState<Folder | null>(null);
   const [trash, setTrash] = useState(false);
   const [moving, setMoving] = useState<File | null>(null);
   const [search, setSearch] = useState("");
@@ -72,12 +84,10 @@ export function CloudFiles({
       },
       ...(body ? { method: "POST", body: JSON.stringify(body) } : {}),
     });
-    if (!r.ok)
-      throw Error(
-        r.status === 409
-          ? t("The cloud file has changed. Reopen it before saving.")
-          : t("Cloud space request failed ({status})", { status: r.status }),
-      );
+    if (!r.ok) {
+      const detail=await r.json().catch(()=>({}));
+      throw Error(detail.error_description || detail.error || t("Cloud space request failed ({status})",{status:r.status}));
+    }
     return r.json();
   }
   async function load() {
@@ -120,14 +130,7 @@ export function CloudFiles({
       <div className="cloud-files-heading">
         <div>
           <h3>{trash ? "回收站" : t("All cloud files")}</h3>
-          <button
-            onClick={() => {
-              setTrash(!trash);
-              setParent(null);
-            }}
-          >
-            {trash ? "返回文件" : "回收站（保留 30 天）"}
-          </button>
+
           <p>
             {t("Organize designs in folders and open a file to keep creating.")}
           </p>
@@ -182,43 +185,14 @@ export function CloudFiles({
             {t("New folder")}
           </button>
           <button
-            onClick={() =>
-              void run(async () => {
-                const preview = await Promise.all(
-                  document.pages.map(async (page) => {
-                    const blob = await raster(
-                      await svgString(document, page.id),
-                      0.5,
-                    );
-                    return await new Promise<string>((resolve, reject) => {
-                      const reader = new FileReader();
-                      reader.onload = () => resolve(String(reader.result));
-                      reader.onerror = reject;
-                      reader.readAsDataURL(blob);
-                    });
-                  }),
-                );
-                const d = await api("/files/" + document.id + "/save", {
-                  content: document,
-                  preview,
-                  headId:
-                    readCloudBinding(session, document.id)?.headId ||
-                    heads[document.id] ||
-                    null,
-                });
-                rememberCloudBinding(
-                  session,
-                  document.id,
-                  d.headId,
-                  files.find((f) => f.id === document.id)?.folder_id || null,
-                );
-                setHeads((h) => ({ ...h, [document.id]: d.headId }));
-                await load();
-              })
-            }
+            className="workspace-trash-button"
+            onClick={() => {
+              setTrash(!trash);
+              setParent(null);
+            }}
           >
-            <CloudUpload size={14} />
-            {t("Save current file to cloud")}
+            <Trash2 size={14} />
+            {trash ? "返回文件" : "回收站"}
           </button>
         </div>
         <nav className="cloud-breadcrumb" aria-label={t("File path")}>
@@ -253,15 +227,40 @@ export function CloudFiles({
             {folders
               .filter(
                 (f) =>
-                  f.parent_id === parent &&
+                  (trash || f.parent_id === parent) &&
                   f.name.toLowerCase().includes(search.toLowerCase()),
               )
               .map((f) => (
-                <tr key={f.id}>
+                <WorkspaceRow
+                  key={f.id}
+                  onDragOver={(e) => {
+                    if (
+                      !trash &&
+                      e.dataTransfer.types.includes(
+                        "application/x-baizefig-cloud-file",
+                      )
+                    ) {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const id = e.dataTransfer.getData(
+                      "application/x-baizefig-cloud-file",
+                    );
+                    if (id && !trash)
+                      void run(async () => {
+                        await api("/files/" + id + "/move", { folderId: f.id });
+                        await load();
+                      });
+                  }}
+                >
                   <td>
                     <button
                       className="cloud-file-open cloud-folder-open"
-                      onClick={() => setParent(f.id)}
+                      disabled={trash}
+                      onDoubleClick={() => setParent(f.id)}
                     >
                       <span className="cloud-folder-picture">
                         <Folder size={view === "grid" ? 44 : 18} />
@@ -271,8 +270,69 @@ export function CloudFiles({
                   </td>
                   <td className="cloud-file-date">{t("Folder")}</td>
                   <td>—</td>
-                  <td className="cloud-file-actions">—</td>
-                </tr>
+                  <td className="cloud-file-actions">
+                    <FileActions>
+                      {trash ? (
+                        <>
+                          <button
+                            onClick={() =>
+                              void run(async () => {
+                                await api("/folders/" + f.id + "/restore", {});
+                                await load();
+                              })
+                            }
+                          >
+                            恢复
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (
+                                confirm("彻底删除文件夹及其中内容？无法恢复。")
+                              )
+                                void run(async () => {
+                                  await api("/folders/" + f.id + "/purge", {});
+                                  await load();
+                                });
+                            }}
+                          >
+                            彻底删除
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button onClick={() => setParent(f.id)}>打开</button>
+                          <button
+                            onClick={() =>
+                              void run(async () =>
+                                setFolderDetails(await api("/folders/" + f.id)),
+                              )
+                            }
+                          >
+                            属性
+                          </button>
+                          <button onClick={() => setFolderMoving(f)}>
+                            移动
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  `删除文件夹「${f.name}」及其中内容？将进入回收站保留 30 天。`,
+                                )
+                              )
+                                void run(async () => {
+                                  await api("/folders/" + f.id + "/delete", {});
+                                  await load();
+                                });
+                            }}
+                          >
+                            删除
+                          </button>
+                        </>
+                      )}
+                    </FileActions>
+                  </td>
+                </WorkspaceRow>
               ))}
             {files
               .filter(
@@ -281,12 +341,22 @@ export function CloudFiles({
                   f.name.toLowerCase().includes(search.toLowerCase()),
               )
               .map((f) => (
-                <tr key={f.id}>
+                <WorkspaceRow
+                  key={f.id}
+                  draggable={!trash}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(
+                      "application/x-baizefig-cloud-file",
+                      f.id,
+                    );
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                >
                   <td>
                     <button
                       className="cloud-file-open"
                       disabled={trash}
-                      onClick={() => void run(() => open(f))}
+                      onDoubleClick={() => void run(() => open(f))}
                     >
                       {view === "grid" && (
                         <CloudThumbnail
@@ -341,9 +411,6 @@ export function CloudFiles({
                       </>
                     ) : (
                       <FileActions>
-                        <button onClick={() => void run(() => open(f))}>
-                          打开
-                        </button>
                         <button
                           onClick={() =>
                             void run(async () => {
@@ -375,13 +442,13 @@ export function CloudFiles({
                       </FileActions>
                     )}
                   </td>
-                </tr>
+                </WorkspaceRow>
               ))}
           </tbody>
         </table>
         {!folders.some(
           (f) =>
-            f.parent_id === parent &&
+            (trash || f.parent_id === parent) &&
             f.name.toLowerCase().includes(search.toLowerCase()),
         ) &&
           !files.some(
@@ -476,6 +543,43 @@ export function CloudFiles({
               void run(async () => {
                 await api("/files/" + moving.id + "/move", { folderId: id });
                 setMoving(null);
+                await load();
+              })
+            }
+          />
+        )}
+        {folderDetails && (
+          <FileDetails
+            folder
+            name={folderDetails.name}
+            size={folderDetails.size_bytes}
+            created={folderDetails.created_at}
+            updated={folderDetails.updated_at}
+            location={folderPath(folders, folderDetails.parent_id, "云工作区")}
+            onClose={() => setFolderDetails(null)}
+          />
+        )}
+        {folderMoving && (
+          <MoveFileDialog
+            folders={folders.filter((f) => {
+              let cursor: Folder | undefined = f;
+              const seen = new Set<string>();
+              while (cursor && !seen.has(cursor.id)) {
+                if (cursor.id === folderMoving.id) return false;
+                seen.add(cursor.id);
+                cursor = folders.find((p) => p.id === cursor!.parent_id);
+              }
+              return true;
+            })}
+            root="云工作区"
+            initial={folderMoving.parent_id}
+            onClose={() => setFolderMoving(null)}
+            onMove={(id) =>
+              void run(async () => {
+                await api("/folders/" + folderMoving.id + "/move", {
+                  folderId: id,
+                });
+                setFolderMoving(null);
                 await load();
               })
             }

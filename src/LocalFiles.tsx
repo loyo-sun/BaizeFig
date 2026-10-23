@@ -1,3 +1,4 @@
+import { WorkspaceRow } from "./WorkspaceRow";
 import { FileActions } from "./FileActions";
 import { LayoutGrid, List, Folder, RefreshCw } from "lucide-react";
 import { Scene } from "./Canvas";
@@ -30,12 +31,25 @@ export function LocalFiles({
     [folders, setFolders] = useState<WorkspaceFolder[]>([]),
     [meta, setMeta] = useState<Record<string, LocalFileMetadata>>({}),
     [parent, setParent] = useState<string | null>(null),
-    [view, setView] = useState<"grid"|"list">(()=>{try{return localStorage.getItem("baizefig.local.view")==="grid"?"grid":"list";}catch{return "list";}}),
+    [view, setView] = useState<"grid" | "list">(() => {
+      try {
+        return localStorage.getItem("baizefig.local.view") === "grid"
+          ? "grid"
+          : "list";
+      } catch {
+        return "list";
+      }
+    }),
     [search, setSearch] = useState(""),
     [details, setDetails] = useState<Document | null>(null),
     [moving, setMoving] = useState<Document | null>(null),
     [error, setError] = useState("");
-  const changeView=(next:"grid"|"list")=>{setView(next);try{localStorage.setItem("baizefig.local.view",next);}catch{}};
+  const changeView = (next: "grid" | "list") => {
+    setView(next);
+    try {
+      localStorage.setItem("baizefig.local.view", next);
+    } catch {}
+  };
   async function load() {
     const docs = await listDocuments();
     setFiles(docs);
@@ -96,10 +110,8 @@ export function LocalFiles({
           <RefreshCw size={14} />
           刷新
         </button>
-
       </div>
       {error && <p role="alert">{error}</p>}
-
       <table className={`cloud-file-table cloud-file-${view}`}>
         <thead>
           <tr>
@@ -117,11 +129,30 @@ export function LocalFiles({
                 f.name.toLowerCase().includes(search.toLowerCase()),
             )
             .map((f) => (
-              <tr key={f.id}>
+              <WorkspaceRow
+                key={f.id}
+                onDragOver={(e) => {
+                  if (
+                    e.dataTransfer.types.includes(
+                      "application/x-baizefig-local-file",
+                    )
+                  ) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const id = e.dataTransfer.getData(
+                    "application/x-baizefig-local-file",
+                  );
+                  if (id) void run(() => moveLocalFile(id, f.id));
+                }}
+              >
                 <td>
                   <button
                     className="cloud-file-open cloud-folder-open"
-                    onClick={() => setParent(f.id)}
+                    onDoubleClick={() => setParent(f.id)}
                   >
                     <span className="cloud-folder-picture">
                       <Folder size={view === "grid" ? 44 : 18} />
@@ -132,7 +163,7 @@ export function LocalFiles({
                 <td className="cloud-file-date">文件夹</td>
                 <td className="cloud-file-date">—</td>
                 <td>—</td>
-              </tr>
+              </WorkspaceRow>
             ))}
           {files
             .filter(
@@ -141,9 +172,22 @@ export function LocalFiles({
                 d.name.toLowerCase().includes(search.toLowerCase()),
             )
             .map((d) => (
-              <tr key={d.id}>
+              <WorkspaceRow
+                key={d.id}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData(
+                    "application/x-baizefig-local-file",
+                    d.id,
+                  );
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+              >
                 <td>
-                  <button className="cloud-file-open" onClick={() => onOpen(d)}>
+                  <button
+                    className="cloud-file-open"
+                    onDoubleClick={() => onOpen(d)}
+                  >
                     {view === "grid" && (
                       <div
                         className="local-workspace-preview"
@@ -165,7 +209,6 @@ export function LocalFiles({
                 </td>
                 <td className="cloud-file-actions">
                   <FileActions>
-                    <button onClick={() => onOpen(d)}>打开</button>
                     <button onClick={() => setDetails(d)}>属性</button>
                     <button onClick={() => setMoving(d)}>移动</button>
                     <button
@@ -182,7 +225,7 @@ export function LocalFiles({
                     </button>
                   </FileActions>
                 </td>
-              </tr>
+              </WorkspaceRow>
             ))}
         </tbody>
       </table>

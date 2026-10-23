@@ -30,7 +30,9 @@ export function FileDetails({
   location,
   onClose,
   children,
+  folder = false,
 }: {
+  folder?: boolean;
   children?: import("react").ReactNode;
   name: string;
   size?: number;
@@ -56,15 +58,35 @@ export function FileDetails({
       >
         <header>
           <h3>文件属性</h3>
-          <button className="workspace-dialog-close" aria-label="关闭属性" title="关闭" autoFocus onClick={onClose}><X size={18}/></button>
+          <button
+            className="workspace-dialog-close"
+            aria-label="关闭属性"
+            title="关闭"
+            autoFocus
+            onClick={onClose}
+          >
+            <X size={18} />
+          </button>
         </header>
         <div className="workspace-file-summary">
-          <img src="/baize-white.svg" alt="BaizeFig 文件" width={48} height={48} />
-          <strong>{name}.baizefig</strong>
+          {folder ? (
+            <Folder size={48} />
+          ) : (
+            <img
+              src="/baize-white.svg"
+              alt="BaizeFig 文件"
+              width={48}
+              height={48}
+            />
+          )}
+          <strong>
+            {name}
+            {folder ? "" : ".baizefig"}
+          </strong>
         </div>
         <dl>
           {[
-            ["种类", "BaizeFig 设计文件"],
+            ["种类", folder ? "文件夹" : "BaizeFig 设计文件"],
             [
               "大小",
               size === undefined
