@@ -55,6 +55,15 @@ export function useExclusiveEdit(
   ) => Promise<unknown>,
 ) {
   const starting = useRef(false);
+  const refreshEdit = useRef<() => void>(() => {});
+  const generation = useRef(0),
+    autoPaused = useRef<string | null>(null),
+    previousDocument = useRef(documentId);
+  const cloudBacked = isCloudBackedDocument(documentId);
+  const [occupant, setOccupant] = useState("");
+  const [checking, setChecking] = useState(
+    !window.baizefigDesktop && !!session && cloudBacked,
+  );
   const flushRef = useRef(flush);
   flushRef.current = flush;
   const lease = useRef<Lease | null>(null),
@@ -86,12 +95,26 @@ export function useExclusiveEdit(
   useEffect(() => {
     let cancelled = false,
       updating = false;
+    generation.current++;
     const s = session,
       id = documentId;
+    if (previousDocument.current !== id) {
+      autoPaused.current = null;
+      previousDocument.current = id;
+    }
+    if (web) {
+      setOccupant("");
+      setChecking(!!s && cloudBacked);
+    }
+
     const update = async () => {
       if (updating) return;
       updating = true;
       try {
+        const opening = web
+          ? new URLSearchParams(window.location.search).get("cloudFile")
+          : null;
+        if (opening && opening !== id) return;
         if (web && isCloudOffline() && navigator.onLine && s) {
           try {
             await cloudRequest(s, "/files/" + id + "/edit");
@@ -148,6 +171,7 @@ export function useExclusiveEdit(
           );
           if (!cancelled && lease.current === current) {
             current.until = new Date(result.expires_at).getTime();
+            setOccupant("");
             setStatus("你正在独占编辑");
           }
         } else {
@@ -163,29 +187,70 @@ export function useExclusiveEdit(
               lease.current = null;
               if (web) releaseLocalEditor(id);
             }
+            const holder = web
+              ? result.lock?.holder || result.lock?.label || ""
+              : result.lock?.label || "";
+            if (web) setOccupant(holder);
             setStatus(
-              result.lock
-                ? result.lock.label + " 正在编辑 · 当前只读"
+              holder
+                ? holder + " 正在编辑 · 当前只读"
                 : "只读 · 点击开始编辑获取编辑权",
             );
             render((v) => v + 1);
+            if (
+              web &&
+              !result.lock &&
+              !lease.current &&
+              autoPaused.current !== id &&
+              !starting.current
+            )
+              await begin("human", undefined, true);
           }
         }
       } catch (error) {
         if (!cancelled) {
           if ((error as { status?: number }).status !== 413)
             lease.current = null;
-          setStatus(
-            (error as Error).message || "编辑连接已失效 · 本机内容已保留",
-          );
+          if (web && (error as { status?: number }).status === 423) {
+            const state = await cloudRequest(
+              s!,
+              "/files/" + id + "/edit",
+            ).catch(() => null);
+            if (!cancelled && state?.lock) {
+              const holder = web
+                ? state.lock.holder || state.lock.label
+                : state.lock.label;
+              if (web) setOccupant(holder);
+              setStatus(holder + " 正在编辑 · 当前只读");
+            }
+          } else {
+            if (web) setOccupant("");
+            setStatus(
+              (error as Error).message || "编辑连接已失效 · 本机内容已保留",
+            );
+          }
           render((v) => v + 1);
         }
       } finally {
+        if (web && !cancelled && !starting.current) setChecking(false);
         updating = false;
       }
     };
+    refreshEdit.current = () => void update();
     void update();
-    const timer = setInterval(() => void update(), 15000);
+    const timer = setInterval(
+      () => {
+        const current = lease.current;
+        if (
+          web &&
+          current?.kind === "human" &&
+          current.until - Date.now() > 75000
+        )
+          return;
+        void update();
+      },
+      web ? 5000 : 15000,
+    );
     const close = () => {
       const l = lease.current;
       if (s && l?.documentId === id) {
@@ -232,6 +297,7 @@ export function useExclusiveEdit(
     if (web) window.addEventListener("online", online);
     return () => {
       cancelled = true;
+      generation.current++;
       clearInterval(timer);
       window.removeEventListener("pagehide", leave);
       window.removeEventListener("offline", offline);
@@ -240,6 +306,12 @@ export function useExclusiveEdit(
       close();
     };
   }, [session?.token, documentId, editorId]);
+  useEffect(() => {
+    if (web && cloudBacked && !lease.current) {
+      setChecking(true);
+      refreshEdit.current();
+    }
+  }, [cloudBacked]);
   async function begin(
     kind: "human" | "ai" = "human",
     token?: string,
@@ -247,8 +319,16 @@ export function useExclusiveEdit(
   ) {
     if (starting.current) throw Error("正在获取编辑权，请稍候");
     starting.current = true;
+    if (web) {
+      setChecking(true);
+      setStatus("正在获取编辑权…");
+    }
     try {
       const result = await beginEditing(kind, token);
+      if (web) {
+        autoPaused.current = null;
+        setOccupant("");
+      }
       if (web && !resuming)
         try {
           localStorage.removeItem("baizefig.finish-after-sync." + documentId);
@@ -256,15 +336,27 @@ export function useExclusiveEdit(
       return result;
     } finally {
       starting.current = false;
+      if (web) setChecking(false);
     }
   }
   async function beginEditing(kind: "human" | "ai" = "human", token?: string) {
     const id = documentId,
+      epoch = generation.current,
       s = session || offlineSessionForDoc(id);
     if (!s) throw Error("请先登录乐悦云");
     if (lease.current) throw Error("请先结束当前编辑会话");
-    if (web && navigator.locks && !(await claimLocalEditor(id)))
-      throw Error("另一个标签页正在编辑此文件，请先结束该标签页的编辑");
+    if (web && navigator.locks && !(await claimLocalEditor(id))) {
+      const state = await cloudRequest(s, "/files/" + id + "/edit").catch(
+        () => null,
+      );
+      const holder =
+        state?.lock?.holder || state?.lock?.label || "另一个标签页";
+      setOccupant(holder);
+      setStatus(holder + " 正在编辑 · 当前只读");
+      throw Object.assign(Error(holder + " 正在编辑，请先结束该会话"), {
+        status: 423,
+      });
+    }
     if (web && isCloudOffline()) {
       if (kind !== "human" || !(await readCloudRecovery(s, id))) {
         releaseLocalEditor(id);
@@ -294,11 +386,13 @@ export function useExclusiveEdit(
         documentId: id,
         until: new Date(result.expires_at).getTime(),
       };
-      if (active.current !== id) throw Error("文档已切换，请重新开始编辑");
+      if (active.current !== id || (web && generation.current !== epoch))
+        throw Error("文档已切换，请重新开始编辑");
       try {
         let latest = await cloudRequest(s, "/files/" + id);
         if (web) latest = await resolveCloudOpen(s, latest);
-        if (active.current !== id) throw Error("文档已切换");
+        if (active.current !== id || (web && generation.current !== epoch))
+          throw Error("文档已切换");
         rememberCloudBinding(
           s,
           id,
@@ -325,7 +419,13 @@ export function useExclusiveEdit(
         const state = await cloudRequest(s, "/files/" + id + "/edit").catch(
           () => null,
         );
-        if (state?.lock) setStatus(state.lock.label + " 正在编辑 · 当前只读");
+        if (state?.lock) {
+          const holder = web
+            ? state.lock.holder || state.lock.label
+            : state.lock.label;
+          if (web) setOccupant(holder);
+          setStatus(holder + " 正在编辑 · 当前只读");
+        }
       }
       throw error;
     } finally {
@@ -359,6 +459,7 @@ export function useExclusiveEdit(
         );
       } catch {}
       releaseLocalEditor(documentId);
+      autoPaused.current = documentId;
       setStatus("已保存到本机 · 联网后同步");
       render((v) => v + 1);
       return;
@@ -380,6 +481,8 @@ export function useExclusiveEdit(
       await release(session, l);
       lease.current = null;
       if (web) {
+        if (l.kind === "human") autoPaused.current = documentId;
+        setOccupant("");
         await setOfflineEditing(session, documentId, false);
         releaseLocalEditor(documentId);
       }
@@ -394,6 +497,8 @@ export function useExclusiveEdit(
   }
   return {
     status,
+    occupant,
+    checking,
     busy,
     begin,
     end,

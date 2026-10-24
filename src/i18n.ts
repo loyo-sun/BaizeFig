@@ -7,6 +7,8 @@ export type TranslationValues = Record<string, string | number>;
 export const zhCN: Record<string, string> = {
   "Finish editing": "结束编辑",
   "Read only": "只读",
+  "Acquiring edit access": "正在获取编辑权…",
+  "is editing": "正在编辑",
   "Modified": "已修改",
   "Saved": "已保存",
   "Console": "控制台",

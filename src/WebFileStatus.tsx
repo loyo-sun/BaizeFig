@@ -1,6 +1,8 @@
 import { useI18n } from "./LanguageContext";
 export function WebFileStatus({
   readOnly,
+  checking,
+  occupant,
   modified,
   cloud,
   draft,
@@ -11,6 +13,8 @@ export function WebFileStatus({
   onFinish,
 }: {
   readOnly: boolean;
+  checking?: boolean;
+  occupant?: string;
   modified: boolean;
   cloud: boolean;
   draft?: boolean;
@@ -21,7 +25,13 @@ export function WebFileStatus({
   onFinish: () => void;
 }) {
   const { t } = useI18n();
-  const state = readOnly ? "readonly" : modified ? "modified" : "saved";
+  const state = checking
+    ? "checking"
+    : readOnly
+      ? "readonly"
+      : modified
+        ? "modified"
+        : "saved";
   return (
     <div
       className={"web-file-status web-file-status--" + state}
@@ -32,9 +42,16 @@ export function WebFileStatus({
     >
       <span className="web-file-status-label">
         <i aria-hidden="true" />
-        {t(readOnly ? "Read only" : modified ? "Modified" : "Saved")}
+        <span className="web-file-status-text">
+          {checking
+            ? t("Acquiring edit access")
+            : t(readOnly ? "Read only" : modified ? "Modified" : "Saved")}
+          {!checking && readOnly && occupant
+            ? " · " + occupant + " " + t("is editing")
+            : ""}
+        </span>
       </span>
-      {readOnly ? (
+      {checking ? null : readOnly ? (
         <button disabled={busy} onClick={onEdit}>
           [{t("Edit")}]
         </button>

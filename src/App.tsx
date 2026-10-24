@@ -4839,6 +4839,10 @@ export default function App() {
               {webEditor ? (
                 <WebFileStatus
                   cloud={cloudBacked}
+                  checking={
+                    cloudBacked && (exclusive.checking || cloudLogin.restoring)
+                  }
+                  occupant={exclusive.occupant}
                   readOnly={
                     cloudBacked &&
                     !exclusive.canEdit(doc.id) &&
@@ -4852,10 +4856,16 @@ export default function App() {
                       : saved !== "Saved locally"
                   }
                   busy={
-                    exclusive.busy || destinationBusy || cloudSaveState.saving
+                    exclusive.busy ||
+                    exclusive.checking ||
+                    destinationBusy ||
+                    cloudSaveState.saving
                   }
                   title={
                     cloudSaveError ||
+                    (cloudBacked && !exclusive.canEdit(doc.id)
+                      ? exclusive.status
+                      : "") ||
                     (isCloudOffline()
                       ? "本机保存，待联网同步"
                       : cloudSaveState.draft
