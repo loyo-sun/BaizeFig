@@ -244,15 +244,30 @@ async function saveCloudSnapshot(
     automatic && Date.now() - (currentRecovery?.previewAt || 0) < 15 * 60 * 1000
       ? undefined
       : await Promise.all(
-          doc.pages.map(async (page) => {
-            const blob = await raster(await svgString(doc, page.id), 0.5);
-            return new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(String(reader.result));
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
-          }),
+          (webClient() ? doc.pages.slice(0, 1) : doc.pages).map(
+            async (page) => {
+              const svg = await svgString(doc, page.id);
+              const width =
+                Number(svg.match(/<svg[^>]*\bwidth="([\d.eE+-]+)"/)?.[1]) ||
+                1920;
+              const height =
+                Number(svg.match(/<svg[^>]*\bheight="([\d.eE+-]+)"/)?.[1]) ||
+                1920;
+              const blob = await raster(
+                svg,
+                webClient()
+                  ? Math.min(0.5, 960 / Math.max(width, height))
+                  : 0.5,
+                webClient() ? "image/webp" : "image/png",
+              );
+              return new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result));
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+              });
+            },
+          ),
         );
   const result = await cloudRequest(
     session,
