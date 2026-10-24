@@ -127,7 +127,7 @@ function VersionName({version, headId, onRename}: {version: CloudVersion; headId
     if (finished.current) return;
     finished.current = true;
     setEditing(false);
-    if (value.trim() !== (version.version_name || "")) await onRename(version.id, value.trim());
+    if (value.trim() && value.trim() !== (version.version_name || "")) await onRename(version.id, value.trim());
   };
   return editing ? <input data-version-edit autoFocus aria-label="版本名称" maxLength={100} value={value}
     onChange={e => setValue(e.target.value)} onBlur={() => void commit()}
