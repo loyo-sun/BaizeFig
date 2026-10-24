@@ -14,6 +14,7 @@ export type RecoveryRecord = {
   doc: Document;
   hash: string;
   syncedHash: string;
+  baseName?: string;
   headId: string | null;
   cloudRevision: string | null;
   folderId: string | null;
@@ -263,6 +264,7 @@ export function acknowledgeCloudDraft(
     r.headId = result.headId;
     r.cloudRevision = result.draftRevision || null;
     r.syncedHash = await hashDocument(doc);
+    r.baseName = doc.name;
     r.dirty = r.hash !== r.syncedHash;
     if (result.checkpoint) {
       r.manual = false;
@@ -295,7 +297,7 @@ export async function resolveCloudOpen(s: CloudSession, result: any) {
     const remoteHash = await hashDocument(result.content),
       draft = result.draft;
     let content: Document = result.content;
-    if (r?.dirty && r.hash !== remoteHash) {
+    if (r && (r.dirty || r.manual) && r.hash !== remoteHash) {
       const sameBase =
         r.headId === result.file.head_id ||
         (result.checkpoint?.source === "自动存档" &&
@@ -307,7 +309,11 @@ export async function resolveCloudOpen(s: CloudSession, result: any) {
         (!draft &&
           result.checkpoint?.source === "自动存档" &&
           result.checkpoint?.stage_id === r.stageId);
-      if (sameBase && sameDraft) {
+      const conflictingRename =
+        !!r.baseName &&
+        r.baseName !== result.file.name &&
+        r.doc.name !== result.file.name;
+      if (sameBase && sameDraft && !conflictingRename) {
         content = r.doc;
         recovered.add(content);
         r.headId = result.file.head_id;
@@ -335,6 +341,7 @@ export async function resolveCloudOpen(s: CloudSession, result: any) {
         doc: content,
         hash: remoteHash,
         syncedHash: remoteHash,
+        baseName: result.file.name,
         headId: result.file.head_id,
         cloudRevision: draft?.revision || null,
         folderId: result.file.folder_id,

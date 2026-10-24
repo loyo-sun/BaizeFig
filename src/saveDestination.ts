@@ -84,7 +84,7 @@ export async function cloudRequest(
     setCloudReachable(false);
     throw error;
   }
-  setCloudReachable(true);
+  setCloudReachable(response.status < 500);
   const result = await response.json();
   if (!response.ok)
     throw Object.assign(
