@@ -32,7 +32,9 @@ export function FileDetails({
   children,
   folder = false,
   versionContent,
+  initialTab = "basic",
 }: {
+  initialTab?: "basic" | "versions";
   versionContent?: import("react").ReactNode;
   folder?: boolean;
   children?: import("react").ReactNode;
@@ -43,7 +45,7 @@ export function FileDetails({
   location: string;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<"basic" | "versions">("basic");
+  const [tab, setTab] = useState<"basic" | "versions">(initialTab);
   return (
     <div className="workspace-dialog-overlay" onClick={onClose}>
       <section

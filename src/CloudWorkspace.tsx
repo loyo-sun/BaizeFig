@@ -33,12 +33,12 @@ export function CloudWorkspace({
   return (
     <section
       className={`cloud-workspace ${session ? "has-session" : ""}`}
-      aria-label={t("Cloud workspace")}
+      aria-label={"LoyoCloud"}
     >
       <span className="cloud-workspace-icon">
         <Cloud size={28} />
       </span>
-      <h3>{t("Cloud workspace")}</h3>
+      <h3>{"LoyoCloud"}</h3>
       {session ? (
         <>
           <CloudFiles session={session} document={document} onOpen={onOpen} />

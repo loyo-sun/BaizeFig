@@ -1,21 +1,25 @@
+import {
+  MoreVertical,
+  ChevronDown,
+  ChevronRight,
+  UserRound,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
+import { download } from "./storage";
 import { CloudVersions, type CloudVersion } from "./CloudVersions";
 import { webPrompt, webConfirm, webAlert } from "./WebDialogs";
-import { WorkspaceRow } from "./WorkspaceRow";
-import { FileActions } from "./FileActions";
 import { FileDetails, MoveFileDialog, folderPath } from "./FileDetails";
 import { useI18n } from "./LanguageContext";
-import { rememberCloudBinding, readCloudBinding } from "./saveDestination";
+import { rememberCloudBinding } from "./saveDestination";
 import { CloudThumbnail } from "./CloudThumbnail";
 import {
   LayoutGrid,
   List,
   Folder,
   RefreshCw,
-  Plus,
-  CloudUpload,
   Trash2,
 } from "lucide-react";
-import { svgString, raster } from "./Canvas";
 import { useEffect, useState } from "react";
 import type { CloudSession } from "./cloud";
 import { type Document, validateDocument } from "./core";
@@ -24,12 +28,14 @@ type File = {
   name: string;
   folder_id: string | null;
   head_id: string | null;
+  owner?: string;
   updated_at: string;
   created_at?: string;
   deleted_at?: string;
   size_bytes?: number;
 };
 type Folder = {
+  owner?: string;
   id: string;
   name: string;
   parent_id: string | null;
@@ -57,6 +63,17 @@ export function CloudFiles({
       return "grid";
     }
   });
+  const [selectedTab, setSelectedTab] = useState<"basic" | "versions">("basic");
+  const [menu, setMenu] = useState<{
+    x: number;
+    y: number;
+    items: { label: string; run: () => void }[];
+  } | null>(null);
+  const [sort, setSort] = useState<{
+    key: "name" | "owner" | "updated_at" | "size_bytes";
+    direction: number;
+  }>({ key: "name", direction: 1 });
+  const [picked, setPicked] = useState<string | null>(null);
   const [dropFolder, setDropFolder] = useState<string | null>(null);
   const [folderDetails, setFolderDetails] = useState<Folder | null>(null);
   const [folderMoving, setFolderMoving] = useState<Folder | null>(null);
@@ -82,7 +99,6 @@ export function CloudFiles({
     [parent, setParentState] = useState<string | null>(rememberedPath),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [heads, setHeads] = useState<Record<string, string | null>>({}),
     [versions, setVersions] = useState<CloudVersion[]>([]),
     [selected, setSelected] = useState<File | null>(null);
   const setParent = (value: string | null) => {
@@ -134,7 +150,6 @@ export function CloudFiles({
     }
   }
   useEffect(() => {
-    setHeads({});
     setParentState(rememberedPath());
     void run(load);
   }, [session.token, trash]);
@@ -150,119 +165,327 @@ export function CloudFiles({
       d.file.head_id,
       d.file.folder_id || null,
     );
-    setHeads((h) => ({ ...h, [file.id]: d.file.head_id }));
+  }
+  type Entry = { folder: boolean; item: File | Folder };
+  const entries: Entry[] = [
+    ...folders
+      .filter(
+        (f) =>
+          (trash || f.parent_id === parent) &&
+          f.name.toLowerCase().includes(search.toLowerCase()),
+      )
+      .map((item) => ({ folder: true, item })),
+    ...files
+      .filter(
+        (f) =>
+          (trash || f.folder_id === parent) &&
+          f.name.toLowerCase().includes(search.toLowerCase()),
+      )
+      .map((item) => ({ folder: false, item })),
+  ];
+  entries.sort((a, b) => {
+    const key = sort.key;
+    const value = (e: Entry) =>
+      key === "owner"
+        ? e.item.owner || session.user.username
+        : key === "size_bytes"
+          ? Number(e.item.size_bytes || 0)
+          : key === "updated_at"
+            ? new Date(e.item.updated_at || e.item.created_at || 0).getTime()
+            : e.item.name;
+    const av = value(a),
+      bv = value(b);
+    return (
+      (typeof av === "number" && typeof bv === "number"
+        ? av - bv
+        : String(av).localeCompare(String(bv), "zh-CN", { numeric: true })) *
+        sort.direction || a.item.id.localeCompare(b.item.id)
+    );
+  });
+  const newFolder = () =>
+    void run(async () => {
+      const name = await webPrompt("新建文件夹");
+      if (name?.trim()) {
+        await api("/folders", { name: name.trim(), parentId: parent });
+        await load();
+      }
+    });
+  const showMenu = (
+    x: number,
+    y: number,
+    items: { label: string; run: () => void }[],
+  ) =>
+    setMenu({
+      x: Math.min(x, window.innerWidth - 190),
+      y: Math.max(8, Math.min(y, window.innerHeight - items.length * 38 - 20)),
+      items,
+    });
+  const properties = (entry: Entry, tab: "basic" | "versions" = "basic") =>
+    void run(async () => {
+      if (entry.folder)
+        setFolderDetails(await api("/folders/" + entry.item.id));
+      else {
+        setSelectedTab(tab);
+        setVersions([]);
+        setSelected(entry.item as File);
+        setVersions((await api("/files/" + entry.item.id)).versions);
+      }
+    });
+  const actions = (entry: Entry) => {
+    const f = entry.item,
+      base = (entry.folder ? "/folders/" : "/files/") + f.id;
+    if (trash)
+      return [
+        {
+          label: "恢复",
+          run: () =>
+            void run(async () => {
+              await api(base + "/restore", {});
+              await load();
+            }),
+        },
+        {
+          label: "彻底删除",
+          run: () =>
+            void run(async () => {
+              if (
+                await webConfirm("彻底删除「" + f.name + "」？用户将无法恢复。")
+              ) {
+                await api(base + "/purge", {});
+                await load();
+              }
+            }),
+        },
+      ];
+    return [
+      {
+        label: "打开",
+        run: () =>
+          entry.folder ? setParent(f.id) : void run(() => open(f as File)),
+      },
+      {
+        label: "重命名",
+        run: () =>
+          void run(async () => {
+            const name = await webPrompt("重命名", f.name);
+            if (name?.trim() && name.trim() !== f.name) {
+              await api(base + "/rename", { name: name.trim() });
+              await load();
+            }
+          }),
+      },
+      {
+        label: "下载",
+        run: () =>
+          void run(async () => {
+            const response = await fetch(
+              session.base +
+                "/api/v1/space" +
+                base +
+                (entry.folder ? "/download" : "?download=1"),
+              { headers: { Authorization: "Bearer " + session.token } },
+            );
+            if (!response.ok) {
+              const error = await response.json();
+              throw Error(error.error_description || "下载失败");
+            }
+            download(
+              await response.blob(),
+              f.name + (entry.folder ? ".zip" : ".baizefig"),
+            );
+          }),
+      },
+      {
+        label: "移动",
+        run: () =>
+          entry.folder ? setFolderMoving(f as Folder) : setMoving(f as File),
+      },
+      ...(!entry.folder
+        ? [{ label: "版本", run: () => properties(entry, "versions") }]
+        : []),
+      { label: "属性", run: () => properties(entry) },
+      {
+        label: "移至回收站",
+        run: () =>
+          void run(async () => {
+            if (
+              await webConfirm("将「" + f.name + "」移至回收站？保留 30 天。")
+            ) {
+              await api(base + "/delete", {});
+              await load();
+            }
+          }),
+      },
+    ];
+  };
+  const chain: Folder[] = [];
+  let cursor = parent;
+  const seen = new Set<string>();
+  while (cursor && !seen.has(cursor)) {
+    seen.add(cursor);
+    const f = folders.find((f) => f.id === cursor);
+    if (!f) break;
+    chain.unshift(f);
+    cursor = f.parent_id;
   }
   return (
-    <div className="cloud-files" aria-busy={busy}>
-      <div className="cloud-files-heading">
-        <div>
-          <h3>{trash ? "回收站" : t("All cloud files")}</h3>
-
-          <p>
-            {t("Organize designs in folders and open a file to keep creating.")}
-          </p>
-        </div>
-        <div
-          className="cloud-view-switch"
-          role="group"
-          aria-label={t("File view")}
-        >
+    <div className="cloud-files drive-workspace" aria-busy={busy}>
+      <header className="drive-header">
+        <nav aria-label="云端路径">
           <button
-            aria-label={t("Icon view")}
-            aria-pressed={view === "grid"}
-            onClick={() => changeView("grid")}
+            className="drive-root"
+            onClick={(e) => {
+              if (parent) {
+                setParent(null);
+                return;
+              }
+              const rect = e.currentTarget.getBoundingClientRect();
+              showMenu(rect.left, rect.bottom, [
+                { label: "新建文件夹", run: newFolder },
+              ]);
+            }}
           >
-            <LayoutGrid size={16} />
+            {trash ? "回收站" : "LoyoCloud"}
+            {!parent && <ChevronDown size={18} />}
           </button>
-          <button
-            aria-label={t("List view")}
-            aria-pressed={view === "list"}
-            onClick={() => changeView("list")}
-          >
-            <List size={16} />
-          </button>
-        </div>
-      </div>
-      {error && <p role="alert">{t(error)}</p>}
-      <fieldset disabled={busy} className="cloud-files-body">
-        <div className="cloud-toolbar">
+          {!trash &&
+            chain.map((f, i) => (
+              <span key={f.id}>
+                <ChevronRight size={18} />
+                <button
+                  onClick={(e) => {
+                    if (i < chain.length - 1) setParent(f.id);
+                    else {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      showMenu(rect.left, rect.bottom, [
+                        { label: "新建文件夹", run: newFolder },
+                        ...actions({ folder: true, item: f }).filter(
+                          (a) => a.label !== "打开",
+                        ),
+                      ]);
+                    }
+                  }}
+                >
+                  {f.name}
+                  {i === chain.length - 1 && <ChevronDown size={16} />}
+                </button>
+              </span>
+            ))}
+        </nav>
+        <div className="drive-tools">
           <input
             type="search"
-            aria-label={t("Search this folder")}
-            placeholder={t("Search files or folders")}
+            aria-label="搜索文件"
+            placeholder="搜索文件或文件夹"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button onClick={() => void run(load)}>
-            <RefreshCw size={14} />
-            {t("Refresh")}
-          </button>
-          <button
-            onClick={() =>
-              void run(async () => {
-                const name = await webPrompt(t("Folder name"));
-                if (name) {
-                  await api("/folders", { name, parentId: parent });
-                  await load();
-                }
-              })
-            }
+          <div
+            className="cloud-view-switch"
+            role="group"
+            aria-label="文件显示方式"
           >
-            <Plus size={14} />
-            {t("New folder")}
+            <button
+              aria-label="列表模式"
+              aria-pressed={view === "list"}
+              onClick={() => changeView("list")}
+            >
+              <List size={17} />
+            </button>
+            <button
+              aria-label="图标模式"
+              aria-pressed={view === "grid"}
+              onClick={() => changeView("grid")}
+            >
+              <LayoutGrid size={17} />
+            </button>
+          </div>
+          <button aria-label="刷新" onClick={() => void run(load)}>
+            <RefreshCw size={17} />
           </button>
           <button
             className="workspace-trash-button"
-            onClick={() => {
-              setTrash(!trash);
-            }}
+            onClick={() => setTrash(!trash)}
           >
-            <Trash2 size={14} />
+            <Trash2 size={16} />
             {trash ? "返回文件" : "回收站"}
           </button>
         </div>
-        {parent && (
-          <nav className="cloud-breadcrumb" aria-label={t("File path")}>
-            <button onClick={() => setParent(null)}>{t("Cloud space")}</button>
-            {(() => {
-              const chain: Folder[] = [];
-              let cursor: string | null = parent;
-              while (cursor) {
-                const f = folders.find((x) => x.id === cursor);
-                if (!f) break;
-                chain.unshift(f);
-                cursor = f.parent_id;
-              }
-              return chain.map((f) => (
-                <span key={f.id}>
-                  {" "}
-                  / <button onClick={() => setParent(f.id)}>{f.name}</button>
-                </span>
-              ));
-            })()}
-          </nav>
-        )}
-        <table className={`cloud-file-table cloud-file-${view}`}>
+      </header>
+      {error && <p role="alert">{error}</p>}
+      <fieldset disabled={busy} className="drive-body">
+        <table className={"drive-table drive-" + view}>
           <thead>
             <tr>
-              <th>{t("Name")}</th>
-              <th>文件类型</th>
-              <th>{t("Updated")}</th>
-              <th>创建时间</th>
-              <th>{t("Actions")}</th>
+              {(
+                [
+                  ["name", "名称"],
+                  ["owner", "所有人"],
+                  ["updated_at", "修改时间"],
+                  ["size_bytes", "文件大小"],
+                ] as const
+              ).map(([key, label]) => (
+                <th
+                  key={key}
+                  aria-sort={
+                    sort.key === key
+                      ? sort.direction === 1
+                        ? "ascending"
+                        : "descending"
+                      : "none"
+                  }
+                >
+                  <button
+                    onClick={() =>
+                      setSort({
+                        key,
+                        direction: sort.key === key ? -sort.direction : 1,
+                      })
+                    }
+                  >
+                    {label}
+                    {sort.key === key &&
+                      (sort.direction === 1 ? (
+                        <ArrowUp size={14} />
+                      ) : (
+                        <ArrowDown size={14} />
+                      ))}
+                  </button>
+                </th>
+              ))}
+              <th aria-label="文件菜单" />
             </tr>
           </thead>
           <tbody>
-            {folders
-              .filter(
-                (f) =>
-                  (trash || f.parent_id === parent) &&
-                  f.name.toLowerCase().includes(search.toLowerCase()),
-              )
-              .map((f) => (
-                <WorkspaceRow
+            {entries.map((entry) => {
+              const f = entry.item;
+              return (
+                <tr
                   key={f.id}
-                  className={dropFolder === f.id ? "workspace-drop-target" : ""}
+                  className={
+                    (picked === f.id ? "drive-selected " : "") +
+                    (dropFolder === f.id ? "workspace-drop-target" : "")
+                  }
+                  onClick={() => setPicked(f.id)}
+                  onDoubleClick={(e) => {
+                    if ((e.target as HTMLElement).closest(".drive-more"))
+                      return;
+                    if (!trash) actions(entry)[0].run();
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setPicked(f.id);
+                    showMenu(e.clientX, e.clientY, actions(entry));
+                  }}
+                  draggable={!trash && !entry.folder}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData(
+                      "application/x-baizefig-cloud-file",
+                      f.id,
+                    );
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragEnd={() => setDropFolder(null)}
                   onDragLeave={(e) => {
                     if (
                       !e.currentTarget.contains(e.relatedTarget as Node | null)
@@ -271,6 +494,7 @@ export function CloudFiles({
                   }}
                   onDragOver={(e) => {
                     if (
+                      entry.folder &&
                       !trash &&
                       e.dataTransfer.types.includes(
                         "application/x-baizefig-cloud-file",
@@ -278,7 +502,6 @@ export function CloudFiles({
                     ) {
                       e.preventDefault();
                       setDropFolder(f.id);
-                      e.dataTransfer.dropEffect = "move";
                     }
                   }}
                   onDrop={(e) => {
@@ -287,231 +510,78 @@ export function CloudFiles({
                     const id = e.dataTransfer.getData(
                       "application/x-baizefig-cloud-file",
                     );
-                    if (id && !trash)
+                    if (entry.folder && !trash && id)
                       void run(async () => {
                         await api("/files/" + id + "/move", { folderId: f.id });
                         await load();
                       });
                   }}
                 >
-                  <td>
-                    <button
-                      className="cloud-file-open cloud-folder-open"
-                      disabled={trash}
-                      onDoubleClick={() => setParent(f.id)}
-                    >
-                      <span className="cloud-folder-picture">
-                        <Folder size={view === "grid" ? 44 : 18} />
-                      </span>
-                      <strong>{f.name}</strong>
-                    </button>
-                  </td>
-                  <td className="cloud-file-type">文件夹</td>
-                  <td className="cloud-file-date">—</td>
-                  <td>—</td>
-                  <td className="cloud-file-actions">
-                    <FileActions>
-                      {trash ? (
-                        <>
-                          <button
-                            onClick={() =>
-                              void run(async () => {
-                                await api("/folders/" + f.id + "/restore", {});
-                                await load();
-                              })
-                            }
-                          >
-                            恢复
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (
-                                await webConfirm(
-                                  "彻底删除文件夹及其中内容？无法恢复。",
-                                )
-                              )
-                                void run(async () => {
-                                  await api("/folders/" + f.id + "/purge", {});
-                                  await load();
-                                });
-                            }}
-                          >
-                            彻底删除
-                          </button>
-                        </>
+                  <td className="drive-name">
+                    <span className="drive-title">
+                      {entry.folder ? (
+                        <Folder fill="currentColor" size={22} />
                       ) : (
-                        <>
-                          <button
-                            onClick={() =>
-                              void run(async () =>
-                                setFolderDetails(await api("/folders/" + f.id)),
-                              )
-                            }
-                          >
-                            属性
-                          </button>
-                          <button onClick={() => setFolderMoving(f)}>
-                            移动
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (
-                                await webConfirm(
-                                  `删除文件夹「${f.name}」及其中内容？将进入回收站保留 30 天。`,
-                                )
-                              )
-                                void run(async () => {
-                                  await api("/folders/" + f.id + "/delete", {});
-                                  await load();
-                                });
-                            }}
-                          >
-                            删除
-                          </button>
-                        </>
-                      )}
-                    </FileActions>
-                  </td>
-                </WorkspaceRow>
-              ))}
-            {files
-              .filter(
-                (f) =>
-                  (trash || f.folder_id === parent) &&
-                  f.name.toLowerCase().includes(search.toLowerCase()),
-              )
-              .map((f) => (
-                <WorkspaceRow
-                  key={f.id}
-                  draggable={!trash}
-                  onDragEnd={() => setDropFolder(null)}
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData(
-                      "application/x-baizefig-cloud-file",
-                      f.id,
-                    );
-                    e.dataTransfer.effectAllowed = "move";
-                  }}
-                >
-                  <td>
-                    <button
-                      className="cloud-file-open"
-                      disabled={trash}
-                      onDoubleClick={() => void run(() => open(f))}
-                    >
-                      {view === "grid" && (
-                        <CloudThumbnail
-                          session={session}
-                          id={f.id}
-                          head={f.head_id}
-                          name={f.name}
-                        />
+                        <img src="/baize-design.svg" alt="设计文件" />
                       )}
                       <strong>{f.name.replace(/\.baizefig$/i, "")}</strong>
-                    </button>
-                  </td>
-                  <td className="cloud-file-type">设计文件</td>
-                  <td className="cloud-file-date">
-                    {f.updated_at
-                      ? new Date(f.updated_at).toLocaleString()
-                      : "—"}
-                  </td>
-                  <td className="cloud-file-created cloud-file-date">
-                    {f.created_at
-                      ? new Date(f.created_at).toLocaleString()
-                      : "—"}
-                  </td>
-                  <td className="cloud-file-actions">
-                    {trash ? (
-                      <>
-                        <button
-                          onClick={() =>
-                            void run(async () => {
-                              await api("/files/" + f.id + "/restore", {});
-                              await load();
-                            })
-                          }
-                        >
-                          恢复
-                        </button>
-                        <button
-                          onClick={async () => {
-                            if (
-                              await webConfirm(
-                                "彻底删除此文件？此操作无法恢复。",
-                              )
-                            )
-                              void run(async () => {
-                                await api("/files/" + f.id + "/purge", {});
-                                await load();
-                              });
-                          }}
-                        >
-                          彻底删除
-                        </button>
-                        <p>
-                          删除于{" "}
-                          {f.deleted_at &&
-                            new Date(f.deleted_at).toLocaleString()}
-                        </p>
-                      </>
-                    ) : (
-                      <FileActions>
-                        <button
-                          onClick={() =>
-                            void run(async () => {
-                              setSelected(f);
-                              setVersions(
-                                (await api("/files/" + f.id)).versions,
-                              );
-                            })
-                          }
-                        >
-                          属性
-                        </button>
-                        <button onClick={() => setMoving(f)}>移动</button>
-                        <button
-                          onClick={async () => {
-                            if (
-                              await webConfirm(
-                                `删除「${f.name}」？文件将移入回收站，保留 30 天。`,
-                              )
-                            )
-                              void run(async () => {
-                                await api("/files/" + f.id + "/delete", {});
-                                await load();
-                              });
-                          }}
-                        >
-                          删除
-                        </button>
-                      </FileActions>
+                    </span>
+                    {view === "grid" && !entry.folder && (
+                      <CloudThumbnail
+                        session={session}
+                        id={f.id}
+                        head={(f as File).head_id}
+                        name={f.name}
+                      />
                     )}
                   </td>
-                </WorkspaceRow>
-              ))}
+                  <td className="drive-owner">
+                    <UserRound size={20} />
+                    {f.owner || session.user.username}
+                  </td>
+                  <td>
+                    {f.updated_at || f.created_at
+                      ? new Date(f.updated_at || f.created_at!).toLocaleString()
+                      : "—"}
+                  </td>
+                  <td>
+                    {entry.folder
+                      ? "—"
+                      : Number(f.size_bytes || 0) >= 1048576
+                        ? (Number(f.size_bytes) / 1048576).toFixed(2) + " MB"
+                        : (Number(f.size_bytes || 0) / 1024).toFixed(1) + " KB"}
+                  </td>
+                  <td className="drive-more">
+                    <button
+                      aria-label={"操作 " + f.name}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setPicked(f.id);
+                        showMenu(rect.right - 180, rect.bottom, actions(entry));
+                      }}
+                    >
+                      <MoreVertical size={19} />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-        {!folders.some(
-          (f) =>
-            (trash || f.parent_id === parent) &&
-            f.name.toLowerCase().includes(search.toLowerCase()),
-        ) &&
-          !files.some(
-            (f) =>
-              (trash || f.folder_id === parent) &&
-              f.name.toLowerCase().includes(search.toLowerCase()),
-          ) && (
-            <p className="cloud-empty">
-              {search
-                ? t("No matching files")
-                : t(
-                    "This folder is empty. Save the current design to get started.",
-                  )}
-            </p>
-          )}
+        {!entries.length && (
+          <p className="drive-empty">
+            {search
+              ? "没有匹配的文件"
+              : trash
+                ? "回收站为空"
+                : "此文件夹为空。点击路径菜单新建文件夹。"}
+          </p>
+        )}
         {selected && (
           <FileDetails
+            key={selected.id + selectedTab}
+            initialTab={selectedTab}
             name={selected.name}
             size={
               selected.size_bytes === undefined
@@ -520,7 +590,7 @@ export function CloudFiles({
             }
             created={selected.created_at}
             updated={selected.updated_at}
-            location={folderPath(folders, selected.folder_id, "云工作区")}
+            location={folderPath(folders, selected.folder_id, "LoyoCloud")}
             onClose={() => setSelected(null)}
             versionContent={
               <CloudVersions
@@ -592,7 +662,7 @@ export function CloudFiles({
         {moving && (
           <MoveFileDialog
             folders={folders}
-            root="云工作区"
+            root="LoyoCloud"
             initial={moving.folder_id}
             onClose={() => setMoving(null)}
             onMove={(id) =>
@@ -611,7 +681,7 @@ export function CloudFiles({
             size={folderDetails.size_bytes}
             created={folderDetails.created_at}
             updated={folderDetails.updated_at}
-            location={folderPath(folders, folderDetails.parent_id, "云工作区")}
+            location={folderPath(folders, folderDetails.parent_id, "LoyoCloud")}
             onClose={() => setFolderDetails(null)}
           />
         )}
@@ -627,7 +697,7 @@ export function CloudFiles({
               }
               return true;
             })}
-            root="云工作区"
+            root="LoyoCloud"
             initial={folderMoving.parent_id}
             onClose={() => setFolderMoving(null)}
             onMove={(id) =>
@@ -642,6 +712,43 @@ export function CloudFiles({
           />
         )}
       </fieldset>
+      {menu && (
+        <>
+          <div
+            className="drive-menu-backdrop"
+            onClick={() => setMenu(null)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setMenu(null);
+            }}
+          />
+          <div
+            className="drive-context-menu"
+            role="menu"
+            style={{ left: menu.x, top: menu.y }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.stopPropagation();
+                setMenu(null);
+              }
+            }}
+          >
+            {menu.items.map((item, i) => (
+              <button
+                autoFocus={i === 0}
+                role="menuitem"
+                key={item.label}
+                onClick={() => {
+                  setMenu(null);
+                  item.run();
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -135,7 +135,7 @@ export function LocalFiles({
                     onDoubleClick={() => setParent(f.id)}
                   >
                     <span className="cloud-folder-picture">
-                      <Folder size={view === "grid" ? 44 : 18} />
+                      <Folder fill="currentColor" size={view === "grid" ? 44 : 18} />
                     </span>
                     <strong>{f.name}</strong>
                   </button>

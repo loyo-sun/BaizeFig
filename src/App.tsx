@@ -13,6 +13,7 @@ import {
   readSaveDestination,
   storeSaveDestination,
   readCloudBinding,
+  rememberCloudBinding,
   cloudRequest,
   saveCloudDocument,
   type SaveDestination,
@@ -1131,6 +1132,24 @@ export default function App() {
       setFileBusy(false);
     }
   }
+  const openingCloudLink=useRef(false);
+  useEffect(()=>{
+    const fileId=new URLSearchParams(window.location.search).get('cloudFile');
+    if(!fileId||!ready||openingCloudLink.current)return;
+    if(!cloudSession){if(!cloudLogin.restoring){setWorkspaceTab('cloud');setModal('files');}return;}
+    openingCloudLink.current=true;
+    void (async()=>{
+      try{
+        const result=await cloudRequest(cloudSession,'/files/'+encodeURIComponent(fileId));
+        validateDocument(result.content);
+        if(!await save(current.current.doc))throw Error('无法保存当前文件');
+        if(!await save(result.content))throw Error('无法缓存云端文件');
+        rememberCloudBinding(cloudSession,result.file.id,result.file.head_id,result.file.folder_id);
+        committedDocument.current=result.content;current.current.doc=result.content;history.current=new History();setDoc(result.content);setPage(result.content.pages[0].id);setSelected([]);setCollapsed(new Set());setModal(null);
+        const url=new URL(window.location.href);url.searchParams.delete('cloudFile');window.history.replaceState(null,'',url);
+      }catch(error){notify((error as Error).message);}
+    })();
+  },[ready,cloudSession?.token,cloudLogin.restoring]);
   const localExport = () => {
     download(JSON.stringify(doc, null, 2), `${doc.name}.baizefig`);
     notify("Local copy exported");
@@ -7548,7 +7567,7 @@ export default function App() {
                       {t(
                         value === "local"
                           ? "Local workspace"
-                          : "Cloud workspace",
+                          : "LoyoCloud",
                       )}
                     </button>
                   ))}

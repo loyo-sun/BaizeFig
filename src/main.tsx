@@ -32,3 +32,4 @@ import "./quickPalette.css";
 import "./smartPanel.css";
 
 import "./workspaceNavigation.css";
+import './cloudDrive.css';

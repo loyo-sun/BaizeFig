@@ -1,0 +1,247 @@
+.workspace-fullscreen .drive-workspace {
+  padding: 0;
+  position: static;
+}
+.drive-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 24px 0 30px;
+}
+.drive-header nav,
+.drive-header nav > span,
+.drive-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.drive-header nav {
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.drive-header nav button {
+  border: 0;
+  background: transparent;
+  font-size: 21px;
+  padding: 8px 6px;
+  max-width: 330px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.drive-header nav button:hover {
+  background: var(--ui-field);
+}
+.drive-header nav .drive-root {
+  font-size: 24px;
+}
+.drive-tools {
+  flex-shrink: 0;
+}
+.drive-tools input {
+  width: 240px;
+  padding: 10px 12px;
+  background: var(--ui-field);
+  color: var(--ui-ink);
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+}
+.drive-body {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.drive-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.drive-table th {
+  text-align: left;
+  border-bottom: 1px solid var(--ui-border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ui-muted);
+}
+.drive-table th button {
+  border: 0 !important;
+  background: transparent !important;
+  justify-content: flex-start;
+  padding: 12px 10px !important;
+}
+.drive-table th:first-child {
+  width: 43%;
+}
+.drive-table th:nth-child(2) {
+  width: 17%;
+}
+.drive-table th:nth-child(3) {
+  width: 23%;
+}
+.drive-table th:last-child {
+  width: 40px;
+}
+.drive-table td {
+  border-bottom: 1px solid var(--ui-border);
+  padding: 17px 10px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.drive-table tr {
+  cursor: default;
+}
+.drive-table tbody tr:hover {
+  background: var(--ui-field);
+}
+.drive-table tbody tr.drive-selected {
+  background: #287f711a;
+}
+.drive-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.drive-title > img {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+}
+.drive-title > svg {
+  flex-shrink: 0;
+  color: var(--ui-ink);
+}
+.drive-title strong {
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.drive-owner svg {
+  vertical-align: middle;
+  margin-right: 8px;
+  color: var(--ui-accent);
+}
+.drive-more button {
+  padding: 4px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+.drive-context-menu {
+  position: fixed;
+  z-index: 12000;
+  width: 180px;
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-border);
+  box-shadow: 0 8px 32px #0003;
+  border-radius: 9px;
+  padding: 6px;
+}
+.drive-context-menu button {
+  width: 100%;
+  display: block !important;
+  text-align: left;
+  padding: 10px 12px !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+.drive-context-menu button:hover {
+  background: var(--ui-field) !important;
+}
+.drive-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 11999;
+}
+.drive-empty {
+  padding: 30px;
+  color: var(--ui-muted);
+}
+.drive-grid {
+  display: block;
+}
+.drive-grid thead {
+  display: none;
+}
+.drive-grid tbody {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 22px;
+}
+.drive-grid tr {
+  position: relative;
+  display: block;
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: var(--ui-field);
+  padding: 10px;
+  min-width: 0;
+}
+.drive-grid td {
+  display: none;
+  border: 0;
+  padding: 0;
+}
+.drive-grid td.drive-name {
+  display: block;
+}
+.drive-grid .drive-title {
+  padding: 5px 30px 14px 4px;
+}
+.drive-grid .cloud-thumbnail {
+  height: 220px;
+  border-radius: 8px;
+  background: var(--ui-surface);
+}
+.drive-grid tr:has(.drive-title > svg) {
+  align-self: start;
+}
+.drive-grid tr:has(.drive-title > svg) .drive-title {
+  padding-bottom: 5px;
+}
+.drive-grid td.drive-more {
+  display: block;
+  position: absolute;
+  right: 10px;
+  top: 12px;
+}
+.drive-grid .drive-title strong {
+  font-size: 14px;
+}
+.drive-workspace .workspace-dialog {
+  cursor: auto;
+}
+@media (max-width: 900px) {
+  .drive-header {
+    flex-wrap: wrap;
+  }
+  .drive-tools {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .drive-tools input {
+    flex: 1;
+  }
+  .drive-body {
+    overflow-x: auto;
+  }
+  .drive-list {
+    min-width: 700px;
+  }
+}
+.drive-table td.drive-more {
+  overflow: visible;
+  text-overflow: clip;
+  padding: 4px;
+}
+.drive-grid td.drive-more {
+  padding: 0;
+}
+/* Workspace source switch sits to the right of the workspace title. */
+.workspace-fullscreen .workspace-switcher{position:absolute;top:24px;right:68px;width:270px;max-width:calc(100% - 190px);margin:0!important;height:42px}.workspace-fullscreen .modal-heading{padding-right:330px;margin-bottom:60px}.workspace-fullscreen .modal-heading>button{position:absolute;right:20px;top:25px}.workspace-fullscreen .has-session .workspace-account{top:82px;right:24px}.workspace-fullscreen .cloud-files:not(.drive-workspace){padding-top:76px}.workspace-fullscreen .cloud-files:not(.drive-workspace) .cloud-toolbar{top:0}.workspace-fullscreen .cloud-files:not(.drive-workspace) .cloud-files-heading{top:0}.workspace-fullscreen .cloud-files:not(.drive-workspace) .cloud-toolbar input{height:42px;min-height:42px;grid-row:2}.workspace-fullscreen .cloud-files:not(.drive-workspace) .cloud-toolbar button{grid-row:1}
+@media(max-width:760px){.workspace-fullscreen .workspace-switcher{width:230px;right:55px;max-width:calc(100% - 150px)}.workspace-fullscreen .modal-heading{padding-right:0;margin-bottom:50px}.workspace-fullscreen .cloud-files:not(.drive-workspace) .cloud-toolbar{position:static}}
+.workspace-fullscreen .workspace-switcher{top:42px}.workspace-fullscreen .has-session .workspace-account{top:96px}
+.workspace-fullscreen .cloud-files:not(.drive-workspace) .cloud-toolbar{display:flex;flex-wrap:wrap;gap:8px}.workspace-fullscreen .cloud-files:not(.drive-workspace) .cloud-toolbar input{order:-1;width:240px;margin:0}
