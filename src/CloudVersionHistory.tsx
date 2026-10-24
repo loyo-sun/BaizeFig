@@ -10,12 +10,17 @@ export function CloudVersionHistory({
   session: CloudSession;
   documentId: string;
 }) {
+  const [draft, setDraft] = useState<{
+    updatedAt: string;
+    logicalBytes: number;
+  } | null>(null);
   const [versions, setVersions] = useState<CloudVersion[]>([]),
     [head, setHead] = useState<string | null>(null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const load = async () => {
     const result = await cloudRequest(session, "/files/" + documentId);
+    setDraft(result.draft || null);
     setVersions(result.versions);
     setHead(result.file.head_id);
   };
@@ -24,6 +29,7 @@ export function CloudVersionHistory({
     void cloudRequest(session, "/files/" + documentId)
       .then((result) => {
         if (active) {
+          setDraft(result.draft || null);
           setVersions(result.versions);
           setHead(result.file.head_id);
         }
@@ -54,6 +60,17 @@ export function CloudVersionHistory({
           刷新
         </button>
       </header>
+      <p className="muted">
+        主动保存合并当前编辑阶段；无变化时不新增版本。草稿每 15
+        分钟滚动存档，连续 2 小时未保存时自动保留一个历史版本。
+      </p>
+      {draft && (
+        <p className="muted">
+          另有 1 个滚动草稿 · {(draft.logicalBytes / 1024).toFixed(1)} KB ·
+          同步于 {new Date(draft.updatedAt).toLocaleString()}
+          （占用单独计量，不重复累加每次存档）
+        </p>
+      )}
       {error && <p role="alert">{error}</p>}
       <fieldset disabled={busy}>
         <CloudVersions

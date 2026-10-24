@@ -57,7 +57,8 @@ export function CloudVersions({
       {web && (
         <div className="cloud-version-summary">
           <span>
-            共 {versions.length} 个云端版本 · 占用 {formatSize(total)}（含预览）
+            共 {versions.length} 个云端版本 · 占用 {formatSize(total)}
+            （按完整文件计量）
           </span>
           {onDeleteUnnamed && (
             <button

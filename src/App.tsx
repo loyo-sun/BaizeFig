@@ -1,9 +1,20 @@
+import { isCloudOffline } from "./cloudConnectivity";
+import {
+  cacheCloudDraft,
+  resolveCloudOpen,
+  isRecoveredDocument,
+  canEditOffline,
+  offlineSessionForDoc,
+  hasPendingManual,
+  readCloudRecovery,
+  markRecoveredDocument,
+} from "./cloudRecovery";
 import { WebFileStatus } from "./WebFileStatus";
 import { CloudVersionHistory } from "./CloudVersionHistory";
 import { useCloudSaveState } from "./useCloudSaveState";
 import { useExclusiveEdit } from "./useExclusiveEdit";
-import {webPrompt} from "./WebDialogs";
-import {figmaClipboardBytes,clipboardPlainText} from "./externalClipboard";
+import { webPrompt } from "./WebDialogs";
+import { figmaClipboardBytes, clipboardPlainText } from "./externalClipboard";
 import { LocalFiles } from "./LocalFiles";
 import { permanentlyDeleteLocalFile } from "./storage";
 import { detectShortcutPlatform } from "./deviceEnvironment";
@@ -378,12 +389,17 @@ export default function App() {
   const [doc, setDocumentState] = useState<Document>(() =>
     createWelcomeDocument(),
   );
-  const editGuard = useRef<(id:string)=>boolean>(()=>true);
+  const editGuard = useRef<(id: string) => boolean>(() => true);
   const setDoc = useCallback(
     (next: Document | ((previous: Document) => Document), trusted = false) => {
       setDocumentState((previous) => {
-        const value=typeof next === "function" ? next(previous) : next;
-        if(!trusted && value.id===previous.id && !editGuard.current(previous.id))return previous;
+        const value = typeof next === "function" ? next(previous) : next;
+        if (
+          !trusted &&
+          value.id === previous.id &&
+          !editGuard.current(previous.id)
+        )
+          return previous;
         return removeDesignTokens(value);
       });
     },
@@ -716,37 +732,181 @@ export default function App() {
     bridgeExport,
     editing: Boolean(editingText || editingCrop || editingVector),
   };
-  const editSnapshots=useRef(new Map<string,Document>());editSnapshots.current.set(doc.id,doc);
-  const exclusive = useExclusiveEdit(cloudSession,doc.id,mcp.current.editorId,(latest)=>{
-    validateDocument(latest);if(!window.baizefigDesktop&&cloudSession)markCloudSnapshotSaved(cloudSession,removeDesignTokens(latest));history.current=new History();current.current.doc=latest;setDoc(latest,true);setPage(latest.pages[0].id);setSelected([]);
-  },async(s,id,token)=>{
-    const snapshot=editSnapshots.current.get(id);if(!snapshot||isCloudSnapshotSaved(s,snapshot))return;
-    const binding=readCloudBinding(s,id);
-    return saveCloudDocument(s,snapshot,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:token});
-  });
-  const exclusiveRef=useRef(exclusive);exclusiveRef.current=exclusive;
-  const webEditor=!window.baizefigDesktop;
-  const cloudBacked=isCloudBackedDocument(doc.id);
-  const cloudSaveState=useCloudSaveState(cloudSession,doc);
-  const cloudSaveError=webEditor&&cloudBacked?cloudSaveState.error:"";
-  const displayedSaveError=cloudSaveError||persistentSaveError;
-  useEffect(()=>{
-    if(!cloudSession || !isCloudBackedDocument(doc.id) || !exclusive.editing || (webEditor&&isCloudSnapshotSaved(cloudSession,doc)))return;
-    const timer=setTimeout(()=>{
-      const l=exclusiveRef.current.lease.current;if(!l||l.kind!=="human"||l.ending)return;
-      const binding=readCloudBinding(cloudSession,doc.id);
-      void saveCloudDocument(cloudSession,doc,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:l.token,...(webEditor?{saveMode:"autosave" as const}:{})}).catch(e=>{if(!webEditor)setPersistentSaveError(e.message);});
-    },800);
-    return()=>clearTimeout(timer);
-  },[doc,cloudSession?.token,exclusive.editing]);
-  editGuard.current=exclusive.canEdit;
-  useEffect(()=>{
-    const protect=(event:BeforeUnloadEvent)=>{
-      const latest=current.current.doc;
-      if(cloudSession&&exclusiveRef.current.lease.current?.kind==="human"&&!isCloudSnapshotSaved(cloudSession,latest)){event.preventDefault();event.returnValue="";}
+  const editSnapshots = useRef(new Map<string, Document>());
+  editSnapshots.current.set(doc.id, doc);
+  const exclusive = useExclusiveEdit(
+    cloudSession,
+    doc.id,
+    mcp.current.editorId,
+    (latest) => {
+      validateDocument(latest);
+      if (
+        !window.baizefigDesktop &&
+        cloudSession &&
+        !isRecoveredDocument(latest)
+      )
+        markCloudSnapshotSaved(cloudSession, removeDesignTokens(latest));
+      history.current = new History();
+      current.current.doc = latest;
+      setDoc(latest, true);
+      setPage(latest.pages[0].id);
+      setSelected([]);
+    },
+    async (s, id, token, kind, checkpoint) => {
+      const snapshot =
+          current.current.doc.id === id
+            ? current.current.doc
+            : editSnapshots.current.get(id),
+        binding = readCloudBinding(s, id);
+      if (
+        !snapshot ||
+        (!hasPendingManual(id) &&
+          isCloudSnapshotSaved(s, snapshot) &&
+          (!checkpoint || !binding?.draftRevision))
+      )
+        return;
+      return saveCloudDocument(
+        s,
+        snapshot,
+        binding?.folderId || null,
+        binding?.headId || null,
+        {
+          editorId: mcp.current.editorId,
+          lockToken: token,
+          ...(!window.baizefigDesktop
+            ? {
+                ...(checkpoint ? {} : { saveMode: "autosave" as const }),
+                ...(kind === "ai" ? { source: "ai" as const } : {}),
+              }
+            : {}),
+        },
+      );
+    },
+  );
+  const exclusiveRef = useRef(exclusive);
+  exclusiveRef.current = exclusive;
+  const webEditor = !window.baizefigDesktop;
+  const cloudBacked = isCloudBackedDocument(doc.id);
+  const cloudSaveState = useCloudSaveState(cloudSession, doc);
+  const cloudSaveError = webEditor && cloudBacked ? cloudSaveState.error : "";
+  const displayedSaveError = cloudSaveError || persistentSaveError;
+  useEffect(() => {
+    if (
+      !cloudSession ||
+      !isCloudBackedDocument(doc.id) ||
+      !exclusive.editing ||
+      (webEditor &&
+        isCloudSnapshotSaved(cloudSession, doc) &&
+        !hasPendingManual(doc.id))
+    )
+      return;
+    const timer = setTimeout(
+      () => {
+        const l = exclusiveRef.current.lease.current;
+        if (!l || l.kind !== "human" || l.ending) return;
+        const binding = readCloudBinding(cloudSession, doc.id);
+        void saveCloudDocument(
+          cloudSession,
+          doc,
+          binding?.folderId || null,
+          binding?.headId || null,
+          {
+            editorId: mcp.current.editorId,
+            lockToken: l.token,
+            ...(webEditor ? { saveMode: "autosave" as const } : {}),
+          },
+        ).catch((e) => {
+          if (!webEditor) setPersistentSaveError(e.message);
+        });
+      },
+      webEditor ? 10000 : 800,
+    );
+    return () => clearTimeout(timer);
+  }, [doc, cloudSession?.token, exclusive.editing]);
+  useEffect(() => {
+    if (!webEditor || !cloudBacked || !exclusive.editing) return;
+    const s = cloudSession || offlineSessionForDoc(doc.id);
+    if (!s) return;
+    const store = () => {
+      const latest = current.current.doc;
+      if (latest.id !== doc.id) return Promise.resolve();
+      return cacheCloudDraft(
+        s,
+        latest,
+        readCloudBinding(s, doc.id) || { headId: null, folderId: null },
+        { editing: true },
+      ).catch((e) => setPersistentSaveError("本机缓存尚未保存：" + e.message));
     };
-    window.addEventListener("beforeunload",protect);return()=>window.removeEventListener("beforeunload",protect);
-  },[cloudSession?.token]);
+    const timer = setTimeout(() => void store(), 250),
+      archive = setInterval(() => void store(), 15 * 60 * 1000);
+    const hide = () => {
+      if (document.visibilityState === "hidden") void store();
+    };
+    document.addEventListener("visibilitychange", hide);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(archive);
+      document.removeEventListener("visibilitychange", hide);
+    };
+  }, [doc, webEditor, cloudBacked, exclusive.editing, cloudSession?.token]);
+  useEffect(() => {
+    if (!webEditor || !cloudSession || !cloudBacked || !exclusive.editing)
+      return;
+    // Continuous drawing is synchronized at least every 30 seconds, even without a pause.
+    const timer = setInterval(() => {
+      const l = exclusiveRef.current.lease.current,
+        latest = current.current.doc;
+      if (
+        !l ||
+        l.kind !== "human" ||
+        l.ending ||
+        isCloudOffline() ||
+        (isCloudSnapshotSaved(cloudSession, latest) &&
+          !hasPendingManual(latest.id))
+      )
+        return;
+      const binding = readCloudBinding(cloudSession, latest.id);
+      void saveCloudDocument(
+        cloudSession,
+        latest,
+        binding?.folderId || null,
+        binding?.headId || null,
+        {
+          editorId: mcp.current.editorId,
+          lockToken: l.token,
+          saveMode: "autosave",
+        },
+      ).catch(() => {});
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [webEditor, cloudSession?.token, cloudBacked, exclusive.editing]);
+  useEffect(() => {
+    if (!webEditor) return;
+    const recover = (event: Event) =>
+      notify(
+        "发现本机与云端修改分叉，已保留 " +
+          (event as CustomEvent).detail.name +
+          "，可在本地文件中打开比较。",
+      );
+    window.addEventListener("baizefig-cloud-recovery", recover);
+    return () => window.removeEventListener("baizefig-cloud-recovery", recover);
+  }, [webEditor]);
+  editGuard.current = exclusive.canEdit;
+  useEffect(() => {
+    const protect = (event: BeforeUnloadEvent) => {
+      const latest = current.current.doc;
+      if (
+        cloudSession &&
+        exclusiveRef.current.lease.current?.kind === "human" &&
+        !isCloudSnapshotSaved(cloudSession, latest)
+      ) {
+        event.preventDefault();
+        event.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", protect);
+    return () => window.removeEventListener("beforeunload", protect);
+  }, [cloudSession?.token]);
   const scenePointerRef = useRef(pointerDown);
   scenePointerRef.current = pointerDown;
   const scenePointerDown = useCallback(
@@ -1173,25 +1333,74 @@ export default function App() {
       setFileBusy(false);
     }
   }
-  const openingCloudLink=useRef(false);
-  useEffect(()=>{
-    const fileId=new URLSearchParams(window.location.search).get('cloudFile');
-    if(!fileId||!ready||openingCloudLink.current)return;
-    if(!cloudSession){if(!cloudLogin.restoring){setWorkspaceTab('cloud');setModal('files');}return;}
-    openingCloudLink.current=true;
-    void (async()=>{
-      try{
-        const result=await cloudRequest(cloudSession,'/files/'+encodeURIComponent(fileId));
+  const openingCloudLink = useRef(false);
+  useEffect(() => {
+    const fileId = new URLSearchParams(window.location.search).get("cloudFile");
+    if (!fileId || !ready || openingCloudLink.current) return;
+    if (!cloudSession) {
+      if (!cloudLogin.restoring) {
+        setWorkspaceTab("cloud");
+        setModal("files");
+      }
+      return;
+    }
+    openingCloudLink.current = true;
+    void (async () => {
+      try {
+        let result;
+        if (!window.baizefigDesktop && isCloudOffline()) {
+          const cached = await readCloudRecovery(cloudSession, fileId);
+          if (!cached) throw Error("此文件尚未缓存到本机，请联网后打开");
+          result = {
+            file: {
+              id: fileId,
+              head_id: cached.headId,
+              folder_id: cached.folderId,
+            },
+            content: markRecoveredDocument(cached.doc),
+            draft: cached.cloudRevision
+              ? { revision: cached.cloudRevision }
+              : null,
+          };
+        } else {
+          result = await cloudRequest(
+            cloudSession,
+            "/files/" + encodeURIComponent(fileId),
+          );
+          if (!window.baizefigDesktop)
+            result = await resolveCloudOpen(cloudSession, result);
+        }
         validateDocument(result.content);
-        if(!await save(current.current.doc))throw Error('无法保存当前文件');
-        if(!await save(result.content))throw Error('无法缓存云端文件');
-        rememberCloudBinding(cloudSession,result.file.id,result.file.head_id,result.file.folder_id);
-        if(!window.baizefigDesktop)markCloudSnapshotSaved(cloudSession,removeDesignTokens(result.content));
-        committedDocument.current=result.content;current.current.doc=result.content;history.current=new History();setDoc(result.content,true);setPage(result.content.pages[0].id);setSelected([]);setCollapsed(new Set());setModal(null);
-        const url=new URL(window.location.href);url.searchParams.delete('cloudFile');window.history.replaceState(null,'',url);
-      }catch(error){notify((error as Error).message);}
+        if (!(await save(current.current.doc))) throw Error("无法保存当前文件");
+        if (!(await save(result.content))) throw Error("无法缓存云端文件");
+        rememberCloudBinding(
+          cloudSession,
+          result.file.id,
+          result.file.head_id,
+          result.file.folder_id,
+          !window.baizefigDesktop ? result.draft?.revision || null : undefined,
+        );
+        if (!window.baizefigDesktop && !isRecoveredDocument(result.content))
+          markCloudSnapshotSaved(
+            cloudSession,
+            removeDesignTokens(result.content),
+          );
+        committedDocument.current = result.content;
+        current.current.doc = result.content;
+        history.current = new History();
+        setDoc(result.content, true);
+        setPage(result.content.pages[0].id);
+        setSelected([]);
+        setCollapsed(new Set());
+        setModal(null);
+        const url = new URL(window.location.href);
+        url.searchParams.delete("cloudFile");
+        window.history.replaceState(null, "", url);
+      } catch (error) {
+        notify((error as Error).message);
+      }
     })();
-  },[ready,cloudSession?.token,cloudLogin.restoring]);
+  }, [ready, cloudSession?.token, cloudLogin.restoring]);
   const localExport = () => {
     download(JSON.stringify(doc, null, 2), `${doc.name}.baizefig`);
     notify("Local copy exported");
@@ -1230,12 +1439,25 @@ export default function App() {
             if ((e as { status?: number }).status !== 404) throw e;
           }
         }
-        if(!exclusive.canSave()) {
-          if(binding)throw Error("请先开始编辑，再保存云文件");
+        if (!exclusive.canSave()) {
+          if (binding) throw Error("请先开始编辑，再保存云文件");
           await exclusive.begin();
         }
-        await saveCloudDocument(cloudSession, current.current.doc, folderId, headId, {editorId:mcp.current.editorId,lockToken:exclusive.lease.current!.token});
-        notify("Saved to cloud");
+        await saveCloudDocument(
+          cloudSession,
+          current.current.doc,
+          folderId,
+          headId,
+          {
+            editorId: mcp.current.editorId,
+            lockToken: exclusive.lease.current?.token || "",
+          },
+        );
+        notify(
+          isCloudOffline() && webEditor
+            ? "已保存到本机，联网后同步为正式版本"
+            : "Saved to cloud",
+        );
       }
       if (makeDefault) configureSaveDestination(where);
       setSavePrompt(null);
@@ -1251,10 +1473,33 @@ export default function App() {
   const requestSave = () => {
     if (destinationSaving.current || savePrompt) return;
     setDestinationError("");
-    if(webEditor&&cloudBacked) {
-      if(!cloudSession){notify("请登录乐悦云后重试云端保存");return;}
-      const binding=readCloudBinding(cloudSession,doc.id);
-      void saveToDestination("cloud",false,binding?.folderId||null);return;
+    if (
+      webEditor &&
+      cloudBacked &&
+      isCloudOffline() &&
+      canEditOffline(doc.id)
+    ) {
+      const s = cloudSession || offlineSessionForDoc(doc.id);
+      if (s)
+        void cacheCloudDraft(
+          s,
+          doc,
+          readCloudBinding(s, doc.id) || { headId: null, folderId: null },
+          { manual: true, editing: true, archive: true },
+        )
+          .then(() => persistCurrent(doc))
+          .then(() => notify("已保存到本机，联网后同步为正式版本"))
+          .catch((e) => notify(e.message));
+      return;
+    }
+    if (webEditor && cloudBacked) {
+      if (!cloudSession) {
+        notify("请登录乐悦云后重试云端保存");
+        return;
+      }
+      const binding = readCloudBinding(cloudSession, doc.id);
+      void saveToDestination("cloud", false, binding?.folderId || null);
+      return;
     }
     if (!cloudSession || saveDestination === "local") {
       void saveToDestination("local");
@@ -2084,7 +2329,10 @@ export default function App() {
       }
     } else notify("Create a frame to start a prototype");
   }
-  async function importFiles(files: FileList | File[] | null, pastedSvg = false) {
+  async function importFiles(
+    files: FileList | File[] | null,
+    pastedSvg = false,
+  ) {
     if (!files?.length || importInFlight.current) return;
     importInFlight.current = true;
     let next = doc;
@@ -2111,7 +2359,7 @@ export default function App() {
           const { importSvg } = await import("./svgImport");
           const result = importSvg(await file.text(), page, file.name);
           if (pastedSvg) {
-            const root = result.nodes.find(n => n.id === result.rootId)!;
+            const root = result.nodes.find((n) => n.id === result.rootId)!;
             root.type = "group";
             if (root.fidelity) root.fidelity.clipsContent = false;
           }
@@ -3461,7 +3709,7 @@ export default function App() {
         return;
       }
       if (e.key === "Escape") {
-        if(e.repeat)return;
+        if (e.repeat) return;
         if (menuAnchor) {
           setMenuAnchor(null);
           return;
@@ -3595,45 +3843,123 @@ export default function App() {
         ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)
       )
         return;
-      const data=e.clipboardData;
-      if(!data)return;
-      const plain=data.getData("text/plain");
-      const html=data.getData("text/html");
+      const data = e.clipboardData;
+      if (!data) return;
+      const plain = data.getData("text/plain");
+      const html = data.getData("text/html");
       try {
-        const parsed=JSON.parse(plain);
-        if(parsed?.format==="baizefig-clipboard" && Array.isArray(parsed.nodes)){
-          e.preventDefault();clipboard.current=parsed;void paste("normal",parsed);return;
+        const parsed = JSON.parse(plain);
+        if (
+          parsed?.format === "baizefig-clipboard" &&
+          Array.isArray(parsed.nodes)
+        ) {
+          e.preventDefault();
+          clipboard.current = parsed;
+          void paste("normal", parsed);
+          return;
         }
-      }catch{ /* External text is not our internal layer format. */ }
-      const svgText=data.getData("image/svg+xml")||plain;
-      const svgMatch=svgText.match(/^\s*(?:<\?xml[\s\S]*?\?>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg\b/i);
-      if(svgMatch){e.preventDefault();void importFiles([new window.File([svgText],"粘贴的图形.svg",{type:"image/svg+xml"})],true);return;}
-      const images=Array.from(data.items).filter(item=>item.kind==="file"&&item.type.startsWith("image/")).map(item=>item.getAsFile()).filter((f):f is globalThis.File=>!!f);
-      if(html.includes("<!--(figma)")){
-        e.preventDefault();
-        void (async()=>{
-          const sourceId=doc.id;
-          try{
-            const bytes=figmaClipboardBytes(html);
-            if(!bytes)throw Error("未读取到 Figma 图层");
-            const imported=await importFigFile(new window.File([bytes as BlobPart],"clipboard.fig"));
-            if(latestDocument.current.id!==sourceId)return;
-            const result=pasteNodes(latestDocument.current,page,{nodes:imported.document.nodes},[],"normal");
-            change(result.doc,result.selection);
-            if(imported.report.warnings.length)notify(imported.report.warnings.join("；"));
-          }catch(error){if(images.length){void importFiles(images,true);notify("该设计暂不能完整解析，已粘贴为图片");}else notify((error as Error).message);}
-        })();return;
+      } catch {
+        /* External text is not our internal layer format. */
       }
-      if(images.length){e.preventDefault();void importFiles(images,true);return;}
-      if(html){const svg=new DOMParser().parseFromString(html,"text/html").querySelector("svg");if(svg){e.preventDefault();void importFiles([new window.File([svg.outerHTML],"粘贴的图形.svg",{type:"image/svg+xml"})],true);return;}}
-      const text=plain||(html?clipboardPlainText(html):"");
-      if(text){
+      const svgText = data.getData("image/svg+xml") || plain;
+      const svgMatch = svgText.match(
+        /^\s*(?:<\?xml[\s\S]*?\?>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg\b/i,
+      );
+      if (svgMatch) {
         e.preventDefault();
-        if(text.length>1000000){notify("粘贴文字过长");return;}
-        const node=makeNode("text",page,{name:text.slice(0,40),text,x:80,y:80,width:Math.min(600,Math.max(160,text.split("\n")[0].length*14)),height:Math.max(34,text.split("\n").length*34),fontSize:24,fill:"#202020",textFlow:{autoResize:"height",verticalAlign:"top",letterSpacing:0}});
-        const result=execute(doc,{type:"create",nodes:[node]});change(result.doc,[node.id]);
+        void importFiles(
+          [
+            new window.File([svgText], "粘贴的图形.svg", {
+              type: "image/svg+xml",
+            }),
+          ],
+          true,
+        );
+        return;
       }
-
+      const images = Array.from(data.items)
+        .filter(
+          (item) => item.kind === "file" && item.type.startsWith("image/"),
+        )
+        .map((item) => item.getAsFile())
+        .filter((f): f is globalThis.File => !!f);
+      if (html.includes("<!--(figma)")) {
+        e.preventDefault();
+        void (async () => {
+          const sourceId = doc.id;
+          try {
+            const bytes = figmaClipboardBytes(html);
+            if (!bytes) throw Error("未读取到 Figma 图层");
+            const imported = await importFigFile(
+              new window.File([bytes as BlobPart], "clipboard.fig"),
+            );
+            if (latestDocument.current.id !== sourceId) return;
+            const result = pasteNodes(
+              latestDocument.current,
+              page,
+              { nodes: imported.document.nodes },
+              [],
+              "normal",
+            );
+            change(result.doc, result.selection);
+            if (imported.report.warnings.length)
+              notify(imported.report.warnings.join("；"));
+          } catch (error) {
+            if (images.length) {
+              void importFiles(images, true);
+              notify("该设计暂不能完整解析，已粘贴为图片");
+            } else notify((error as Error).message);
+          }
+        })();
+        return;
+      }
+      if (images.length) {
+        e.preventDefault();
+        void importFiles(images, true);
+        return;
+      }
+      if (html) {
+        const svg = new DOMParser()
+          .parseFromString(html, "text/html")
+          .querySelector("svg");
+        if (svg) {
+          e.preventDefault();
+          void importFiles(
+            [
+              new window.File([svg.outerHTML], "粘贴的图形.svg", {
+                type: "image/svg+xml",
+              }),
+            ],
+            true,
+          );
+          return;
+        }
+      }
+      const text = plain || (html ? clipboardPlainText(html) : "");
+      if (text) {
+        e.preventDefault();
+        if (text.length > 1000000) {
+          notify("粘贴文字过长");
+          return;
+        }
+        const node = makeNode("text", page, {
+          name: text.slice(0, 40),
+          text,
+          x: 80,
+          y: 80,
+          width: Math.min(600, Math.max(160, text.split("\n")[0].length * 14)),
+          height: Math.max(34, text.split("\n").length * 34),
+          fontSize: 24,
+          fill: "#202020",
+          textFlow: {
+            autoResize: "height",
+            verticalAlign: "top",
+            letterSpacing: 0,
+          },
+        });
+        const result = execute(doc, { type: "create", nodes: [node] });
+        change(result.doc, [node.id]);
+      }
     };
     window.addEventListener("paste", pasteEvent);
     window.addEventListener("keydown", down);
@@ -3818,14 +4144,25 @@ export default function App() {
           documentId,
           editorId: mcp.current.editorId,
           name: current.current.doc.name,
-          platform:window.baizefigDesktop?"desktop":"web",
-          clientLabel:window.baizefigDesktop?"Mac":navigator.userAgent.includes("Edg/")?"Edge":navigator.userAgent.includes("Firefox/")?"Firefox":navigator.userAgent.includes("Chrome/")?"Chrome":"Safari",
+          platform: window.baizefigDesktop ? "desktop" : "web",
+          clientLabel: window.baizefigDesktop
+            ? "Mac"
+            : navigator.userAgent.includes("Edg/")
+              ? "Edge"
+              : navigator.userAgent.includes("Firefox/")
+                ? "Firefox"
+                : navigator.userAgent.includes("Chrome/")
+                  ? "Chrome"
+                  : "Safari",
         }),
       );
     };
     ws.onclose = (event) => {
       if (socket.current !== ws) return;
-      if ((event.code === 1008 && !event.reason.includes("Another editor")) || (event.code===1000&&event.reason==="Disconnected")) {
+      if (
+        (event.code === 1008 && !event.reason.includes("Another editor")) ||
+        (event.code === 1000 && event.reason === "Disconnected")
+      ) {
         disconnectBridge();
         if (intent.cloud) {
           const rejected = intent.cloud;
@@ -3841,8 +4178,8 @@ export default function App() {
     ws.onerror = () => {
       if (socket.current === ws) reconnectBridge();
     };
-    let messageQueue=Promise.resolve();
-    const receiveMessage = async (event:MessageEvent) => {
+    let messageQueue = Promise.resolve();
+    const receiveMessage = async (event: MessageEvent) => {
       if (socket.current !== ws || current.current.doc.id !== documentId)
         return;
       let message: {
@@ -3881,21 +4218,43 @@ export default function App() {
         return;
       }
       try {
-        if(cloud && message.method==="begin_edit") {
-          await exclusiveRef.current.begin("ai",String(message.params?.lockToken));
-          ws.send(JSON.stringify({id:message.id,result:{editing:true}}));return;
+        if (cloud && message.method === "begin_edit") {
+          await exclusiveRef.current.begin(
+            "ai",
+            String(message.params?.lockToken),
+          );
+          ws.send(
+            JSON.stringify({ id: message.id, result: { editing: true } }),
+          );
+          return;
         }
-        if(cloud && message.method==="end_edit") {
+        if (cloud && message.method === "end_edit") {
           await exclusiveRef.current.end(String(message.params?.lockToken));
-          ws.send(JSON.stringify({id:message.id,result:{released:true}}));return;
+          ws.send(
+            JSON.stringify({ id: message.id, result: { released: true } }),
+          );
+          return;
         }
         const c = current.current;
-        const cloudFile=isCloudBackedDocument(c.doc.id);
-        if(message.method==="apply_commands" && cloudFile && !cloud)throw new McpError("EDIT_LOCK_REQUIRED","云文件请通过乐悦云连接并先调用 begin_edit");
-        if(cloud && message.method==="apply_commands") {
-          const l=exclusiveRef.current.lease.current;
-          if(!l || l.kind!=="ai" || l.documentId!==c.doc.id || l.token!==message.params?.lockToken)throw new McpError("EDIT_LOCK_REQUIRED","请先调用 begin_edit");
-          await cloudRequest(cloud,"/files/"+c.doc.id+"/edit/validate",{editorId:mcp.current.editorId,lockToken:l.token});
+        const cloudFile = isCloudBackedDocument(c.doc.id);
+        if (message.method === "apply_commands" && cloudFile && !cloud)
+          throw new McpError(
+            "EDIT_LOCK_REQUIRED",
+            "云文件请通过乐悦云连接并先调用 begin_edit",
+          );
+        if (cloud && message.method === "apply_commands") {
+          const l = exclusiveRef.current.lease.current;
+          if (
+            !l ||
+            l.kind !== "ai" ||
+            l.documentId !== c.doc.id ||
+            l.token !== message.params?.lockToken
+          )
+            throw new McpError("EDIT_LOCK_REQUIRED", "请先调用 begin_edit");
+          await cloudRequest(cloud, "/files/" + c.doc.id + "/edit/validate", {
+            editorId: mcp.current.editorId,
+            lockToken: l.token,
+          });
         }
         if (
           (drag.current || c.editing) &&
@@ -3905,10 +4264,15 @@ export default function App() {
             "EDITOR_BUSY",
             "Finish the current canvas or text edit before editing through MCP",
           );
-        if(socket.current!==ws||current.current.doc.id!==documentId)return;
+        if (socket.current !== ws || current.current.doc.id !== documentId)
+          return;
         let result = mcp.current.handle(
           message.method,
-          Object.fromEntries(Object.entries(message.params??{}).filter(([key])=>key!=="lockToken")),
+          Object.fromEntries(
+            Object.entries(message.params ?? {}).filter(
+              ([key]) => key !== "lockToken",
+            ),
+          ),
           cloud
             ? {
                 ...c,
@@ -3920,19 +4284,48 @@ export default function App() {
             next = removeDesignTokens(next);
             history.current.push(c.doc, c.selected);
             current.current = { ...c, doc: next };
-            setDoc(next,true);
+            setDoc(next, true);
           },
         );
-        if(cloud && message.method==="apply_commands") {
-          const binding=readCloudBinding(cloud,c.doc.id);
+        if (cloud && message.method === "apply_commands") {
+          const binding = readCloudBinding(cloud, c.doc.id);
           try {
-            await saveCloudDocument(cloud,current.current.doc,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:String(message.params?.lockToken)});
-          }catch(error){
-            if((error as {status?:number}).status && socket.current===ws && current.current.doc.id===documentId) {
-              mcp.current.forgetReceipt(c.doc.id,String(message.params?.idempotencyKey));
-              current.current={...current.current,doc:c.doc};setDoc(c.doc,true);
+            await saveCloudDocument(
+              cloud,
+              current.current.doc,
+              binding?.folderId || null,
+              binding?.headId || null,
+              {
+                editorId: mcp.current.editorId,
+                lockToken: String(message.params?.lockToken),
+                ...(!window.baizefigDesktop
+                  ? { saveMode: "autosave" as const, source: "ai" as const }
+                  : {}),
+              },
+            );
+          } catch (error) {
+            if (
+              (error as { status?: number }).status &&
+              socket.current === ws &&
+              current.current.doc.id === documentId
+            ) {
+              mcp.current.forgetReceipt(
+                c.doc.id,
+                String(message.params?.idempotencyKey),
+              );
+              current.current = { ...current.current, doc: c.doc };
+              setDoc(c.doc, true);
+              if (!window.baizefigDesktop)
+                await cacheCloudDraft(
+                  cloud,
+                  c.doc,
+                  binding || { headId: null, folderId: null },
+                  { editing: false },
+                );
             }
-            setPersistentSaveError("AI 修改尚未确认保存："+(error as Error).message);
+            setPersistentSaveError(
+              "AI 修改尚未确认保存：" + (error as Error).message,
+            );
             throw error;
           }
         }
@@ -3980,7 +4373,11 @@ export default function App() {
           );
       }
     };
-    ws.onmessage=event=>{messageQueue=messageQueue.then(()=>receiveMessage(event)).catch(()=>{});};
+    ws.onmessage = (event) => {
+      messageQueue = messageQueue
+        .then(() => receiveMessage(event))
+        .catch(() => {});
+    };
   }
   function beginLayerDrag(e: React.PointerEvent<HTMLDivElement>, n: Node) {
     suppressLayerClick.current = false;
@@ -4351,7 +4748,12 @@ export default function App() {
             )}
           </p>
           <div className="find-buttons">
-            <button onClick={() => {if(cloudSaveError)requestSave();else void persistCurrent(doc);}}>
+            <button
+              onClick={() => {
+                if (cloudSaveError) requestSave();
+                else void persistCurrent(doc);
+              }}
+            >
               {t("Retry save")}
             </button>
             <button onClick={localExport}>{t("Export editable backup")}</button>
@@ -4378,7 +4780,11 @@ export default function App() {
           aria-hidden={hiddenUI && hoverSidebar !== "left"}
           inert={hiddenUI && hoverSidebar !== "left"}
         >
-          <div className={"file-panel-header"+(webEditor?" web-file-header":"")}>
+          <div
+            className={
+              "file-panel-header" + (webEditor ? " web-file-header" : "")
+            }
+          >
             <div className="file-title-row">
               <button
                 className="workspace-brand"
@@ -4399,20 +4805,22 @@ export default function App() {
                 value={doc.name}
                 onChange={(e) => setDoc({ ...doc, name: e.target.value })}
               />
-              {!webEditor&&<span
-                className="file-save-indicator"
-                title={t(saved)}
-                aria-label={t(saved)}
-                data-save-state={saved}
-                style={{
-                  background:
-                    saved === "Saved locally"
-                      ? "#2d9f8f"
-                      : saved === "Save failed"
-                        ? "#d44"
-                        : "#e6b343",
-                }}
-              />}
+              {!webEditor && (
+                <span
+                  className="file-save-indicator"
+                  title={t(saved)}
+                  aria-label={t(saved)}
+                  data-save-state={saved}
+                  style={{
+                    background:
+                      saved === "Saved locally"
+                        ? "#2d9f8f"
+                        : saved === "Save failed"
+                          ? "#d44"
+                          : "#e6b343",
+                  }}
+                />
+              )}
               <button
                 className="tiny sidebar-toggle"
                 aria-label={t(
@@ -4428,25 +4836,75 @@ export default function App() {
               </button>
             </div>
             <div className="file-subtitle">
-              {webEditor?<WebFileStatus
-                cloud={cloudBacked}
-                readOnly={cloudBacked&&!exclusive.canEdit(doc.id)&&!exclusive.lease.current?.ending}
-                modified={cloudBacked?(!cloudSaveState.saved||cloudSaveState.saving||!!cloudSaveError):saved!=="Saved locally"}
-                busy={exclusive.busy||destinationBusy||cloudSaveState.saving}
-                title={cloudSaveError||exclusive.status}
-                onEdit={()=>void exclusive.begin().catch(e=>notify(e.message))}
-                onSave={requestSave}
-                onFinish={()=>void exclusive.end().catch(e=>notify(e.message))}
-              />:<><span>{t("Drafts")}</span><span className="local-plan">{t("Local")}</span><span className="save-state">{t(saved)}</span></>}
+              {webEditor ? (
+                <WebFileStatus
+                  cloud={cloudBacked}
+                  readOnly={
+                    cloudBacked &&
+                    !exclusive.canEdit(doc.id) &&
+                    !exclusive.lease.current?.ending
+                  }
+                  modified={
+                    cloudBacked
+                      ? !cloudSaveState.saved ||
+                        cloudSaveState.saving ||
+                        !!cloudSaveError
+                      : saved !== "Saved locally"
+                  }
+                  busy={
+                    exclusive.busy || destinationBusy || cloudSaveState.saving
+                  }
+                  title={
+                    cloudSaveError ||
+                    (isCloudOffline()
+                      ? "本机保存，待联网同步"
+                      : cloudSaveState.draft
+                        ? "云端草稿已同步；点击保存生成正式版本。每 15 分钟滚动存档，连续 2 小时未保存时自动保留历史。"
+                        : exclusive.status)
+                  }
+                  draft={cloudSaveState.draft}
+                  onEdit={() =>
+                    void exclusive.begin().catch((e) => notify(e.message))
+                  }
+                  onSave={requestSave}
+                  onFinish={() =>
+                    void exclusive.end().catch((e) => notify(e.message))
+                  }
+                />
+              ) : (
+                <>
+                  <span>{t("Drafts")}</span>
+                  <span className="local-plan">{t("Local")}</span>
+                  <span className="save-state">{t(saved)}</span>
+                </>
+              )}
             </div>
           </div>
-              {!webEditor&&isCloudBackedDocument(doc.id)&&<div className="exclusive-edit-controls" role="status"><span>{exclusive.status}</span><button disabled={exclusive.busy} onClick={()=>void(async()=>{
-                try {
-                  if(exclusive.editing) {
-                    await exclusive.end();
-                  }else await exclusive.begin();
-                }catch(e){notify((e as Error).message);}
-              })()}>{exclusive.lease.current?.ending?"正在保存并结束编辑":exclusive.editing?"保存并结束编辑":"开始编辑"}</button></div>}
+          {!webEditor && isCloudBackedDocument(doc.id) && (
+            <div className="exclusive-edit-controls" role="status">
+              <span>{exclusive.status}</span>
+              <button
+                disabled={exclusive.busy}
+                onClick={() =>
+                  void (async () => {
+                    try {
+                      if (exclusive.editing) {
+                        await exclusive.end();
+                      } else await exclusive.begin();
+                    } catch (e) {
+                      notify((e as Error).message);
+                    }
+                  })()
+                }
+              >
+                {exclusive.lease.current?.ending
+                  ? "正在保存并结束编辑"
+                  : exclusive.editing
+                    ? "保存并结束编辑"
+                    : "开始编辑"}
+              </button>
+            </div>
+          )}
           <div
             className="workspace-tabs"
             role="tablist"
@@ -7089,8 +7547,10 @@ export default function App() {
           >
             <div className="modal-heading">
               <div>
-                {modal!=="files"&&<span className="eyebrow">BAIZEFIG / 白泽</span>}
-                <h2>{modal==="files"?"工作区":t(title)}</h2>
+                {modal !== "files" && (
+                  <span className="eyebrow">BAIZEFIG / 白泽</span>
+                )}
+                <h2>{modal === "files" ? "工作区" : t(title)}</h2>
               </div>
               <button
                 className="icon-button"
@@ -7113,15 +7573,25 @@ export default function App() {
                 }}
               />
             )}
-            {modal === "versions" && (webEditor&&cloudBacked ? (cloudSession?<CloudVersionHistory session={cloudSession} documentId={doc.id}/>:<p>{t("Sign in to LoyoCloud")}</p>):
-              <VersionHistory
-                doc={doc}
-                onRestore={(next) => {
-                  change(next, []);
-                  setPage(next.pages[0].id);
-                }}
-              />
-            )}
+            {modal === "versions" &&
+              (webEditor && cloudBacked ? (
+                cloudSession ? (
+                  <CloudVersionHistory
+                    session={cloudSession}
+                    documentId={doc.id}
+                  />
+                ) : (
+                  <p>{t("Sign in to LoyoCloud")}</p>
+                )
+              ) : (
+                <VersionHistory
+                  doc={doc}
+                  onRestore={(next) => {
+                    change(next, []);
+                    setPage(next.pages[0].id);
+                  }}
+                />
+              ))}
             {modal === "fig-report" && figReport && (
               <section className="fig-import-report">
                 <p>
@@ -7654,7 +8124,28 @@ export default function App() {
             )}
             {modal === "files" && (
               <>
-                {workspaceTab === "cloud" && <div className="personal-workspace-account">{cloudSession?<><span>{t("Signed in")}</span><strong>{cloudSession.user.username}</strong><a href={cloudSession.base+"/console"} target="_blank" rel="noreferrer">{t("Console")}</a><button onClick={signOutCloud}>{t("Sign out")}</button></>:<button onClick={signInCloud}>{t("Sign in to LoyoCloud")}</button>}</div>}
+                {workspaceTab === "cloud" && (
+                  <div className="personal-workspace-account">
+                    {cloudSession ? (
+                      <>
+                        <span>{t("Signed in")}</span>
+                        <strong>{cloudSession.user.username}</strong>
+                        <a
+                          href={cloudSession.base + "/console"}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t("Console")}
+                        </a>
+                        <button onClick={signOutCloud}>{t("Sign out")}</button>
+                      </>
+                    ) : (
+                      <button onClick={signInCloud}>
+                        {t("Sign in to LoyoCloud")}
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div
                   className="workspace-switcher"
                   role="tablist"
@@ -7680,11 +8171,19 @@ export default function App() {
                       validateDocument(next);
                       if (!(await save(next)))
                         throw Error("Unable to save the cloud file locally");
-                      if(!window.baizefigDesktop&&cloudSession)markCloudSnapshotSaved(cloudSession,removeDesignTokens(next));
+                      if (
+                        !window.baizefigDesktop &&
+                        cloudSession &&
+                        !isRecoveredDocument(next)
+                      )
+                        markCloudSnapshotSaved(
+                          cloudSession,
+                          removeDesignTokens(next),
+                        );
                       committedDocument.current = next;
                       current.current.doc = next;
                       history.current = new History();
-                      setDoc(next,true);
+                      setDoc(next, true);
                       setPage(next.pages[0].id);
                       setSelected([]);
                       setCollapsed(new Set());
@@ -7702,25 +8201,40 @@ export default function App() {
                   />
                 ) : (
                   <>
-                    <LocalFiles actions={<>
-
-                      <button
-                        className="primary"
-                        onClick={newDoc}
-                        title={shortcutLabel("New design file", platform)}
-                        aria-keyshortcuts="Control+Alt+N"
-                      >
-                        <FilePlus2 size={16} />
-                        {t("New design file")}
-                      </button>
-                      <button onClick={() => fileInput.current?.click()}>
-                        <Upload size={16} />
-                        {t("Import")}
-                      </button>
-                    </>} onDelete={deleteLocalFile} onOpen={d=>{
-                      return save(doc).then(async()=>{const latest=await getDocument(d.id);setDoc(latest);setPage(latest.pages[0].id);setSelected([]);history.current=new History();setModal(null);}).catch(error=>setPersistentSaveError((error as Error).message));
-                    }}/>
-
+                    <LocalFiles
+                      actions={
+                        <>
+                          <button
+                            className="primary"
+                            onClick={newDoc}
+                            title={shortcutLabel("New design file", platform)}
+                            aria-keyshortcuts="Control+Alt+N"
+                          >
+                            <FilePlus2 size={16} />
+                            {t("New design file")}
+                          </button>
+                          <button onClick={() => fileInput.current?.click()}>
+                            <Upload size={16} />
+                            {t("Import")}
+                          </button>
+                        </>
+                      }
+                      onDelete={deleteLocalFile}
+                      onOpen={(d) => {
+                        return save(doc)
+                          .then(async () => {
+                            const latest = await getDocument(d.id);
+                            setDoc(latest);
+                            setPage(latest.pages[0].id);
+                            setSelected([]);
+                            history.current = new History();
+                            setModal(null);
+                          })
+                          .catch((error) =>
+                            setPersistentSaveError((error as Error).message),
+                          );
+                      }}
+                    />
                   </>
                 )}
               </>

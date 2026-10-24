@@ -18,5 +18,5 @@ export function useCloudSaveState(session: CloudSession | null, doc: Document) {
   }, [session?.token, doc.id]);
   return session
     ? readCloudSaveState(session, doc)
-    : { saved: false, saving: false, error: "" };
+    : { saved: false, saving: false, error: "", draft: false };
 }

@@ -41,6 +41,18 @@ export interface TrashRecord {
   deletedAt: number;
 }
 export async function save(doc: Document): Promise<boolean> {
+  if (
+    typeof window !== "undefined" &&
+    !window.baizefigDesktop &&
+    navigator.locks
+  ) {
+    const held = (await navigator.locks.query()).held || [];
+    if (
+      held.some((lock) => lock.name === "baizefig-editor-" + doc.id) &&
+      !(await import("./cloudRecovery")).ownsLocalEditor(doc.id)
+    )
+      return true;
+  }
   doc = removeDesignTokens(doc);
   const started = performance.now();
   const db = await database(),
@@ -73,17 +85,15 @@ export async function save(doc: Document): Promise<boolean> {
     );
   }
   const meta = await tx.objectStore("settings").get("file-meta:" + doc.id);
-  await tx
-    .objectStore("settings")
-    .put(
-      {
-        ...meta,
-        createdAt: meta?.createdAt || (previous ? undefined : Date.now()),
-        updatedAt: Date.now(),
-        folderId: meta?.folderId || null,
-      },
-      "file-meta:" + doc.id,
-    );
+  await tx.objectStore("settings").put(
+    {
+      ...meta,
+      createdAt: meta?.createdAt || (previous ? undefined : Date.now()),
+      updatedAt: Date.now(),
+      folderId: meta?.folderId || null,
+    },
+    "file-meta:" + doc.id,
+  );
   await tx.objectStore("documents").put(doc);
   await tx.objectStore("revisions").put(revision + 1, doc.id);
   await tx.objectStore("settings").put(doc.id, "last-document");

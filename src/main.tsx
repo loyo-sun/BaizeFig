@@ -1,4 +1,4 @@
-import {WebDialogs} from "./WebDialogs";
+import { WebDialogs } from "./WebDialogs";
 import "./webDialogs.css";
 import "@fontsource-variable/work-sans/wght.css";
 import "@fontsource-variable/inter/wght.css";
@@ -32,4 +32,15 @@ import "./quickPalette.css";
 import "./smartPanel.css";
 
 import "./workspaceNavigation.css";
-import './cloudDrive.css';
+import "./cloudDrive.css";
+
+// Only the website installs offline support; desktop releases keep their existing file handling.
+if (
+  import.meta.env.PROD &&
+  !window.baizefigDesktop &&
+  "serviceWorker" in navigator
+) {
+  void navigator.serviceWorker
+    .register("/offline-sw.js", { updateViaCache: "none" })
+    .catch(() => {});
+}

@@ -3,6 +3,7 @@ export function WebFileStatus({
   readOnly,
   modified,
   cloud,
+  draft,
   busy,
   title,
   onEdit,
@@ -12,6 +13,7 @@ export function WebFileStatus({
   readOnly: boolean;
   modified: boolean;
   cloud: boolean;
+  draft?: boolean;
   busy: boolean;
   title?: string;
   onEdit: () => void;
@@ -39,7 +41,7 @@ export function WebFileStatus({
       ) : (
         cloud && (
           <span className="web-file-status-actions">
-            {modified && (
+            {(modified || draft) && (
               <button disabled={busy} onClick={onSave}>
                 [{t("Save")}]
               </button>

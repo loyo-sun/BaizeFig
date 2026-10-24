@@ -1,3 +1,4 @@
+import { resolveCloudOpen } from "./cloudRecovery";
 import {
   MoreVertical,
   ChevronDown,
@@ -13,13 +14,7 @@ import { FileDetails, MoveFileDialog, folderPath } from "./FileDetails";
 import { useI18n } from "./LanguageContext";
 import { rememberCloudBinding } from "./saveDestination";
 import { CloudThumbnail } from "./CloudThumbnail";
-import {
-  LayoutGrid,
-  List,
-  Folder,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
+import { LayoutGrid, List, Folder, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { CloudSession } from "./cloud";
 import { type Document, validateDocument } from "./core";
@@ -160,19 +155,27 @@ export function CloudFiles({
     openingLock.current = true;
     setOpening(true);
     try {
-    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-    const d = await api(
-      "/files/" + file.id + (version ? "?version=" + version : ""),
-    );
-    validateDocument(d.content);
-    rememberCloudBinding(
-      session,
-      file.id,
-      d.file.head_id,
-      d.file.folder_id || null,
-    );
-    await onOpen(d.content);
-    } finally { openingLock.current = false; setOpening(false); }
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      );
+      let d = await api(
+        "/files/" + file.id + (version ? "?version=" + version : ""),
+      );
+      if (!window.baizefigDesktop && !version)
+        d = await resolveCloudOpen(session, d);
+      validateDocument(d.content);
+      rememberCloudBinding(
+        session,
+        file.id,
+        d.file.head_id,
+        d.file.folder_id || null,
+        !window.baizefigDesktop ? d.draft?.revision || null : undefined,
+      );
+      await onOpen(d.content);
+    } finally {
+      openingLock.current = false;
+      setOpening(false);
+    }
   }
   type Entry = { folder: boolean; item: File | Folder };
   const entries: Entry[] = [
@@ -420,7 +423,11 @@ export function CloudFiles({
           </button>
         </div>
       </header>
-      {opening && <div className="workspace-opening" role="status" aria-live="polite">正在打开…</div>}
+      {opening && (
+        <div className="workspace-opening" role="status" aria-live="polite">
+          正在打开…
+        </div>
+      )}
       {error && <p role="alert">{error}</p>}
       <fieldset disabled={busy} className="drive-body">
         <table className={"drive-table drive-" + view}>
@@ -605,16 +612,38 @@ export function CloudFiles({
               <CloudVersions
                 versions={versions}
                 headId={selected.head_id}
-                onDeleteUnnamed={async()=>{
-                  const count=versions.filter(v=>v.id!==selected.head_id&&!v.version_name?.trim()).length;
-                  if(await webConfirm("删除 "+count+" 个未命名历史版本？最新版本和所有已命名版本将保留。"))await run(async()=>{
-                    await api("/files/"+selected.id+"/versions/delete-unnamed",{});
-                    const latest=await api("/files/"+selected.id);setVersions(latest.versions);setSelected(latest.file);await load();
-                  });
+                onDeleteUnnamed={async () => {
+                  const count = versions.filter(
+                    (v) => v.id !== selected.head_id && !v.version_name?.trim(),
+                  ).length;
+                  if (
+                    await webConfirm(
+                      "删除 " +
+                        count +
+                        " 个未命名历史版本？最新版本和所有已命名版本将保留。",
+                    )
+                  )
+                    await run(async () => {
+                      await api(
+                        "/files/" + selected.id + "/versions/delete-unnamed",
+                        {},
+                      );
+                      const latest = await api("/files/" + selected.id);
+                      setVersions(latest.versions);
+                      setSelected(latest.file);
+                      await load();
+                    });
                 }}
                 onRename={async (version, name) => {
                   await run(async () => {
-                    await api("/files/" + selected.id + "/versions/" + version + "/rename", {name});
+                    await api(
+                      "/files/" +
+                        selected.id +
+                        "/versions/" +
+                        version +
+                        "/rename",
+                      { name },
+                    );
                     setVersions((await api("/files/" + selected.id)).versions);
                   });
                 }}
@@ -654,9 +683,7 @@ export function CloudFiles({
                 }}
               />
             }
-          >
-
-          </FileDetails>
+          ></FileDetails>
         )}
         {moving && (
           <MoveFileDialog
@@ -737,7 +764,9 @@ export function CloudFiles({
                 autoFocus={i === 0}
                 role="menuitem"
                 key={item.label}
-                className={item.label === "移至回收站" ? "drive-menu-danger" : undefined}
+                className={
+                  item.label === "移至回收站" ? "drive-menu-danger" : undefined
+                }
                 onClick={() => {
                   setMenu(null);
                   item.run();

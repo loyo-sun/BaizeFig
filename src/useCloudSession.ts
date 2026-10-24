@@ -1,3 +1,4 @@
+import { isCloudOffline, setCloudReachable } from "./cloudConnectivity";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cloudBase, restoreCloudSession, type CloudSession } from "./cloud";
 
@@ -107,6 +108,13 @@ export function useCloudSession(ready: boolean) {
         setRestoring(false);
         return;
       }
+      if (!window.baizefigDesktop && isCloudOffline() && !navigator.onLine) {
+        updateSession(saved.session);
+        updateActive(false);
+        setRestoring(false);
+        setRestoreError("离线模式：修改保存在本机，联网后验证身份并同步。");
+        return;
+      }
       if (showLoading) {
         setRestoring(true);
         setRestoreError("");
@@ -117,6 +125,7 @@ export function useCloudSession(ready: boolean) {
           controller.signal,
         );
         if (stopped || generation.current !== version) return;
+        setCloudReachable(true);
         // The server's absolute expiration remains unchanged when restoring.
         const latest = readStoredCloudSession(base);
         if (!latest || latest.session.token !== saved.session.token) return;
@@ -129,6 +138,14 @@ export function useCloudSession(ready: boolean) {
         if (stopped || generation.current !== version) return;
         if ((error as { invalidSession?: boolean }).invalidSession) forget();
         else {
+          if (
+            !window.baizefigDesktop &&
+            !(error as { unsupported?: boolean }).unsupported
+          ) {
+            setCloudReachable(false);
+            updateSession(saved.session);
+            updateActive(false);
+          }
           setRestoring(false);
           setRestoreError(
             (error as { unsupported?: boolean }).unsupported
