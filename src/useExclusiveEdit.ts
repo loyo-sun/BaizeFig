@@ -203,6 +203,7 @@ export function useExclusiveEdit(
     )
       throw Error("编辑会话已失效");
     l.ending = true;
+    setStatus("正在保存并结束编辑 · 当前只读");
     setBusy(true);
     render((v) => v + 1);
     try {

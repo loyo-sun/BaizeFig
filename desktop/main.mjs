@@ -190,7 +190,38 @@ function secureWindow(options = {}) {
     },
   });
   result.once("ready-to-show", () => result.show());
-  result.webContents.setWindowOpenHandler(({ url }) => {
+  result.webContents.setWindowOpenHandler(({ url, frameName }) => {
+    if (url === "about:blank" && frameName === "loyocloud-login") {
+      return {
+        action: "allow",
+        createWindow: (options) => {
+          const popup = new BrowserWindow({
+            ...options,
+            width: 560,
+            height: 760,
+            show: true,
+            webPreferences: {
+              nodeIntegration: false,
+              contextIsolation: true,
+              sandbox: true,
+              webSecurity: true,
+            },
+          });
+          const cloudOrigin = "https://cloud.loyo.work";
+          const check = (event, target) => {
+            if (target === "about:blank") return;
+            try {
+              if (new URL(target).origin === cloudOrigin) return;
+            } catch {}
+            event.preventDefault();
+          };
+          popup.webContents.on("will-navigate", check);
+          popup.webContents.on("will-redirect", check);
+          popup.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+          return popup.webContents;
+        },
+      };
+    }
     if (url.startsWith(origin + "/")) {
       const preview = secureWindow({ width: 1100, height: 800 });
       void preview.loadURL(url);

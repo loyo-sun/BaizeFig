@@ -17,6 +17,9 @@ const launch = async () => {
     timeout: 30000,
   });
   const page = await app.firstWindow();
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setSize(1024, 768),
+  );
   page.on("pageerror", (e) => console.error("Renderer:", e.message));
   await page.waitForLoadState("domcontentloaded");
   return page;

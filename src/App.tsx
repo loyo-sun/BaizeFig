@@ -4424,7 +4424,7 @@ export default function App() {
                     await exclusive.end();
                   }else await exclusive.begin();
                 }catch(e){notify((e as Error).message);}
-              })()}>{exclusive.editing?"保存并结束编辑":"开始编辑"}</button></div>}
+              })()}>{exclusive.lease.current?.ending?"正在保存并结束编辑":exclusive.editing?"保存并结束编辑":"开始编辑"}</button></div>}
           <div
             className="workspace-tabs"
             role="tablist"
