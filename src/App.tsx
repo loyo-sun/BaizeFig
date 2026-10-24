@@ -1188,7 +1188,7 @@ export default function App() {
             if ((e as { status?: number }).status !== 404) throw e;
           }
         }
-        await saveCloudDocument(cloudSession, doc, folderId, headId, true);
+        await saveCloudDocument(cloudSession, doc, folderId, headId);
         notify("Saved to cloud");
       }
       if (makeDefault) configureSaveDestination(where);

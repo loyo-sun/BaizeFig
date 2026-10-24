@@ -66,7 +66,6 @@ export async function saveCloudDocument(
   doc: Document,
   folderId: string | null,
   headId: string | null,
-  overwrite = true,
 ) {
   const preview = await Promise.all(
     doc.pages.map(async (page) => {
@@ -84,7 +83,7 @@ export async function saveCloudDocument(
     preview,
     folderId,
     headId,
-    overwrite,
+    overwrite: false,
   });
   // Older LoyoCloud deployments accept save but do not apply path/overwrite flags.
   // Keep the successful head even if a follow-up request fails.
@@ -103,19 +102,6 @@ export async function saveCloudDocument(
     } catch {
       throw Error(
         "The file was saved to cloud, but moving it failed. Check its location in the cloud workspace.",
-      );
-    }
-  }
-  if (overwrite && headId && !result.overwriteApplied) {
-    try {
-      await cloudRequest(
-        session,
-        "/files/" + doc.id + "/versions/" + headId + "/delete",
-        {},
-      );
-    } catch {
-      throw Error(
-        "The file was saved to cloud, but removing the previous version failed. Check version history.",
       );
     }
   }

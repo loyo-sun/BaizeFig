@@ -94,7 +94,7 @@ try {
   await page.waitForTimeout(1000);
   assert.equal(saves, 2);
   assert.equal(requests[1].headId, "head1");
-  assert.equal(requests[1].overwrite, true);
+  assert.equal(requests[1].overwrite, false);
   assert.equal(deletes, 1);
   assert.equal(await dialog.count(), 0);
   await page.getByRole("button", { name: "Main menu", exact: true }).click();

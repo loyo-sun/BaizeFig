@@ -40,7 +40,7 @@ test("defaults and cloud targets are isolated by user, server and document", () 
     readCloudBinding({ ...session, base: "https://other.test" }, "file"),
   ).toBeNull();
 });
-test("cloud save sends overwrite, selected folder and expected version; failure does not update target", async () => {
+test("cloud save preserves history and sends, selected folder and expected version; failure does not update target", async () => {
   const values = new Map<string, string>();
   vi.stubGlobal("localStorage", {
     getItem: (k: string) => values.get(k) || null,
@@ -72,7 +72,7 @@ test("cloud save sends overwrite, selected folder and expected version; failure 
   vi.stubGlobal("fetch", fetcher);
   await saveCloudDocument(session, doc, "folder", "old-head");
   expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({
-    overwrite: true,
+    overwrite: false,
     folderId: "folder",
     headId: "old-head",
   });
@@ -82,7 +82,7 @@ test("cloud save sends overwrite, selected folder and expected version; failure 
   ).rejects.toThrow("版本冲突");
   expect(readCloudBinding(session, doc.id)?.headId).toBe("new-head");
 });
-test("existing cloud deployment applies selected folder and replaces the previous version without a server update", async () => {
+test("existing cloud deployment applies selected folder without deleting previous versions", async () => {
   const values = new Map<string, string>();
   vi.stubGlobal("localStorage", {
     getItem: (k: string) => values.get(k) || null,
@@ -108,10 +108,6 @@ test("existing cloud deployment applies selected folder and replaces the previou
   expect(fetcher.mock.calls.map((call) => call[0])).toEqual([
     session.base + "/api/v1/space/files/" + doc.id + "/save",
     session.base + "/api/v1/space/files/" + doc.id + "/move",
-    session.base +
-      "/api/v1/space/files/" +
-      doc.id +
-      "/versions/old-head/delete",
   ]);
   expect(readCloudBinding(session, doc.id)).toEqual({
     headId: "new-head",
