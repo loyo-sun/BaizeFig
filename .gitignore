@@ -11,3 +11,5 @@ playwright-report/
 
 # Keep reproducible acceptance logs with the experience evidence.
 !docs/experience/validation/*.log
+
+.netlify/

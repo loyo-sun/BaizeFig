@@ -58,12 +58,15 @@ try {
     JSON.parse(await readFile(join(root, "package.json"), "utf8"))
       .displayVersion,
   );
-  await page.keyboard.press("ControlOrMeta+Shift+p");
+  await page.getByRole("button", { name: "Main menu", exact: true }).click();
   await page
-    .getByRole("textbox", { name: "Search actions", exact: true })
+    .getByRole("menuitem", { name: "Search commands", exact: true })
+    .click();
+  await page
+    .getByRole("combobox", { name: "Search actions", exact: true })
     .fill("MCP connection");
   await page
-    .getByRole("button", { name: "MCP connection", exact: true })
+    .getByRole("option", { name: "MCP connection", exact: true })
     .click();
   await page
     .getByRole("button", { name: "连接桌面本机 MCP", exact: true })
