@@ -1,3 +1,4 @@
+import {useEffect,useRef} from "react";
 import { X, Folder } from "lucide-react";
 export type WorkspaceFolder = {
   id: string;
@@ -22,6 +23,16 @@ export function folderPath(
 }
 export const fileDate = (value?: string | number) =>
   value ? new Date(value).toLocaleString() : "未知（旧文件未记录）";
+function useFloatingEscape(onClose:()=>void){
+ const overlay=useRef<HTMLDivElement>(null);
+ useEffect(()=>{const handler=(e:KeyboardEvent)=>{
+  if(e.key!=="Escape"||e.repeat||document.querySelector('.web-dialog-backdrop'))return;
+  const layers=document.querySelectorAll('.workspace-dialog-overlay');
+  if(layers[layers.length-1]!==overlay.current)return;
+  e.preventDefault();e.stopImmediatePropagation();onClose();
+ };window.addEventListener('keydown',handler,true);return()=>window.removeEventListener('keydown',handler,true);},[onClose]);
+ return overlay;
+}
 export function FileDetails({
   name,
   size,
@@ -45,14 +56,15 @@ export function FileDetails({
   location: string;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<"basic" | "versions">(initialTab);
+  const overlay=useFloatingEscape(onClose);
+  const versionsOnly=initialTab==="versions";
   return (
-    <div className="workspace-dialog-overlay" onClick={onClose}>
+    <div ref={overlay} className="workspace-dialog-overlay" onClick={onClose}>
       <section
-        className={`workspace-dialog ${versionContent ? "workspace-version-dialog" : ""}`}
+        className={`workspace-dialog ${versionsOnly ? "workspace-version-dialog" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label="文件属性"
+        aria-label={versionsOnly?"文件版本":"文件属性"}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
@@ -62,10 +74,10 @@ export function FileDetails({
         }}
       >
         <header>
-          <h3>文件属性</h3>
+          <h3>{versionsOnly?"文件版本":"文件属性"}</h3>
           <button
             className="workspace-dialog-close"
-            aria-label="关闭属性"
+            aria-label={versionsOnly?"关闭版本":"关闭属性"}
             title="关闭"
             autoFocus
             onClick={onClose}
@@ -73,46 +85,20 @@ export function FileDetails({
             <X size={18} />
           </button>
         </header>
-        {versionContent && (
-          <div
-            className="workspace-property-tabs"
-            role="tablist"
-            aria-label="文件属性分类"
-          >
-            {(
-              [
-                ["basic", "基础"],
-                ["versions", "版本"],
-              ] as const
-            ).map(([id, label]) => (
-              <button
-                key={id}
-                role="tab"
-                aria-selected={tab === id}
-                onClick={() => setTab(id)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-        {tab === "basic" ? (
-          <div role={versionContent ? "tabpanel" : undefined}>
+        {!versionsOnly ? (
+          <div>
             <div className="workspace-file-summary">
               {folder ? (
-                <Folder size={48} />
+                <Folder fill="currentColor" size={48} />
               ) : (
                 <img
-                  src="/baize-white.svg"
+                  src="/baize-design.svg"
                   alt="BaizeFig 文件"
                   width={48}
                   height={48}
                 />
               )}
-              <strong>
-                {name}
-                {folder ? "" : ".baizefig"}
-              </strong>
+              <div className="workspace-file-name"><strong>{name.replace(/\.baizefig$/i,"")}</strong>{!folder&&<span>.baizefig</span>}</div>
             </div>
             <dl>
               {[
@@ -136,7 +122,7 @@ export function FileDetails({
             {children}
           </div>
         ) : (
-          <div role="tabpanel">{versionContent}</div>
+          <div>{versionContent}</div>
         )}
       </section>
     </div>
@@ -156,8 +142,9 @@ export function MoveFileDialog({
   onMove: (id: string | null) => void;
 }) {
   const [target, setTarget] = useState<string | null>(initial);
+  const overlay=useFloatingEscape(onClose);
   return (
-    <div className="workspace-dialog-overlay">
+    <div ref={overlay} className="workspace-dialog-overlay">
       <section
         className="workspace-dialog"
         role="dialog"

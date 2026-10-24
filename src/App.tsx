@@ -3390,7 +3390,8 @@ export default function App() {
       if (
         importInFlight.current ||
         e.defaultPrevented ||
-        document.querySelector(".inspector-popover:popover-open")
+        document.querySelector(".inspector-popover:popover-open") ||
+        document.querySelector(".workspace-dialog-overlay,.web-dialog-backdrop")
       )
         return;
       const el = e.target as HTMLElement;
@@ -3409,6 +3410,7 @@ export default function App() {
         return;
       }
       if (e.key === "Escape") {
+        if(e.repeat)return;
         if (menuAnchor) {
           setMenuAnchor(null);
           return;
@@ -6987,8 +6989,8 @@ export default function App() {
           >
             <div className="modal-heading">
               <div>
-                <span className="eyebrow">BAIZEFIG / 白泽</span>
-                <h2>{t(title)}</h2>
+                {modal!=="files"&&<span className="eyebrow">BAIZEFIG / 白泽</span>}
+                <h2>{modal==="files"?"个人工作区":t(title)}</h2>
               </div>
               <button
                 className="icon-button"
@@ -7552,6 +7554,7 @@ export default function App() {
             )}
             {modal === "files" && (
               <>
+                <div className="personal-workspace-account">{cloudSession?<><span>已登录</span><strong>{cloudSession.user.username}</strong><a href={cloudSession.base+"/console"} target="_blank" rel="noreferrer">控制台</a><button onClick={signOutCloud}>退出</button></>:<button onClick={signInCloud}>登录 LoyoCloud</button>}</div>
                 <div
                   className="workspace-switcher"
                   role="tablist"

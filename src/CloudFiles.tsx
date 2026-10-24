@@ -633,30 +633,7 @@ export function CloudFiles({
               />
             }
           >
-            <details>
-              <summary>分享</summary>
-              <button
-                onClick={() =>
-                  void run(async () => {
-                    const d = await api("/files/" + selected.id + "/share", {});
-                    await webPrompt("只读分享地址", session.base + d.url);
-                  })
-                }
-              >
-                分享
-              </button>
-              <button
-                onClick={() =>
-                  void run(async () => {
-                    await api("/files/" + selected.id + "/share", {
-                      revoke: true,
-                    });
-                  })
-                }
-              >
-                撤销分享
-              </button>
-            </details>
+
           </FileDetails>
         )}
         {moving && (

@@ -42,14 +42,7 @@ export function CloudWorkspace({
       {session ? (
         <>
           <CloudFiles session={session} document={document} onOpen={onOpen} />
-          <div className="workspace-account">
-            <span>{t("Signed in")}</span>
-            <strong>{session.user.username}</strong>
-            <button onClick={onSignOut}>
-              <LogOut size={14} />
-              {t("Sign out of cloud")}
-            </button>
-          </div>
+
         </>
       ) : (
         <>
