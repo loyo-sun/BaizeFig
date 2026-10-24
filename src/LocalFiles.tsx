@@ -1,3 +1,4 @@
+import {webConfirm} from "./WebDialogs";
 import {isCloudBackedDocument} from "./saveDestination";
 import { WorkspaceRow } from "./WorkspaceRow";
 import { FileActions } from "./FileActions";
@@ -181,9 +182,9 @@ export function LocalFiles({
                   <FileActions>
                     <button onClick={() => setDetails(d)}>属性</button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         if (
-                          confirm(
+                          await webConfirm(
                             `删除「${d.name}」？本地文件将直接删除，无法恢复。`,
                           )
                         )

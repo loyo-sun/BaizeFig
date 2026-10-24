@@ -1,3 +1,4 @@
+import {webPrompt,webConfirm} from "./WebDialogs";
 import { WorkspaceRow } from "./WorkspaceRow";
 import { FileActions } from "./FileActions";
 import { FileDetails, MoveFileDialog, folderPath } from "./FileDetails";
@@ -179,7 +180,7 @@ export function CloudFiles({
           <button
             onClick={() =>
               void run(async () => {
-                const name = prompt(t("Folder name"));
+                const name = await webPrompt(t("Folder name"));
                 if (name) {
                   await api("/folders", { name, parentId: parent });
                   await load();
@@ -294,9 +295,9 @@ export function CloudFiles({
                             恢复
                           </button>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (
-                                confirm("彻底删除文件夹及其中内容？无法恢复。")
+                                await webConfirm("彻底删除文件夹及其中内容？无法恢复。")
                               )
                                 void run(async () => {
                                   await api("/folders/" + f.id + "/purge", {});
@@ -322,9 +323,9 @@ export function CloudFiles({
                             移动
                           </button>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (
-                                confirm(
+                                await webConfirm(
                                   `删除文件夹「${f.name}」及其中内容？将进入回收站保留 30 天。`,
                                 )
                               )
@@ -403,8 +404,8 @@ export function CloudFiles({
                           恢复
                         </button>
                         <button
-                          onClick={() => {
-                            if (confirm("彻底删除此文件？此操作无法恢复。"))
+                          onClick={async () => {
+                            if (await webConfirm("彻底删除此文件？此操作无法恢复。"))
                               void run(async () => {
                                 await api("/files/" + f.id + "/purge", {});
                                 await load();
@@ -435,9 +436,9 @@ export function CloudFiles({
                         </button>
                         <button onClick={() => setMoving(f)}>移动</button>
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (
-                              confirm(
+                              await webConfirm(
                                 `删除「${f.name}」？文件将移入回收站，保留 30 天。`,
                               )
                             )
@@ -497,8 +498,8 @@ export function CloudFiles({
                   </button>
                   {v.id !== selected.head_id && (
                     <button
-                      onClick={() => {
-                        if (confirm("删除这个历史版本？"))
+                      onClick={async () => {
+                        if (await webConfirm("删除这个历史版本？"))
                           void run(async () => {
                             await api(
                               "/files/" +
@@ -523,7 +524,7 @@ export function CloudFiles({
                 onClick={() =>
                   void run(async () => {
                     const d = await api("/files/" + selected.id + "/share", {});
-                    prompt("只读分享地址", session.base + d.url);
+                    await webPrompt("只读分享地址", session.base + d.url);
                   })
                 }
               >

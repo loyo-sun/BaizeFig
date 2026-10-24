@@ -1,3 +1,5 @@
+import {WebDialogs} from "./WebDialogs";
+import "./webDialogs.css";
 import "@fontsource-variable/work-sans/wght.css";
 import "@fontsource-variable/inter/wght.css";
 import "@fontsource-variable/inter/wght-italic.css";
@@ -13,6 +15,7 @@ void ensureBundledFonts().finally(() =>
     <React.StrictMode>
       <LanguageProvider>
         <App />
+        <WebDialogs />
       </LanguageProvider>
     </React.StrictMode>,
   ),

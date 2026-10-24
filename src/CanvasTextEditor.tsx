@@ -1,3 +1,4 @@
+import {webPrompt,webAlert} from "./WebDialogs";
 import { fontSettingsStyle, mergeFontSettings } from "./fontSettings";
 import { renderFontFamily } from "./fontFamily";
 import {createPortal} from "react-dom";
@@ -450,8 +451,8 @@ export function CanvasTextEditor({
           <button
             title={t("Text selection color")}
             aria-label={t("Text selection color")}
-            onClick={() => {
-              const color = window.prompt(t("Text selection color"), node.fill);
+            onClick={async () => {
+              const color = await webPrompt(t("Text selection color"), node.fill);
               if (color && /^#[\da-f]{6}$/i.test(color))
                 format({ fill: color });
             }}
@@ -461,8 +462,8 @@ export function CanvasTextEditor({
           <button
             title={t("Create link")}
             aria-label={t("Create link")}
-            onClick={() => {
-              const value = window.prompt(
+            onClick={async () => {
+              const value = await webPrompt(
                 t("Link URL (empty to remove)"),
                 "https://",
               );
@@ -471,7 +472,7 @@ export function CanvasTextEditor({
                 const href = safeTextLink(value);
                 format({ href: href ?? "" });
               } catch (error) {
-                window.alert(t((error as Error).message));
+                await webAlert(t((error as Error).message));
               }
             }}
           >

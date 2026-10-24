@@ -1,3 +1,4 @@
+import {webPrompt} from "./WebDialogs";
 import { InspectorPopover } from "./InspectorPopover";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import { NestedComponentProperties } from "./NestedComponentProperties";
@@ -745,8 +746,8 @@ export function ComponentProperties({
                 </div>
               ))}
               <button
-                onClick={() => {
-                  const axis = window.prompt(t("New variant axis"));
+                onClick={async () => {
+                  const axis = await webPrompt(t("New variant axis"));
                   if (axis && !set.axes[axis])
                     editSet({
                       ...set,

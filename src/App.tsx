@@ -1,3 +1,4 @@
+import {webPrompt} from "./WebDialogs";
 import {figmaClipboardBytes,clipboardPlainText} from "./externalClipboard";
 import { LocalFiles } from "./LocalFiles";
 import { permanentlyDeleteLocalFile } from "./storage";
@@ -2849,8 +2850,8 @@ export default function App() {
     },
     {
       name: "Create link",
-      run: () => {
-        const value = window.prompt(t("Link URL (empty to remove)"), "");
+      run: async () => {
+        const value = await webPrompt(t("Link URL (empty to remove)"), "");
         if (value !== null) {
           try {
             textStyle({ href: safeTextLink(value) ?? "" });
