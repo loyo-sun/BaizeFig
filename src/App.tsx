@@ -57,6 +57,7 @@ import { useCloudSession } from "./useCloudSession";
 import { CloudPanel } from "./CloudPanel";
 import { AgentPanel } from "./AgentPanel";
 import { AIAgentSettings } from "./AIAgentSettings";
+import { useAgentWorkspace } from "./agentWorkspace";
 import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
 import {
@@ -539,6 +540,7 @@ export default function App() {
   const [ai, setAI] = useState<AIConfig>({
     baseUrl: "http://localhost:11434/v1", model: "", key: "", system: "",
   });
+  const agentWorkspace = useAgentWorkspace(doc.id, ai);
   const cloudLogin = useCloudSession(ready);
   const {
     session: cloudSession,
@@ -4409,6 +4411,7 @@ export default function App() {
               pageId={page}
               selected={selected}
               config={ai}
+              workspace={agentWorkspace}
               onOpenSettings={() => openPreferences("ai-agent")}
               canEdit={exclusive.canEdit(doc.id)}
               onApply={(commands, base) => {
@@ -7149,7 +7152,7 @@ export default function App() {
                     description:
                       "Configure the model and design guidelines for your creative assistant.",
                     keywords: "AI agent 模型 智能体 密钥 API 创作 model key assistant",
-                    content: <AIAgentSettings config={ai} onChange={setAI} />,
+                    content: <AIAgentSettings config={ai} onChange={setAI} workspace={agentWorkspace} />,
                   },
                   {
                     id: "mcp",
@@ -7201,8 +7204,7 @@ export default function App() {
                             }}
                             onConnection={() => {
                               setMcpAdvanced(true);
-                              document
-                                .getElementById("mcp-canvas-settings")
+                              (document.getElementById("mcp-canvas-settings") ?? document.getElementById("mcp-cloud-settings"))
                                 ?.scrollIntoView({ behavior: "smooth", block: "start" });
                             }}
                             onLocal={() => {
@@ -7214,13 +7216,12 @@ export default function App() {
                                 setBridgeToken("");
                               }
                               setMcpAdvanced(true);
-                              document
-                                .getElementById("mcp-canvas-settings")
+                              (document.getElementById("mcp-canvas-settings") ?? document.getElementById("mcp-cloud-settings"))
                                 ?.scrollIntoView({ behavior: "smooth", block: "start" });
                             }}
                           />
                         </div>
-                        <details
+                        {smartDeployment === "self" ? <details
                           id="mcp-canvas-settings"
                           className="mcp-advanced"
                           open={mcpAdvanced || oauthApprovals.length > 0}
@@ -7285,7 +7286,13 @@ export default function App() {
                               );
                             }}
                           />
-                        </details>
+                        </details> : <section id="mcp-cloud-settings" className="mcp-cloud-access">
+                          <h4>{t("Cloud canvas permissions")}</h4>
+                          <p>{t("LoyoCloud is the only selected MCP service. Self-hosted configuration is hidden.")}</p>
+                          <label><input type="checkbox" checked={bridgeWrite} onChange={e => { current.current = { ...current.current, bridgeWrite: e.target.checked }; setBridgeWrite(e.target.checked); }} />{t("Allow MCP to modify the currently open document")}</label>
+                          <label><input type="checkbox" checked={bridgeExport} onChange={e => { current.current = { ...current.current, bridgeExport: e.target.checked }; setBridgeExport(e.target.checked); }} />{t("Allow MCP screenshots and SVG export")}</label>
+                          {oauthApprovals.map(approval => <div key={approval.id} className="mcp-cloud-approval"><strong>{approval.clientName}</strong><span>{t("An AI client requests access to this canvas")}</span>{[true, false].map(allowed => <button key={String(allowed)} onClick={() => { if (socket.current?.readyState === WebSocket.OPEN) socket.current.send(JSON.stringify({ type: "oauth_decision", id: approval.id, approved: allowed })); setOauthApprovals(all => all.filter(item => item.id !== approval.id)); }}>{t(allowed ? "Allow" : "Deny")}</button>)}</div>)}
+                        </section>}
                       </div>
                     ),
                   },

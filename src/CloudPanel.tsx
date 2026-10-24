@@ -69,11 +69,13 @@ export function CloudPanel(p: {
               }
               aria-checked={deployment === value}
               tabIndex={deployment === value ? 0 : -1}
+              disabled={p.status !== "Disconnected"}
               onClick={() => p.onDeploymentChange(value)}
               onKeyDown={(e) => {
                 if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key))
                   return;
                 e.preventDefault();
+                if (p.status !== "Disconnected") return;
                 const next =
                   e.key === "Home"
                     ? "cloud"
@@ -97,6 +99,13 @@ export function CloudPanel(p: {
             </button>
           ))}
         </div>
+        <p className="mcp-exclusive-hint">
+          {t(
+            p.status === "Disconnected"
+              ? "Choose one MCP service. Only the selected service can connect to this canvas."
+              : "Disconnect the current MCP service before switching providers.",
+          )}
+        </p>
       </header>
       <div className="cloud-panel-body">
         {deployment === "cloud" ? (
@@ -260,7 +269,7 @@ export function CloudPanel(p: {
             )}
           </div>
         </section>
-        {p.session && (
+        {p.session && deployment === "cloud" && (
           <footer className="cloud-panel-footer">
             <button onClick={p.onSignOut}>
               <LogOut size={14} aria-hidden="true" />

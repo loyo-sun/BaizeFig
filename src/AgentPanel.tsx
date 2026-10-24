@@ -29,6 +29,7 @@ import {
   type AgentTurn,
 } from "./agentModes";
 import type { Command, Document } from "./core";
+import type { AgentWorkspace } from "./agentWorkspace";
 
 const examples: Record<AgentMode, [string, string][]> = {
   auto: [
@@ -94,7 +95,6 @@ const icons = {
   ui: Layers3,
   vector: PenTool,
 };
-type Turn = AgentTurn & { id: number; summary?: string };
 type Proposal = { commands: Command[]; base: string; id: number };
 
 export function AgentPanel(p: {
@@ -102,6 +102,7 @@ export function AgentPanel(p: {
   pageId: string;
   selected: string[];
   config: AIConfig;
+  workspace: AgentWorkspace;
   onOpenSettings: () => void;
   onApply: (commands: Command[], base: string) => void;
   canEdit: boolean;
@@ -111,7 +112,7 @@ export function AgentPanel(p: {
   const [modeOpen, setModeOpen] = useState(false);
   const [scope, setScope] = useState<"page" | "selection">("selection");
   const [draft, setDraft] = useState("");
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const { turns, setTurns, activeAgent, source, location } = p.workspace;
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -120,7 +121,7 @@ export function AgentPanel(p: {
   const log = useRef<HTMLDivElement>(null);
   const sequence = useRef(0);
   const Icon = icons[mode];
-  const ready = !!p.config.model.trim();
+  const ready = source !== null;
   const stale = proposal !== null && proposal.base !== JSON.stringify(p.doc);
   const validSelection = p.selected.filter((id) =>
     p.doc.nodes.some((n) => n.id === id && n.pageId === p.pageId),
@@ -162,22 +163,39 @@ export function AgentPanel(p: {
     if (proposal) discard();
     const request = draft.trim();
     const resolved = resolveAgentMode(mode, request);
-    const id = ++sequence.current;
+    const id =
+      Math.max(sequence.current, ...turns.map((turn) => turn.id), 0) + 1;
+    sequence.current = id;
     const base = JSON.stringify(p.doc);
     const controller = new AbortController();
     abort.current = controller;
     setTurns((all) => [
       ...all,
-      { id, request, mode: resolved, outcome: "pending" },
+      {
+        id,
+        request,
+        mode: resolved,
+        outcome: "pending",
+        source: source ?? "custom",
+        agentName: t(activeAgent.name),
+      },
     ]);
     setDraft("");
     setError("");
+    if (source === "cloud") {
+      finish(
+        id,
+        "discarded",
+        "Cloud preview: this request shares your Agent context. Cloud execution is not connected; no credits were charged and the canvas is unchanged.",
+      );
+      return;
+    }
     setBusy(true);
     try {
       const commands = await generate(
         {
           ...p.config,
-          system: `${p.config.system}\n${agentInstruction(resolved, p.pageId, effectiveScope, validSelection, turns)}`,
+          system: `${activeAgent.system}\n${p.config.system}\n${agentInstruction(resolved, p.pageId, effectiveScope, validSelection, turns)}`,
         },
         request,
         p.doc,
@@ -245,6 +263,22 @@ export function AgentPanel(p: {
     p.doc.pages.find((page) => page.id === p.pageId)?.name ?? p.doc.name;
   return (
     <section className="agent-panel" aria-label={t("Baize assistant")}>
+      <div className="agent-identity">
+        <Sparkles size={14} />
+        <select
+          aria-label={t("Current Agent")}
+          value={activeAgent.id}
+          disabled={busy}
+          onChange={(e) => p.workspace.setActiveId(e.target.value)}
+        >
+          {p.workspace.agents.map((agent) => (
+            <option value={agent.id} key={agent.id}>
+              {t(agent.name)}
+            </option>
+          ))}
+        </select>
+        <span>{t(location === "cloud" ? "Cloud preview" : "Local")}</span>
+      </div>
       <div className="agent-toolbar">
         <div
           className="agent-mode-wrap"
@@ -388,7 +422,7 @@ export function AgentPanel(p: {
                   </span>
                   <div>
                     <strong>
-                      {t("Baize")}
+                      {turn.agentName ?? t("Baize")}
                       <span>{t(agentModes[turn.mode].label)}</span>
                     </strong>
                     <p>
@@ -505,6 +539,14 @@ export function AgentPanel(p: {
         )}
       </div>
       <div className="agent-compose-area">
+        <div className="agent-shared-context-label">
+          <span>
+            {t("Shared context")} · {turns.length}
+          </span>
+          <span>
+            {t(location === "cloud" ? "Cloud preview" : "Local storage")}
+          </span>
+        </div>
         <div className="agent-context">
           <span>
             <MousePointer2 size={12} />
@@ -549,7 +591,11 @@ export function AgentPanel(p: {
               title={t("AI Agent settings")}
             >
               <span className={ready ? "ready" : ""} />
-              {ready ? p.config.model : t("Connect a model")}
+              {source === "cloud"
+                ? t("LoyoCloud · credits (preview)")
+                : source === "custom"
+                  ? `${p.config.model} · Token`
+                  : t("Connect a model")}
               <ChevronDown size={10} />
             </button>
             {busy ? (
@@ -575,9 +621,13 @@ export function AgentPanel(p: {
         <p className="agent-footnote">
           {!p.canEdit
             ? t("Start editing this document before applying AI changes.")
-            : t(
-                "The document is sent to your model. Changes need your review.",
-              )}
+            : source === "cloud"
+              ? t(
+                  "Cloud preview keeps context in this page. No request is sent.",
+                )
+              : t(
+                  "The document is sent to your model. Changes need your review.",
+                )}
         </p>
       </div>
     </section>
