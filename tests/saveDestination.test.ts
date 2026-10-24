@@ -114,3 +114,78 @@ test("existing cloud deployment applies selected folder without deleting previou
     folderId: "folder",
   });
 });
+
+test("web cloud status follows the server result; identical autosaves skip uploads and quota failure remains unsaved", async () => {
+  const { markCloudSnapshotSaved, isCloudSnapshotSaved, readCloudSaveState } =
+    await import("../src/saveDestination");
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => values.get(key) || null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  });
+  vi.stubGlobal("window", { dispatchEvent: vi.fn(), CustomEvent });
+  const session = {
+    base: "https://status.test",
+    token: "token",
+    expiresAt: Date.now() + 60000,
+    user: { id: "status-user", username: "status-user" },
+    mcpUrl: "",
+  };
+  const doc = { ...emptyDocument(), pages: [] };
+  rememberCloudBinding(session, doc.id, "head-1", null);
+  markCloudSnapshotSaved(session, doc);
+  const fetcher = vi.fn();
+  vi.stubGlobal("fetch", fetcher);
+  await saveCloudDocument(session, structuredClone(doc), null, "head-1", {
+    editorId: "editor",
+    lockToken: "lock",
+    saveMode: "autosave",
+  });
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(isCloudSnapshotSaved(session, structuredClone(doc))).toBe(true);
+  const changed = { ...doc, name: "Changed" };
+  let finish!: (response: unknown) => void;
+  fetcher.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const pending = saveCloudDocument(session, changed, null, "head-1", {
+    editorId: "editor",
+    lockToken: "lock",
+    saveMode: "autosave",
+  });
+  expect(readCloudSaveState(session, changed)).toMatchObject({
+    saved: false,
+    saving: true,
+  });
+  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+  finish({
+    ok: false,
+    status: 413,
+    json: async () => ({ error_description: "云空间容量不足" }),
+  });
+  await expect(pending).rejects.toThrow("云空间容量不足");
+  expect(readCloudSaveState(session, changed)).toEqual({
+    saved: false,
+    saving: false,
+    error: "云空间容量不足",
+  });
+  // A local cache write must never clear the cloud failure or turn its status green.
+  values.set("local-recovery", JSON.stringify(changed));
+  expect(readCloudSaveState(session, changed).saved).toBe(false);
+  fetcher.mockResolvedValueOnce({
+    ok: true,
+    json: async () => ({ headId: "head-2", folderApplied: true }),
+  });
+  await saveCloudDocument(session, changed, null, "head-1", {
+    editorId: "editor",
+    lockToken: "lock",
+  });
+  expect(readCloudSaveState(session, changed)).toEqual({
+    saved: true,
+    saving: false,
+    error: "",
+  });
+});

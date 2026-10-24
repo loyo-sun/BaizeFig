@@ -605,6 +605,13 @@ export function CloudFiles({
               <CloudVersions
                 versions={versions}
                 headId={selected.head_id}
+                onDeleteUnnamed={async()=>{
+                  const count=versions.filter(v=>v.id!==selected.head_id&&!v.version_name?.trim()).length;
+                  if(await webConfirm("删除 "+count+" 个未命名历史版本？最新版本和所有已命名版本将保留。"))await run(async()=>{
+                    await api("/files/"+selected.id+"/versions/delete-unnamed",{});
+                    const latest=await api("/files/"+selected.id);setVersions(latest.versions);setSelected(latest.file);await load();
+                  });
+                }}
                 onRename={async (version, name) => {
                   await run(async () => {
                     await api("/files/" + selected.id + "/versions/" + version + "/rename", {name});

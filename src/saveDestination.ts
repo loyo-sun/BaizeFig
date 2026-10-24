@@ -61,17 +61,116 @@ export async function cloudRequest(
     );
   return result;
 }
-const savedCloudSnapshots = new Map<string,Document>();
-export const isCloudSnapshotSaved=(session:CloudSession,doc:Document)=>savedCloudSnapshots.get(session.base+":"+session.user.id+":"+doc.id)===doc;
-const cloudSaveQueue = new Map<string,Promise<unknown>>();
-export function saveCloudDocument(
-  session:CloudSession, doc:Document, folderId:string|null, headId:string|null, edit?:{editorId:string;lockToken:string},
+const savedCloudSnapshots = new Map<string, Document>();
+const savedHeads = new Map<string, string | null>();
+const fingerprints = new WeakMap<Document, string>();
+const cloudProgress = new Map<string, { pending: number; error: string }>();
+export const CLOUD_SAVE_EVENT = "baizefig-cloud-save";
+const cloudKey = (session: CloudSession, id: string) =>
+  session.base + ":" + session.user.id + ":" + id;
+const webClient = () =>
+  typeof window !== "undefined" && !window.baizefigDesktop;
+function fingerprint(doc: Document) {
+  let value = fingerprints.get(doc);
+  if (!value) {
+    value = JSON.stringify(doc);
+    fingerprints.set(doc, value);
+  }
+  return value;
+}
+function announce(key: string) {
+  if (webClient())
+    window.dispatchEvent(
+      new window.CustomEvent(CLOUD_SAVE_EVENT, { detail: { key } }),
+    );
+}
+export function markCloudSnapshotSaved(session: CloudSession, doc: Document) {
+  const key = cloudKey(session, doc.id);
+  savedCloudSnapshots.set(key, doc);
+  savedHeads.set(key, readCloudBinding(session, doc.id)?.headId || null);
+  const progress = cloudProgress.get(key);
+  if (progress) progress.error = "";
+  announce(key);
+}
+export function isCloudSnapshotSaved(session: CloudSession, doc: Document) {
+  const key = cloudKey(session, doc.id),
+    snapshot = savedCloudSnapshots.get(key);
+  if (!webClient()) return snapshot === doc;
+  return (
+    !!snapshot &&
+    savedHeads.get(key) ===
+      (readCloudBinding(session, doc.id)?.headId || null) &&
+    (snapshot === doc || fingerprint(snapshot) === fingerprint(doc))
+  );
+}
+export function readCloudSaveState(session: CloudSession, doc: Document) {
+  const progress = cloudProgress.get(cloudKey(session, doc.id));
+  return {
+    saved: isCloudSnapshotSaved(session, doc),
+    saving: !!progress?.pending,
+    error: progress?.error || "",
+  };
+}
+export function matchesCloudSaveEvent(
+  event: Event,
+  session: CloudSession,
+  id: string,
 ) {
-  const key=session.base+":"+session.user.id+":"+doc.id;
-  const previous=cloudSaveQueue.get(key);
-  const next=(previous||Promise.resolve()).catch(()=>{}).then(async()=>{const result=await saveCloudSnapshot(session,doc,folderId,readCloudBinding(session,doc.id)?.headId||headId,edit);savedCloudSnapshots.set(key,doc);return result;});
-  cloudSaveQueue.set(key,next);
-  void next.finally(()=>{if(cloudSaveQueue.get(key)===next)cloudSaveQueue.delete(key);}).catch(()=>{});
+  return (event as CustomEvent).detail?.key === cloudKey(session, id);
+}
+const cloudSaveQueue = new Map<string, Promise<unknown>>();
+export type CloudEdit = {
+  editorId: string;
+  lockToken: string;
+  saveMode?: "autosave";
+};
+export function saveCloudDocument(
+  session: CloudSession,
+  doc: Document,
+  folderId: string | null,
+  headId: string | null,
+  edit?: CloudEdit,
+) {
+  const key = cloudKey(session, doc.id),
+    previous = cloudSaveQueue.get(key);
+  const progress = cloudProgress.get(key) || { pending: 0, error: "" };
+  cloudProgress.set(key, progress);
+  progress.pending++;
+  announce(key);
+  const next = (previous || Promise.resolve())
+    .catch(() => {})
+    .then(async () => {
+      if (
+        webClient() &&
+        edit?.saveMode === "autosave" &&
+        isCloudSnapshotSaved(session, doc) &&
+        readCloudBinding(session, doc.id)?.folderId === folderId
+      )
+        return {
+          headId: readCloudBinding(session, doc.id)!.headId,
+          folderApplied: true,
+          unchanged: true,
+        };
+      const result = await saveCloudSnapshot(
+        session,
+        doc,
+        folderId,
+        readCloudBinding(session, doc.id)?.headId || headId,
+        edit,
+      );
+      markCloudSnapshotSaved(session, doc);
+      return result;
+    })
+    .catch((error) => {
+      progress.error = (error as Error).message;
+      throw error;
+    })
+    .finally(() => {
+      progress.pending--;
+      if (cloudSaveQueue.get(key) === next) cloudSaveQueue.delete(key);
+      announce(key);
+    });
+  cloudSaveQueue.set(key, next);
   return next;
 }
 async function saveCloudSnapshot(
@@ -79,7 +178,7 @@ async function saveCloudSnapshot(
   doc: Document,
   folderId: string | null,
   headId: string | null,
-  edit?: {editorId:string;lockToken:string},
+  edit?: CloudEdit,
 ) {
   const preview = await Promise.all(
     doc.pages.map(async (page) => {
@@ -126,13 +225,15 @@ async function saveCloudSnapshot(
 /** Cloud-linked browser copies are recovery caches, not local workspace files. */
 export function isCloudBackedDocument(id: string): boolean {
   try {
-    for (let i=0;i<localStorage.length;i++) {
-      const key=localStorage.key(i);
-      if(key?.startsWith('baizefig.cloud.file.') && key.endsWith('.'+id)) {
-        const binding=JSON.parse(localStorage.getItem(key)||'null');
-        if(binding?.headId)return true;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith("baizefig.cloud.file.") && key.endsWith("." + id)) {
+        const binding = JSON.parse(localStorage.getItem(key) || "null");
+        if (binding?.headId) return true;
       }
     }
-  } catch { /* Keep local files visible if browser settings cannot be read. */ }
+  } catch {
+    /* Keep local files visible if browser settings cannot be read. */
+  }
   return false;
 }

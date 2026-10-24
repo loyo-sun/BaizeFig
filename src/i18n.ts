@@ -5,6 +5,10 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Finish editing": "结束编辑",
+  "Read only": "只读",
+  "Modified": "已修改",
+  "Saved": "已保存",
   "Console": "控制台",
   "Sign out": "退出",
   "Unable to remember the save location. Check browser storage permissions.": "无法保存默认位置，请检查浏览器存储权限",

@@ -1,3 +1,6 @@
+import { WebFileStatus } from "./WebFileStatus";
+import { CloudVersionHistory } from "./CloudVersionHistory";
+import { useCloudSaveState } from "./useCloudSaveState";
 import { useExclusiveEdit } from "./useExclusiveEdit";
 import {webPrompt} from "./WebDialogs";
 import {figmaClipboardBytes,clipboardPlainText} from "./externalClipboard";
@@ -17,6 +20,7 @@ import {
   rememberCloudBinding,
   isCloudBackedDocument,
   isCloudSnapshotSaved,
+  markCloudSnapshotSaved,
   cloudRequest,
   saveCloudDocument,
   type SaveDestination,
@@ -714,19 +718,24 @@ export default function App() {
   };
   const editSnapshots=useRef(new Map<string,Document>());editSnapshots.current.set(doc.id,doc);
   const exclusive = useExclusiveEdit(cloudSession,doc.id,mcp.current.editorId,(latest)=>{
-    validateDocument(latest);history.current=new History();current.current.doc=latest;setDoc(latest,true);setPage(latest.pages[0].id);setSelected([]);
+    validateDocument(latest);if(!window.baizefigDesktop&&cloudSession)markCloudSnapshotSaved(cloudSession,removeDesignTokens(latest));history.current=new History();current.current.doc=latest;setDoc(latest,true);setPage(latest.pages[0].id);setSelected([]);
   },async(s,id,token)=>{
     const snapshot=editSnapshots.current.get(id);if(!snapshot||isCloudSnapshotSaved(s,snapshot))return;
     const binding=readCloudBinding(s,id);
     return saveCloudDocument(s,snapshot,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:token});
   });
   const exclusiveRef=useRef(exclusive);exclusiveRef.current=exclusive;
+  const webEditor=!window.baizefigDesktop;
+  const cloudBacked=isCloudBackedDocument(doc.id);
+  const cloudSaveState=useCloudSaveState(cloudSession,doc);
+  const cloudSaveError=webEditor&&cloudBacked?cloudSaveState.error:"";
+  const displayedSaveError=cloudSaveError||persistentSaveError;
   useEffect(()=>{
-    if(!cloudSession || !isCloudBackedDocument(doc.id) || !exclusive.editing)return;
+    if(!cloudSession || !isCloudBackedDocument(doc.id) || !exclusive.editing || (webEditor&&isCloudSnapshotSaved(cloudSession,doc)))return;
     const timer=setTimeout(()=>{
       const l=exclusiveRef.current.lease.current;if(!l||l.kind!=="human"||l.ending)return;
       const binding=readCloudBinding(cloudSession,doc.id);
-      void saveCloudDocument(cloudSession,doc,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:l.token}).catch(e=>setPersistentSaveError(e.message));
+      void saveCloudDocument(cloudSession,doc,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:l.token,...(webEditor?{saveMode:"autosave" as const}:{})}).catch(e=>{if(!webEditor)setPersistentSaveError(e.message);});
     },800);
     return()=>clearTimeout(timer);
   },[doc,cloudSession?.token,exclusive.editing]);
@@ -1177,6 +1186,7 @@ export default function App() {
         if(!await save(current.current.doc))throw Error('无法保存当前文件');
         if(!await save(result.content))throw Error('无法缓存云端文件');
         rememberCloudBinding(cloudSession,result.file.id,result.file.head_id,result.file.folder_id);
+        if(!window.baizefigDesktop)markCloudSnapshotSaved(cloudSession,removeDesignTokens(result.content));
         committedDocument.current=result.content;current.current.doc=result.content;history.current=new History();setDoc(result.content,true);setPage(result.content.pages[0].id);setSelected([]);setCollapsed(new Set());setModal(null);
         const url=new URL(window.location.href);url.searchParams.delete('cloudFile');window.history.replaceState(null,'',url);
       }catch(error){notify((error as Error).message);}
@@ -1241,6 +1251,11 @@ export default function App() {
   const requestSave = () => {
     if (destinationSaving.current || savePrompt) return;
     setDestinationError("");
+    if(webEditor&&cloudBacked) {
+      if(!cloudSession){notify("请登录乐悦云后重试云端保存");return;}
+      const binding=readCloudBinding(cloudSession,doc.id);
+      void saveToDestination("cloud",false,binding?.folderId||null);return;
+    }
     if (!cloudSession || saveDestination === "local") {
       void saveToDestination("local");
       return;
@@ -4326,17 +4341,17 @@ export default function App() {
           onClose={() => setShowPerformance(false)}
         />
       )}
-      {persistentSaveError && (
+      {displayedSaveError && (
         <aside className="save-recovery" role="alert">
           <strong>{t("Your latest work is not saved")}</strong>
-          <p>{t(persistentSaveError)}</p>
+          <p>{t(displayedSaveError)}</p>
           <p>
             {t(
               "Keep this tab open until you save a backup or a separate copy.",
             )}
           </p>
           <div className="find-buttons">
-            <button onClick={() => void persistCurrent(doc)}>
+            <button onClick={() => {if(cloudSaveError)requestSave();else void persistCurrent(doc);}}>
               {t("Retry save")}
             </button>
             <button onClick={localExport}>{t("Export editable backup")}</button>
@@ -4363,7 +4378,7 @@ export default function App() {
           aria-hidden={hiddenUI && hoverSidebar !== "left"}
           inert={hiddenUI && hoverSidebar !== "left"}
         >
-          <div className="file-panel-header">
+          <div className={"file-panel-header"+(webEditor?" web-file-header":"")}>
             <div className="file-title-row">
               <button
                 className="workspace-brand"
@@ -4384,7 +4399,7 @@ export default function App() {
                 value={doc.name}
                 onChange={(e) => setDoc({ ...doc, name: e.target.value })}
               />
-              <span
+              {!webEditor&&<span
                 className="file-save-indicator"
                 title={t(saved)}
                 aria-label={t(saved)}
@@ -4397,7 +4412,7 @@ export default function App() {
                         ? "#d44"
                         : "#e6b343",
                 }}
-              />
+              />}
               <button
                 className="tiny sidebar-toggle"
                 aria-label={t(
@@ -4413,12 +4428,19 @@ export default function App() {
               </button>
             </div>
             <div className="file-subtitle">
-              <span>{t("Drafts")}</span>
-              <span className="local-plan">{t("Local")}</span>
-              <span className="save-state">{t(saved)}</span>
+              {webEditor?<WebFileStatus
+                cloud={cloudBacked}
+                readOnly={cloudBacked&&!exclusive.canEdit(doc.id)&&!exclusive.lease.current?.ending}
+                modified={cloudBacked?(!cloudSaveState.saved||cloudSaveState.saving||!!cloudSaveError):saved!=="Saved locally"}
+                busy={exclusive.busy||destinationBusy||cloudSaveState.saving}
+                title={cloudSaveError||exclusive.status}
+                onEdit={()=>void exclusive.begin().catch(e=>notify(e.message))}
+                onSave={requestSave}
+                onFinish={()=>void exclusive.end().catch(e=>notify(e.message))}
+              />:<><span>{t("Drafts")}</span><span className="local-plan">{t("Local")}</span><span className="save-state">{t(saved)}</span></>}
             </div>
           </div>
-              {isCloudBackedDocument(doc.id)&&<div className="exclusive-edit-controls" role="status"><span>{exclusive.status}</span><button disabled={exclusive.busy} onClick={()=>void(async()=>{
+              {!webEditor&&isCloudBackedDocument(doc.id)&&<div className="exclusive-edit-controls" role="status"><span>{exclusive.status}</span><button disabled={exclusive.busy} onClick={()=>void(async()=>{
                 try {
                   if(exclusive.editing) {
                     await exclusive.end();
@@ -7091,7 +7113,7 @@ export default function App() {
                 }}
               />
             )}
-            {modal === "versions" && (
+            {modal === "versions" && (webEditor&&cloudBacked ? (cloudSession?<CloudVersionHistory session={cloudSession} documentId={doc.id}/>:<p>{t("Sign in to LoyoCloud")}</p>):
               <VersionHistory
                 doc={doc}
                 onRestore={(next) => {
@@ -7658,6 +7680,7 @@ export default function App() {
                       validateDocument(next);
                       if (!(await save(next)))
                         throw Error("Unable to save the cloud file locally");
+                      if(!window.baizefigDesktop&&cloudSession)markCloudSnapshotSaved(cloudSession,removeDesignTokens(next));
                       committedDocument.current = next;
                       current.current.doc = next;
                       history.current = new History();
