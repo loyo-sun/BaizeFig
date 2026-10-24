@@ -309,7 +309,7 @@ export function CloudFiles({
           entry.folder ? setFolderMoving(f as Folder) : setMoving(f as File),
       },
       ...(!entry.folder
-        ? [{ label: "版本", run: () => properties(entry, "versions") }]
+        ? [{ label: "历史版本", run: () => properties(entry, "versions") }]
         : []),
       { label: "属性", run: () => properties(entry) },
       {
@@ -605,6 +605,12 @@ export function CloudFiles({
               <CloudVersions
                 versions={versions}
                 headId={selected.head_id}
+                onRename={async (version, name) => {
+                  await run(async () => {
+                    await api("/files/" + selected.id + "/versions/" + version + "/rename", {name});
+                    setVersions((await api("/files/" + selected.id)).versions);
+                  });
+                }}
                 onRestore={async (version) => {
                   if (
                     !(await webConfirm(

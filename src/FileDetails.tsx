@@ -64,7 +64,7 @@ export function FileDetails({
         className={`workspace-dialog ${versionsOnly ? "workspace-version-dialog" : ""}`}
         role="dialog"
         aria-modal="true"
-        aria-label={versionsOnly?"文件版本":"文件属性"}
+        aria-label={versionsOnly?"历史版本":"文件属性"}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
@@ -74,7 +74,7 @@ export function FileDetails({
         }}
       >
         <header>
-          <h3>{versionsOnly?"文件版本":"文件属性"}</h3>
+          <h3>{versionsOnly?"历史版本":"文件属性"}</h3>
           <button
             className="workspace-dialog-close"
             aria-label={versionsOnly?"关闭版本":"关闭属性"}

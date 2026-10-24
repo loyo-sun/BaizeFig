@@ -252,3 +252,5 @@
 
 .drive-context-menu button.drive-menu-danger{color:#dc3545!important}
 .drive-context-menu button.drive-menu-danger:hover{background:rgb(220 53 69 / .08)!important}
+
+.version-named-filter{display:flex;align-items:center;gap:8px;margin:16px 0}.version-named-filter input{width:auto!important;margin:0}.version-name{border:0!important;background:transparent!important;text-align:left;cursor:pointer;color:inherit;padding:4px!important}.version-name:hover{text-decoration:underline}

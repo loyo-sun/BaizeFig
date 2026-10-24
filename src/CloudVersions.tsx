@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { webPrompt } from "./WebDialogs";
 import { UserRound, RotateCcw, Trash2 } from "lucide-react";
 export type CloudVersion = {
   id: string;
@@ -12,14 +14,18 @@ export function CloudVersions({
   headId,
   onRestore,
   onDelete,
+  onRename,
 }: {
   versions: CloudVersion[];
   headId: string | null;
   onRestore: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onRename: (id: string, name: string) => Promise<void>;
 }) {
+  const [namedOnly, setNamedOnly] = useState(false);
+  const visibleVersions = namedOnly ? versions.filter(v => v.version_name?.trim()) : versions;
   const groups = new Map<string, CloudVersion[]>();
-  for (const version of versions) {
+  for (const version of visibleVersions) {
     const day = new Date(version.created_at).toLocaleDateString("zh-CN", {
       timeZone: "Asia/Shanghai",
       year: "numeric",
@@ -34,6 +40,7 @@ export function CloudVersions({
       <p className="muted">
         恢复后在原文件夹创建新文件，原文件与历史版本保持不变。
       </p>
+      <label className="version-named-filter"><input type="checkbox" checked={namedOnly} onChange={e => setNamedOnly(e.target.checked)} />只显示已命名版本</label>
       <table>
         <thead>
           <tr>
@@ -53,11 +60,12 @@ export function CloudVersions({
               headId={headId}
               onRestore={onRestore}
               onDelete={onDelete}
+              onRename={onRename}
             />
           ))}
         </tbody>
       </table>
-      {!versions.length && <p>暂无版本记录</p>}
+      {!visibleVersions.length && <p>{namedOnly ? "暂无已命名版本" : "暂无版本记录"}</p>}
     </div>
   );
 }
@@ -67,12 +75,14 @@ function VersionDay({
   headId,
   onRestore,
   onDelete,
+  onRename,
 }: {
   day: string;
   items: CloudVersion[];
   headId: string | null;
   onRestore: (id: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onRename: (id: string, name: string) => Promise<void>;
 }) {
   return (
     <>
@@ -82,8 +92,10 @@ function VersionDay({
       {items.map((v) => (
         <tr key={v.id}>
           <td>
-            {new Date(v.created_at).toLocaleTimeString("zh-CN", {
+            {new Date(v.created_at).toLocaleString("zh-CN", {
               timeZone: "Asia/Shanghai",
+              year: "numeric", month: "2-digit", day: "2-digit",
+              second: "2-digit", hour12: false,
               hour: "2-digit",
               minute: "2-digit",
             })}
@@ -102,7 +114,10 @@ function VersionDay({
                 : (Number(v.size_bytes) / 1024).toFixed(1) + " KB"}
           </td>
           <td>{v.source || "未记录"}</td>
-          <td>{v.id === headId ? "最新版本" : v.version_name || "历史版本"}</td>
+          <td><button className="version-name" title="点击编辑版本名称" onClick={async () => {
+            const name = await webPrompt("编辑版本名称", v.version_name || "");
+            if (name !== null) await onRename(v.id, name);
+          }}>{v.version_name || (v.id === headId ? "最新版本" : "历史版本")}</button></td>
           <td>
             <div className="workspace-file-actions">
               <button onClick={() => void onRestore(v.id)}>
