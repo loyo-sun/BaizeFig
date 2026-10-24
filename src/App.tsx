@@ -55,6 +55,7 @@ import {
 } from "./cloud";
 import { useCloudSession } from "./useCloudSession";
 import { CloudPanel } from "./CloudPanel";
+import { AgentPanel } from "./AgentPanel";
 import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
 import {
@@ -4359,7 +4360,7 @@ export default function App() {
       )}
       <div className="workspace">
         <aside
-          className="left-panel"
+          className={`left-panel ${leftTab === "smart" ? "left-panel-agent" : ""}`}
           aria-hidden={hiddenUI && hoverSidebar !== "left"}
           inert={hiddenUI && hoverSidebar !== "left"}
         >
@@ -4448,57 +4449,80 @@ export default function App() {
               </button>
             ))}
           </div>
-          {leftTab === "smart" ? (
-            <CloudPanel
-              deployment={smartDeployment}
-              onDeploymentChange={setSmartDeployment}
-              status={bridgeStatus}
-              session={cloudSession}
-              serviceAddress={bridgeAddress}
-              signingIn={cloudSigningIn || cloudLogin.restoring}
-              restoring={cloudLogin.restoring}
-              restoreError={cloudLogin.restoreError}
-              onRetryRestore={cloudLogin.retryRestore}
-              durationDays={cloudLogin.durationDays}
-              onDurationChange={cloudLogin.setDurationDays}
-              cloudActive={cloudActive}
-              onSignIn={signInCloud}
-              onSignOut={signOutCloud}
-              onCloudConnect={() => {
-                if (!cloudSession) return;
-                if (Date.now() >= cloudSession.expiresAt) {
-                  cloudLogin.forget();
-                  notify("Cloud session expired. Please sign in again.");
-                  return;
-                }
-                if (cloudActive) connectBridge(false, cloudSession);
-                else setCloudActive(true);
+          <div className="agent-host" hidden={leftTab !== "smart"}>
+            <AgentPanel
+              key={doc.id}
+              doc={doc}
+              pageId={page}
+              selected={selected}
+              config={ai}
+              onConfig={setAI}
+              canEdit={exclusive.canEdit(doc.id)}
+              onApply={(commands, base) => {
+                const latest = latestDocument.current;
+                if (!editGuard.current(latest.id))
+                  throw Error("Start editing this document before applying AI changes.");
+                if (JSON.stringify(latest) !== base)
+                  throw Error("The canvas has changed. Discard this proposal and generate again.");
+                let next = latest;
+                for (const command of commands) next = execute(next, command).doc;
+                change(next);
+                notify("AI changes applied · Undo available");
               }}
-              onCloudDisconnect={() => {
-                setCloudActive(false);
-                disconnectBridge();
-              }}
-              onCopy={(address) => {
-                void navigator.clipboard
-                  .writeText(address)
-                  .then(() => notify("Copied"))
-                  .catch(() =>
-                    notify("Copy failed. Select and copy the displayed text."),
-                  );
-              }}
-              onConnection={() => setModal("bridge")}
-              onLocal={() => {
-                disconnectBridge();
-                setCloudActive(false);
-                if (bridgeRemote) {
-                  setBridgeRemote(false);
-                  setBridgeAddress("http://127.0.0.1:4319/mcp");
-                  setBridgeToken("");
-                }
-                setModal("bridge");
-              }}
+              connections={
+                <CloudPanel
+                  deployment={smartDeployment}
+                  onDeploymentChange={setSmartDeployment}
+                  status={bridgeStatus}
+                  session={cloudSession}
+                  serviceAddress={bridgeAddress}
+                  signingIn={cloudSigningIn || cloudLogin.restoring}
+                  restoring={cloudLogin.restoring}
+                  restoreError={cloudLogin.restoreError}
+                  onRetryRestore={cloudLogin.retryRestore}
+                  durationDays={cloudLogin.durationDays}
+                  onDurationChange={cloudLogin.setDurationDays}
+                  cloudActive={cloudActive}
+                  onSignIn={signInCloud}
+                  onSignOut={signOutCloud}
+                  onCloudConnect={() => {
+                    if (!cloudSession) return;
+                    if (Date.now() >= cloudSession.expiresAt) {
+                      cloudLogin.forget();
+                      notify("Cloud session expired. Please sign in again.");
+                      return;
+                    }
+                    if (cloudActive) connectBridge(false, cloudSession);
+                    else setCloudActive(true);
+                  }}
+                  onCloudDisconnect={() => {
+                    setCloudActive(false);
+                    disconnectBridge();
+                  }}
+                  onCopy={(address) => {
+                    void navigator.clipboard
+                      .writeText(address)
+                      .then(() => notify("Copied"))
+                      .catch(() =>
+                        notify("Copy failed. Select and copy the displayed text."),
+                      );
+                  }}
+                  onConnection={() => setModal("bridge")}
+                  onLocal={() => {
+                    disconnectBridge();
+                    setCloudActive(false);
+                    if (bridgeRemote) {
+                      setBridgeRemote(false);
+                      setBridgeAddress("http://127.0.0.1:4319/mcp");
+                      setBridgeToken("");
+                    }
+                    setModal("bridge");
+                  }}
+                />
+              }
             />
-          ) : leftTab === "assets" ? (
+          </div>
+          {leftTab === "smart" ? null : leftTab === "assets" ? (
             <LocalAssets
               key={doc.id}
               doc={doc}
