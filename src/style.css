@@ -3651,3 +3651,34 @@ html[lang="zh-CN"] .layer-title-input {
 
 .agent-error { white-space: pre-wrap; }
 .agent-endpoint { display: block; margin-top: 7px; overflow-wrap: anywhere; font-size: 9px; line-height: 1.6; }
+
+/* Connection settings live in Preferences; the canvas keeps a status entry. */
+.agent-toolbar { padding-bottom: 12px; border-bottom: 1px solid #edf0ed; }
+.agent-toolbar-actions { display: flex; align-items: center; gap: 3px; }
+.mcp-status-entry { position: fixed; z-index: 65; right: 14px; bottom: 10px; gap: 7px; border: 1px solid var(--ui-border, #e5e5e5); background: var(--ui-surface, #fff); color: var(--ui-muted, #8a928d); padding: 6px 9px; font-size: 10px; border-radius: 6px; box-shadow: 0 2px 6px #00000005; }
+.mcp-status-entry:hover { background: var(--ui-field, #f3f5f0); }
+.mcp-status-entry > span:nth-child(2) { color: var(--ui-ink, #4a554d); font-weight: 550; }
+.mcp-status-dot { width: 5px; height: 5px; border-radius: 50%; background: #adb3aa; }
+.mcp-status-dot.connected { background: #45967a; }
+.mcp-status-dot.pending { background: #d9ab56; }
+.ai-agent-settings { max-width: 640px; }
+.ai-agent-settings-heading { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 20px; }
+.ai-agent-settings-heading span { color: var(--ui-muted); font-weight: 400; font-size: 10px; }
+.ai-agent-settings label { display: grid; gap: 9px; font-size: 12px; margin-top: 19px; color: var(--ui-ink); }
+.ai-agent-settings input, .ai-agent-settings textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--ui-border); border-radius: 7px; background: var(--ui-field); color: var(--ui-ink); font-size: 12px; line-height: 1.6; }
+.ai-agent-settings textarea { resize: vertical; min-height: 96px; }
+.ai-agent-settings-help { font-size: 11px; line-height: 1.8; color: var(--ui-muted); margin: 9px 0 0; }
+.ai-agent-settings-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.ai-agent-endpoint { margin-top: 19px; padding: 12px 14px; background: color-mix(in srgb, var(--ui-accent) 5%, var(--ui-surface)); border: 1px solid color-mix(in srgb, var(--ui-accent) 15%, var(--ui-border)); border-radius: 7px; }
+.ai-agent-endpoint span { font-size: 10px; color: var(--ui-muted); display: block; margin-bottom: 6px; }
+.ai-agent-endpoint code { font-size: 11px; overflow-wrap: anywhere; color: var(--ui-accent); }
+.ai-agent-settings-note { margin-top: 25px; padding-top: 18px; border-top: 1px solid var(--ui-border); font-size: 11px; line-height: 1.8; color: var(--ui-muted); }
+.mcp-preferences .smart-panel { overflow: visible; scrollbar-gutter: auto; background: none; }
+.mcp-preferences .smart-heading, .mcp-preferences .cloud-panel-header > p { display: none; }
+.mcp-preferences .smart-panel .cloud-panel-header { padding: 0; }
+.mcp-preferences .smart-panel .cloud-panel-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 18px 0; }
+.mcp-preferences .smart-panel .cloud-panel-footer { grid-column: 1 / -1; }
+.mcp-advanced { border-top: 1px solid var(--ui-border); margin-top: 8px; padding-top: 16px; scroll-margin-top: 15px; }
+.mcp-advanced > summary { cursor: pointer; font-size: 12px; font-weight: 550; padding: 4px 0 14px; color: var(--ui-ink); }
+.mcp-preferences .mcp-wizard input { max-width: 100%; }
+@media (max-width: 760px) { .mcp-preferences .smart-panel .cloud-panel-body, .ai-agent-settings-fields { grid-template-columns: 1fr; } }

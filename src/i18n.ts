@@ -5,6 +5,15 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "AI Agent settings": "AI Agent 设置",
+  "Configure the model and design guidelines for your creative assistant.": "设置创作助手使用的模型、连接方式与设计规范。",
+  "Connect external AI tools and manage canvas access.": "连接外部 AI 工具，管理当前画布的访问权限。",
+  "Model connection": "模型连接",
+  "Choose a design mode and describe your request in the Create tab. Model settings apply to all design modes.": "在「创作」中选择设计模式并描述需求。这里的模型设置对所有设计模式生效。",
+  "Canvas connection settings": "画布连接设置",
+  "MCP connection status: {status}": "MCP 连接状态：{status}",
+  "MCP settings": "MCP 设置",
+
   "The service returned a web page instead of an API response. Check the API base URL; compatible services usually use /v1.": "服务返回了网页，而不是模型接口响应。请检查 API 基础地址，兼容服务通常需要以 /v1 结尾。",
   "The service did not return valid JSON. Check the API address and whether it points to a web page.": "服务未返回有效的 JSON，请检查 API 地址是否误填为网页地址。",
   "The model did not return a valid design proposal. Try a more specific design request.": "模型未返回有效的设计提案，请尝试更具体的设计需求。",

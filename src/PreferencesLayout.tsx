@@ -2,7 +2,14 @@ import { useState, type ReactNode } from "react";
 import { Search } from "lucide-react";
 import { useI18n } from "./LanguageContext";
 export type PreferencesSection =
-  "general" | "appearance" | "canvas" | "snapping" | "keyboard" | "fonts";
+  | "general"
+  | "appearance"
+  | "canvas"
+  | "snapping"
+  | "keyboard"
+  | "fonts"
+  | "ai-agent"
+  | "mcp";
 export function PreferencesLayout({
   sections,
   active,
