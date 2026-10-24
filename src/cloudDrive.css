@@ -258,3 +258,11 @@
 .cloud-versions table{table-layout:fixed;width:100%}.cloud-versions th:nth-child(1){width:26%}.cloud-versions th:nth-child(2){width:16%}.cloud-versions th:nth-child(3){width:12%}.cloud-versions th:nth-child(4){width:13%}.cloud-versions th:nth-child(5){width:17%}.cloud-versions th:nth-child(6){width:16%}.cloud-versions td{overflow-wrap:anywhere}.cloud-versions .version-name,.cloud-versions input[data-version-edit]{box-sizing:border-box;width:100%;min-width:0;max-width:100%;height:32px;margin:0;padding:4px!important;font:inherit}.cloud-versions .version-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .cloud-versions input.version-name-input{display:block!important;text-align:left!important;justify-content:flex-start!important;border:1px solid transparent!important;border-radius:4px;background:transparent!important;color:var(--ui-ink)!important;padding:4px 0!important;outline:none;box-shadow:none!important}.cloud-versions input.version-name-input:focus{border-color:var(--ui-accent)!important;background:var(--ui-field)!important}.cloud-versions td:nth-child(5){text-align:left!important}
+
+/* History cells share their headers' content edge, including nested controls. */
+.workspace-version-dialog .cloud-versions th,
+.workspace-version-dialog .cloud-versions td{text-align:left!important;padding-left:10px!important;padding-right:10px!important}
+.workspace-version-dialog .cloud-versions td:nth-child(5) input,
+.workspace-version-dialog .cloud-versions td:nth-child(5) button{display:block!important;box-sizing:border-box!important;width:100%!important;margin:0!important;padding-left:0!important;padding-right:0!important;text-align:left!important;text-indent:0!important;justify-content:flex-start!important;transform:none!important}
+.workspace-version-dialog .cloud-versions .workspace-file-actions{justify-content:flex-start!important;margin:0!important;gap:10px!important}
+.workspace-version-dialog .cloud-versions .workspace-file-actions button{justify-content:flex-start!important;margin:0!important;padding-left:0!important;padding-right:0!important}
