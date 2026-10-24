@@ -15,7 +15,12 @@ import {
   Cable,
 } from "lucide-react";
 import { useI18n } from "./LanguageContext";
-import { generate, type AIConfig } from "./ai";
+import {
+  generate,
+  formatAIError,
+  chatCompletionsUrl,
+  type AIConfig,
+} from "./ai";
 import {
   agentModes,
   agentInstruction,
@@ -120,6 +125,13 @@ export function AgentPanel(p: {
   const sequence = useRef(0);
   const Icon = icons[mode];
   const ready = !!p.config.model.trim();
+  let requestUrl = "";
+  try {
+    const url = new URL(chatCompletionsUrl(p.config.baseUrl));
+    requestUrl = url.origin + url.pathname;
+  } catch {
+    /* Shown when the user submits. */
+  }
   const stale = proposal !== null && proposal.base !== JSON.stringify(p.doc);
   const validSelection = p.selected.filter((id) =>
     p.doc.nodes.some((n) => n.id === id && n.pageId === p.pageId),
@@ -220,7 +232,7 @@ export function AgentPanel(p: {
           ? "Generation stopped. Your canvas is unchanged."
           : "The proposal could not be generated.",
       );
-      if (!cancelled) setError(t((e as Error).message));
+      if (!cancelled) setError(formatAIError(e, t));
     } finally {
       setBusy(false);
     }
@@ -237,7 +249,7 @@ export function AgentPanel(p: {
       setProposal(null);
       setError("");
     } catch (e) {
-      setError(t((e as Error).message));
+      setError(formatAIError(e, t));
     }
   }
   const pageName =
@@ -385,6 +397,11 @@ export function AgentPanel(p: {
               </label>
               <p>
                 {t("Use a compatible model service. Your key stays in memory.")}
+                {requestUrl && (
+                  <span className="agent-endpoint">
+                    {t("Request endpoint")}: {requestUrl}
+                  </span>
+                )}
               </p>
               <button
                 className="agent-settings-done"

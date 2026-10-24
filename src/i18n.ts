@@ -5,6 +5,14 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Request endpoint": "实际请求地址",
+  "The API route or model was not found. Check the API address and the service's exact model name.": "接口路径或模型不存在，请核对 API 地址，以及该服务支持的完整模型名。",
+  "The service rejected the request. Check its supported model and parameters.": "服务拒绝了请求，请核对支持的模型及参数。",
+  "Authentication failed. Check the API key for this service.": "身份验证失败，请检查该服务的 API 密钥。",
+  "This key does not have permission to use the requested model.": "此密钥没有调用该模型的权限。",
+  "The service is rate limited or has insufficient quota. Check your account and try again later.": "服务请求过于频繁或额度不足，请检查账户后重试。",
+  "This connection uses Chat Completions. Enter a compatible API base URL instead of a Responses endpoint.": "当前连接使用 Chat Completions，请填写兼容的 API 基础地址，不能填写 Responses 接口地址。",
+
   "Create layers": "新增",
   "Update layers": "修改",
   "Delete layers": "删除",

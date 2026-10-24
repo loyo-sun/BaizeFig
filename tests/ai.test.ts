@@ -110,3 +110,78 @@ describe("AI proposal boundary", () => {
     ).rejects.toThrow("401");
   });
 });
+
+describe("AI endpoint configuration and diagnostics", () => {
+  it("accepts a base URL and a complete endpoint without duplicating the route", async () => {
+    const { chatCompletionsUrl } = await import("../src/ai");
+    expect(chatCompletionsUrl(" https://example.com/v1/ ")).toBe(
+      "https://example.com/v1/chat/completions",
+    );
+    expect(chatCompletionsUrl("https://example.com/v1/chat/completions/")).toBe(
+      "https://example.com/v1/chat/completions",
+    );
+    expect(
+      chatCompletionsUrl("https://example.com/custom/v2?api-version=test"),
+    ).toBe("https://example.com/custom/v2/chat/completions?api-version=test");
+    expect(() =>
+      chatCompletionsUrl("https://example.com/v1/responses"),
+    ).toThrow("Responses");
+  });
+  it("preserves the service's 404 explanation and redacts the configured key", async () => {
+    const { formatAIError } = await import("../src/ai");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          error: { message: "Model unknown. Key: session-key" },
+        }),
+      }),
+    );
+    let caught: unknown;
+    try {
+      await generate(
+        config,
+        "Design",
+        emptyDocument(),
+        [],
+        new AbortController().signal,
+      );
+    } catch (e) {
+      caught = e;
+    }
+    const message = formatAIError(caught, (s) => s);
+    expect(message).toContain("404");
+    expect(message).toContain("API route or model");
+    expect(message).toContain("Model unknown");
+    expect(message).not.toContain(config.key);
+    expect(message).toContain("[redacted]");
+  });
+  it("keeps HTTP diagnostics when the service returns an HTML error", async () => {
+    const { formatAIError } = await import("../src/ai");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => {
+          throw Error("HTML response");
+        },
+      }),
+    );
+    let caught: unknown;
+    try {
+      await generate(
+        config,
+        "Design",
+        emptyDocument(),
+        [],
+        new AbortController().signal,
+      );
+    } catch (e) {
+      caught = e;
+    }
+    expect(formatAIError(caught, (s) => s)).toContain("Authentication failed");
+  });
+});

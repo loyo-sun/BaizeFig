@@ -3648,3 +3648,6 @@ html[lang="zh-CN"] .layer-title-input {
   .agent-composer textarea { min-height: 52px; }
 }
 .agent-change-values { display: block; white-space: pre-wrap; overflow-wrap: anywhere; color: #8c9781; font-size: 10px; line-height: 1.7; margin-top: 4px; }
+
+.agent-error { white-space: pre-wrap; }
+.agent-endpoint { display: block; margin-top: 7px; overflow-wrap: anywhere; font-size: 9px; line-height: 1.6; }

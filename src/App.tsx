@@ -288,7 +288,7 @@ import {
   listTrash,
   type TrashRecord,
 } from "./storage";
-import { generate, type AIConfig } from "./ai";
+import { generate, formatAIError, type AIConfig } from "./ai";
 import { useI18n } from "./LanguageContext";
 import type { Language } from "./i18n";
 
@@ -3676,7 +3676,7 @@ export default function App() {
       );
       setAIResult({ commands, base });
     } catch (e) {
-      notify((e as Error).message);
+      notify(formatAIError(e, t));
     } finally {
       setAIBusy(false);
     }
