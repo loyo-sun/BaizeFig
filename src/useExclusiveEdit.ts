@@ -1,3 +1,8 @@
+import {
+  readEditResume,
+  rememberEditResume,
+  forgetEditResume,
+} from "./cloudEditResume";
 import { isCloudOffline, CLOUD_NETWORK_EVENT } from "./cloudConnectivity";
 import { useEffect, useRef, useState } from "react";
 import type { CloudSession } from "./cloud";
@@ -91,7 +96,11 @@ export function useExclusiveEdit(
         body: JSON.stringify(body(l)),
         keepalive: true,
       },
-    );
+    ).then((response) => {
+      if (response.ok && web && l.kind === "human")
+        forgetEditResume(s, l.documentId, l.token);
+      return response;
+    });
   useEffect(() => {
     let cancelled = false,
       updating = false;
@@ -160,6 +169,16 @@ export function useExclusiveEdit(
               localStorage.removeItem("baizefig.finish-after-sync." + id);
             } catch {}
           }
+          return;
+        }
+        if (
+          web &&
+          !lease.current &&
+          autoPaused.current !== id &&
+          readEditResume(s, id) &&
+          !starting.current
+        ) {
+          await begin("human", undefined, true);
           return;
         }
         const current = lease.current;
@@ -291,6 +310,10 @@ export function useExclusiveEdit(
       else offline();
     };
     const online = () => void update();
+    const show = (event: PageTransitionEvent) => {
+      if (web && event.persisted) void update();
+    };
+    if (web) window.addEventListener("pageshow", show);
     if (web) window.addEventListener(CLOUD_NETWORK_EVENT, network);
     window.addEventListener("pagehide", leave);
     window.addEventListener("offline", offline);
@@ -300,6 +323,7 @@ export function useExclusiveEdit(
       generation.current++;
       clearInterval(timer);
       window.removeEventListener("pagehide", leave);
+      window.removeEventListener("pageshow", show);
       window.removeEventListener("offline", offline);
       window.removeEventListener("online", online);
       window.removeEventListener(CLOUD_NETWORK_EVENT, network);
@@ -334,6 +358,14 @@ export function useExclusiveEdit(
           localStorage.removeItem("baizefig.finish-after-sync." + documentId);
         } catch {}
       return result;
+    } catch (error) {
+      if (
+        web &&
+        [401, 403, 423].includes((error as { status?: number }).status || 0) &&
+        session
+      )
+        forgetEditResume(session, documentId);
+      throw error;
     } finally {
       starting.current = false;
       if (web) setChecking(false);
@@ -379,6 +411,9 @@ export function useExclusiveEdit(
             editorId,
             platform: web ? "web" : "desktop",
             label: web ? "网页版" : "本地版",
+            ...(web && kind === "human"
+              ? { resume: readEditResume(s, id) }
+              : {}),
           });
       acquired = {
         token: result.token,
@@ -388,6 +423,8 @@ export function useExclusiveEdit(
       };
       if (active.current !== id || (web && generation.current !== epoch))
         throw Error("文档已切换，请重新开始编辑");
+      if (web && kind === "human")
+        rememberEditResume(s, id, { editorId, token: acquired.token });
       try {
         let latest = await cloudRequest(s, "/files/" + id);
         if (web) latest = await resolveCloudOpen(s, latest);
