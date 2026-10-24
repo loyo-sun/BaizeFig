@@ -18,7 +18,7 @@ export function chatCompletionsUrl(address: string): string {
     url.password
   )
     throw Error("Invalid API URL");
-  const path = url.pathname.replace(/\/+$/, "");
+  const path = url.pathname.replace(/\/+$/, "") || "/v1";
   if (/\/responses$/.test(path))
     throw Error(
       "This connection uses Chat Completions. Enter a compatible API base URL instead of a Responses endpoint.",
@@ -118,11 +118,31 @@ export async function generate(
     signal,
   });
   if (!response.ok) throw await modelFailure(response, key);
-  const json = await response.json();
-  const raw = json.choices?.[0]?.message?.content;
+  const contentType = response.headers?.get("content-type") ?? "";
+  if (/text\/html/i.test(contentType))
+    throw Error(
+      "The service returned a web page instead of an API response. Check the API base URL; compatible services usually use /v1.",
+    );
+  let json;
+  try {
+    json = await response.json();
+  } catch (error) {
+    if (signal.aborted) throw error;
+    throw Error(
+      "The service did not return valid JSON. Check the API address and whether it points to a web page.",
+    );
+  }
+  const raw = json?.choices?.[0]?.message?.content;
   if (typeof raw !== "string") throw Error("Model returned no content");
-  const parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ""));
-  if (!Array.isArray(parsed.commands) || parsed.commands.length > 100)
+  let parsed;
+  try {
+    parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ""));
+  } catch {
+    throw Error(
+      "The model did not return a valid design proposal. Try a more specific design request.",
+    );
+  }
+  if (!Array.isArray(parsed?.commands) || parsed.commands.length > 100)
     throw Error("Invalid AI command batch");
   let copy = doc;
   for (const command of parsed.commands) {

@@ -396,7 +396,7 @@ export function AgentPanel(p: {
                 />
               </label>
               <p>
-                {t("Use a compatible model service. Your key stays in memory.")}
+                {t("Enter an API base URL, such as https://example.com/v1. A bare domain uses /v1 automatically.")}
                 {requestUrl && (
                   <span className="agent-endpoint">
                     {t("Request endpoint")}: {requestUrl}

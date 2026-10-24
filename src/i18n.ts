@@ -5,6 +5,11 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "The service returned a web page instead of an API response. Check the API base URL; compatible services usually use /v1.": "服务返回了网页，而不是模型接口响应。请检查 API 基础地址，兼容服务通常需要以 /v1 结尾。",
+  "The service did not return valid JSON. Check the API address and whether it points to a web page.": "服务未返回有效的 JSON，请检查 API 地址是否误填为网页地址。",
+  "The model did not return a valid design proposal. Try a more specific design request.": "模型未返回有效的设计提案，请尝试更具体的设计需求。",
+  "Enter an API base URL, such as https://example.com/v1. A bare domain uses /v1 automatically.": "填写 API 基础地址，例如 https://example.com/v1。只填域名时会自动补上 /v1。",
+
   "Request endpoint": "实际请求地址",
   "The API route or model was not found. Check the API address and the service's exact model name.": "接口路径或模型不存在，请核对 API 地址，以及该服务支持的完整模型名。",
   "The service rejected the request. Check its supported model and parameters.": "服务拒绝了请求，请核对支持的模型及参数。",
