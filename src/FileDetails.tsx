@@ -31,7 +31,9 @@ export function FileDetails({
   onClose,
   children,
   folder = false,
+  versionContent,
 }: {
+  versionContent?: import("react").ReactNode;
   folder?: boolean;
   children?: import("react").ReactNode;
   name: string;
@@ -41,10 +43,11 @@ export function FileDetails({
   location: string;
   onClose: () => void;
 }) {
+  const [tab, setTab] = useState<"basic" | "versions">("basic");
   return (
     <div className="workspace-dialog-overlay" onClick={onClose}>
       <section
-        className="workspace-dialog"
+        className={`workspace-dialog ${versionContent ? "workspace-version-dialog" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label="文件属性"
@@ -68,42 +71,71 @@ export function FileDetails({
             <X size={18} />
           </button>
         </header>
-        <div className="workspace-file-summary">
-          {folder ? (
-            <Folder size={48} />
-          ) : (
-            <img
-              src="/baize-white.svg"
-              alt="BaizeFig 文件"
-              width={48}
-              height={48}
-            />
-          )}
-          <strong>
-            {name}
-            {folder ? "" : ".baizefig"}
-          </strong>
-        </div>
-        <dl>
-          {[
-            ["种类", folder ? "文件夹" : "BaizeFig 设计文件"],
-            [
-              "大小",
-              size === undefined
-                ? "未知"
-                : `${size.toLocaleString()} 字节（${(size / 1024).toFixed(1)} KB）`,
-            ],
-            ["位置", location],
-            ["创建时间", fileDate(created)],
-            ["最后修改时间", fileDate(updated)],
-          ].map(([key, value]) => (
-            <div key={key}>
-              <dt>{key}</dt>
-              <dd>{value}</dd>
+        {versionContent && (
+          <div
+            className="workspace-property-tabs"
+            role="tablist"
+            aria-label="文件属性分类"
+          >
+            {(
+              [
+                ["basic", "基础"],
+                ["versions", "版本"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={tab === id}
+                onClick={() => setTab(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {tab === "basic" ? (
+          <div role={versionContent ? "tabpanel" : undefined}>
+            <div className="workspace-file-summary">
+              {folder ? (
+                <Folder size={48} />
+              ) : (
+                <img
+                  src="/baize-white.svg"
+                  alt="BaizeFig 文件"
+                  width={48}
+                  height={48}
+                />
+              )}
+              <strong>
+                {name}
+                {folder ? "" : ".baizefig"}
+              </strong>
             </div>
-          ))}
-        </dl>
-        {children}
+            <dl>
+              {[
+                ["种类", folder ? "文件夹" : "BaizeFig 设计文件"],
+                [
+                  "大小",
+                  size === undefined
+                    ? "未知"
+                    : `${size.toLocaleString()} 字节（${(size / 1024).toFixed(1)} KB）`,
+                ],
+                ["位置", location],
+                ["创建时间", fileDate(created)],
+                ["最后修改时间", fileDate(updated)],
+              ].map(([key, value]) => (
+                <div key={key}>
+                  <dt>{key}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+            {children}
+          </div>
+        ) : (
+          <div role="tabpanel">{versionContent}</div>
+        )}
       </section>
     </div>
   );

@@ -1,4 +1,5 @@
-import {webPrompt,webConfirm} from "./WebDialogs";
+import { CloudVersions, type CloudVersion } from "./CloudVersions";
+import { webPrompt, webConfirm, webAlert } from "./WebDialogs";
 import { WorkspaceRow } from "./WorkspaceRow";
 import { FileActions } from "./FileActions";
 import { FileDetails, MoveFileDialog, folderPath } from "./FileDetails";
@@ -56,7 +57,7 @@ export function CloudFiles({
       return "grid";
     }
   });
-  const [dropFolder,setDropFolder]=useState<string|null>(null);
+  const [dropFolder, setDropFolder] = useState<string | null>(null);
   const [folderDetails, setFolderDetails] = useState<Folder | null>(null);
   const [folderMoving, setFolderMoving] = useState<Folder | null>(null);
   const [trash, setTrash] = useState(false);
@@ -68,19 +69,29 @@ export function CloudFiles({
       localStorage.setItem("baizefig.cloud.view", next);
     } catch {}
   };
-  const pathKey="baizefig.cloud.path."+session.base+"."+session.user.id;
-  const rememberedPath=()=>{try{return localStorage.getItem(pathKey)||null;}catch{return null;}};
+  const pathKey = "baizefig.cloud.path." + session.base + "." + session.user.id;
+  const rememberedPath = () => {
+    try {
+      return localStorage.getItem(pathKey) || null;
+    } catch {
+      return null;
+    }
+  };
   const [files, setFiles] = useState<File[]>([]),
     [folders, setFolders] = useState<Folder[]>([]),
     [parent, setParentState] = useState<string | null>(rememberedPath),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [heads, setHeads] = useState<Record<string, string | null>>({}),
-    [versions, setVersions] = useState<{ id: string; created_at: string }[]>(
-      [],
-    ),
+    [versions, setVersions] = useState<CloudVersion[]>([]),
     [selected, setSelected] = useState<File | null>(null);
-  const setParent=(value:string|null)=>{setParentState(value);try{if(value)localStorage.setItem(pathKey,value);else localStorage.removeItem(pathKey);}catch{}};
+  const setParent = (value: string | null) => {
+    setParentState(value);
+    try {
+      if (value) localStorage.setItem(pathKey, value);
+      else localStorage.removeItem(pathKey);
+    } catch {}
+  };
   async function api(path: string, body?: unknown) {
     const r = await fetch(session.base + "/api/v1/space" + path, {
       headers: {
@@ -90,8 +101,12 @@ export function CloudFiles({
       ...(body ? { method: "POST", body: JSON.stringify(body) } : {}),
     });
     if (!r.ok) {
-      const detail=await r.json().catch(()=>({}));
-      throw Error(detail.error_description || detail.error || t("Cloud space request failed ({status})",{status:r.status}));
+      const detail = await r.json().catch(() => ({}));
+      throw Error(
+        detail.error_description ||
+          detail.error ||
+          t("Cloud space request failed ({status})", { status: r.status }),
+      );
     }
     return r.json();
   }
@@ -99,8 +114,13 @@ export function CloudFiles({
     const d = await api(trash ? "/trash" : "");
     setFiles(d.files);
     setFolders(d.folders || []);
-    const savedPath=rememberedPath();
-    if(!trash && savedPath && !(d.folders||[]).some((f:Folder)=>f.id===savedPath))setParent(null);
+    const savedPath = rememberedPath();
+    if (
+      !trash &&
+      savedPath &&
+      !(d.folders || []).some((f: Folder) => f.id === savedPath)
+    )
+      setParent(null);
   }
   async function run(fn: () => Promise<void>) {
     setBusy(true);
@@ -201,30 +221,33 @@ export function CloudFiles({
             {trash ? "返回文件" : "回收站"}
           </button>
         </div>
-        {parent && <nav className="cloud-breadcrumb" aria-label={t("File path")}>
-          <button onClick={() => setParent(null)}>{t("Cloud space")}</button>
-          {(() => {
-            const chain: Folder[] = [];
-            let cursor: string | null = parent;
-            while (cursor) {
-              const f = folders.find((x) => x.id === cursor);
-              if (!f) break;
-              chain.unshift(f);
-              cursor = f.parent_id;
-            }
-            return chain.map((f) => (
-              <span key={f.id}>
-                {" "}
-                / <button onClick={() => setParent(f.id)}>{f.name}</button>
-              </span>
-            ));
-          })()}
-        </nav>}
+        {parent && (
+          <nav className="cloud-breadcrumb" aria-label={t("File path")}>
+            <button onClick={() => setParent(null)}>{t("Cloud space")}</button>
+            {(() => {
+              const chain: Folder[] = [];
+              let cursor: string | null = parent;
+              while (cursor) {
+                const f = folders.find((x) => x.id === cursor);
+                if (!f) break;
+                chain.unshift(f);
+                cursor = f.parent_id;
+              }
+              return chain.map((f) => (
+                <span key={f.id}>
+                  {" "}
+                  / <button onClick={() => setParent(f.id)}>{f.name}</button>
+                </span>
+              ));
+            })()}
+          </nav>
+        )}
         <table className={`cloud-file-table cloud-file-${view}`}>
           <thead>
             <tr>
               <th>{t("Name")}</th>
-              <th>文件类型</th><th>{t("Updated")}</th>
+              <th>文件类型</th>
+              <th>{t("Updated")}</th>
               <th>创建时间</th>
               <th>{t("Actions")}</th>
             </tr>
@@ -239,8 +262,13 @@ export function CloudFiles({
               .map((f) => (
                 <WorkspaceRow
                   key={f.id}
-                  className={dropFolder===f.id?"workspace-drop-target":""}
-                  onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node|null))setDropFolder(null);}}
+                  className={dropFolder === f.id ? "workspace-drop-target" : ""}
+                  onDragLeave={(e) => {
+                    if (
+                      !e.currentTarget.contains(e.relatedTarget as Node | null)
+                    )
+                      setDropFolder(null);
+                  }}
                   onDragOver={(e) => {
                     if (
                       !trash &&
@@ -278,7 +306,8 @@ export function CloudFiles({
                       <strong>{f.name}</strong>
                     </button>
                   </td>
-                  <td className="cloud-file-type">文件夹</td><td className="cloud-file-date">—</td>
+                  <td className="cloud-file-type">文件夹</td>
+                  <td className="cloud-file-date">—</td>
                   <td>—</td>
                   <td className="cloud-file-actions">
                     <FileActions>
@@ -297,7 +326,9 @@ export function CloudFiles({
                           <button
                             onClick={async () => {
                               if (
-                                await webConfirm("彻底删除文件夹及其中内容？无法恢复。")
+                                await webConfirm(
+                                  "彻底删除文件夹及其中内容？无法恢复。",
+                                )
                               )
                                 void run(async () => {
                                   await api("/folders/" + f.id + "/purge", {});
@@ -353,7 +384,7 @@ export function CloudFiles({
                 <WorkspaceRow
                   key={f.id}
                   draggable={!trash}
-                  onDragEnd={()=>setDropFolder(null)}
+                  onDragEnd={() => setDropFolder(null)}
                   onDragStart={(e) => {
                     e.dataTransfer.setData(
                       "application/x-baizefig-cloud-file",
@@ -405,7 +436,11 @@ export function CloudFiles({
                         </button>
                         <button
                           onClick={async () => {
-                            if (await webConfirm("彻底删除此文件？此操作无法恢复。"))
+                            if (
+                              await webConfirm(
+                                "彻底删除此文件？此操作无法恢复。",
+                              )
+                            )
                               void run(async () => {
                                 await api("/files/" + f.id + "/purge", {});
                                 await load();
@@ -487,39 +522,49 @@ export function CloudFiles({
             updated={selected.updated_at}
             location={folderPath(folders, selected.folder_id, "云工作区")}
             onClose={() => setSelected(null)}
+            versionContent={
+              <CloudVersions
+                versions={versions}
+                headId={selected.head_id}
+                onRestore={async (version) => {
+                  if (
+                    !(await webConfirm(
+                      "将此版本恢复为新的云端文件？原文件保持不变。",
+                    ))
+                  )
+                    return;
+                  await run(async () => {
+                    const copy = await api(
+                      "/files/" +
+                        selected.id +
+                        "/versions/" +
+                        version +
+                        "/restore",
+                      {},
+                    );
+                    await load();
+                    await webAlert("已恢复为新文件：" + copy.name);
+                  });
+                }}
+                onDelete={async (version) => {
+                  if (!(await webConfirm("删除这个历史版本？"))) return;
+                  await run(async () => {
+                    await api(
+                      "/files/" +
+                        selected.id +
+                        "/versions/" +
+                        version +
+                        "/delete",
+                      {},
+                    );
+                    setVersions((await api("/files/" + selected.id)).versions);
+                  });
+                }}
+              />
+            }
           >
             <details>
-              <summary>历史版本与分享</summary>
-              {versions.map((v) => (
-                <p key={v.id}>
-                  {new Date(v.created_at).toLocaleString()}{" "}
-                  <button onClick={() => void run(() => open(selected, v.id))}>
-                    打开版本
-                  </button>
-                  {v.id !== selected.head_id && (
-                    <button
-                      onClick={async () => {
-                        if (await webConfirm("删除这个历史版本？"))
-                          void run(async () => {
-                            await api(
-                              "/files/" +
-                                selected.id +
-                                "/versions/" +
-                                v.id +
-                                "/delete",
-                              {},
-                            );
-                            setVersions(
-                              (await api("/files/" + selected.id)).versions,
-                            );
-                          });
-                      }}
-                    >
-                      删除版本
-                    </button>
-                  )}
-                </p>
-              ))}
+              <summary>分享</summary>
               <button
                 onClick={() =>
                   void run(async () => {
