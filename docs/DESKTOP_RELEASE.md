@@ -1,23 +1,25 @@
 ## English
 
-Apple Silicon installation fix for v0.0.1b1.
+BaizeFig v0.0.1b3 adds exclusive editing for LoyoCloud files.
 
-- Replace the skipped signing step with a complete local ad-hoc signature for the app, helpers, and embedded frameworks. No Apple Developer account, certificate, or notarization is required.
-- Verify bundle signatures strictly before generating the installers, failing the build if verification fails.
-- Keep offline editing, local MCP management, local designs, and GitHub update prompts.
+- Open cloud files read-only, then choose Start editing to hold the file’s edit lock. Other windows and AI clients can view the file while it is locked.
+- Save cloud edits automatically and finish pending saves before ending the editing session. Closing the document releases the lock; interrupted sessions expire within 90 seconds.
+- AI clients use begin_edit, renew_edit and end_edit. Cloud writes require the current lock token and are saved before success is returned.
+- Manage AI permissions and web/desktop connections in LoyoCloud’s authorization and application pages.
 
-Download the `mac-arm64.dmg`, quit BaizeFig, and replace the app in Applications. v0.0.1b1 remains available as a historical release; install b2 manually if b1 cannot open.
+Download the Apple Silicon DMG or ZIP, quit BaizeFig, and replace the previous application. Existing local designs remain available. Cloud file editing requires the updated LoyoCloud service; standalone local files keep their existing editing behavior.
 
-This app is not Developer ID signed or notarized. macOS may still require manual approval. If it reports “damaged,” verify the installed app with `codesign --verify --deep --strict --verbose=2 /Applications/BaizeFig.app`; only if verification succeeds and the download is from this repository, remove this app's download quarantine flag with `xattr -dr com.apple.quarantine /Applications/BaizeFig.app`. No system-wide security settings need to change.
+The app uses a verified local ad-hoc signature and is not Developer ID signed or notarized.
 
 ## 简体中文
 
-修复 v0.0.1b1 在 Apple Silicon Mac 上安装后可能提示“已损坏”的问题。
+BaizeFig v0.0.1b3 新增乐悦云文件独占编辑。
 
-- 从完全跳过签名改为完整的本地临时签名（ad-hoc），覆盖应用、Helper 和内嵌框架，无需 Apple 开发者账号、证书或公证。
-- 生成安装包前严格验证签名，失败则终止打包。
-- 保留离线编辑、本机 MCP 管理、本地作品和 GitHub 更新提示。
+- 打开云文件默认只读，点击「开始编辑」后持有文件锁，其他窗口和 AI 可以查看。
+- 编辑期间自动保存，「保存并结束编辑」会先完成保存再释放。关闭文档释放锁，异常会话最长 90 秒过期。
+- AI 使用 begin_edit、renew_edit、end_edit；修改需要当前锁凭据，云端保存成功后才返回成功。
+- 在乐悦云「授权管理」配置 AI 权限，在「应用管理」查看和管理网页、本地连接。
 
-下载 `mac-arm64.dmg`，退出 BaizeFig 后替换「应用程序」中的旧版。b1 作为历史版本保留；如果 b1 无法打开，请手动安装 b2。
+下载 Apple Silicon DMG 或 ZIP，退出白泽后替换旧版。已有本地作品保留。云文件编辑需要同步升级乐悦云服务；独立本地文件继续按原有方式编辑。
 
-此版本没有 Apple 开发者认证或公证，macOS 仍可能要求手动确认。若仍提示“已损坏”，先运行 `codesign --verify --deep --strict --verbose=2 /Applications/BaizeFig.app`；仅在校验通过、且确认为本仓库下载的应用后，运行 `xattr -dr com.apple.quarantine /Applications/BaizeFig.app` 清除此应用的下载隔离标记，无需关闭系统整体安全检查。
+应用使用经过校验的本地临时签名，尚无 Apple 开发者认证或公证。

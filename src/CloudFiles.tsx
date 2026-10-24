@@ -165,13 +165,13 @@ export function CloudFiles({
       "/files/" + file.id + (version ? "?version=" + version : ""),
     );
     validateDocument(d.content);
-    await onOpen(d.content);
     rememberCloudBinding(
       session,
       file.id,
       d.file.head_id,
       d.file.folder_id || null,
     );
+    await onOpen(d.content);
     } finally { openingLock.current = false; setOpening(false); }
   }
   type Entry = { folder: boolean; item: File | Folder };

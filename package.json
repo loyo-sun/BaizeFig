@@ -1,6 +1,6 @@
 {
   "name": "baizefig",
-  "version": "0.0.1-beta.2",
+  "version": "0.0.1-beta.3",
   "private": true,
   "type": "module",
   "scripts": {
@@ -63,7 +63,7 @@
   "engines": {
     "node": ">=22.12.0"
   },
-  "displayVersion": "v0.0.1b2",
+  "displayVersion": "v0.0.1b3",
   "main": "desktop/main.mjs",
   "description": "BaizeFig local-first design editor with local MCP",
   "author": "Loyo"

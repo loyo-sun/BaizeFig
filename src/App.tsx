@@ -1,3 +1,4 @@
+import { useExclusiveEdit } from "./useExclusiveEdit";
 import {webPrompt} from "./WebDialogs";
 import {figmaClipboardBytes,clipboardPlainText} from "./externalClipboard";
 import { LocalFiles } from "./LocalFiles";
@@ -14,6 +15,8 @@ import {
   storeSaveDestination,
   readCloudBinding,
   rememberCloudBinding,
+  isCloudBackedDocument,
+  isCloudSnapshotSaved,
   cloudRequest,
   saveCloudDocument,
   type SaveDestination,
@@ -371,11 +374,14 @@ export default function App() {
   const [doc, setDocumentState] = useState<Document>(() =>
     createWelcomeDocument(),
   );
+  const editGuard = useRef<(id:string)=>boolean>(()=>true);
   const setDoc = useCallback(
-    (next: Document | ((previous: Document) => Document)) => {
-      setDocumentState((previous) =>
-        removeDesignTokens(typeof next === "function" ? next(previous) : next),
-      );
+    (next: Document | ((previous: Document) => Document), trusted = false) => {
+      setDocumentState((previous) => {
+        const value=typeof next === "function" ? next(previous) : next;
+        if(!trusted && value.id===previous.id && !editGuard.current(previous.id))return previous;
+        return removeDesignTokens(value);
+      });
     },
     [],
   );
@@ -706,6 +712,32 @@ export default function App() {
     bridgeExport,
     editing: Boolean(editingText || editingCrop || editingVector),
   };
+  const editSnapshots=useRef(new Map<string,Document>());editSnapshots.current.set(doc.id,doc);
+  const exclusive = useExclusiveEdit(cloudSession,doc.id,mcp.current.editorId,(latest)=>{
+    validateDocument(latest);history.current=new History();current.current.doc=latest;setDoc(latest,true);setPage(latest.pages[0].id);setSelected([]);
+  },async(s,id,token)=>{
+    const snapshot=editSnapshots.current.get(id);if(!snapshot||isCloudSnapshotSaved(s,snapshot))return;
+    const binding=readCloudBinding(s,id);
+    return saveCloudDocument(s,snapshot,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:token});
+  });
+  const exclusiveRef=useRef(exclusive);exclusiveRef.current=exclusive;
+  useEffect(()=>{
+    if(!cloudSession || !isCloudBackedDocument(doc.id) || !exclusive.editing)return;
+    const timer=setTimeout(()=>{
+      const l=exclusiveRef.current.lease.current;if(!l||l.kind!=="human"||l.ending)return;
+      const binding=readCloudBinding(cloudSession,doc.id);
+      void saveCloudDocument(cloudSession,doc,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:l.token}).catch(e=>setPersistentSaveError(e.message));
+    },800);
+    return()=>clearTimeout(timer);
+  },[doc,cloudSession?.token,exclusive.editing]);
+  editGuard.current=exclusive.canEdit;
+  useEffect(()=>{
+    const protect=(event:BeforeUnloadEvent)=>{
+      const latest=current.current.doc;
+      if(cloudSession&&exclusiveRef.current.lease.current?.kind==="human"&&!isCloudSnapshotSaved(cloudSession,latest)){event.preventDefault();event.returnValue="";}
+    };
+    window.addEventListener("beforeunload",protect);return()=>window.removeEventListener("beforeunload",protect);
+  },[cloudSession?.token]);
   const scenePointerRef = useRef(pointerDown);
   scenePointerRef.current = pointerDown;
   const scenePointerDown = useCallback(
@@ -1145,7 +1177,7 @@ export default function App() {
         if(!await save(current.current.doc))throw Error('无法保存当前文件');
         if(!await save(result.content))throw Error('无法缓存云端文件');
         rememberCloudBinding(cloudSession,result.file.id,result.file.head_id,result.file.folder_id);
-        committedDocument.current=result.content;current.current.doc=result.content;history.current=new History();setDoc(result.content);setPage(result.content.pages[0].id);setSelected([]);setCollapsed(new Set());setModal(null);
+        committedDocument.current=result.content;current.current.doc=result.content;history.current=new History();setDoc(result.content,true);setPage(result.content.pages[0].id);setSelected([]);setCollapsed(new Set());setModal(null);
         const url=new URL(window.location.href);url.searchParams.delete('cloudFile');window.history.replaceState(null,'',url);
       }catch(error){notify((error as Error).message);}
     })();
@@ -1188,7 +1220,11 @@ export default function App() {
             if ((e as { status?: number }).status !== 404) throw e;
           }
         }
-        await saveCloudDocument(cloudSession, doc, folderId, headId);
+        if(!exclusive.canSave()) {
+          if(binding)throw Error("请先开始编辑，再保存云文件");
+          await exclusive.begin();
+        }
+        await saveCloudDocument(cloudSession, current.current.doc, folderId, headId, {editorId:mcp.current.editorId,lockToken:exclusive.lease.current!.token});
         notify("Saved to cloud");
       }
       if (makeDefault) configureSaveDestination(where);
@@ -3767,12 +3803,14 @@ export default function App() {
           documentId,
           editorId: mcp.current.editorId,
           name: current.current.doc.name,
+          platform:window.baizefigDesktop?"desktop":"web",
+          clientLabel:window.baizefigDesktop?"Mac":navigator.userAgent.includes("Edg/")?"Edge":navigator.userAgent.includes("Firefox/")?"Firefox":navigator.userAgent.includes("Chrome/")?"Chrome":"Safari",
         }),
       );
     };
     ws.onclose = (event) => {
       if (socket.current !== ws) return;
-      if (event.code === 1008 && !event.reason.includes("Another editor")) {
+      if ((event.code === 1008 && !event.reason.includes("Another editor")) || (event.code===1000&&event.reason==="Disconnected")) {
         disconnectBridge();
         if (intent.cloud) {
           const rejected = intent.cloud;
@@ -3788,7 +3826,8 @@ export default function App() {
     ws.onerror = () => {
       if (socket.current === ws) reconnectBridge();
     };
-    ws.onmessage = async (event) => {
+    let messageQueue=Promise.resolve();
+    const receiveMessage = async (event:MessageEvent) => {
       if (socket.current !== ws || current.current.doc.id !== documentId)
         return;
       let message: {
@@ -3827,7 +3866,22 @@ export default function App() {
         return;
       }
       try {
+        if(cloud && message.method==="begin_edit") {
+          await exclusiveRef.current.begin("ai",String(message.params?.lockToken));
+          ws.send(JSON.stringify({id:message.id,result:{editing:true}}));return;
+        }
+        if(cloud && message.method==="end_edit") {
+          await exclusiveRef.current.end(String(message.params?.lockToken));
+          ws.send(JSON.stringify({id:message.id,result:{released:true}}));return;
+        }
         const c = current.current;
+        const cloudFile=isCloudBackedDocument(c.doc.id);
+        if(message.method==="apply_commands" && cloudFile && !cloud)throw new McpError("EDIT_LOCK_REQUIRED","云文件请通过乐悦云连接并先调用 begin_edit");
+        if(cloud && message.method==="apply_commands") {
+          const l=exclusiveRef.current.lease.current;
+          if(!l || l.kind!=="ai" || l.documentId!==c.doc.id || l.token!==message.params?.lockToken)throw new McpError("EDIT_LOCK_REQUIRED","请先调用 begin_edit");
+          await cloudRequest(cloud,"/files/"+c.doc.id+"/edit/validate",{editorId:mcp.current.editorId,lockToken:l.token});
+        }
         if (
           (drag.current || c.editing) &&
           ["apply_commands", "preview_commands"].includes(message.method)
@@ -3836,9 +3890,10 @@ export default function App() {
             "EDITOR_BUSY",
             "Finish the current canvas or text edit before editing through MCP",
           );
+        if(socket.current!==ws||current.current.doc.id!==documentId)return;
         let result = mcp.current.handle(
           message.method,
-          message.params ?? {},
+          Object.fromEntries(Object.entries(message.params??{}).filter(([key])=>key!=="lockToken")),
           cloud
             ? {
                 ...c,
@@ -3850,9 +3905,22 @@ export default function App() {
             next = removeDesignTokens(next);
             history.current.push(c.doc, c.selected);
             current.current = { ...c, doc: next };
-            setDoc(next);
+            setDoc(next,true);
           },
         );
+        if(cloud && message.method==="apply_commands") {
+          const binding=readCloudBinding(cloud,c.doc.id);
+          try {
+            await saveCloudDocument(cloud,current.current.doc,binding?.folderId||null,binding?.headId||null,{editorId:mcp.current.editorId,lockToken:String(message.params?.lockToken)});
+          }catch(error){
+            if((error as {status?:number}).status && socket.current===ws && current.current.doc.id===documentId) {
+              mcp.current.forgetReceipt(c.doc.id,String(message.params?.idempotencyKey));
+              current.current={...current.current,doc:c.doc};setDoc(c.doc,true);
+            }
+            setPersistentSaveError("AI 修改尚未确认保存："+(error as Error).message);
+            throw error;
+          }
+        }
         if (message.method === "get_screenshot") {
           const blob = await raster(await svgString(c.doc, c.page, c.selected));
           result = await new Promise<string>((resolve, reject) => {
@@ -3897,6 +3965,7 @@ export default function App() {
           );
       }
     };
+    ws.onmessage=event=>{messageQueue=messageQueue.then(()=>receiveMessage(event)).catch(()=>{});};
   }
   function beginLayerDrag(e: React.PointerEvent<HTMLDivElement>, n: Node) {
     suppressLayerClick.current = false;
@@ -4307,7 +4376,9 @@ export default function App() {
               >
                 <img src="/baize.svg" alt="BaizeFig" />
               </button>
+
               <input
+                readOnly={!exclusive.canEdit(doc.id)}
                 className="document-title"
                 aria-label={t("Document name")}
                 value={doc.name}
@@ -4347,6 +4418,13 @@ export default function App() {
               <span className="save-state">{t(saved)}</span>
             </div>
           </div>
+              {isCloudBackedDocument(doc.id)&&<div className="exclusive-edit-controls" role="status"><span>{exclusive.status}</span><button disabled={exclusive.busy} onClick={()=>void(async()=>{
+                try {
+                  if(exclusive.editing) {
+                    await exclusive.end();
+                  }else await exclusive.begin();
+                }catch(e){notify((e as Error).message);}
+              })()}>{exclusive.editing?"保存并结束编辑":"开始编辑"}</button></div>}
           <div
             className="workspace-tabs"
             role="tablist"
@@ -7554,7 +7632,7 @@ export default function App() {
             )}
             {modal === "files" && (
               <>
-                {workspaceTab === "cloud" && <div className="personal-workspace-account">{cloudSession?<><span>已登录</span><strong>{cloudSession.user.username}</strong><a href={cloudSession.base+"/console"} target="_blank" rel="noreferrer">控制台</a><button onClick={signOutCloud}>退出</button></>:<button onClick={signInCloud}>登录 LoyoCloud</button>}</div>}
+                {workspaceTab === "cloud" && <div className="personal-workspace-account">{cloudSession?<><span>{t("Signed in")}</span><strong>{cloudSession.user.username}</strong><a href={cloudSession.base+"/console"} target="_blank" rel="noreferrer">{t("Console")}</a><button onClick={signOutCloud}>{t("Sign out")}</button></>:<button onClick={signInCloud}>{t("Sign in to LoyoCloud")}</button>}</div>}
                 <div
                   className="workspace-switcher"
                   role="tablist"
@@ -7583,7 +7661,7 @@ export default function App() {
                       committedDocument.current = next;
                       current.current.doc = next;
                       history.current = new History();
-                      setDoc(next);
+                      setDoc(next,true);
                       setPage(next.pages[0].id);
                       setSelected([]);
                       setCollapsed(new Set());

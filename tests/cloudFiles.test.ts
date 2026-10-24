@@ -16,6 +16,7 @@ test("cloud list navigates folders and opens the selected document in the editor
     url: "https://editor.test",
   });
   vi.stubGlobal("window", dom.window);
+  vi.stubGlobal("requestAnimationFrame", (fn:()=>void)=>setTimeout(fn,0));
   vi.stubGlobal("document", dom.window.document);
   vi.stubGlobal("localStorage", dom.window.localStorage);
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -38,7 +39,7 @@ test("cloud list navigates folders and opens the selected document in the editor
           }
         : url.endsWith("/thumbnail")
           ? { thumbnail: "data:image/png;base64,aGVsbG8=", headId: "head" }
-          : { file: { head_id: "head" }, versions: [], content: doc },
+          : { file: { id: doc.id, head_id: "head" }, versions: [], content: doc },
   }));
   vi.stubGlobal("fetch", fetcher);
   const root = createRoot(document.getElementById("root")!);
@@ -69,18 +70,23 @@ test("cloud list navigates folders and opens the selected document in the editor
     });
     expect(document.body.textContent).toContain("项目");
     expect(document.body.textContent).not.toContain("设计.baizefig");
-    await click("项目");
-    expect(document.querySelector(".cloud-file-grid")).toBeTruthy();
+    const openEntry=async(name:string)=>{
+      const row=[...document.querySelectorAll("tbody tr")].find(r=>r.querySelector("strong")?.textContent===name)!;
+      expect(row).toBeTruthy();
+      await act(async()=>{row.dispatchEvent(new dom.window.MouseEvent("dblclick",{bubbles:true}));await new Promise(r=>setTimeout(r,40));});
+    };
+    await openEntry("项目");
+    expect(document.querySelector(".drive-grid")).toBeTruthy();
     expect(
       document.querySelector('img[alt="设计 thumbnail"]')?.getAttribute("src"),
     ).toBe("data:image/png;base64,aGVsbG8=");
-    await click("List view");
-    expect(document.querySelector(".cloud-file-list")).toBeTruthy();
+    await click("列表模式");
+    expect(document.querySelector(".drive-list")).toBeTruthy();
     expect(document.querySelector(".cloud-thumbnail")).toBeNull();
     expect(localStorage.getItem("baizefig.cloud.view")).toBe("list");
-    await click("Icon view");
-    expect(document.body.textContent).toContain("设计.baizefig");
-    await click("Open to edit");
+    await click("图标模式");
+    expect(document.body.textContent).toContain("设计");
+    await openEntry("设计");
     expect(onOpen).toHaveBeenCalledWith(doc);
     expect(fetcher.mock.calls[0][0]).toBe("https://cloud.test/api/v1/space");
   } finally {

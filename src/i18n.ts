@@ -5,6 +5,8 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Console": "控制台",
+  "Sign out": "退出",
   "Unable to remember the save location. Check browser storage permissions.": "无法保存默认位置，请检查浏览器存储权限",
   "Sign in to your cloud account again before saving.": "请重新登录云账号后保存",
   "Saved to cloud": "已保存到云端",

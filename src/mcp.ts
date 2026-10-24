@@ -68,6 +68,7 @@ export class EditorMcp {
   private document?: Document;
   private revision = crypto.randomUUID();
   private receipts = new Map<string, Receipt>();
+  forgetReceipt(documentId:string,key:string) {this.receipts.delete(JSON.stringify([documentId,key]));}
   private sync(doc: Document) {
     if (this.document !== doc) {
       this.document = doc;

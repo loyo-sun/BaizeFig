@@ -61,11 +61,25 @@ export async function cloudRequest(
     );
   return result;
 }
-export async function saveCloudDocument(
+const savedCloudSnapshots = new Map<string,Document>();
+export const isCloudSnapshotSaved=(session:CloudSession,doc:Document)=>savedCloudSnapshots.get(session.base+":"+session.user.id+":"+doc.id)===doc;
+const cloudSaveQueue = new Map<string,Promise<unknown>>();
+export function saveCloudDocument(
+  session:CloudSession, doc:Document, folderId:string|null, headId:string|null, edit?:{editorId:string;lockToken:string},
+) {
+  const key=session.base+":"+session.user.id+":"+doc.id;
+  const previous=cloudSaveQueue.get(key);
+  const next=(previous||Promise.resolve()).catch(()=>{}).then(async()=>{const result=await saveCloudSnapshot(session,doc,folderId,readCloudBinding(session,doc.id)?.headId||headId,edit);savedCloudSnapshots.set(key,doc);return result;});
+  cloudSaveQueue.set(key,next);
+  void next.finally(()=>{if(cloudSaveQueue.get(key)===next)cloudSaveQueue.delete(key);}).catch(()=>{});
+  return next;
+}
+async function saveCloudSnapshot(
   session: CloudSession,
   doc: Document,
   folderId: string | null,
   headId: string | null,
+  edit?: {editorId:string;lockToken:string},
 ) {
   const preview = await Promise.all(
     doc.pages.map(async (page) => {
@@ -79,6 +93,7 @@ export async function saveCloudDocument(
     }),
   );
   const result = await cloudRequest(session, "/files/" + doc.id + "/save", {
+    ...edit,
     content: doc,
     preview,
     folderId,
