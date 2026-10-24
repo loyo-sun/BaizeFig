@@ -121,3 +121,17 @@ export async function saveCloudDocument(
   }
   return result;
 }
+
+/** Cloud-linked browser copies are recovery caches, not local workspace files. */
+export function isCloudBackedDocument(id: string): boolean {
+  try {
+    for (let i=0;i<localStorage.length;i++) {
+      const key=localStorage.key(i);
+      if(key?.startsWith('baizefig.cloud.file.') && key.endsWith('.'+id)) {
+        const binding=JSON.parse(localStorage.getItem(key)||'null');
+        if(binding?.headId)return true;
+      }
+    }
+  } catch { /* Keep local files visible if browser settings cannot be read. */ }
+  return false;
+}

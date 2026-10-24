@@ -1,3 +1,4 @@
+import {isCloudBackedDocument} from "./saveDestination";
 import { WorkspaceRow } from "./WorkspaceRow";
 import { FileActions } from "./FileActions";
 import { LayoutGrid, List, Folder, RefreshCw } from "lucide-react";
@@ -48,7 +49,7 @@ export function LocalFiles({
     } catch {}
   };
   async function load() {
-    const docs = await listDocuments();
+    const docs = (await listDocuments()).filter(d=>!isCloudBackedDocument(d.id));
     setFiles(docs);
     setFolders(await localFolders());
     setMeta(
