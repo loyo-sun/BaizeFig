@@ -20,7 +20,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CloudSession } from "./cloud";
 import { type Document, validateDocument } from "./core";
 type File = {
@@ -153,7 +153,14 @@ export function CloudFiles({
     setParentState(rememberedPath());
     void run(load);
   }, [session.token, trash]);
+  const openingLock = useRef(false);
+  const [opening, setOpening] = useState(false);
   async function open(file: File, version?: string) {
+    if (openingLock.current) return;
+    openingLock.current = true;
+    setOpening(true);
+    try {
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
     const d = await api(
       "/files/" + file.id + (version ? "?version=" + version : ""),
     );
@@ -165,6 +172,7 @@ export function CloudFiles({
       d.file.head_id,
       d.file.folder_id || null,
     );
+    } finally { openingLock.current = false; setOpening(false); }
   }
   type Entry = { folder: boolean; item: File | Folder };
   const entries: Entry[] = [
@@ -412,6 +420,7 @@ export function CloudFiles({
           </button>
         </div>
       </header>
+      {opening && <div className="workspace-opening" role="status" aria-live="polite">正在打开…</div>}
       {error && <p role="alert">{error}</p>}
       <fieldset disabled={busy} className="drive-body">
         <table className={"drive-table drive-" + view}>

@@ -7617,7 +7617,7 @@ export default function App() {
                         {t("Import")}
                       </button>
                     </>} onDelete={deleteLocalFile} onOpen={d=>{
-                      void save(doc).then(async()=>{const latest=await getDocument(d.id);setDoc(latest);setPage(latest.pages[0].id);setSelected([]);history.current=new History();setModal(null);}).catch(error=>setPersistentSaveError((error as Error).message));
+                      return save(doc).then(async()=>{const latest=await getDocument(d.id);setDoc(latest);setPage(latest.pages[0].id);setSelected([]);history.current=new History();setModal(null);}).catch(error=>setPersistentSaveError((error as Error).message));
                     }}/>
 
                   </>

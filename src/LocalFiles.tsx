@@ -4,7 +4,7 @@ import { WorkspaceRow } from "./WorkspaceRow";
 import { FileActions } from "./FileActions";
 import { LayoutGrid, List, Folder, RefreshCw } from "lucide-react";
 import { Scene } from "./Canvas";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Document } from "./core";
 import {
   listDocuments,
@@ -24,7 +24,7 @@ export function LocalFiles({
   actions,
 }: {
   actions?: import("react").ReactNode;
-  onOpen: (d: Document) => void;
+  onOpen: (d: Document) => void | Promise<void>;
   onDelete: (d: Document) => Promise<void>;
 }) {
   const [files, setFiles] = useState<Document[]>([]),
@@ -43,6 +43,18 @@ export function LocalFiles({
     [search, setSearch] = useState(""),
     [details, setDetails] = useState<Document | null>(null),
     [error, setError] = useState("");
+  const openingLock = useRef(false);
+  const [opening, setOpening] = useState(false);
+  async function openFile(d: Document) {
+    if (openingLock.current) return;
+    openingLock.current = true;
+    setOpening(true);
+    try {
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      await onOpen(d);
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    finally { openingLock.current = false; setOpening(false); }
+  }
   const changeView = (next: "grid" | "list") => {
     setView(next);
     try {
@@ -110,6 +122,7 @@ export function LocalFiles({
           刷新
         </button>
       </div>
+      {opening && <div className="workspace-opening" role="status" aria-live="polite">正在打开…</div>}
       {error && <p role="alert">{error}</p>}
       <table className={`cloud-file-table cloud-file-${view}`}>
         <thead>
@@ -156,7 +169,7 @@ export function LocalFiles({
                 <td>
                   <button
                     className="cloud-file-open"
-                    onDoubleClick={() => onOpen(d)}
+                    onDoubleClick={() => void openFile(d)}
                   >
                     {view === "grid" && (
                       <div
