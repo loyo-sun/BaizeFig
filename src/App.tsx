@@ -7554,7 +7554,7 @@ export default function App() {
             )}
             {modal === "files" && (
               <>
-                <div className="personal-workspace-account">{cloudSession?<><span>已登录</span><strong>{cloudSession.user.username}</strong><a href={cloudSession.base+"/console"} target="_blank" rel="noreferrer">控制台</a><button onClick={signOutCloud}>退出</button></>:<button onClick={signInCloud}>登录 LoyoCloud</button>}</div>
+                {workspaceTab === "cloud" && <div className="personal-workspace-account">{cloudSession?<><span>已登录</span><strong>{cloudSession.user.username}</strong><a href={cloudSession.base+"/console"} target="_blank" rel="noreferrer">控制台</a><button onClick={signOutCloud}>退出</button></>:<button onClick={signInCloud}>登录 LoyoCloud</button>}</div>}
                 <div
                   className="workspace-switcher"
                   role="tablist"

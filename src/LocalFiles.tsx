@@ -2,9 +2,9 @@ import {webConfirm} from "./WebDialogs";
 import {isCloudBackedDocument} from "./saveDestination";
 import { WorkspaceRow } from "./WorkspaceRow";
 import { FileActions } from "./FileActions";
-import { LayoutGrid, List, Folder, RefreshCw } from "lucide-react";
+import { LayoutGrid, List, Folder, RefreshCw, Info } from "lucide-react";
 import { Scene } from "./Canvas";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Document } from "./core";
 import {
   listDocuments,
@@ -43,6 +43,7 @@ export function LocalFiles({
     [search, setSearch] = useState(""),
     [details, setDetails] = useState<Document | null>(null),
     [error, setError] = useState("");
+  const storageInfoId = useId();
   const openingLock = useRef(false);
   const [opening, setOpening] = useState(false);
   async function openFile(d: Document) {
@@ -85,43 +86,29 @@ export function LocalFiles({
     void run(load);
   }, []);
   return (
-    <div className="cloud-files">
-      <div className="cloud-files-heading">
-        <div>
-          <h3>所有本地文件</h3>
-          <p>在文件夹中整理设计，打开文件继续创作。</p>
+    <div className="cloud-files drive-workspace local-drive-workspace">
+      <header className="drive-header">
+        <div className="local-drive-label">本地文件
+          <span className="local-storage-info">
+            <button className="local-storage-info-button" popoverTarget={storageInfoId} aria-label="了解本地文件保存机制"><Info size={17} /></button>
+            <div id={storageInfoId} popover="auto" className="local-storage-tooltip" role="note">
+              <strong>温馨提示：</strong>
+              <p>1.未保存文件仅在当前浏览器缓存数据；</p>
+              <p>2.清除网站数据会导致数据丢失；</p>
+              <p>3.为保证文件安全，请及时保存文件。</p>
+            </div>
+          </span>
         </div>
-        <div className="cloud-view-switch" role="group" aria-label="文件视图">
-          <button
-            aria-label="图标模式"
-            aria-pressed={view === "grid"}
-            onClick={() => changeView("grid")}
-          >
-            <LayoutGrid size={16} />
-          </button>
-          <button
-            aria-label="列表模式"
-            aria-pressed={view === "list"}
-            onClick={() => changeView("list")}
-          >
-            <List size={16} />
-          </button>
+        <div className="drive-tools">
+          <input type="search" aria-label="搜索文件或文件夹" placeholder="搜索文件或文件夹" value={search} onChange={e => setSearch(e.target.value)} />
+          <div className="cloud-view-switch" role="group" aria-label="文件显示方式">
+            <button aria-label="列表模式" aria-pressed={view === "list"} onClick={() => changeView("list")}><List size={17} /></button>
+            <button aria-label="图标模式" aria-pressed={view === "grid"} onClick={() => changeView("grid")}><LayoutGrid size={17} /></button>
+          </div>
+          <button aria-label="刷新" onClick={() => void run(load)}><RefreshCw size={17} /></button>
+          {actions}
         </div>
-      </div>
-      <div className="cloud-toolbar">
-        {actions}
-        <input
-          type="search"
-          aria-label="搜索文件或文件夹"
-          placeholder="搜索文件或文件夹"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <button onClick={() => void run(load)}>
-          <RefreshCw size={14} />
-          刷新
-        </button>
-      </div>
+      </header>
       {opening && <div className="workspace-opening" role="status" aria-live="polite">正在打开…</div>}
       {error && <p role="alert">{error}</p>}
       <table className={`cloud-file-table cloud-file-${view}`}>
@@ -181,7 +168,7 @@ export function LocalFiles({
                         </svg>
                       </div>
                     )}
-                    <strong>{d.name.replace(/\.baizefig$/i, "")}</strong>
+                    <span className="local-file-title"><img className="local-design-icon" src="/baize-design.svg" alt="设计文件" /><strong>{d.name.replace(/\.baizefig$/i, "")}</strong></span>
                   </button>
                 </td>
                 <td className="cloud-file-type">设计文件</td>
