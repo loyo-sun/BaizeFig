@@ -55,6 +55,7 @@ export function CloudFiles({
       return "grid";
     }
   });
+  const [dropFolder,setDropFolder]=useState<string|null>(null);
   const [folderDetails, setFolderDetails] = useState<Folder | null>(null);
   const [folderMoving, setFolderMoving] = useState<Folder | null>(null);
   const [trash, setTrash] = useState(false);
@@ -233,6 +234,8 @@ export function CloudFiles({
               .map((f) => (
                 <WorkspaceRow
                   key={f.id}
+                  className={dropFolder===f.id?"workspace-drop-target":""}
+                  onDragLeave={e=>{if(!e.currentTarget.contains(e.relatedTarget as Node|null))setDropFolder(null);}}
                   onDragOver={(e) => {
                     if (
                       !trash &&
@@ -241,11 +244,13 @@ export function CloudFiles({
                       )
                     ) {
                       e.preventDefault();
+                      setDropFolder(f.id);
                       e.dataTransfer.dropEffect = "move";
                     }
                   }}
                   onDrop={(e) => {
                     e.preventDefault();
+                    setDropFolder(null);
                     const id = e.dataTransfer.getData(
                       "application/x-baizefig-cloud-file",
                     );
@@ -343,6 +348,7 @@ export function CloudFiles({
                 <WorkspaceRow
                   key={f.id}
                   draggable={!trash}
+                  onDragEnd={()=>setDropFolder(null)}
                   onDragStart={(e) => {
                     e.dataTransfer.setData(
                       "application/x-baizefig-cloud-file",
