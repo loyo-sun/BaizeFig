@@ -724,6 +724,7 @@ export function CloudFiles({
                 autoFocus={i === 0}
                 role="menuitem"
                 key={item.label}
+                className={item.label === "移至回收站" ? "drive-menu-danger" : undefined}
                 onClick={() => {
                   setMenu(null);
                   item.run();

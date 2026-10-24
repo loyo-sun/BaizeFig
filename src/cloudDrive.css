@@ -249,3 +249,6 @@
 @media(max-width:850px){.workspace-fullscreen .workspace-switcher{left:190px;max-width:220px}.personal-workspace-account{position:static;justify-content:flex-end;margin:10px 0 20px}.workspace-fullscreen .modal-heading{margin-bottom:20px}}
 
 .workspace-opening{position:fixed;inset:0;z-index:10000;background:rgb(0 0 0 / .12);display:flex;align-items:center;justify-content:center;color:var(--ui-ink);font-size:16px;font-weight:600;cursor:progress;backdrop-filter:blur(2px)}
+
+.drive-context-menu button.drive-menu-danger{color:#dc3545!important}
+.drive-context-menu button.drive-menu-danger:hover{background:rgb(220 53 69 / .08)!important}
