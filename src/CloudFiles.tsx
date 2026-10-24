@@ -67,9 +67,11 @@ export function CloudFiles({
       localStorage.setItem("baizefig.cloud.view", next);
     } catch {}
   };
+  const pathKey="baizefig.cloud.path."+session.base+"."+session.user.id;
+  const rememberedPath=()=>{try{return localStorage.getItem(pathKey)||null;}catch{return null;}};
   const [files, setFiles] = useState<File[]>([]),
     [folders, setFolders] = useState<Folder[]>([]),
-    [parent, setParent] = useState<string | null>(null),
+    [parent, setParentState] = useState<string | null>(rememberedPath),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [heads, setHeads] = useState<Record<string, string | null>>({}),
@@ -77,6 +79,7 @@ export function CloudFiles({
       [],
     ),
     [selected, setSelected] = useState<File | null>(null);
+  const setParent=(value:string|null)=>{setParentState(value);try{if(value)localStorage.setItem(pathKey,value);else localStorage.removeItem(pathKey);}catch{}};
   async function api(path: string, body?: unknown) {
     const r = await fetch(session.base + "/api/v1/space" + path, {
       headers: {
@@ -95,6 +98,8 @@ export function CloudFiles({
     const d = await api(trash ? "/trash" : "");
     setFiles(d.files);
     setFolders(d.folders || []);
+    const savedPath=rememberedPath();
+    if(!trash && savedPath && !(d.folders||[]).some((f:Folder)=>f.id===savedPath))setParent(null);
   }
   async function run(fn: () => Promise<void>) {
     setBusy(true);
@@ -109,7 +114,7 @@ export function CloudFiles({
   }
   useEffect(() => {
     setHeads({});
-    setParent(null);
+    setParentState(rememberedPath());
     void run(load);
   }, [session.token, trash]);
   async function open(file: File, version?: string) {
@@ -189,7 +194,6 @@ export function CloudFiles({
             className="workspace-trash-button"
             onClick={() => {
               setTrash(!trash);
-              setParent(null);
             }}
           >
             <Trash2 size={14} />
