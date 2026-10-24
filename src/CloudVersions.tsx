@@ -123,18 +123,20 @@ function VersionName({version, headId, onRename}: {version: CloudVersion; headId
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
   const finished = useRef(false);
+  const displayedName = version.version_name?.trim() || (version.id === headId ? "最新版本" : "历史版本");
   const commit = async () => {
     if (finished.current) return;
     finished.current = true;
     setEditing(false);
-    if (value.trim() && value.trim() !== (version.version_name || "")) await onRename(version.id, value.trim());
+    const name = value.trim();
+    if (name && name !== (version.version_name || "")) await onRename(version.id, name);
   };
-  return editing ? <input data-version-edit autoFocus aria-label="版本名称" maxLength={100} value={value}
+  return <input className="version-name-input" data-version-edit aria-label="版本名称" title="点击编辑版本名称" maxLength={100}
+    value={editing ? value : displayedName}
+    onFocus={e => {finished.current = false; setValue(version.version_name || ""); setEditing(true); e.currentTarget.select();}}
     onChange={e => setValue(e.target.value)} onBlur={() => void commit()}
     onKeyDown={e => {
-      if (e.key === "Enter" && !e.nativeEvent.isComposing) {e.preventDefault(); void commit();}
-      if (e.key === "Escape") {e.preventDefault(); e.stopPropagation(); finished.current = true; setEditing(false);}
-    }} /> : <button className="version-name" title="点击编辑版本名称" onClick={() => {finished.current = false; setValue(version.version_name || ""); setEditing(true);}}>
-    {version.version_name || (version.id === headId ? "最新版本" : "历史版本")}
-  </button>;
+      if (e.key === "Enter" && !e.nativeEvent.isComposing) {e.preventDefault(); e.stopPropagation(); void commit(); e.currentTarget.blur();}
+      if (e.key === "Escape") {e.preventDefault(); e.stopPropagation(); finished.current = true; setEditing(false); e.currentTarget.blur();}
+    }} />;
 }
