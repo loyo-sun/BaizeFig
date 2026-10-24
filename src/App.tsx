@@ -6990,7 +6990,7 @@ export default function App() {
             <div className="modal-heading">
               <div>
                 {modal!=="files"&&<span className="eyebrow">BAIZEFIG / 白泽</span>}
-                <h2>{modal==="files"?"个人工作区":t(title)}</h2>
+                <h2>{modal==="files"?"工作区":t(title)}</h2>
               </div>
               <button
                 className="icon-button"
@@ -7567,11 +7567,7 @@ export default function App() {
                       aria-selected={workspaceTab === value}
                       onClick={() => setWorkspaceTab(value)}
                     >
-                      {t(
-                        value === "local"
-                          ? "Local workspace"
-                          : "LoyoCloud",
-                      )}
+                      {value === "local" ? "本地" : "云"}
                     </button>
                   ))}
                 </div>
