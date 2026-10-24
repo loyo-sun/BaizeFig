@@ -26,6 +26,7 @@ export const fileDate = (value?: string | number) =>
 function useFloatingEscape(onClose:()=>void){
  const overlay=useRef<HTMLDivElement>(null);
  useEffect(()=>{const handler=(e:KeyboardEvent)=>{
+        if ((e.target as HTMLElement)?.matches?.("[data-version-edit]")) return;
   if(e.key!=="Escape"||e.repeat||document.querySelector('.web-dialog-backdrop'))return;
   const layers=document.querySelectorAll('.workspace-dialog-overlay');
   if(layers[layers.length-1]!==overlay.current)return;

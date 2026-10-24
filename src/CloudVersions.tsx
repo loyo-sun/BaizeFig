@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { webPrompt } from "./WebDialogs";
+import { useRef, useState } from "react";
 import { UserRound, RotateCcw, Trash2 } from "lucide-react";
 export type CloudVersion = {
   id: string;
@@ -24,17 +23,6 @@ export function CloudVersions({
 }) {
   const [namedOnly, setNamedOnly] = useState(false);
   const visibleVersions = namedOnly ? versions.filter(v => v.version_name?.trim()) : versions;
-  const groups = new Map<string, CloudVersion[]>();
-  for (const version of visibleVersions) {
-    const day = new Date(version.created_at).toLocaleDateString("zh-CN", {
-      timeZone: "Asia/Shanghai",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "long",
-    });
-    groups.set(day, [...(groups.get(day) || []), version]);
-  }
   return (
     <div className="cloud-versions">
       <p className="muted">
@@ -52,17 +40,15 @@ export function CloudVersions({
           </tr>
         </thead>
         <tbody>
-          {Array.from(groups).map(([day, items]) => (
+
             <VersionDay
-              key={day}
-              day={day}
-              items={items}
+              key="versions"
+              items={visibleVersions}
               headId={headId}
               onRestore={onRestore}
               onDelete={onDelete}
               onRename={onRename}
             />
-          ))}
         </tbody>
       </table>
       {!visibleVersions.length && <p>{namedOnly ? "暂无已命名版本" : "暂无版本记录"}</p>}
@@ -70,14 +56,12 @@ export function CloudVersions({
   );
 }
 function VersionDay({
-  day,
   items,
   headId,
   onRestore,
   onDelete,
   onRename,
 }: {
-  day: string;
   items: CloudVersion[];
   headId: string | null;
   onRestore: (id: string) => Promise<void>;
@@ -86,9 +70,6 @@ function VersionDay({
 }) {
   return (
     <>
-      <tr className="version-day">
-        <td colSpan={6}>{day}</td>
-      </tr>
       {items.map((v) => (
         <tr key={v.id}>
           <td>
@@ -114,10 +95,7 @@ function VersionDay({
                 : (Number(v.size_bytes) / 1024).toFixed(1) + " KB"}
           </td>
           <td>{v.source || "未记录"}</td>
-          <td><button className="version-name" title="点击编辑版本名称" onClick={async () => {
-            const name = await webPrompt("编辑版本名称", v.version_name || "");
-            if (name !== null) await onRename(v.id, name);
-          }}>{v.version_name || (v.id === headId ? "最新版本" : "历史版本")}</button></td>
+          <td><VersionName version={v} headId={headId} onRename={onRename} /></td>
           <td>
             <div className="workspace-file-actions">
               <button onClick={() => void onRestore(v.id)}>
@@ -139,4 +117,24 @@ function VersionDay({
       ))}
     </>
   );
+}
+
+function VersionName({version, headId, onRename}: {version: CloudVersion; headId: string | null; onRename: (id: string, name: string) => Promise<void>}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+  const finished = useRef(false);
+  const commit = async () => {
+    if (finished.current) return;
+    finished.current = true;
+    setEditing(false);
+    if (value.trim() !== (version.version_name || "")) await onRename(version.id, value.trim());
+  };
+  return editing ? <input data-version-edit autoFocus aria-label="版本名称" maxLength={100} value={value}
+    onChange={e => setValue(e.target.value)} onBlur={() => void commit()}
+    onKeyDown={e => {
+      if (e.key === "Enter" && !e.nativeEvent.isComposing) {e.preventDefault(); void commit();}
+      if (e.key === "Escape") {e.preventDefault(); e.stopPropagation(); finished.current = true; setEditing(false);}
+    }} /> : <button className="version-name" title="点击编辑版本名称" onClick={() => {finished.current = false; setValue(version.version_name || ""); setEditing(true);}}>
+    {version.version_name || (version.id === headId ? "最新版本" : "历史版本")}
+  </button>;
 }
