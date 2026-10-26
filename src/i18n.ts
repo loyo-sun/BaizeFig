@@ -302,6 +302,8 @@ export const zhCN: Record<string, string> = {
   "Signed in": "已登录",
   "Not signed in": "未登录",
   "Canvas connection": "当前画布连接",
+  "Signed-in canvases connect automatically. Disconnect pauses this page; reopening or refreshing reconnects.":
+    "登录后自动连接当前画布。断开仅暂停本页面，重新打开或刷新后会自动连接。",
   Cloud: "云",
   "Official cloud service": "官方云服务",
   "Account center": "账号中心",

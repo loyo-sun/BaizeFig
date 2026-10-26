@@ -31,10 +31,10 @@ export function readStoredCloudSession(base: string) {
     return null;
   }
 }
-function store(session: CloudSession | null, autoConnect = false) {
+function store(session: CloudSession | null) {
   try {
     if (session) {
-      const value = JSON.stringify({ session, autoConnect });
+      const value = JSON.stringify({ session, autoConnect: true });
       if (localStorage.getItem(CLOUD_SESSION_KEY) !== value)
         localStorage.setItem(CLOUD_SESSION_KEY, value);
     } else localStorage.removeItem(CLOUD_SESSION_KEY);
@@ -51,6 +51,7 @@ export function useCloudSession(ready: boolean) {
   const [restoreError, setRestoreError] = useState("");
   const [restoreVersion, setRestoreVersion] = useState(0);
   const generation = useRef(0);
+  const paused = useRef(false);
   const currentToken = useRef<string | null>(null);
   currentToken.current = session?.token ?? null;
   const [durationDays, updateDuration] = useState(() => {
@@ -82,8 +83,9 @@ export function useCloudSession(ready: boolean) {
   }, []);
   const accept = (value: CloudSession) => {
     generation.current++;
+    paused.current = false;
     currentToken.current = value.token;
-    const persisted = store(value, true);
+    const persisted = store(value);
     updateSession(value);
     updateActive(true);
     setRestoring(false);
@@ -91,8 +93,11 @@ export function useCloudSession(ready: boolean) {
     return persisted;
   };
   const setActive = (value: boolean) => {
+    paused.current = !value;
     updateActive(value);
-    if (session) store(session, value);
+    // Disconnect pauses this page only. Do not turn a rejected pairing or a
+    // switch to a local service into a permanent opt-out on future visits.
+    if (session) store(session);
   };
   useEffect(() => {
     if (!ready) return;
@@ -129,9 +134,11 @@ export function useCloudSession(ready: boolean) {
         // The server's absolute expiration remains unchanged when restoring.
         const latest = readStoredCloudSession(base);
         if (!latest || latest.session.token !== saved.session.token) return;
-        store(validated, latest.autoConnect);
+        // Older versions persisted autoConnect=false after any disconnect.
+        // A validated sign-in always reconnects on a new visit or recovery.
+        store(validated);
         updateSession(validated);
-        updateActive(latest.autoConnect);
+        updateActive(!paused.current);
         setRestoring(false);
         setRestoreError("");
       } catch (error) {

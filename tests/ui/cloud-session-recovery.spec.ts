@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 const base = "https://cloud.loyo.work";
-test("missing recovery endpoint stops the spinner, preserves sign-in and allows retry", async ({
+test("missing recovery endpoint stops the spinner, preserves sign-in and reconnects when available", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -21,6 +21,12 @@ test("missing recovery endpoint stops the spinner, preserves sign-in and allows 
       );
   });
   let available = false;
+  await page.routeWebSocket(
+    "wss://cloud.loyo.work/api/v1/bridge/baizefig",
+    (ws) => {
+      ws.onMessage(() => ws.send(JSON.stringify({ type: "paired" })));
+    },
+  );
   await page.route(base + "/api/v1/editor/session", (route) =>
     route.fulfill({
       status: available ? 200 : 404,
@@ -52,14 +58,14 @@ test("missing recovery endpoint stops the spinner, preserves sign-in and allows 
       localStorage.getItem("baizefig.cloud.session.v1"),
     ),
   ).not.toBeNull();
+  await expect(
+    page.getByRole("button", { name: "Retry restoring sign-in", exact: true }),
+  ).toBeEnabled();
   available = true;
-  await page
-    .getByRole("button", { name: "Retry restoring sign-in", exact: true })
-    .click();
   await expect(page.getByText("tester", { exact: true })).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Connect this canvas", exact: true }),
-  ).toBeVisible();
+    page.getByRole("status").filter({ hasText: /^Connected$/ }),
+  ).toBeVisible({ timeout: 10000 });
   await expect(
     page.getByRole("button", { name: "Restoring sign-in…", exact: true }),
   ).toHaveCount(0);

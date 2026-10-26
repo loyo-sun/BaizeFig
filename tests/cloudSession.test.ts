@@ -22,7 +22,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 describe("remembered cloud sign-in", () => {
-  it("accepts remembered sign-in without overwriting an explicit disconnect", () => {
+  it("reads legacy disconnected sessions so they can be validated and reconnected", () => {
     localStorage.setItem(
       CLOUD_SESSION_KEY,
       JSON.stringify({ session: session(), autoConnect: false }),

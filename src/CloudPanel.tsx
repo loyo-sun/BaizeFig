@@ -259,6 +259,13 @@ export function CloudPanel(p: {
               </button>
             )}
           </div>
+          {cloudService && p.session && (
+            <p className="cloud-fine-print">
+              {t(
+                "Signed-in canvases connect automatically. Disconnect pauses this page; reopening or refreshing reconnects.",
+              )}
+            </p>
+          )}
         </section>
         {p.session && (
           <footer className="cloud-panel-footer">
