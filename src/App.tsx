@@ -1,3 +1,4 @@
+import { LayerTree, type LayerTreeActions } from "./LayerTree";
 import { isCloudOffline } from "./cloudConnectivity";
 import {
   cacheCloudDraft,
@@ -1695,15 +1696,17 @@ export default function App() {
     e.stopPropagation();
     svg.current?.setPointerCapture(e.pointerId);
     const p = point(e);
+    const panning = tool === "hand" || space.current || e.button === 1;
     const base = {
       start: p,
       screen: { x: e.clientX, y: e.clientY },
-      before: clone(doc),
+      // Panning changes only the viewport; no editable document snapshot is needed.
+      before: panning ? doc : clone(doc),
       view: { ...view },
       ids: [] as string[],
       selectionBefore: [...selected],
     };
-    if (tool === "hand" || space.current || e.button === 1) {
+    if (panning) {
       drag.current = { ...base, type: "pan" };
       setIsPanning(true);
       return;
@@ -4448,172 +4451,33 @@ export default function App() {
       });
     }
   }
-  function tree(parentId: string | null, depth = 0) {
-    return [
-      ...doc.nodes.filter((n) => n.pageId === page && n.parentId === parentId),
-    ]
-      .reverse()
-      .map((n) => {
-        if (
-          layerFilter &&
-          !descendants(doc, [n.id]).some((key) =>
-            doc.nodes
-              .find((a) => a.id === key)
-              ?.name.toLowerCase()
-              .includes(layerFilter.toLowerCase()),
-          )
-        )
-          return null;
-        const children = doc.nodes.some((c) => c.parentId === n.id);
-        return (
-          <div key={n.id}>
-            <div
-              className={`layer ${selected.includes(n.id) ? "selected" : ""} ${ancestors(doc, n).some((a) => selected.includes(a.id)) ? "in-selection" : ""} ${[n, ...ancestors(doc, n)].some((a) => a.type === "component" || a.type === "instance") ? "component-layer" : ""} ${!n.visible ? "dim" : ""}`}
-              style={{ paddingLeft: 12 + depth * 14, touchAction: "none" }}
-              aria-selected={selected.includes(n.id)}
-              data-layer-id={n.id}
-              draggable={false}
-              onPointerDown={(e) => beginLayerDrag(e, n)}
-              onPointerMove={moveLayerDrag}
-              onPointerUp={endLayerDrag}
-              onPointerCancel={() => {
-                layerPointer.current = null;
-                layerPointerDrop.current = null;
-                setLayerDrop(null);
-              }}
-              aria-label={t("Layer {name}", { name: n.name })}
-
-              data-drop-position={
-                layerDrop?.id === n.id ? layerDrop.position : undefined
-              }
-              onClick={(e) => {
-                if (suppressLayerClick.current) {
-                  suppressLayerClick.current = false;
-                  return;
-                }
-                setSelected(
-                  e.shiftKey
-                    ? selected.includes(n.id)
-                      ? selected.filter((s) => s !== n.id)
-                      : [...selected, n.id]
-                    : [n.id],
-                );
-              }}
-              onDoubleClick={(e) => {
-                if ((e.target as Element).closest("button,input")) return;
-                setSelected([n.id]);
-                setRenaming({ kind: "layer", id: n.id, documentId: doc.id });
-              }}
-            >
-              <button
-                className="tiny"
-                aria-label={t("Toggle {name}", { name: n.name })}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCollapsed((old) => {
-                    const next = new Set(old);
-                    next.has(n.id) ? next.delete(n.id) : next.add(n.id);
-                    return next;
-                  });
-                }}
-              >
-                {children ? (
-                  collapsed.has(n.id) ? (
-                    <ChevronRight size={12} />
-                  ) : (
-                    <ChevronDown size={12} />
-                  )
-                ) : (
-                  <span className="spacer" />
-                )}
-              </button>
-              {(() => {
-                const Icon =
-                  (n.type === "path"
-                    ? Spline
-                    : tools.find((tool) => tool.id === n.type)?.icon) ??
-                  (n.type === "component" || n.type === "instance"
-                    ? Component
-                    : Layers);
-                return (
-                  <Icon
-                    size={12}
-                    strokeWidth={1.25}
-                    className="layer-kind-icon"
-                  />
-                );
-              })()}
-              {(n.type === "component" || n.type === "instance") && (
-                <span
-                  className="component-badge"
-                  title={t(
-                    n.type === "component" ? "Main component" : "Instance",
-                  )}
-                  aria-label={t(
-                    n.type === "component" ? "Main component" : "Instance",
-                  )}
-                >
-                  {n.type === "component" ? (
-                    <Component size={13} />
-                  ) : (
-                    <span aria-hidden="true">{"◇"}</span>
-                  )}
-                </span>
-              )}
-              {renaming?.kind === "layer" &&
-              renaming.id === n.id &&
-              renaming.documentId === doc.id ? (
-                <InlineNameInput
-                  key={n.id}
-                  name={n.name}
-                  label={t("Layer name")}
-                  onCancel={() => setRenaming(null)}
-                  onCommit={(name) => {
-                    run({ type: "update", ids: [n.id], patch: { name } });
-                    setRenaming(null);
-                  }}
-                />
-              ) : (
-                <span className="layer-name">{n.name}</span>
-              )}
-              <button
-                className="tiny layer-action"
-                aria-label={t(n.visible ? "Hide {name}" : "Show {name}", {
-                  name: n.name,
-                })}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  run({
-                    type: "update",
-                    ids: [n.id],
-                    patch: { visible: !n.visible },
-                  });
-                }}
-              >
-                {n.visible ? <Eye size={12} /> : <EyeOff size={12} />}
-              </button>
-              <button
-                className="tiny layer-action"
-                aria-label={t(n.locked ? "Unlock {name}" : "Lock {name}", {
-                  name: n.name,
-                })}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  run({
-                    type: "update",
-                    ids: [n.id],
-                    patch: { locked: !n.locked },
-                  });
-                }}
-              >
-                {n.locked ? <Lock size={12} /> : <Unlock size={12} />}
-              </button>
-            </div>
-            {!collapsed.has(n.id) && tree(n.id, depth + 1)}
-          </div>
-        );
-      });
-  }
+  const layerActions = useRef<LayerTreeActions>(null!);
+  layerActions.current = {
+    begin: beginLayerDrag,
+    move: moveLayerDrag,
+    end: endLayerDrag,
+    cancel: () => {
+      layerPointer.current = null;
+      layerPointerDrop.current = null;
+      setLayerDrop(null);
+    },
+    select: (e, n) => {
+      if (suppressLayerClick.current) {
+        suppressLayerClick.current = false;
+        return;
+      }
+      setSelected(
+        e.shiftKey
+          ? selected.includes(n.id)
+            ? selected.filter((s) => s !== n.id)
+            : [...selected, n.id]
+          : [n.id],
+      );
+    },
+    rename: (id) =>
+      setRenaming(id ? { kind: "layer", id, documentId: doc.id } : null),
+    run,
+  };
   const selectionBox = chosen.length ? bounds(doc, roots(doc, selected)) : null;
   function locateMatch(match: FindMatch) {
     const node = doc.nodes.find((n) => n.id === match.nodeId);
@@ -5258,7 +5122,22 @@ export default function App() {
                 </div>
               )}
               <div className="layer-tree">
-                {tree(null)}
+                <LayerTree
+                  doc={doc}
+                  page={page}
+                  selected={selected}
+                  collapsed={collapsed}
+                  layerFilter={layerFilter}
+                  layerDrop={layerDrop}
+                  renamingId={
+                    renaming?.kind === "layer" && renaming.documentId === doc.id
+                      ? renaming.id
+                      : null
+                  }
+                  setSelected={setSelected}
+                  setCollapsed={setCollapsed}
+                  actions={layerActions}
+                />
                 <div
                   className="layer-root-drop"
                   role="button"

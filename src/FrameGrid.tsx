@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { ancestors, worldTransform, type Document, type Node } from "./core";
 export function frameGridRects(n: Node) {
   const grid = n.frameGrid;
@@ -21,7 +22,13 @@ export function frameGridRects(n: Node) {
         },
   );
 }
-export function FrameGrid({ doc, page }: { doc: Document; page: string }) {
+export const FrameGrid = memo(function FrameGrid({
+  doc,
+  page,
+}: {
+  doc: Document;
+  page: string;
+}) {
   return (
     <g pointerEvents="none">
       {doc.nodes
@@ -29,8 +36,8 @@ export function FrameGrid({ doc, page }: { doc: Document; page: string }) {
           (n) =>
             n.pageId === page &&
             n.visible &&
-            !ancestors(doc, n).some((a) => !a.visible) &&
-            n.frameGrid?.visible,
+            n.frameGrid?.visible &&
+            !ancestors(doc, n).some((a) => !a.visible),
         )
         .map((n) => (
           <g
@@ -45,4 +52,4 @@ export function FrameGrid({ doc, page }: { doc: Document; page: string }) {
         ))}
     </g>
   );
-}
+});
