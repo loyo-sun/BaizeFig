@@ -5,6 +5,16 @@ export const LANGUAGE_STORAGE_KEY = "baizefig.ui.language";
 export type TranslationValues = Record<string, string | number>;
 
 export const zhCN: Record<string, string> = {
+  "Open cloud file": "打开云端文件",
+  "Opening selected cloud file…": "正在打开所选云端文件…",
+  "Unable to open cloud file": "无法打开所选云端文件",
+  "Downloading the selected file. Please wait.": "正在下载所选文件，请稍候。",
+  "Sign in to LoyoCloud to open the selected file.":
+    "请登录 LoyoCloud 以打开所选文件。",
+  "Retry opening file": "重新打开",
+  "Cancel opening": "取消打开",
+  "The returned file does not match the selected file.":
+    "返回的文件与所选文件不一致，请重试或联系管理员。",
   "Finish editing": "结束编辑",
   "Read only": "只读",
   "Acquiring edit access": "正在获取编辑权…",

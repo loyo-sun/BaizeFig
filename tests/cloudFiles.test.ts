@@ -1,3 +1,4 @@
+import "fake-indexeddb/auto";
 import { test, expect, vi } from "vitest";
 import { JSDOM } from "test-dom-jsdom";
 import React, { act } from "react";

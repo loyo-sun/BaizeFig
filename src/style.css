@@ -3547,3 +3547,16 @@ html[lang="zh-CN"] .layer-title-input {
 .presentation > p {
   display: none;
 }
+
+/* A cloud link must never present the last local document as its result. */
+.app.cloud-file-link-blocked {pointer-events:none}
+.app.cloud-file-link-blocked, .app.cloud-file-link-blocked * {visibility:hidden!important}
+.cloud-file-link-gate {position:fixed;inset:0;z-index:100000;display:grid;place-items:center;padding:24px;background:var(--ui-field,#f3f4f6);color:var(--ui-ink,#202624);overflow:auto}
+.cloud-file-link-card {width:min(440px,100%);padding:28px;border:1px solid var(--ui-border,#e0e5e2);border-radius:14px;background:var(--ui-surface,#fff);box-shadow:0 12px 40px #0001}
+.cloud-file-link-card h1 {font-size:20px;line-height:1.5;margin:18px 0 10px}
+.cloud-file-link-card p {font-size:13px;line-height:1.7;color:var(--ui-muted,#64716b);overflow-wrap:anywhere}
+.cloud-file-link-card [role=alert] {color:#bd4054}
+.cloud-file-link-actions {display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.cloud-file-link-card button {min-height:36px;border:1px solid var(--ui-border,#e0e5e2);border-radius:7px;padding:8px 13px;background:var(--ui-surface,#fff);color:var(--ui-ink,#202624);cursor:pointer}
+.cloud-file-link-card button.primary {background:var(--ui-accent,#287f71);border-color:var(--ui-accent,#287f71);color:var(--ui-surface,#fff)}
+.cloud-file-link-card button:disabled {opacity:.5;cursor:wait}

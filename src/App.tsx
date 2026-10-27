@@ -71,6 +71,7 @@ import {
 } from "./cloud";
 import { useCloudSession } from "./useCloudSession";
 import { CloudPanel } from "./CloudPanel";
+import { CloudFileLinkGate } from "./CloudFileLinkGate";
 import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
 import {
@@ -406,6 +407,21 @@ export default function App() {
     },
     [],
   );
+  const [cloudLinkPending, setCloudLinkPending] = useState(() =>
+    Boolean(new URLSearchParams(window.location.search).get("cloudFile")),
+  );
+  const [cloudLinkError, setCloudLinkError] = useState("");
+  const [cloudLinkAttempt, setCloudLinkAttempt] = useState(0);
+  const cloudLinkBlocking = useRef(cloudLinkPending);
+  cloudLinkBlocking.current = cloudLinkPending;
+  useEffect(() => {
+    const blockEditorShortcuts = (event: KeyboardEvent) => {
+      if (cloudLinkBlocking.current) event.stopImmediatePropagation();
+    };
+    window.addEventListener("keydown", blockEditorShortcuts, true);
+    return () =>
+      window.removeEventListener("keydown", blockEditorShortcuts, true);
+  }, []);
   const [leftTab, setLeftTab] = useState<"file" | "assets" | "smart">("file");
   const [smartDeployment, setSmartDeployment] = useState<"cloud" | "self">(
     "cloud",
@@ -632,6 +648,7 @@ export default function App() {
   }, [tool]);
   const pathDrawing = useRef<PathDrawingHandle>(null);
   useEffect(() => {
+    if (cloudLinkPending) return;
     if (cloudActive && cloudSession && Date.now() < cloudSession.expiresAt) {
       connectBridge(false, cloudSession);
     } else if (bridgeIntent.current?.cloud) {
@@ -642,7 +659,7 @@ export default function App() {
     setCollapsed(
       new Set(doc.nodes.filter((n) => container(n)).map((n) => n.id)),
     );
-  }, [doc.id, cloudActive, cloudSession?.token]);
+  }, [doc.id, cloudActive, cloudSession?.token, cloudLinkPending]);
   useEffect(() => {
     const offline = () => {
       if (
@@ -923,6 +940,11 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
   useEffect(() => {
+    // A specific cloud link takes priority over the browser's last document.
+    if (new URLSearchParams(window.location.search).get("cloudFile")) {
+      setReady(true);
+      return;
+    }
     let alive = true;
     loadLast()
       .then((found) => {
@@ -973,7 +995,7 @@ export default function App() {
       await persistCurrent(snapshot);
       return committedDocument.current === current.current.doc;
     });
-  }, [ready, persistCurrent]);
+  }, [ready, persistCurrent, cloudLinkPending]);
   useEffect(() => {
     if (!ready || !window.baizefigDesktop) return;
     return window.baizefigDesktop.onOpenFile(async (file) => {
@@ -1005,7 +1027,7 @@ export default function App() {
     });
   }, [ready, notify]);
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || cloudLinkPending) return;
     if (doc === committedDocument.current) {
       setSaved("Saved locally");
       return;
@@ -1013,9 +1035,9 @@ export default function App() {
     setSaved("Saving…");
     const timer = setTimeout(() => void persistCurrent(doc), 400);
     return () => clearTimeout(timer);
-  }, [doc, ready, persistCurrent]);
+  }, [doc, ready, persistCurrent, cloudLinkPending]);
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || cloudLinkPending) return;
     const flush = () => {
       if (current.current.doc !== committedDocument.current)
         void persistCurrent(current.current.doc);
@@ -1338,18 +1360,13 @@ export default function App() {
   useEffect(() => {
     const fileId = new URLSearchParams(window.location.search).get("cloudFile");
     if (!fileId || !ready || openingCloudLink.current) return;
-    if (!cloudSession) {
-      if (!cloudLogin.restoring) {
-        setWorkspaceTab("cloud");
-        setModal("files");
-      }
-      return;
-    }
+    if (!cloudSession) return;
     openingCloudLink.current = true;
+    setCloudLinkError("");
     void (async () => {
       try {
         let result;
-        if (!window.baizefigDesktop && isCloudOffline()) {
+        if (!window.baizefigDesktop && isCloudOffline() && !(cloudLinkAttempt > 0 && navigator.onLine)) {
           const cached = await readCloudRecovery(cloudSession, fileId);
           if (!cached) throw Error("此文件尚未缓存到本机，请联网后打开");
           result = {
@@ -1368,11 +1385,16 @@ export default function App() {
             cloudSession,
             "/files/" + encodeURIComponent(fileId),
           );
+          if (result.file?.id !== fileId || result.content?.id !== fileId)
+            throw Error("The returned file does not match the selected file.");
           if (!window.baizefigDesktop)
             result = await resolveCloudOpen(cloudSession, result);
         }
+        if (result.file?.id !== fileId || result.content?.id !== fileId)
+          throw Error("The returned file does not match the selected file.");
         validateDocument(result.content);
-        if (!(await save(current.current.doc))) throw Error("无法保存当前文件");
+        if (committedDocument.current && !(await save(current.current.doc)))
+          throw Error("无法保存当前文件");
         if (!(await save(result.content))) throw Error("无法缓存云端文件");
         rememberCloudBinding(
           cloudSession,
@@ -1397,11 +1419,12 @@ export default function App() {
         const url = new URL(window.location.href);
         url.searchParams.delete("cloudFile");
         window.history.replaceState(null, "", url);
+        setCloudLinkPending(false);
       } catch (error) {
-        notify((error as Error).message);
+        setCloudLinkError((error as Error).message);
       }
     })();
-  }, [ready, cloudSession?.token, cloudLogin.restoring]);
+  }, [ready, cloudSession?.token, cloudLogin.restoring, cloudLinkAttempt]);
   const localExport = () => {
     download(JSON.stringify(doc, null, 2), `${doc.name}.baizefig`);
     notify("Local copy exported");
@@ -4559,8 +4582,33 @@ export default function App() {
                             ? "Connect external AI"
                             : "Rename layer";
   return (
+    <>
+      {cloudLinkPending && (
+        <CloudFileLinkGate
+          error={cloudLinkError}
+          restoring={cloudLogin.restoring}
+          signingIn={cloudSigningIn}
+          signedIn={Boolean(cloudSession)}
+          restoreError={cloudLogin.restoreError}
+          notice={toast}
+          days={cloudLogin.durationDays}
+          onDays={cloudLogin.setDurationDays}
+          onSignIn={signInCloud}
+          onRestore={cloudLogin.retryRestore}
+          onRetry={() => {
+            openingCloudLink.current = false;
+            setCloudLinkAttempt((v) => v + 1);
+          }}
+          onCancel={() => {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("cloudFile");
+            window.location.assign(url);
+          }}
+        />
+      )}
     <div
-      className={`app ${hiddenUI ? "ui-hidden" : ""}`}
+      inert={cloudLinkPending}
+      className={`app ${hiddenUI ? "ui-hidden" : ""} ${cloudLinkPending ? "cloud-file-link-blocked" : ""}`}
       onPointerMove={(e) => {
         if (!hiddenUI || drag.current) return;
         const target = e.target as Element;
@@ -8304,5 +8352,6 @@ export default function App() {
         </div>
       )}
     </div>
+    </>
   );
 }
