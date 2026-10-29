@@ -44,6 +44,35 @@ function fixture() {
   };
 }
 describe("MCP editor boundary", () => {
+  it("keeps read revisions valid across cloud lease reloads and consecutive batches", () => {
+    const f = fixture();
+    for (let batch = 0; batch < 2; batch++) {
+      const request = f.write();
+      // begin_edit fetches the same JSON again, with independent objects and
+      // potentially different property order. This must not cause a conflict.
+      const reloaded = JSON.parse(JSON.stringify(f.doc));
+      f.commit(
+        Object.fromEntries(Object.entries(reloaded).reverse()) as typeof f.doc,
+      );
+      expect(f.read().revision).toBe(request.expectedRevision);
+      request.commands[0].patch.name = `AI batch ${batch}`;
+      const applied = f.call("apply_commands", request);
+      expect(applied.revision).not.toBe(request.expectedRevision);
+      f.commit(structuredClone(f.doc));
+      expect(f.read().revision).toBe(applied.revision);
+    }
+  });
+  it("rejects genuinely changed cloud content after acquiring the lease", () => {
+    const f = fixture(),
+      request = f.write();
+    const reloaded = structuredClone(f.doc);
+    reloaded.nodes[0].x += 1;
+    f.commit(reloaded);
+    expect(() => f.call("apply_commands", request)).toThrow(/Document changed/);
+    expect(f.call("get_request_status", pTarget(request)).status).toBe(
+      "not_found",
+    );
+  });
   it("commits once, exposes receipts, detects conflicting keys and undoes one atomic batch", () => {
     const f = fixture(),
       p = f.write(),

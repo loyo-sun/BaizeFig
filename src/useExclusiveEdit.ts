@@ -216,14 +216,8 @@ export function useExclusiveEdit(
                 : "只读 · 点击开始编辑获取编辑权",
             );
             render((v) => v + 1);
-            if (
-              web &&
-              !result.lock &&
-              !lease.current &&
-              autoPaused.current !== id &&
-              !starting.current
-            )
-              await begin("human", undefined, true);
+            // Being online is enough to serve MCP. An idle browser must not
+            // claim a human lease just because the previous AI batch ended.
           }
         }
       } catch (error) {
@@ -350,7 +344,7 @@ export function useExclusiveEdit(
     try {
       const result = await beginEditing(kind, token);
       if (web) {
-        autoPaused.current = null;
+        autoPaused.current = kind === "ai" ? documentId : null;
         setOccupant("");
       }
       if (web && !resuming)
@@ -425,6 +419,7 @@ export function useExclusiveEdit(
         throw Error("文档已切换，请重新开始编辑");
       if (web && kind === "human")
         rememberEditResume(s, id, { editorId, token: acquired.token });
+      if (web && kind === "ai") forgetEditResume(s, id);
       try {
         let latest = await cloudRequest(s, "/files/" + id);
         if (web) latest = await resolveCloudOpen(s, latest);

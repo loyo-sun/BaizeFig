@@ -66,13 +66,31 @@ type Receipt = { fingerprint: string; result: unknown };
 export class EditorMcp {
   readonly editorId = crypto.randomUUID();
   private document?: Document;
+  private contentSnapshot?: string;
   private revision = crypto.randomUUID();
   private receipts = new Map<string, Receipt>();
-  forgetReceipt(documentId:string,key:string) {this.receipts.delete(JSON.stringify([documentId,key]));}
+  forgetReceipt(documentId: string, key: string) {
+    this.receipts.delete(JSON.stringify([documentId, key]));
+  }
   private sync(doc: Document) {
     if (this.document !== doc) {
+      // Acquiring a cloud lease reloads the document into a fresh object.
+      // Only content changes invalidate a revision, not object identity or
+      // the order of JSON object keys returned by the cloud.
+      const snapshot = JSON.stringify(doc, (_key, value) =>
+        value && typeof value === "object" && !Array.isArray(value)
+          ? Object.fromEntries(
+              Object.keys(value)
+                .sort()
+                .map((key) => [key, value[key]]),
+            )
+          : value,
+      );
       this.document = doc;
-      this.revision = crypto.randomUUID();
+      if (snapshot !== this.contentSnapshot) {
+        this.contentSnapshot = snapshot;
+        this.revision = crypto.randomUUID();
+      }
     }
     return this.revision;
   }
