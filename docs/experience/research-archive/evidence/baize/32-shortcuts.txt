@@ -1,0 +1,352 @@
+File
+Assets
+Agents
+Cloud
+Variables
+Drafts
+Local
+Saved locally
+Local components
+1
+Libraries
+All sources
+Local components
+
+Click for details; drag onto the canvas to create an instance.
+
+Continue
+Button
+Local components
+Baize · Understand all things. See every form.
+LOCAL FIRST
+Board
+Design baseline
+Continue
+360 × 120
+白
+Share
+Design
+Prototype
+83%
+2 selected
+Position
+X
+Y
++
+horizontal min
+horizontal max
+horizontal center
+horizontal stretch
+horizontal scale
+vertical min
+vertical max
+vertical center
+vertical stretch
+vertical scale
+↻
+⌜
+Layout
+W
+H
+Width sizing
+fixed
+hug
+fill
+Height sizing
+fixed
+hug
+fill
+Size limits
+Layer
+Blend normal
+Blend multiply
+Blend screen
+Blend overlay
+Blend darken
+Blend lighten
+Blend color-dodge
+Blend color-burn
+Blend hard-light
+Blend soft-light
+Blend difference
+Blend exclusion
+Blend hue
+Blend saturation
+Blend color
+Blend luminosity
+%
+Fill
+%
+Fill layers and image crop
+Stroke
+%
+Width
+Stroke alignment
+Center stroke
+Inside stroke
+Outside stroke
+Stroke
+Selection colors
+3B82F6
+202A24
+F97316
+Effects
+Export
+1x
+2x
+3x
+PNG
+JPG
+SVG
+HTML
+PDF
+Export Rectangle
+All changes stay on your device.
+BAIZEFIG / 白泽
+Keyboard shortcuts
+
+Familiar keys. A canvas of your own. ⌘ on Mac, Ctrl on Windows/Linux.
+
+Shortcut
+Move
+V
+Shortcut
+Scale
+K
+Shortcut
+Frame
+F
+Shortcut
+Rectangle
+R
+Shortcut
+Ellipse
+O
+Shortcut
+Line
+L
+Shortcut
+Pen / polyline
+P
+Shortcut
+Text
+T
+Shortcut
+Hand
+H
+Shortcut
+Arrow
+Shift + L
+Shortcut
+Pencil
+Shift + P
+Shortcut
+Actions
+⌘ + K
+Shortcut
+Undo
+⌘ + Z
+Shortcut
+Redo
+⌘ + Shift + Z
+Shortcut
+Copy
+⌘ + C
+Shortcut
+Cut
+⌘ + X
+Shortcut
+Paste
+⌘ + V
+Shortcut
+Paste over selection
+⌘ + Shift + V
+Shortcut
+Paste to replace
+⌘ + Shift + R
+Shortcut
+Duplicate selection
+⌘ + D
+Shortcut
+Delete
+⌫
+Shortcut
+Group selection
+⌘ + G
+Shortcut
+Ungroup selection
+⌘ + ⌫
+Shortcut
+Frame selection
+⌘ + ⌥ + G
+Shortcut
+Create component
+⌘ + ⌥ + K
+Shortcut
+Select all
+⌘ + A
+Shortcut
+Select inverse
+⌘ + Shift + A
+Shortcut
+Copy properties
+⌘ + ⌥ + C
+Shortcut
+Paste properties
+⌘ + ⌥ + V
+Shortcut
+Pick color
+Ctrl + C
+Shortcut
+Save local copy
+⌘ + S
+Shortcut
+Import file or image
+⌘ + O
+Shortcut
+Place image
+⌘ + Shift + K
+Shortcut
+Export
+⌘ + Shift + E
+Shortcut
+Find and replace
+⌘ + F
+Shortcut
+Bring to front
+]
+Shortcut
+Bring forward
+⌘ + ]
+Shortcut
+Send backward
+⌘ + [
+Shortcut
+Send to back
+[
+Shortcut
+Flip horizontal
+Shift + H
+Shortcut
+Flip vertical
+Shift + V
+Shortcut
+Add auto layout
+Shift + A
+Shortcut
+Remove auto layout
+⌥ + Shift + A
+Shortcut
+Union
+⌥ + Shift + U
+Shortcut
+Subtract
+⌥ + Shift + S
+Shortcut
+Intersect
+⌥ + Shift + I
+Shortcut
+Exclude
+⌥ + Shift + E
+Shortcut
+Flatten
+⌥ + Shift + F
+Shortcut
+Outline stroke
+⌘ + ⌥ + O
+Shortcut
+Show/Hide selection
+⌘ + Shift + H
+Shortcut
+Lock/Unlock selection
+⌘ + Shift + L
+Shortcut
+Align left
+⌥ + A
+Shortcut
+Align horizontal centers
+⌥ + H
+Shortcut
+Align right
+⌥ + D
+Shortcut
+Align top
+⌥ + W
+Shortcut
+Align vertical centers
+⌥ + V
+Shortcut
+Align bottom
+⌥ + S
+Shortcut
+Tidy up
+Ctrl + ⌥ + T
+Shortcut
+Distribute horizontal spacing
+Ctrl + ⌥ + H
+Shortcut
+Distribute vertical spacing
+Ctrl + ⌥ + V
+Shortcut
+Pixel grid
+Shift + '
+Shortcut
+Layout guides
+Shift + G
+Shortcut
+Rulers
+Shift + R
+Shortcut
+Layer outlines
+Shift + O
+Shortcut
+Snap to pixel grid
+⌘ + Shift + '
+Shortcut
+Zoom to 100%
+⌘ + 0
+Shortcut
+Zoom to fit
+Shift + 1
+Shortcut
+Zoom to selection
+Shift + 2
+Shortcut
+Zoom in
+⌘ + =
+Shortcut
+Zoom out
+⌘ + -
+Shortcut
+Show/Hide UI
+⌘ + \
+Shortcut
+Present
+Shift + Space
+Shortcut
+Keyboard shortcuts
+Shift + /
+Shortcut
+Edit vector
+Enter
+Shortcut
+Bold
+⌘ + B
+Shortcut
+Italic
+⌘ + I
+Shortcut
+Underline
+⌘ + U
+Shortcut
+Strikethrough
+⌘ + Shift + X
+Shortcut
+Create link
+⌘ + Shift + U
+Shortcut
+Bulleted list
+⌘ + Shift + 8
+Shortcut
+Numbered list
+⌘ + Shift + 7

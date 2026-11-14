@@ -1,0 +1,101 @@
+[
+  {
+    "app": "penpot",
+    "test": "two-shape-selection",
+    "count": 2,
+    "geometry": {
+      "w": "",
+      "h": "",
+      "x": "",
+      "y": ""
+    }
+  },
+  {
+    "app": "penpot",
+    "test": "numeric-undo-selection",
+    "before": {
+      "w": "200",
+      "h": "120",
+      "x": "182",
+      "y": "280"
+    },
+    "committed": {
+      "w": "240",
+      "h": "120",
+      "x": "182",
+      "y": "280"
+    },
+    "afterUndoSelection": {
+      "w": "200",
+      "h": "120",
+      "x": "182",
+      "y": "280"
+    },
+    "restored": {
+      "w": "200",
+      "h": "120",
+      "x": "182",
+      "y": "280"
+    }
+  },
+  {
+    "app": "penpot",
+    "test": "text-click-80ms",
+    "editors": [
+      {
+        "tag": "DIV",
+        "role": "textbox",
+        "cls": "notranslate public-DraftEditor-content mousetrap"
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "cls": ""
+      }
+    ]
+  },
+  {
+    "app": "baize",
+    "test": "two-shape-selection",
+    "count": 2,
+    "geometry": {
+      "w": "200",
+      "h": "120",
+      "x": "64",
+      "y": "200"
+    }
+  },
+  {
+    "app": "baize",
+    "test": "numeric-undo-selection",
+    "before": {
+      "w": "200",
+      "h": "120",
+      "x": "64",
+      "y": "200"
+    },
+    "committed": {
+      "w": "240",
+      "h": "120",
+      "x": "64",
+      "y": "200"
+    },
+    "afterUndoSelection": {
+      "w": null,
+      "h": null,
+      "x": null,
+      "y": null
+    },
+    "restored": {
+      "w": "200",
+      "h": "120",
+      "x": "64",
+      "y": "200"
+    }
+  },
+  {
+    "app": "baize",
+    "test": "text-click-80ms",
+    "editors": []
+  }
+]

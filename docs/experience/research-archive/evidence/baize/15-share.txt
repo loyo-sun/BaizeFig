@@ -1,0 +1,83 @@
+File
+Assets
+Agents
+Cloud
+Variables
+Drafts
+Local
+Saved locally
+Pages
+Page 1
+Layers
+3
+Path
+Design baseline
+Text
+Rectangle
+Drop here to move to page root
+Baize · Understand all things. See every form.
+LOCAL FIRST
+Design baseline
+白
+Share
+Design
+Prototype
+100%
+Path
+Position
+X
+Y
+↻
+Layout
+W
+H
+Width sizing
+fixed
+hug
+fill
+Height sizing
+fixed
+hug
+fill
+Size limits
+Layer
+Blend normal
+Blend multiply
+Blend screen
+Blend overlay
+Blend darken
+Blend lighten
+Blend color-dodge
+Blend color-burn
+Blend hard-light
+Blend soft-light
+Blend difference
+Blend exclusion
+Blend hue
+Blend saturation
+Blend color
+Blend luminosity
+%
+Fill
+Stroke
+%
+Width
+Stroke alignment
+Center stroke
+Inside stroke
+Outside stroke
+Stroke
+Effects
+Export
+All changes stay on your device.
+BAIZEFIG / 白泽
+Share this design
+
+Share a portable copy of this design. Anyone with the file can open it in BaizeFig.
+
+Download design file
+Editable .baizefig copy, with assets included
+Export an image
+PNG, JPG or SVG from the Export panel
+
+Live collaboration and shareable room links are still in development. Sharing a file does not create a live collaboration session.

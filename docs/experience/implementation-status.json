@@ -112,7 +112,7 @@
     "Ruler labels and selection dimension badge differ",
     "Not every property popover, vector toolbar and intermediate state has identical pixels"
   ],
-  "penpotReference": "stopped with dedicated VM; data retained",
+  "penpotReference": "Removed 2026-10-22 at user request; static evidence archived locally; compare.py uses bundled reference images",
   "W7": "https://app.notion.com/p/40041f739488812981ccc892ba6b1617",
   "publication": "No release, push or pull request",
   "acceptancePage": "https://app.notion.com/p/40041f7394888147b707e2ad08a02c82",

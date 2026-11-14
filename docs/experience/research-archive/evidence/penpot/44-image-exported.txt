@@ -1,0 +1,79 @@
+Design baseline
+200 x 120
+Rectangle
+Board
+-100
+-50
+0
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+550
+600
+650
+-250
+-200
+-150
+-100
+-50
+0
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+550
+600
+650
+700
+0
+200
+120
+0
+DRAFTS
+New File 3
+LAYERS
+ASSETS
+TOKENS
+PAGES
+Page 1
+PAGE 1
+test-pattern
+Board
+Design baseline
+Rectangle
+100%
+DESIGN
+PROTOTYPE
+INSPECT
+Normal
+Size presets
+COMPONENT
+Main
+Rectangle
+LAYOUT
+FILL
+STROKE
+SELECTED COLORS
+%
+%
+%
+SHADOW
+BLUR
+GUIDES
+EXPORT
+PNG
+1x
+EXPORT 1 ELEMENT

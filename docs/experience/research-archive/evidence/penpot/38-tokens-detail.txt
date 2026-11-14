@@ -1,0 +1,74 @@
+Design baseline
+Rectangle
+Board
+-50
+0
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+550
+600
+650
+700
+0
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+550
+600
+650
+700
+750
+800
+850
+900
+950
+DRAFTS
+New File 3
+LAYERS
+ASSETS
+TOKENS
+THEMES
+There are no themes.Create one.
+SETS
+There are no sets yet.Create one.
+TOKENS -
+Border Radius
+Color
+Dimensions
+Font Family
+Font Size
+Font Weight
+Letter Spacing
+Number
+Opacity
+Rotation
+Shadow
+Sizing
+Spacing
+Stroke Width
+Text Case
+Text Decoration
+Typography
+TOOLS
+100%
+DESIGN
+PROTOTYPE
+INSPECT
+CANVAS BACKGROUND
+PIXEL GRID COLOR
+%

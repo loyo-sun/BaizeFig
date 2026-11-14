@@ -1,0 +1,75 @@
+Inspecting code (View Only)
+DONE
+Design baseline
+200 x 120
+Rectangle
+Board
+-100
+-50
+0
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+550
+600
+650
+-250
+-200
+-150
+-100
+-50
+0
+50
+100
+150
+200
+250
+300
+350
+400
+450
+500
+550
+600
+650
+700
+0
+200
+120
+0
+DRAFTS
+New File 3
+LAYERS
+PAGES
+View only
+Page 1
+PAGE 1
+test-pattern
+Board
+Design baseline
+Rectangle
+100%
+DESIGN
+PROTOTYPE
+INSPECT
+Rectangle
+Main component
+Layer info
+HEX
+Styles
+SIZE AND POSITION
+Width
+200px
+Height
+120px
+EXPORT
+PNG
+1x
+EXPORT 1 ELEMENT

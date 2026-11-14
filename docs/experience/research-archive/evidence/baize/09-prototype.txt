@@ -1,0 +1,41 @@
+File
+Assets
+Agents
+Cloud
+Variables
+Drafts
+Local
+Saved locally
+Pages
+Page 1
+Layers
+1
+Rectangle
+Drop here to move to page root
+Baize · Understand all things. See every form.
+LOCAL FIRST
+200 × 120
+白
+Share
+Design
+Prototype
+100%
+Interactions
+Interaction trigger
+Trigger click
+Trigger hover
+Trigger leave
+Trigger press
+Trigger release
+Trigger delay
+Interaction action
+Navigate to frame
+Scroll to target
+Change component state
+None
+Present prototype
+
+Preview supports navigation, overlays and scroll-to actions. Advanced conditions and smart animation are tracked in the feature matrix.
+
+Export
+All changes stay on your device.

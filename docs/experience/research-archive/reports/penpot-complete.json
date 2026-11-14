@@ -1,0 +1,54 @@
+[
+  {
+    "id": "29-stroke",
+    "status": "captured"
+  },
+  {
+    "id": "30-shadow",
+    "status": "captured"
+  },
+  {
+    "id": "31-blur",
+    "status": "captured"
+  },
+  {
+    "id": "32-layout-menu",
+    "status": "captured"
+  },
+  {
+    "id": "33-component",
+    "status": "captured"
+  },
+  {
+    "id": "34-component-assets",
+    "status": "captured"
+  },
+  {
+    "id": "35-board",
+    "status": "captured"
+  },
+  {
+    "id": "36-flex-layout",
+    "status": "captured"
+  },
+  {
+    "id": "37-image",
+    "status": "captured"
+  },
+  {
+    "id": "38-tokens-detail",
+    "status": "captured"
+  },
+  {
+    "id": "39-user-access",
+    "status": "captured"
+  },
+  {
+    "id": "40-export-image",
+    "status": "captured"
+  },
+  {
+    "id": "41-download-native",
+    "status": "captured"
+  }
+]

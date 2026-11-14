@@ -54,4 +54,4 @@
 - 视觉：node docs/experience/scripts/capture.cjs；python3 docs/experience/scripts/compare.py。预览4318及原参考图片路径需保持可读。
 - 性能：使用随文附带的1000层合成原生文件fixtures/performance-1000.baizefig，以基线/当前生产预览为参数执行scripts/performance.cjs；临时基线与生产测量服务器验收后关闭，需自行按所记录提交和当前源码重新构建。
 
-Penpot已停止全部专用容器与虚拟机，保留数据；localhost:9001当前不可登录。恢复用Penpot研究环境/scripts/control.sh start，不是启动BaizeFig的前置步骤。
+2026-10-22：按用户要求删除 Penpot 专用环境。历史参考图与调研证据已归档至本目录 evidence/reference-archive 和 research-archive；视觉对比脚本不再依赖原研究环境目录。

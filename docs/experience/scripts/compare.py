@@ -1,9 +1,9 @@
 from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont
 import numpy as np,json,shutil
-r=Path(__file__).resolve().parent.parent;research=r.parents[2]/'Penpot研究环境'
+r=Path(__file__).resolve().parent.parent;research=r/'evidence/reference-archive'
 # The original reference is kept intact; no masks, image shifts or threshold relaxation.
-ref=Image.open(research/'evidence/penpot/pixel-rectangle-clean.png').convert('RGB');current=Image.open(r/'evidence/rectangle.png').convert('RGB');previous=Image.open(research/'evidence/baize/pixel-rectangle.png').convert('RGB')
+ref=Image.open(research/'penpot-rectangle.png').convert('RGB');current=Image.open(r/'evidence/rectangle.png').convert('RGB');previous=Image.open(research/'baize-before.png').convert('RGB')
 ref.save(r/'evidence/penpot-rectangle-reference.png')
 a=np.asarray(current).astype(np.int16);b=np.asarray(ref).astype(np.int16);delta=np.abs(a-b);maxdelta=delta.max(2);noise=np.any(a!=np.asarray(Image.open(r/'evidence/rectangle-repeat.png').convert('RGB')),2).sum()
 metrics={}

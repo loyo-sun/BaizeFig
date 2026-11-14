@@ -1,0 +1,72 @@
+[
+  {
+    "id": "17-sample",
+    "status": "captured"
+  },
+  {
+    "id": "18-board",
+    "status": "captured"
+  },
+  {
+    "id": "19-layout",
+    "status": "captured"
+  },
+  {
+    "id": "20-component",
+    "status": "captured"
+  },
+  {
+    "id": "21-shape",
+    "status": "captured"
+  },
+  {
+    "id": "22-fill-detail",
+    "status": "captured"
+  },
+  {
+    "id": "23-stroke-detail",
+    "status": "not-captured",
+    "error": "locator.click: Timeout 4000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Stroke options', exact: true })\u001b[22m\n"
+  },
+  {
+    "id": "24-more-actions",
+    "status": "captured"
+  },
+  {
+    "id": "25-text",
+    "status": "captured"
+  },
+  {
+    "id": "26-font-list",
+    "status": "captured"
+  },
+  {
+    "id": "27-typography",
+    "status": "captured"
+  },
+  {
+    "id": "28-variables",
+    "status": "not-captured",
+    "error": "locator.click: Error: strict mode violation: getByText('Styles', { exact: true }) resolved to 2 elements:\n    1) <summary>Styles</summary> aka locator('summary').filter({ hasText: 'Styles' })\n    2) <div class=\"section-heading\">…</div> aka locator('div').filter({ hasText: /^Styles$/ })\n\nCall log:\n\u001b[2m  - waiting for getByText('Styles', { exact: true })\u001b[22m\n"
+  },
+  {
+    "id": "29-multi-select",
+    "status": "captured"
+  },
+  {
+    "id": "30-export",
+    "status": "captured"
+  },
+  {
+    "id": "31-assets",
+    "status": "captured"
+  },
+  {
+    "id": "32-shortcuts",
+    "status": "captured"
+  },
+  {
+    "id": "33-version-history",
+    "status": "captured"
+  }
+]

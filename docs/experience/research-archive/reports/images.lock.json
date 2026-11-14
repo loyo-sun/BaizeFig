@@ -1,0 +1,205 @@
+[
+  {
+    "tags": [
+      "penpotapp/frontend:2.18.3",
+      "registry-1.docker.io/penpotapp/frontend:2.18.3"
+    ],
+    "imageConfigDigest": "sha256:b59fcd78d91b5ccda20f4a048c81bd1924a5ef923aba6890db2476973b8f1f55",
+    "architecture": "arm64",
+    "os": "linux",
+    "sizeBytes": 711072568,
+    "rootFSLayers": [
+      "sha256:7b9aa8cf3d881c1d3d8db6d6a3fd6a8e8aa26e47c5bb7ea84b88f789d7ee6b65",
+      "sha256:0356cfd6a8b55695a26d7eef2ccfcb29050228ed406a3790c72e0dedcfcee4cd",
+      "sha256:4894da42d51d7aceffefa0fd5f38db859d3ce81b8143848155da3e2c062c8b17",
+      "sha256:d0e1ed2a25a25c3104023a44e8f3d5774413230ab3b4e94d312b8a904b2f87f2",
+      "sha256:23d7fc70e6c05be3c49e116c264a2d8229554ca392d8dc0b2f8482bf33e25332",
+      "sha256:c81b8b6e3a8a174caa0d455f79d07924bbc50887cd4a2763413e6aa850842ac4",
+      "sha256:7a8e7db9f08a50d0cdb6cb8afb6e721a5d0b62687dbd9db7fc0d5fd564363355",
+      "sha256:f1a93f6f7450f371f9bdac9a6bbf481d11152e6ce070ea610b2a261b7434a9b7",
+      "sha256:ce9413644e4b4ac67a4b44cffb1bb7c0babdff2d9963265699e2c150a61ad3cb",
+      "sha256:4536435be7d72d04119b45f2048b45c7fe702fb2ad48600bb3546497cd8004c4",
+      "sha256:d0af9de6daf8395bd868900b199f5f033395ddcf50be6ed344d19f66c6b0cdb1",
+      "sha256:478b633849ddf0b2c9f4184ae089bdecf936783bdafe050402de16a94196a556",
+      "sha256:d16e490dbdce98c175afdd861918eb2064744c5709e9da332d08440e096243d4",
+      "sha256:8c649c960397696ca8c9da31e9a5b8d8a94c112ad3d61699660656161984d923",
+      "sha256:ca59b44dbec11a5bd9f6cc89ddcc5070af596583a03145243c8be5f2aed3f83e",
+      "sha256:40d48d8124a8be31bcb24048c90335d06c2240fb1aeed2449266b2cf7ea2b152",
+      "sha256:c85a9d3ce6cfe5d7158e7f39183b6708cd5797b377589ca6ea32e5aa352e60e3",
+      "sha256:f698f057e82ef2cea6c75ab63852119960d1ebf82947da024499459a24733587",
+      "sha256:f8de03f1ca32672aebafee5da2b4387ae1f6147a21c9a8b78f4034d335a78e76",
+      "sha256:21b27b9eb4bf6ddaa75586d40731395fc193ffc4a912af1b1762c147e7ab2df8",
+      "sha256:3947466c343002e5e9d139176fab220b81437468d2450ee156e9c960645324ac",
+      "sha256:503dcc5a3ae58a1a1d69cf62e51886b36fdb4838134188b1f559016fb59cb516",
+      "sha256:67103c196d23089ea7d62dffa8e81a2d87468dd466db9884576486080586019d",
+      "sha256:3344c104f8da0382878cf42529f7d2084afa03d767ed9329d08b45b12fca5fab"
+    ]
+  },
+  {
+    "tags": [
+      "penpotapp/backend:2.18.3",
+      "registry-1.docker.io/penpotapp/backend:2.18.3"
+    ],
+    "imageConfigDigest": "sha256:a54e2fda5c63fb9296fc9a2e1c252b51cf612cb61efa15628eedfff8deed0409",
+    "architecture": "arm64",
+    "os": "linux",
+    "sizeBytes": 802049637,
+    "rootFSLayers": [
+      "sha256:0c346f256df017a2a63ebc18df54b54672c62c4cd816c8340f4c97541e8c306e",
+      "sha256:55b0599ffe9f82d884dba05acf880b1f2e4bd3f72b884cc6c091b43fddcb1abd",
+      "sha256:a06d05eac58e246e395345ff79abda5552f2aec3faa053fcdac15397b511bfcc",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:4e83c71747b8c156f4538f8a06d502367bd8459ffd5ae7d67ead81ce41eedca0",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:e92f455a42a69d7ff1a5b1428548e4a641544fdd5c1bfcbfcf88ac6441e64ef0",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:1b2f919e7c0b48bf43b36911bd9fa945885b8f2ed64597af9b2f169906074eed",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:f3015762361c282bf1b560c4532583bc6a385ca513c90fb4dd9875dff31d07a5",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:78af550ce6c9bfa743037ab221e64355401c0b03c7686e67505f9ebb21c7b820",
+      "sha256:10e67b050d85d6709638ffa03465045278ad746f6ca5fe64e52c781d5238ec6a",
+      "sha256:565aa5a84bc7b8586961d3e978f4b293b3a42448a9d96de512bc9e31aff6e178",
+      "sha256:25bb718f9f1b658a29f35ca5aae5d89a98a12a02ee7803c5d4abf9774b8b2b1b",
+      "sha256:f8ec6d6c46daaed2a315c57c67a52cfbda87847db3ce0db7f552c645b475f8e2",
+      "sha256:bb9e5478a876707669927f4f14c18f9fb485f42306aa79d265c52919c307d95f",
+      "sha256:8e5d4ed378b5e94f6af26b40d4b2e13c0200d477e52876b8240f7d21d5ab7478",
+      "sha256:1360de4699c26116c7e51b1b8e7a2d061f65bf33f462a44040f1615abfc601ce",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+    ]
+  },
+  {
+    "tags": [
+      "penpotapp/exporter:2.18.3",
+      "registry-1.docker.io/penpotapp/exporter:2.18.3"
+    ],
+    "imageConfigDigest": "sha256:d9bf9cdba416e16c6dfb1ad8d68adea33fe9c09eebad7ce485e265643bfa5fbd",
+    "architecture": "arm64",
+    "os": "linux",
+    "sizeBytes": 2423903378,
+    "rootFSLayers": [
+      "sha256:b391c95e66d0d167eb22f92933f223e3d520384ee6b699a7de45178e2a58cca3",
+      "sha256:b8ccae3575309d92e04f3001a2c7324b93a627b9679321ff2023ec00f2db63f4",
+      "sha256:93f407ad377248d796fe2fe068865c8f9de5dd924d25032ce7f21f1ceead1170",
+      "sha256:5817a4dfc8ccfbb334a55fa390855910b462b5bf501d7c3d6ad48025017d239a",
+      "sha256:0a7f6f53be614c92b412a7074bd5a2fc7aa2992bfbdef498be1365dd97c23a61",
+      "sha256:e739e2a6f8595f6d38bba82db1f643ac736a0f047e68458654df0bdbfa901d6b",
+      "sha256:99dc5001cae3a64003d048f423a257f24bdef98ec53b62386044db476ea30f37",
+      "sha256:4eb3878316e4adcfd27dc7800359d688ebd1cc9adfdf93ee0fe05275990ddb02",
+      "sha256:631a1404a644ad47e55237675ed0f46d361f06dbab87d89ca259ed3922b43bb3",
+      "sha256:c5fdf484136c77ae15e3140324b964c2ec5cb8ff080cb610a0ddaf9243aa5997",
+      "sha256:f13605b38f1fe873b88c70193a45870a220811d90521364e6e2403d73bd64e8f",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:292bf21c9eb7d84c434e229c5fa4513c4213dc9c6a0020b79ad4997801ac48fb",
+      "sha256:12d2e1d0122544d37a2920caad65cd69ac8c67cb07fe21725e63bb41470e213d"
+    ]
+  },
+  {
+    "tags": [
+      "penpotapp/admin-console:2.18.3",
+      "registry-1.docker.io/penpotapp/admin-console:2.18.3"
+    ],
+    "imageConfigDigest": "sha256:cdd0cddbd829b9aa3ce55b8622f9884c12b094bdcbdc6f1036f0f260a954570d",
+    "architecture": "arm64",
+    "os": "linux",
+    "sizeBytes": 368739724,
+    "rootFSLayers": [
+      "sha256:b391c95e66d0d167eb22f92933f223e3d520384ee6b699a7de45178e2a58cca3",
+      "sha256:1ee817d8c0f5430965d63c74ab72e5f657468b6e2d89b54dc9b6e11462e70da0",
+      "sha256:8a6e6b8e3dfc3a99f5707c026ce2cc1ea2bb450e29dd2286c296e7e918525216",
+      "sha256:310d783b3ceda4b86877422031e04625c593d18cf768086612b20a3579bf2c47",
+      "sha256:608f8d8663cf78f88d02a14857eef051a6c1485f29f32afba430ce8b6eff63b2",
+      "sha256:fb101a5a9b7b879f11f80233331b2ee17eb47c5318e5f5b383522d3eb787455e",
+      "sha256:5681ccc9dc67caa32c9b90f00320ac521f3e184547411048d542986e692664dc",
+      "sha256:d29294a5606dabcec62369cddb85d4113c825a5d644bdf149c9c8b055709b662",
+      "sha256:98ba1f08e2397c00f7f99e897ff54708abcd4d14c92c9916c87378fb7e54f221",
+      "sha256:f35a879d6416f533aec260763bd14531963bcb5cb9845d610bf3a6cfd489a59e",
+      "sha256:e5a7a61ed24829f0103471f11f06fedebb06de650163e9f1e74ef959f7fab46f",
+      "sha256:ee69ecbd11b73b213047fb202552b3e69b5cb4ecbb67c27f1393581c9ce9d8e1",
+      "sha256:5107f5a7aeb8599fbb728bf63f8e90258006b3242097ca567ebf9c75e13e8965",
+      "sha256:23ef95169a31ff2a8c52a1be40bd349c50ae53cf30d0aa6bd4677c836c204693"
+    ]
+  },
+  {
+    "tags": [
+      "penpotapp/mcp:2.18.3",
+      "registry-1.docker.io/penpotapp/mcp:2.18.3"
+    ],
+    "imageConfigDigest": "sha256:2f1099956f20f155519d452e5a630f4054bd1c8b1cd726262f8c6f661c97ab02",
+    "architecture": "arm64",
+    "os": "linux",
+    "sizeBytes": 201682837,
+    "rootFSLayers": [
+      "sha256:b391c95e66d0d167eb22f92933f223e3d520384ee6b699a7de45178e2a58cca3",
+      "sha256:1ee817d8c0f5430965d63c74ab72e5f657468b6e2d89b54dc9b6e11462e70da0",
+      "sha256:8a6e6b8e3dfc3a99f5707c026ce2cc1ea2bb450e29dd2286c296e7e918525216",
+      "sha256:310d783b3ceda4b86877422031e04625c593d18cf768086612b20a3579bf2c47",
+      "sha256:608f8d8663cf78f88d02a14857eef051a6c1485f29f32afba430ce8b6eff63b2",
+      "sha256:fb101a5a9b7b879f11f80233331b2ee17eb47c5318e5f5b383522d3eb787455e",
+      "sha256:c165ede0cf03bfd688933d050aa7cd8168186326fb9d6c40d227fbbc6b6892d7",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef"
+    ]
+  },
+  {
+    "tags": [
+      "postgres:15",
+      "registry-1.docker.io/library/postgres:15"
+    ],
+    "imageConfigDigest": "sha256:f6a528436858e8356a8f9265e67eebf2067a3d8cccc90fc800f8d10fb21c7f35",
+    "architecture": "arm64",
+    "os": "linux",
+    "sizeBytes": 467625401,
+    "rootFSLayers": [
+      "sha256:258ba1f62b513e7bb7492d3cc8ce445e4ef176a14980f193f789b6d7270ae61c",
+      "sha256:845c809524477e28b05b8250522da81b73eb0317d0084a10c8a27e0222340022",
+      "sha256:0315a42c2fdf4d3276bbc48d394eb878bd4f00feb204c4fae86f3f45bd9386a5",
+      "sha256:7108505709c5b138aa8303e91726657cbf44ec0f0e2f0cc67cf7c963abd6f1db",
+      "sha256:3d042b5ce2cf26f248afc3251225b8dbd25cbd4b3e4b1f128e3a3c0c35dde48f",
+      "sha256:d11ac140431e3ff1469b3e2e0c49bd568aaa005db5b29ba3bc9b83d36a9c457a",
+      "sha256:b58de63a2b97dfebba9946ff72f9c8966146144eb0507a6bc36167ec4788bd01",
+      "sha256:6d447b2b83129728bfde01a4dfd2a7432475c1bf902a62ffb8057ab4d8b61f6c",
+      "sha256:8ea168e174e6a3e0f8264a96286b0093a47fb7f5b8d502a60c2eabde8dc023d3",
+      "sha256:0997af08c4d3f44c669d35324b09b0026f7f36234f4b36f9bf8138953dc64e35",
+      "sha256:8912eb95603d20061769e9e1e0cdcf25ed8c18c038bb9de77fc4f69f061e7893",
+      "sha256:b2b73e05d4c74c1890a96d33549cee316b07342e2e274cafd0bb5a2274b01800",
+      "sha256:0c8879c30aa79b5b209cfd2f88d285cc4a67aa51145d45b5d626a165330dcfc0",
+      "sha256:c8f7d1a69ea2f2430097f8f33eed79fb9e68071be774c7d3f18340bc726da203"
+    ]
+  },
+  {
+    "tags": [
+      "valkey/valkey:8.1",
+      "registry-1.docker.io/valkey/valkey:8.1"
+    ],
+    "imageConfigDigest": "sha256:cba0d442b9bdb895e9c94681f467ea2e8aa6cd35cbb6f5f0c4c4e53c10b9285d",
+    "architecture": "arm64",
+    "os": "linux",
+    "sizeBytes": 133989537,
+    "rootFSLayers": [
+      "sha256:8227a1264c7ff2f8bd125b585e62c1cec77dd2099c985c33e08d34292d06144f",
+      "sha256:15392f27678c32fa077a69b03b95c858a38627508a5f4f035efba7baea28721d",
+      "sha256:591f6d785efa402885f37038e93737a64dc94cd5e61ff02b21b3d455feac6eea",
+      "sha256:6cea05e2bc07074605156631f08f2dd16f34e9600ded9b2784446a0f7e80c67f",
+      "sha256:64df9696678e2fb46736e85f62b2bdc6dbb327dca123fde984bf32ab42fdebe6",
+      "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef",
+      "sha256:2831d81030988a2f6e9c80ac614534e640a4fa5cfc883d44ff8cd7d05acbb684"
+    ]
+  },
+  {
+    "tags": [
+      "sj26/mailcatcher:latest",
+      "registry-1.docker.io/sj26/mailcatcher:latest"
+    ],
+    "imageConfigDigest": "sha256:696189ed600a82c0225070eb79efdacb841dc918de8a35936dccce70f5d83792",
+    "architecture": "arm64",
+    "os": "linux",
+    "sizeBytes": 142642944,
+    "rootFSLayers": [
+      "sha256:b2848c02ac6ff53d265469b5b30f649f335e546a83330cd8916d54e65e640409",
+      "sha256:cfbbd1e8127be85873f8f3fe1610a2bc29587d9f0a3e4ab028a82957cd4286e5",
+      "sha256:02197a3b392c9868693418d95b70287afb8a8fd8e5f7025036632f0d425fec7e",
+      "sha256:0c5ca9fe007c03ed6e5d4d51fe5d6718d40ce96f6eed08d054ad88fae1688bd6",
+      "sha256:be0c46b84147d70477062775cf5a757cf71069672c9e920763b4dfb72442d96a"
+    ]
+  }
+]

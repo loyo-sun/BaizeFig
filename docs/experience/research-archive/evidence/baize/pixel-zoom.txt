@@ -1,0 +1,94 @@
+File
+Assets
+Agents
+Cloud
+Variables
+Drafts
+Local
+Saved locally
+Pages
+Page 1
+Layers
+1
+Rectangle
+Drop here to move to page root
+Baize · Understand all things. See every form.
+LOCAL FIRST
+200 × 120
+100
+200
+300
+400
+500
+600
+700
+800
+100
+200
+300
+400
+500
+600
+700
+800
+900
+1000
+白
+Share
+Design
+Prototype
+100%
+Zoom percentage
+%
+Enter a value from 5 to 800
+25%
+50%
+100%
+200%
+Zoom to fit
+Shift + 1
+Zoom to selection
+Shift + 2
+Rectangle
+Position
+X
+Y
+↻
+⌜
+Layout
+W
+H
+Width sizing
+fixed
+hug
+fill
+Height sizing
+fixed
+hug
+fill
+Size limits
+Layer
+Blend normal
+Blend multiply
+Blend screen
+Blend overlay
+Blend darken
+Blend lighten
+Blend color-dodge
+Blend color-burn
+Blend hard-light
+Blend soft-light
+Blend difference
+Blend exclusion
+Blend hue
+Blend saturation
+Blend color
+Blend luminosity
+%
+Fill
+%
+Fill layers and image crop
+Stroke
+Effects
+Export
+All changes stay on your device.

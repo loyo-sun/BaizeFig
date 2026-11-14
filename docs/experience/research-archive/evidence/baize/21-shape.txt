@@ -1,0 +1,88 @@
+File
+Assets
+Agents
+Cloud
+Variables
+Drafts
+Local
+Saved locally
+Pages
+Page 1
+Layers
+9
+Continue
+Button
+Design baseline
+Board
+Layout card
+Design baseline
+Heading
+Ellipse
+Rectangle
+Drop here to move to page root
+Baize · Understand all things. See every form.
+LOCAL FIRST
+Board
+Design baseline
+Continue
+200 × 120
+白
+Share
+Design
+Prototype
+83%
+Rectangle
+Position
+X
+Y
++
+horizontal min
+horizontal max
+horizontal center
+horizontal stretch
+horizontal scale
+vertical min
+vertical max
+vertical center
+vertical stretch
+vertical scale
+↻
+⌜
+Layout
+W
+H
+Width sizing
+fixed
+hug
+fill
+Height sizing
+fixed
+hug
+fill
+Size limits
+Layer
+Blend normal
+Blend multiply
+Blend screen
+Blend overlay
+Blend darken
+Blend lighten
+Blend color-dodge
+Blend color-burn
+Blend hard-light
+Blend soft-light
+Blend difference
+Blend exclusion
+Blend hue
+Blend saturation
+Blend color
+Blend luminosity
+%
+Fill
+%
+Fill layers and image crop
+Stroke
+Effects
+Export
+All changes stay on your device.
+Document imported

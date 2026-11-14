@@ -1,0 +1,164 @@
+File
+Assets
+Agents
+Cloud
+Variables
+Drafts
+Local
+Saved locally
+Pages
+Page 1
+Layers
+9
+Continue
+Button
+Design baseline
+Board
+Layout card
+Design baseline
+Heading
+Ellipse
+Rectangle
+Drop here to move to page root
+Baize · Understand all things. See every form.
+LOCAL FIRST
+Board
+Design baseline
+Continue
+360 × 60
+白
+Share
+Design
+Prototype
+83%
+Text
+Position
+X
+Y
++
+horizontal min
+horizontal max
+horizontal center
+horizontal stretch
+horizontal scale
+vertical min
+vertical max
+vertical center
+vertical stretch
+vertical scale
+↻
+Layout
+W
+H
+Width sizing
+fixed
+hug
+fill
+Height sizing
+fixed
+hug
+fill
+Size limits
+Typography
+B
+I
+U
+S
+• ≡
+1. ≡
+Inter
+Arial
+Courier New
+Georgia
+Heiti SC
+Helvetica
+Helvetica Neue
+Hiragino Sans GB
+Menlo
+Monaco
+PingFang SC
+Songti SC
+Times New Roman
+Trebuchet MS
+Verdana
+Size
+Weight
+Line height
+Letter spacing
+Advanced typography
+Advanced typography
+Typography
+Font availability and replacement
+Paragraph spacing
+Truncate overflow text
+
+Typography features depend on the selected font. Changes apply to this text layer.
+
+Common ligatures
+Font default
+On
+Off
+Contextual alternates
+Font default
+On
+Off
+Tabular numbers
+Font default
+On
+Off
+Slashed zero
+Font default
+On
+Off
+Small capitals
+Font default
+On
+Off
+Weight · wght
+Width · wdth
+Optical size · opsz
+Slant · slnt
+Italic · ital
+Text direction
+Automatic direction
+Left to right
+Right to left
+UPPERCASE
+lowercase
+Title Case
+Browser spell check
+Text language
+Automatic
+简体中文
+English
+العربية
+עברית
+Türkçe
+
+Spell check uses your browser dictionaries and privacy settings. BaizeFig does not send text to a spelling service.
+
+Layer
+Blend normal
+Blend multiply
+Blend screen
+Blend overlay
+Blend darken
+Blend lighten
+Blend color-dodge
+Blend color-burn
+Blend hard-light
+Blend soft-light
+Blend difference
+Blend exclusion
+Blend hue
+Blend saturation
+Blend color
+Blend luminosity
+%
+Fill
+%
+Fill layers and image crop
+Stroke
+Effects
+Export
+All changes stay on your device.

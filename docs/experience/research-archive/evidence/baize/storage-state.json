@@ -1,0 +1,654 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://127.0.0.1:4318",
+      "localStorage": [
+        {
+          "name": "baizefig.ui.language",
+          "value": "en"
+        },
+        {
+          "name": "baizefig-canvas-aids",
+          "value": "{\"rulers\":false,\"grid\":false,\"step\":8}"
+        },
+        {
+          "name": "baizefig-snapping",
+          "value": "{\"objects\":true,\"geometry\":true,\"pixel\":false}"
+        }
+      ],
+      "indexedDB": [
+        {
+          "name": "baizefig",
+          "version": 6,
+          "stores": [
+            {
+              "name": "branches",
+              "autoIncrement": false,
+              "keyPath": "id",
+              "records": [],
+              "indexes": [
+                {
+                  "name": "mainId",
+                  "keyPath": "mainId",
+                  "multiEntry": false,
+                  "unique": false
+                }
+              ]
+            },
+            {
+              "name": "documents",
+              "autoIncrement": false,
+              "keyPath": "id",
+              "records": [
+                {
+                  "value": {
+                    "format": "baizefig",
+                    "version": 1,
+                    "id": "2485c70e-b5b3-4dcb-87fe-d73651ce9ee9",
+                    "name": "白泽 · Design playground",
+                    "pages": [
+                      {
+                        "id": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "name": "Page 1"
+                      }
+                    ],
+                    "nodes": [
+                      {
+                        "id": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": null,
+                        "type": "frame",
+                        "name": "白泽 / Welcome",
+                        "x": 80,
+                        "y": 80,
+                        "width": 960,
+                        "height": 680,
+                        "rotation": 0,
+                        "fill": "#f8faf6",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 24,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "text": "Text",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "a9c3e99f-66fe-4e21-bda8-cba042c7ca7e",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "text",
+                        "name": "Brand",
+                        "x": 48,
+                        "y": 32,
+                        "width": 240,
+                        "height": 32,
+                        "rotation": 0,
+                        "fill": "#283d30",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "textFlow": {
+                          "autoResize": "height",
+                          "verticalAlign": "top",
+                          "letterSpacing": 0
+                        },
+                        "text": "BAIZEFIG  /  白泽",
+                        "fontSize": 18,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 700,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "809be879-ecd3-4bbb-8004-49699c0957c3",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "text",
+                        "name": "Navigation",
+                        "x": 665,
+                        "y": 38,
+                        "width": 260,
+                        "height": 24,
+                        "rotation": 0,
+                        "fill": "#637466",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "textFlow": {
+                          "autoResize": "height",
+                          "verticalAlign": "top",
+                          "letterSpacing": 0
+                        },
+                        "text": "Design     Explore     Create ↗",
+                        "fontSize": 14,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "71abcc18-8557-4d4b-8930-321cc27f1016",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "rectangle",
+                        "name": "Eyebrow background",
+                        "x": 48,
+                        "y": 132,
+                        "width": 187,
+                        "height": 30,
+                        "rotation": 0,
+                        "fill": "#e7eedd",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 15,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "text": "Text",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "532f1727-bf6c-4dd0-b819-8985ef6d6179",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "text",
+                        "name": "Eyebrow",
+                        "x": 62,
+                        "y": 137,
+                        "width": 170,
+                        "height": 24,
+                        "rotation": 0,
+                        "fill": "#536d3f",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "textFlow": {
+                          "autoResize": "height",
+                          "verticalAlign": "top",
+                          "letterSpacing": 0
+                        },
+                        "text": "YOUR IDEAS, UNBOUND",
+                        "fontSize": 11,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 600,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "d9084a3f-f481-402a-bc66-245b5210b11e",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "text",
+                        "name": "Headline",
+                        "x": 48,
+                        "y": 192,
+                        "width": 560,
+                        "height": 172,
+                        "rotation": 0,
+                        "fill": "#25382b",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "textFlow": {
+                          "autoResize": "height",
+                          "verticalAlign": "top",
+                          "letterSpacing": 0
+                        },
+                        "text": "通万物、\n识万象。",
+                        "fontSize": 64,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 700,
+                        "textAlign": "left",
+                        "lineHeight": 1.15
+                      },
+                      {
+                        "id": "9801be60-b190-46d4-baba-6706ca069b42",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "text",
+                        "name": "Description",
+                        "x": 50,
+                        "y": 380,
+                        "width": 470,
+                        "height": 70,
+                        "rotation": 0,
+                        "fill": "#73816e",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "textFlow": {
+                          "autoResize": "height",
+                          "verticalAlign": "top",
+                          "letterSpacing": 0
+                        },
+                        "text": "从一个想法，到万千可能。\n在属于你的画布上，与灵感不期而遇。",
+                        "fontSize": 18,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.8
+                      },
+                      {
+                        "id": "3032befe-02fa-4c42-b352-ec1ad8c6a327",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "rectangle",
+                        "name": "Primary button",
+                        "x": 48,
+                        "y": 500,
+                        "width": 168,
+                        "height": 50,
+                        "rotation": 0,
+                        "fill": "#2c4431",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 25,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "text": "Text",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "a2c4ba20-7aa9-41bc-a75d-79490cf798ea",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "text",
+                        "name": "Button label",
+                        "x": 75,
+                        "y": 514,
+                        "width": 140,
+                        "height": 26,
+                        "rotation": 0,
+                        "fill": "#ffffff",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "textFlow": {
+                          "autoResize": "height",
+                          "verticalAlign": "top",
+                          "letterSpacing": 0
+                        },
+                        "text": "开始创造  ↗",
+                        "fontSize": 16,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 600,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "e8f2cb08-80bd-4814-8bf3-5707b5471627",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "ellipse",
+                        "name": "Sage orbit",
+                        "x": 600,
+                        "y": 184,
+                        "width": 280,
+                        "height": 280,
+                        "rotation": 0,
+                        "fill": "#dce7cf",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "text": "Text",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "8c9cd104-ea84-4ebf-b46a-cfc5fef65e8a",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "star",
+                        "name": "Baize star",
+                        "x": 638,
+                        "y": 224,
+                        "width": 204,
+                        "height": 204,
+                        "rotation": 15,
+                        "fill": "#9caf7f",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "text": "Text",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "71c4e8fd-87dc-4888-9e84-ac785ef16ac1",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "ellipse",
+                        "name": "Orbit dot",
+                        "x": 820,
+                        "y": 160,
+                        "width": 44,
+                        "height": 44,
+                        "rotation": 0,
+                        "fill": "#2c4431",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "text": "Text",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "77a5e438-3f3b-47cc-9a78-5147fb82fd25",
+                        "pageId": "8561df1c-4a98-4baa-8ee8-79b5ac2c9564",
+                        "parentId": "d7aba5b5-4e98-460c-9231-575c0d48ed3b",
+                        "type": "text",
+                        "name": "Footer",
+                        "x": 48,
+                        "y": 620,
+                        "width": 850,
+                        "height": 24,
+                        "rotation": 0,
+                        "fill": "#87927f",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "textFlow": {
+                          "autoResize": "height",
+                          "verticalAlign": "top",
+                          "letterSpacing": 0
+                        },
+                        "text": "LOCAL FIRST.  INFINITE POSSIBILITIES.                                                MADE FOR YOUR MIND.",
+                        "fontSize": 10,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      }
+                    ],
+                    "background": "#f5f5f5"
+                  }
+                },
+                {
+                  "value": {
+                    "format": "baizefig",
+                    "version": 1,
+                    "id": "7d172bf2-9f02-4491-ad9a-8513c58792d1",
+                    "name": "Untitled",
+                    "pages": [
+                      {
+                        "id": "1252414f-f918-41c9-90ef-0e57b19a35d9",
+                        "name": "Page 1"
+                      }
+                    ],
+                    "nodes": [
+                      {
+                        "id": "3257a6f2-8a62-4738-aac9-56c0232ba20c",
+                        "pageId": "1252414f-f918-41c9-90ef-0e57b19a35d9",
+                        "parentId": null,
+                        "type": "rectangle",
+                        "name": "Rectangle",
+                        "x": 64,
+                        "y": 200,
+                        "width": 200,
+                        "height": 120,
+                        "rotation": 0,
+                        "fill": "#c5c8d0",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "text": "Text",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4
+                      },
+                      {
+                        "id": "a574ecbb-6430-4a19-abd4-068b03022d93",
+                        "pageId": "1252414f-f918-41c9-90ef-0e57b19a35d9",
+                        "parentId": null,
+                        "type": "text",
+                        "name": "Text",
+                        "x": 84,
+                        "y": 390,
+                        "width": 180.3046875,
+                        "height": 33.599999999999994,
+                        "rotation": 0,
+                        "fill": "#202a24",
+                        "stroke": "#202a24",
+                        "strokeWidth": 0,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "textFlow": {
+                          "autoResize": "both",
+                          "verticalAlign": "top",
+                          "letterSpacing": 0,
+                          "runs": [],
+                          "paragraphs": []
+                        },
+                        "text": "Design baseline",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4,
+                        "layoutItem": {
+                          "horizontalSizing": "hug",
+                          "verticalSizing": "hug"
+                        },
+                        "fidelity": {
+                          "size": [
+                            180.3046875,
+                            33.599999999999994
+                          ],
+                          "text": {
+                            "characters": "Design baseline",
+                            "lines": [
+                              {
+                                "start": 0,
+                                "end": 15,
+                                "x": 0,
+                                "y": 24
+                              }
+                            ],
+                            "letterSpacing": 0,
+                            "spans": []
+                          }
+                        }
+                      },
+                      {
+                        "id": "f8104e40-743d-4314-a6b5-70c7878b41ac",
+                        "pageId": "1252414f-f918-41c9-90ef-0e57b19a35d9",
+                        "parentId": null,
+                        "type": "path",
+                        "name": "Path",
+                        "x": 84,
+                        "y": 490,
+                        "width": 200,
+                        "height": 70,
+                        "rotation": 0,
+                        "fill": "none",
+                        "stroke": "#202a24",
+                        "strokeWidth": 1,
+                        "radius": 0,
+                        "opacity": 1,
+                        "visible": true,
+                        "locked": false,
+                        "text": "Text",
+                        "fontSize": 24,
+                        "fontFamily": "Inter, Arial, sans-serif",
+                        "fontWeight": 400,
+                        "textAlign": "left",
+                        "lineHeight": 1.4,
+                        "fidelity": {
+                          "size": [
+                            200,
+                            70
+                          ],
+                          "network": {
+                            "vertices": [
+                              {
+                                "x": 0,
+                                "y": 50
+                              },
+                              {
+                                "x": 100,
+                                "y": 0
+                              },
+                              {
+                                "x": 200,
+                                "y": 70
+                              }
+                            ],
+                            "segments": [
+                              {
+                                "a": 0,
+                                "b": 1,
+                                "ha": {
+                                  "x": 0,
+                                  "y": 0
+                                },
+                                "hb": {
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              },
+                              {
+                                "a": 1,
+                                "b": 2,
+                                "ha": {
+                                  "x": 0,
+                                  "y": 0
+                                },
+                                "hb": {
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              }
+                            ],
+                            "regions": []
+                          }
+                        }
+                      }
+                    ],
+                    "background": "#f5f5f5"
+                  }
+                }
+              ],
+              "indexes": []
+            },
+            {
+              "name": "libraries",
+              "autoIncrement": false,
+              "keyPath": "key",
+              "records": [],
+              "indexes": []
+            },
+            {
+              "name": "revisions",
+              "autoIncrement": false,
+              "records": [
+                {
+                  "key": "2485c70e-b5b3-4dcb-87fe-d73651ce9ee9",
+                  "value": 1
+                },
+                {
+                  "key": "7d172bf2-9f02-4491-ad9a-8513c58792d1",
+                  "value": 4
+                }
+              ],
+              "indexes": []
+            },
+            {
+              "name": "settings",
+              "autoIncrement": false,
+              "records": [
+                {
+                  "key": "last-document",
+                  "value": "7d172bf2-9f02-4491-ad9a-8513c58792d1"
+                }
+              ],
+              "indexes": []
+            },
+            {
+              "name": "trash",
+              "autoIncrement": false,
+              "keyPath": "document.id",
+              "records": [],
+              "indexes": []
+            },
+            {
+              "name": "versions",
+              "autoIncrement": false,
+              "keyPath": "id",
+              "records": [],
+              "indexes": [
+                {
+                  "name": "documentId",
+                  "keyPath": "documentId",
+                  "multiEntry": false,
+                  "unique": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "noise": [
+    {
+      "app": "penpot",
+      "different_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "app": "baize",
+      "different_pixels": 0,
+      "max_channel_delta": 0
+    },
+    {
+      "app": "penpot",
+      "different_pixels": 0,
+      "max_channel_delta": 0
+    }
+  ],
+  "summary": [
+    {
+      "empty": {
+        "full": {
+          "box": [
+            0,
+            0,
+            1440,
+            1000
+          ],
+          "different_percent": 15.276805555555557,
+          "over16_percent": 10.695763888888889,
+          "mean_absolute_rgb": 3.7070261574074075
+        },
+        "left": {
+          "box": [
+            0,
+            0,
+            340,
+            1000
+          ],
+          "different_percent": 13.300588235294116,
+          "over16_percent": 9.453823529411764,
+          "mean_absolute_rgb": 4.179856862745098
+        },
+        "right": {
+          "box": [
+            1122,
+            0,
+            1440,
+            1000
+          ],
+          "different_percent": 27.935220125786163,
+          "over16_percent": 21.156603773584905,
+          "mean_absolute_rgb": 7.116093291404612
+        },
+        "common_canvas": {
+          "box": [
+            358,
+            100,
+            1122,
+            900
+          ],
+          "different_percent": 0.3926701570680628,
+          "over16_percent": 0.0,
+          "mean_absolute_rgb": 0.025958769633507853
+        }
+      }
+    },
+    {
+      "rectangle": {
+        "full": {
+          "box": [
+            0,
+            0,
+            1440,
+            1000
+          ],
+          "different_percent": 20.306250000000002,
+          "over16_percent": 12.987916666666665,
+          "mean_absolute_rgb": 4.950010648148148
+        },
+        "left": {
+          "box": [
+            0,
+            0,
+            340,
+            1000
+          ],
+          "different_percent": 19.401176470588236,
+          "over16_percent": 15.685588235294118,
+          "mean_absolute_rgb": 5.271638235294118
+        },
+        "right": {
+          "box": [
+            1122,
+            0,
+            1440,
+            1000
+          ],
+          "different_percent": 43.10754716981132,
+          "over16_percent": 22.714779874213836,
+          "mean_absolute_rgb": 10.662251572327044
+        },
+        "common_canvas": {
+          "box": [
+            358,
+            100,
+            1122,
+            900
+          ],
+          "different_percent": 0.9545157068062826,
+          "over16_percent": 0.56184554973822,
+          "mean_absolute_rgb": 0.39868291884816753
+        }
+      }
+    }
+  ]
+}

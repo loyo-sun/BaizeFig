@@ -1,0 +1,82 @@
+File
+Assets
+Agents
+Cloud
+Variables
+Drafts
+Local
+Saved locally
+Pages
+Page 1
+Layers
+9
+Continue
+Button
+Design baseline
+Board
+Drop here to move to page root
+Baize · Understand all things. See every form.
+LOCAL FIRST
+Board
+Design baseline
+Continue
+560 × 600
+白
+Share
+Design
+Prototype
+83%
+Frame
+Position
+X
+Y
+↻
+⌜
+Layout
+W
+H
+Auto layout
+Width sizing
+fixed
+hug
+fill
+Height sizing
+fixed
+hug
+fill
+Size limits
+Clip content
+Layer
+Blend normal
+Blend multiply
+Blend screen
+Blend overlay
+Blend darken
+Blend lighten
+Blend color-dodge
+Blend color-burn
+Blend hard-light
+Blend soft-light
+Blend difference
+Blend exclusion
+Blend hue
+Blend saturation
+Blend color
+Blend luminosity
+%
+Fill
+%
+Fill layers and image crop
+Stroke
+Selection colors
+FFFFFF
+3B82F6
+F97316
+202A24
+F1F5F9
+E2E8F0
+CBD5E1
+Effects
+Export
+All changes stay on your device.
+Document imported

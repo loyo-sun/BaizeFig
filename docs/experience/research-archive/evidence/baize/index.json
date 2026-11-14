@@ -1,0 +1,89 @@
+{
+  "browser": "155.0.8059.82",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "records": [
+    {
+      "id": "01-files",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nPages\nPage 1\nLayers\n13\nBAIZEFIG  /  白泽\nDesign     Explore     Create ↗\nYOUR IDEAS, UNBOUND\n通万物、识万象。\n从一个想法，到万千可能。在属于你的画布上，与灵感不期而遇。\n开始创造  ↗\nLOCAL FIRST.  INFINITE POSSIBILITIES.                                                MADE FOR YOUR MIND.\n白泽 / Welcome\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCA"
+    },
+    {
+      "id": "02-empty",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaving…\nPages\nPage 1\nLayers\n0\nDrop here to move to page root\n\nYour next idea starts here.\n\nChoose a tool and draw on the canvas.\nBaize · Understand all things. See every form.\nLOCAL FIRST\n白\nShare\nDesign\nPrototype\n100%\nPage\nF5F5F5\n100%\nStyles\nExport\nAll changes stay on your device."
+    },
+    {
+      "id": "03-zoom",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nPages\nPage 1\nLayers\n0\nDrop here to move to page root\n\nYour next idea starts here.\n\nChoose a tool and draw on the canvas.\nBaize · Understand all things. See every form.\nLOCAL FIRST\n白\nShare\nDesign\nPrototype\n100%\nZoom percentage\n%\nEnter a value from 5 to 800\n25%\n50%\n100%\n200%\nZoom to fit\nShift + 1\nZoom to selection\nShift + 2\nPage\nF5F5F5\n10"
+    },
+    {
+      "id": "04-drawing-rectangle",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaving…\nPages\nPage 1\nLayers\n1\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\n白\nShare\nDesign\nPrototype\n100%\nRectangle\nPosition\nX\nY\n↻\n⌜\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nLayer\nBlend normal\nBlend multiply\nBlend screen\nBlend overlay\nBlend darken\nBlend light"
+    },
+    {
+      "id": "05-rectangle",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaving…\nPages\nPage 1\nLayers\n1\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\n200 × 120\n白\nShare\nDesign\nPrototype\n100%\nRectangle\nPosition\nX\nY\n↻\n⌜\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nLayer\nBlend normal\nBlend multiply\nBlend screen\nBlend overlay\nBlend darken\nB"
+    },
+    {
+      "id": "06-geometry",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nPages\nPage 1\nLayers\n1\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\n200 × 120\n白\nShare\nDesign\nPrototype\n100%\nRectangle\nPosition\nX\nY\n↻\n⌜\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nLayer\nBlend normal\nBlend multiply\nBlend screen\nBlend overlay\nBlend da"
+    },
+    {
+      "id": "07-context-menu",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nPages\nPage 1\nLayers\n1\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\n200 × 120\n白\nShare\nDesign\nPrototype\n100%\nRectangle\nPosition\nX\nY\n↻\n⌜\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nLayer\nBlend normal\nBlend multiply\nBlend screen\nBlend overlay\nBlend da"
+    },
+    {
+      "id": "08-file-menu",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nPages\nPage 1\nLayers\n1\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\n200 × 120\n白\nShare\nDesign\nPrototype\n100%\nRectangle\nPosition\nX\nY\n↻\n⌜\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nLayer\nBlend normal\nBlend multiply\nBlend screen\nBlend overlay\nBlend da"
+    },
+    {
+      "id": "09-prototype",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nPages\nPage 1\nLayers\n1\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\n200 × 120\n白\nShare\nDesign\nPrototype\n100%\nInteractions\nInteraction trigger\nTrigger click\nTrigger hover\nTrigger leave\nTrigger press\nTrigger release\nTrigger delay\nInteraction action\nNavigate to frame\nScroll to target\nCha"
+    },
+    {
+      "id": "10-assets",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nLocal components\n0\nLibraries\nAll sources\n\nClick for details; drag onto the canvas to create an instance.\n\nCreate a main component to see it here. Components from every page in this file appear automatically.\n\nBaize · Understand all things. See every form.\nLOCAL FIRST\n200 × 120\n白\nShare\nDesign\nPrototype\n100%\nRectangle\nPosition\nX\nY\n↻\n⌜\nLay"
+    },
+    {
+      "id": "11-text-editing",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaving…\nPages\nPage 1\nLayers\n2\nText\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\nDesign baseline\n白\nShare\nDesign\nPrototype\n100%\nText\nPosition\nX\nY\n↻\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nTypography\n• ≡\n1. ≡\n↶\n↷\nAA\naa\nB\nI\nU\nS\nA\n↗\nInter\nArial\nCourier New\nGeorg"
+    },
+    {
+      "id": "12-text-properties",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaving…\nPages\nPage 1\nLayers\n2\nDesign baseline\nText\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\nDesign baseline\n180 × 34\n白\nShare\nDesign\nPrototype\n100%\nText\nPosition\nX\nY\n↻\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nTypography\nB\nI\nU\nS\n• ≡\n1. ≡\nInter\nArial\nCourie"
+    },
+    {
+      "id": "13-path-drawing",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nPages\nPage 1\nLayers\n2\nDesign baseline\nText\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\nDesign baseline\n白\nShare\nDesign\nPrototype\n100%\nPage\nF5F5F5\n100%\nStyles\nExport\nAll changes stay on your device."
+    },
+    {
+      "id": "14-path-properties",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaving…\nPages\nPage 1\nLayers\n3\nPath\nDesign baseline\nText\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\nDesign baseline\n白\nShare\nDesign\nPrototype\n100%\nPath\nPosition\nX\nY\n↻\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nLayer\nBlend normal\nBlend multiply\nBlend screen\nBle"
+    },
+    {
+      "id": "15-share",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nSaved locally\nPages\nPage 1\nLayers\n3\nPath\nDesign baseline\nText\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\nDesign baseline\n白\nShare\nDesign\nPrototype\n100%\nPath\nPosition\nX\nY\n↻\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nLayer\nBlend normal\nBlend multiply\nBlend scre"
+    },
+    {
+      "id": "16-narrow",
+      "url": "http://127.0.0.1:4318/",
+      "text": "File\nAssets\nAgents\nCloud\nVariables\nDrafts\nLocal\nPages\nPage 1\nLayers\n3\nPath\nDesign baseline\nText\nRectangle\nDrop here to move to page root\nBaize · Understand all things. See every form.\nLOCAL FIRST\nDesign baseline\n白\nShare\nDesign\nPrototype\n100%\nPath\nPosition\nX\nY\n↻\nLayout\nW\nH\nWidth sizing\nfixed\nhug\nfill\nHeight sizing\nfixed\nhug\nfill\nSize limits\nLayer\nBlend normal\nBlend multiply\nBlend screen\nBlend overl"
+    }
+  ]
+}

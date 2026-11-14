@@ -1,0 +1,31 @@
+{
+  "penpot": "2.18.3",
+  "lima": "2.2.1",
+  "colima": "0.10.3",
+  "dockerClient": "28.5.1",
+  "compose": "2.40.3",
+  "architecture": "arm64",
+  "viewport": {
+    "width": 1440,
+    "height": 1000,
+    "deviceScaleFactor": 1
+  },
+  "secondaryViewport": {
+    "width": 1100,
+    "height": 800
+  },
+  "language": "en",
+  "referenceTheme": "light",
+  "browser": "155.0.8059.82",
+  "baizefigCommit": "20804018143d986c8002b870fc9c60cc689de22b",
+  "baizefigDirty": true,
+  "deploymentUrl": "http://localhost:9001",
+  "status": "research complete; modification plan preparation",
+  "baizefigWorkingTreeUnchanged": true,
+  "matrixRows": 71,
+  "verificationLegend": {
+    "V": "截图/运行操作实测",
+    "S": "源码和界面交叉核查；复杂场景未穷举",
+    "D": "确认存在缺口；具体子项依报告区分"
+  }
+}

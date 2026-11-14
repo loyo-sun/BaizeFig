@@ -1,0 +1,41 @@
+File
+Assets
+Agents
+Cloud
+Variables
+Drafts
+Local
+Saved locally
+Pages
+Page 1
+Layers
+0
+Drop here to move to page root
+
+Your next idea starts here.
+
+Choose a tool and draw on the canvas.
+Baize · Understand all things. See every form.
+LOCAL FIRST
+白
+Share
+Design
+Prototype
+100%
+Zoom percentage
+%
+Enter a value from 5 to 800
+25%
+50%
+100%
+200%
+Zoom to fit
+Shift + 1
+Zoom to selection
+Shift + 2
+Page
+F5F5F5
+100%
+Styles
+Export
+All changes stay on your device.

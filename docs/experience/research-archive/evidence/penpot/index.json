@@ -1,0 +1,75 @@
+{
+  "browser": "155.0.8059.82",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "locale": "en-US",
+  "theme": "light",
+  "records": [
+    {
+      "id": "08-empty",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7"
+    },
+    {
+      "id": "08-empty-repeat",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7"
+    },
+    {
+      "id": "09-zoom",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7"
+    },
+    {
+      "id": "10-drawing-rectangle",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7"
+    },
+    {
+      "id": "11-rectangle",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7"
+    },
+    {
+      "id": "12-context-menu",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7"
+    },
+    {
+      "id": "13-prototype",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7"
+    },
+    {
+      "id": "14-inspect",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7"
+    },
+    {
+      "id": "15-assets",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7&layout=assets"
+    },
+    {
+      "id": "16-tokens",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7&layout=tokens"
+    },
+    {
+      "id": "17-text-editing",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7&layout=layers"
+    },
+    {
+      "id": "18-text-properties",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7&layout=layers"
+    },
+    {
+      "id": "19-path-drawing",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7&layout=layers"
+    },
+    {
+      "id": "20-path-properties",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7&layout=layers"
+    },
+    {
+      "id": "21-reopened",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7&layout=layers"
+    },
+    {
+      "id": "22-narrow",
+      "url": "http://localhost:9001/#/workspace?team-id=fe165b9f-7599-80c8-8008-d157fdc2190e&file-id=04df5d0b-7e5b-8113-8008-d159fa0e2da6&page-id=04df5d0b-7e5b-8113-8008-d159fa0e2da7&layout=layers"
+    }
+  ]
+}
