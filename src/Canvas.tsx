@@ -843,7 +843,14 @@ export const Scene = React.memo(function Scene({
       white = `${base}-white`,
       black = `${base}-black`;
     if (!children.length) return null;
-    const paint = (
+    const bottom = children[0];
+    const preserveImage =
+      mode === "subtract" &&
+      (Boolean(bottom.image) ||
+        bottom.fidelity?.paints?.some((paint) => paint.type === "image"));
+    const paint = preserveImage ? (
+      <use href={`#scene-${renderId(bottom)}`} />
+    ) : (
       <NodeShape
         node={{
           ...n,
@@ -956,19 +963,27 @@ export const Scene = React.memo(function Scene({
             <mask
               id={`${base}-result`}
               maskUnits="userSpaceOnUse"
+              style={{ maskType: "luminance" }}
               x={-100000}
               y={-100000}
               width={200000}
               height={200000}
             >
-              {children.map((child, i) => (
-                <React.Fragment key={child.id}>
-                  {use(
-                    `scene-${renderId(child)}`,
-                    mode === "subtract" && i > 0 ? black : white,
-                  )}
-                </React.Fragment>
-              ))}
+              {/* The source image already carries its alpha. Mask only the cutters
+                  so translucent pixels and layer opacity are not applied twice. */}
+              {preserveImage && area("#fff")}
+              {(preserveImage ? children.slice(1) : children).map(
+                (child, i) => (
+                  <React.Fragment key={child.id}>
+                    {use(
+                      `scene-${renderId(child)}`,
+                      mode === "subtract" && (preserveImage || i > 0)
+                        ? black
+                        : white,
+                    )}
+                  </React.Fragment>
+                ),
+              )}
             </mask>
           )}
         </defs>
