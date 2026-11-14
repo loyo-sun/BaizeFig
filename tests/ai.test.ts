@@ -110,3 +110,160 @@ describe("AI proposal boundary", () => {
     ).rejects.toThrow("401");
   });
 });
+
+describe("AI endpoint configuration and diagnostics", () => {
+  it("accepts a base URL and a complete endpoint without duplicating the route", async () => {
+    const { chatCompletionsUrl } = await import("../src/ai");
+    expect(chatCompletionsUrl(" https://example.com/v1/ ")).toBe(
+      "https://example.com/v1/chat/completions",
+    );
+    expect(chatCompletionsUrl("https://example.com/v1/chat/completions/")).toBe(
+      "https://example.com/v1/chat/completions",
+    );
+    expect(
+      chatCompletionsUrl("https://example.com/custom/v2?api-version=test"),
+    ).toBe("https://example.com/custom/v2/chat/completions?api-version=test");
+    expect(() =>
+      chatCompletionsUrl("https://example.com/v1/responses"),
+    ).toThrow("Responses");
+  });
+  it("preserves the service's 404 explanation and redacts the configured key", async () => {
+    const { formatAIError } = await import("../src/ai");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: async () => ({
+          error: { message: "Model unknown. Key: session-key" },
+        }),
+      }),
+    );
+    let caught: unknown;
+    try {
+      await generate(
+        config,
+        "Design",
+        emptyDocument(),
+        [],
+        new AbortController().signal,
+      );
+    } catch (e) {
+      caught = e;
+    }
+    const message = formatAIError(caught, (s) => s);
+    expect(message).toContain("404");
+    expect(message).toContain("API route or model");
+    expect(message).toContain("Model unknown");
+    expect(message).not.toContain(config.key);
+    expect(message).toContain("[redacted]");
+  });
+  it("keeps HTTP diagnostics when the service returns an HTML error", async () => {
+    const { formatAIError } = await import("../src/ai");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: async () => {
+          throw Error("HTML response");
+        },
+      }),
+    );
+    let caught: unknown;
+    try {
+      await generate(
+        config,
+        "Design",
+        emptyDocument(),
+        [],
+        new AbortController().signal,
+      );
+    } catch (e) {
+      caught = e;
+    }
+    expect(formatAIError(caught, (s) => s)).toContain("Authentication failed");
+  });
+});
+
+describe("Compatible API base URLs and non-API responses", () => {
+  it("uses /v1 for a bare domain while preserving explicit custom prefixes", async () => {
+    const { chatCompletionsUrl } = await import("../src/ai");
+    expect(chatCompletionsUrl("https://api.openai-hub.net/")).toBe(
+      "https://api.openai-hub.net/v1/chat/completions",
+    );
+    expect(chatCompletionsUrl("https://api.openai-hub.net/v1")).toBe(
+      "https://api.openai-hub.net/v1/chat/completions",
+    );
+    expect(chatCompletionsUrl("https://example.com/api")).toBe(
+      "https://example.com/api/chat/completions",
+    );
+  });
+  it("identifies an HTML success response without exposing a JSON syntax error", async () => {
+    const json = vi.fn();
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue({
+          ok: true,
+          headers: new Headers({ "content-type": "text/html; charset=utf-8" }),
+          json,
+        }),
+    );
+    await expect(
+      generate(
+        config,
+        "Design",
+        emptyDocument(),
+        [],
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow("web page instead of an API response");
+    expect(json).not.toHaveBeenCalled();
+  });
+  it("explains malformed service responses even with a missing content type", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => {
+          throw SyntaxError("Unexpected token '<'");
+        },
+      }),
+    );
+    await expect(
+      generate(
+        config,
+        "Design",
+        emptyDocument(),
+        [],
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow("service did not return valid JSON");
+  });
+  it("distinguishes invalid model output from an invalid endpoint response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue({
+          ok: true,
+          json: async () => ({
+            choices: [
+              { message: { content: "Tell me your model name first" } },
+            ],
+          }),
+        }),
+    );
+    await expect(
+      generate(
+        config,
+        "Design",
+        emptyDocument(),
+        [],
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow("model did not return a valid design proposal");
+  });
+});

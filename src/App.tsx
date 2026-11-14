@@ -72,6 +72,9 @@ import {
 import { useCloudSession } from "./useCloudSession";
 import { CloudPanel } from "./CloudPanel";
 import { CloudFileLinkGate } from "./CloudFileLinkGate";
+import { AgentPanel } from "./AgentPanel";
+import { AIAgentSettings } from "./AIAgentSettings";
+import { useAgentWorkspace } from "./agentWorkspace";
 import { configuredMcpEndpoint } from "./mcpConnections";
 import { McpConnectionWizard, type OAuthApproval } from "./McpConnectionWizard";
 import {
@@ -304,7 +307,7 @@ import {
   listTrash,
   type TrashRecord,
 } from "./storage";
-import { generate, type AIConfig } from "./ai";
+import { type AIConfig } from "./ai";
 import { useI18n } from "./LanguageContext";
 import type { Language } from "./i18n";
 
@@ -326,8 +329,6 @@ type Modal =
   | "export"
   | "files"
   | "commands"
-  | "ai"
-  | "bridge"
   | "assets"
   | "share"
   | "fig-report"
@@ -574,17 +575,9 @@ export default function App() {
     [exportType, setExportType] = useState("PNG"),
     [exportScale, setExportScale] = useState(1);
   const [ai, setAI] = useState<AIConfig>({
-      baseUrl: "http://localhost:11434/v1",
-      model: "",
-      key: "",
-      system: "",
-    }),
-    [prompt, setPrompt] = useState(""),
-    [aiBusy, setAIBusy] = useState(false),
-    [aiResult, setAIResult] = useState<{
-      commands: Command[];
-      base: string;
-    } | null>(null);
+    baseUrl: "http://localhost:11434/v1", model: "", key: "", system: "",
+  });
+  const agentWorkspace = useAgentWorkspace(doc.id, ai);
   const cloudLogin = useCloudSession(ready);
   const {
     session: cloudSession,
@@ -596,6 +589,7 @@ export default function App() {
     setDestinationError("");
   }, [cloudSession?.token]);
   const [cloudSigningIn, setCloudSigningIn] = useState(false);
+  const [mcpAdvanced, setMcpAdvanced] = useState(true);
   const [bridgeRemote, setBridgeRemote] = useState(true);
   const [oauthApprovals, setOauthApprovals] = useState<OAuthApproval[]>([]);
   const [bridgeToken, setBridgeToken] = useState(""),
@@ -620,8 +614,7 @@ export default function App() {
     clipboard = useRef<NodeClipboard | null>(null),
     space = useRef(false),
     socket = useRef<WebSocket | null>(null),
-    mcp = useRef(new EditorMcp()),
-    abort = useRef<AbortController | null>(null);
+    mcp = useRef(new EditorMcp());
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
     const element = svg.current;
@@ -1064,7 +1057,6 @@ export default function App() {
   useEffect(
     () => () => {
       socket.current?.close();
-      abort.current?.abort();
     },
     [],
   );
@@ -3000,8 +2992,8 @@ export default function App() {
     { name: "Add auto layout", key: "⇧ A", run: () => autoLayout() },
     { name: "Zoom to fit", key: "⇧ 1", run: () => fit() },
     { name: "Zoom to selection", key: "⇧ 2", run: () => fit(true) },
-    { name: "AI design engine", key: "", run: () => setModal("ai") },
-    { name: "MCP connection", key: "", run: () => setModal("bridge") },
+    { name: "AI Agent settings", key: "", run: () => openPreferences("ai-agent") },
+    { name: "MCP settings", key: "", run: () => openPreferences("mcp") },
     {
       name: "Help documentation",
       run: () =>
@@ -4023,47 +4015,6 @@ export default function App() {
     el.addEventListener("wheel", wheel, { passive: false });
     return () => el.removeEventListener("wheel", wheel);
   }, [hiddenUI, ready]);
-  async function askAI() {
-    if (!ai.model || !prompt.trim()) {
-      notify("Enter a model and design request");
-      return;
-    }
-    setAIBusy(true);
-    setAIResult(null);
-    abort.current = new AbortController();
-    const base = JSON.stringify(doc);
-    try {
-      const commands = await generate(
-        ai,
-        prompt,
-        doc,
-        selected,
-        abort.current.signal,
-      );
-      setAIResult({ commands, base });
-    } catch (e) {
-      notify((e as Error).message);
-    } finally {
-      setAIBusy(false);
-    }
-  }
-  function applyAI() {
-    if (!aiResult) return;
-    if (JSON.stringify(doc) !== aiResult.base) {
-      notify("Document changed. Generate a new proposal before applying.");
-      return;
-    }
-    try {
-      let next = doc;
-      for (const c of aiResult.commands) next = execute(next, c).doc;
-      change(next);
-      setAIResult(null);
-      setModal(null);
-      notify("AI changes applied · Undo available");
-    } catch (e) {
-      notify((e as Error).message);
-    }
-  }
   function disconnectBridge(stopRetry = true, revoke = true) {
     if (stopRetry) {
       setCloudActive(false);
@@ -4232,7 +4183,7 @@ export default function App() {
           setOauthApprovals((list) =>
             [...list.filter((item) => item.id !== r.id), r].slice(-20),
           );
-          setModal("bridge");
+          openPreferences("mcp");
         }
         return;
       }
@@ -4576,11 +4527,7 @@ export default function App() {
                       ? "Workspace"
                       : modal === "commands"
                         ? "Actions"
-                        : modal === "ai"
-                          ? "Create with Baize"
-                          : modal === "bridge"
-                            ? "Connect external AI"
-                            : "Rename layer";
+                        : "Rename layer";
   return (
     <>
       {cloudLinkPending && (
@@ -4635,6 +4582,15 @@ export default function App() {
           {t("Help center")}
         </a>
       </small>
+      <button
+        className="mcp-status-entry"
+        aria-label={t("MCP connection status: {status}", { status: t(bridgeStatus) })}
+        title={t("MCP settings")}
+        onClick={() => openPreferences("mcp")}
+      >
+        <span className={`mcp-status-dot ${bridgeStatus === "Connected" ? "connected" : bridgeStatus === "Disconnected" ? "disconnected" : "pending"}`} />
+        <span>MCP</span><span>{t(bridgeStatus)}</span>
+      </button>
       <input
         ref={fileInput}
         type="file"
@@ -4688,7 +4644,7 @@ export default function App() {
       )}
       <div className="workspace">
         <aside
-          className="left-panel"
+          className={`left-panel ${leftTab === "smart" ? "left-panel-agent" : ""}`}
           aria-hidden={hiddenUI && hoverSidebar !== "left"}
           inert={hiddenUI && hoverSidebar !== "left"}
         >
@@ -4836,7 +4792,7 @@ export default function App() {
               [
                 ["file", "Layers"],
                 ["assets", "Assets"],
-                ["smart", "Smart"],
+                ["smart", "Create"],
               ] as const
             ).map(([id, label]) => (
               <button
@@ -4850,57 +4806,31 @@ export default function App() {
               </button>
             ))}
           </div>
-          {leftTab === "smart" ? (
-            <CloudPanel
-              deployment={smartDeployment}
-              onDeploymentChange={setSmartDeployment}
-              status={bridgeStatus}
-              session={cloudSession}
-              serviceAddress={bridgeAddress}
-              signingIn={cloudSigningIn || cloudLogin.restoring}
-              restoring={cloudLogin.restoring}
-              restoreError={cloudLogin.restoreError}
-              onRetryRestore={cloudLogin.retryRestore}
-              durationDays={cloudLogin.durationDays}
-              onDurationChange={cloudLogin.setDurationDays}
-              cloudActive={cloudActive}
-              onSignIn={signInCloud}
-              onSignOut={signOutCloud}
-              onCloudConnect={() => {
-                if (!cloudSession) return;
-                if (Date.now() >= cloudSession.expiresAt) {
-                  cloudLogin.forget();
-                  notify("Cloud session expired. Please sign in again.");
-                  return;
-                }
-                if (cloudActive) connectBridge(false, cloudSession);
-                else setCloudActive(true);
+          <div className="agent-host" hidden={leftTab !== "smart"}>
+            <AgentPanel
+              key={doc.id}
+              doc={doc}
+              pageId={page}
+              selected={selected}
+              config={ai}
+              workspace={agentWorkspace}
+              onOpenSettings={() => openPreferences("ai-agent")}
+              canEdit={exclusive.canEdit(doc.id)}
+              onApply={(commands, base) => {
+                const latest = latestDocument.current;
+                if (!editGuard.current(latest.id))
+                  throw Error("Start editing this document before applying AI changes.");
+                if (JSON.stringify(latest) !== base)
+                  throw Error("The canvas has changed. Discard this proposal and generate again.");
+                let next = latest;
+                for (const command of commands) next = execute(next, command).doc;
+                change(next);
+                notify("AI changes applied · Undo available");
               }}
-              onCloudDisconnect={() => {
-                setCloudActive(false);
-                disconnectBridge();
-              }}
-              onCopy={(address) => {
-                void navigator.clipboard
-                  .writeText(address)
-                  .then(() => notify("Copied"))
-                  .catch(() =>
-                    notify("Copy failed. Select and copy the displayed text."),
-                  );
-              }}
-              onConnection={() => setModal("bridge")}
-              onLocal={() => {
-                disconnectBridge();
-                setCloudActive(false);
-                if (bridgeRemote) {
-                  setBridgeRemote(false);
-                  setBridgeAddress("http://127.0.0.1:4319/mcp");
-                  setBridgeToken("");
-                }
-                setModal("bridge");
-              }}
+
             />
-          ) : leftTab === "assets" ? (
+          </div>
+          {leftTab === "smart" ? null : leftTab === "assets" ? (
             <LocalAssets
               key={doc.id}
               doc={doc}
@@ -7571,8 +7501,7 @@ export default function App() {
                     id: "general",
                     title: "General",
                     description: "Choose where your design files are saved.",
-                    keywords:
-                      "保存 默认 本地 云端 文件 save default local cloud",
+                    keywords: "保存 默认 本地 云端 文件 save default local cloud",
                     content: (
                       <>
                         <label className="setting-row">
@@ -7581,9 +7510,7 @@ export default function App() {
                             aria-label={t("Default save location")}
                             value={saveDestination}
                             onChange={(e) =>
-                              configureSaveDestination(
-                                e.target.value as SaveDestination,
-                              )
+                              configureSaveDestination(e.target.value as SaveDestination)
                             }
                           >
                             <option value="ask">{t("Ask every time")}</option>
@@ -7603,8 +7530,7 @@ export default function App() {
                     id: "appearance",
                     title: "Appearance",
                     description: "Set the theme and interface language.",
-                    keywords:
-                      "主题 外观 语言 深色 浅色 theme language dark light",
+                    keywords: "主题 外观 语言 深色 浅色 theme language dark light",
                     content: (
                       <>
                         <label className="setting-row">
@@ -7613,9 +7539,7 @@ export default function App() {
                             aria-label={t("Theme")}
                             value={theme}
                             onChange={(e) =>
-                              setTheme(
-                                e.target.value as "light" | "dark" | "system",
-                              )
+                              setTheme(e.target.value as "light" | "dark" | "system")
                             }
                           >
                             <option value="light">{t("Light")}</option>
@@ -7630,9 +7554,7 @@ export default function App() {
                           <select
                             id="interface-language"
                             value={language}
-                            onChange={(e) =>
-                              setLanguage(e.target.value as Language)
-                            }
+                            onChange={(e) => setLanguage(e.target.value as Language)}
                           >
                             <option value="zh-CN">简体中文</option>
                             <option value="en">English</option>
@@ -7654,10 +7576,159 @@ export default function App() {
                     ),
                   },
                   {
+                    id: "ai-agent",
+                    title: "AI Agent",
+                    description:
+                      "Configure the model and design guidelines for your creative assistant.",
+                    keywords: "AI agent 模型 智能体 密钥 API 创作 model key assistant",
+                    content: <AIAgentSettings config={ai} onChange={setAI} workspace={agentWorkspace} />,
+                  },
+                  {
+                    id: "mcp",
+                    title: "MCP",
+                    description: "Connect external AI tools and manage canvas access.",
+                    keywords:
+                      "MCP 连接 服务 云端 本地 配对 connection cloud local permissions",
+                    content: (
+                      <div className="mcp-preferences">
+                        <div className="mcp-preferences-service">
+                          <CloudPanel
+                            deployment={smartDeployment}
+                            onDeploymentChange={setSmartDeployment}
+                            status={bridgeStatus}
+                            session={cloudSession}
+                            serviceAddress={bridgeAddress}
+                            signingIn={cloudSigningIn || cloudLogin.restoring}
+                            restoring={cloudLogin.restoring}
+                            restoreError={cloudLogin.restoreError}
+                            onRetryRestore={cloudLogin.retryRestore}
+                            durationDays={cloudLogin.durationDays}
+                            onDurationChange={cloudLogin.setDurationDays}
+                            cloudActive={cloudActive}
+                            onSignIn={signInCloud}
+                            onSignOut={signOutCloud}
+                            onCloudConnect={() => {
+                              if (!cloudSession) return;
+                              if (Date.now() >= cloudSession.expiresAt) {
+                                cloudLogin.forget();
+                                notify("Cloud session expired. Please sign in again.");
+                                return;
+                              }
+                              if (cloudActive) connectBridge(false, cloudSession);
+                              else setCloudActive(true);
+                            }}
+                            onCloudDisconnect={() => {
+                              setCloudActive(false);
+                              disconnectBridge();
+                            }}
+                            onCopy={(address) => {
+                              void navigator.clipboard
+                                .writeText(address)
+                                .then(() => notify("Copied"))
+                                .catch(() =>
+                                  notify(
+                                    "Copy failed. Select and copy the displayed text.",
+                                  ),
+                                );
+                            }}
+                            onConnection={() => {
+                              setMcpAdvanced(true);
+                              (document.getElementById("mcp-canvas-settings") ?? document.getElementById("mcp-cloud-settings"))
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            onLocal={() => {
+                              disconnectBridge();
+                              setCloudActive(false);
+                              if (bridgeRemote) {
+                                setBridgeRemote(false);
+                                setBridgeAddress("http://127.0.0.1:4319/mcp");
+                                setBridgeToken("");
+                              }
+                              setMcpAdvanced(true);
+                              (document.getElementById("mcp-canvas-settings") ?? document.getElementById("mcp-cloud-settings"))
+                                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                          />
+                        </div>
+                        {smartDeployment === "self" ? <details
+                          id="mcp-canvas-settings"
+                          className="mcp-advanced"
+                          open={mcpAdvanced || oauthApprovals.length > 0}
+                          onToggle={(e) => setMcpAdvanced(e.currentTarget.open)}
+                        >
+                          <summary>{t("Canvas connection settings")}</summary>
+                          <McpConnectionWizard
+                            remote={bridgeRemote}
+                            onRemote={setBridgeRemote}
+                            address={bridgeAddress}
+                            token={bridgeToken}
+                            status={bridgeStatus}
+                            write={bridgeWrite}
+                            exporting={bridgeExport}
+                            onAddress={setBridgeAddress}
+                            onToken={setBridgeToken}
+                            onConnect={connectBridge}
+                            onDesktopConnect={
+                              window.baizefigDesktop
+                                ? async () => {
+                                    try {
+                                      const local = await window.baizefigDesktop!.status();
+                                      if (!local.running) {
+                                        await window.baizefigDesktop!.manage();
+                                        notify(
+                                          "Install and start local MCP in desktop settings first.",
+                                        );
+                                        return;
+                                      }
+                                      setBridgeRemote(false);
+                                      setBridgeAddress(local.endpoint);
+                                      setBridgeToken(local.pairingToken);
+                                      connectBridge(false, undefined, {
+                                        address: bridgeWebSocketUrl(local.endpoint),
+                                        token: local.pairingToken,
+                                        automatic: false,
+                                      });
+                                    } catch (e) {
+                                      notify((e as Error).message);
+                                    }
+                                  }
+                                : undefined
+                            }
+                            onDisconnect={() => disconnectBridge()}
+                            notify={notify}
+                            onWrite={(value) => {
+                              current.current = { ...current.current, bridgeWrite: value };
+                              setBridgeWrite(value);
+                            }}
+                            onExport={(value) => {
+                              current.current = { ...current.current, bridgeExport: value };
+                              setBridgeExport(value);
+                            }}
+                            approvals={oauthApprovals}
+                            onApproval={(id, approved) => {
+                              if (socket.current?.readyState === WebSocket.OPEN)
+                                socket.current.send(
+                                  JSON.stringify({ type: "oauth_decision", id, approved }),
+                                );
+                              setOauthApprovals((list) =>
+                                list.filter((item) => item.id !== id),
+                              );
+                            }}
+                          />
+                        </details> : <section id="mcp-cloud-settings" className="mcp-cloud-access">
+                          <h4>{t("Cloud canvas permissions")}</h4>
+                          <p>{t("LoyoCloud is the only selected MCP service. Self-hosted configuration is hidden.")}</p>
+                          <label><input type="checkbox" checked={bridgeWrite} onChange={e => { current.current = { ...current.current, bridgeWrite: e.target.checked }; setBridgeWrite(e.target.checked); }} />{t("Allow MCP to modify the currently open document")}</label>
+                          <label><input type="checkbox" checked={bridgeExport} onChange={e => { current.current = { ...current.current, bridgeExport: e.target.checked }; setBridgeExport(e.target.checked); }} />{t("Allow MCP screenshots and SVG export")}</label>
+                          {oauthApprovals.map(approval => <div key={approval.id} className="mcp-cloud-approval"><strong>{approval.clientName}</strong><span>{t("An AI client requests access to this canvas")}</span>{[true, false].map(allowed => <button key={String(allowed)} onClick={() => { if (socket.current?.readyState === WebSocket.OPEN) socket.current.send(JSON.stringify({ type: "oauth_decision", id: approval.id, approved: allowed })); setOauthApprovals(all => all.filter(item => item.id !== approval.id)); }}>{t(allowed ? "Allow" : "Deny")}</button>)}</div>)}
+                        </section>}
+                      </div>
+                    ),
+                  },
+                  {
                     id: "canvas",
                     title: "Canvas aids",
-                    description:
-                      "Manage grids, rulers and guides for this document.",
+                    description: "Manage grids, rulers and guides for this document.",
                     keywords:
                       "画布 标尺 网格 参考线 间距 canvas grid guides rulers spacing",
                     content: (
@@ -7749,9 +7820,7 @@ export default function App() {
                                 onClick={() =>
                                   change({
                                     ...doc,
-                                    guides: doc.guides!.filter(
-                                      (a) => a.id !== g.id,
-                                    ),
+                                    guides: doc.guides!.filter((a) => a.id !== g.id),
                                   })
                                 }
                               >
@@ -7769,29 +7838,27 @@ export default function App() {
                     keywords: "吸附 对象 几何 像素 snap objects geometry pixel",
                     content: (
                       <>
-                        {(["objects", "geometry", "pixel"] as const).map(
-                          (key) => (
-                            <label className="setting-row" key={key}>
-                              {t(
-                                key === "objects"
-                                  ? "Snap to objects"
-                                  : key === "geometry"
-                                    ? "Snap to geometry"
-                                    : "Snap to pixel grid",
-                              )}
-                              <input
-                                type="checkbox"
-                                checked={snapOptions[key]}
-                                onChange={(e) =>
-                                  setSnapOptions({
-                                    ...snapOptions,
-                                    [key]: e.target.checked,
-                                  })
-                                }
-                              />
-                            </label>
-                          ),
-                        )}
+                        {(["objects", "geometry", "pixel"] as const).map((key) => (
+                          <label className="setting-row" key={key}>
+                            {t(
+                              key === "objects"
+                                ? "Snap to objects"
+                                : key === "geometry"
+                                  ? "Snap to geometry"
+                                  : "Snap to pixel grid",
+                            )}
+                            <input
+                              type="checkbox"
+                              checked={snapOptions[key]}
+                              onChange={(e) =>
+                                setSnapOptions({
+                                  ...snapOptions,
+                                  [key]: e.target.checked,
+                                })
+                              }
+                            />
+                          </label>
+                        ))}
                         <p className="muted">
                           {t(
                             "Hold {modifier} while dragging to temporarily disable snapping.",
@@ -7800,9 +7867,7 @@ export default function App() {
                         </p>
                         {snapSaveError && (
                           <p role="alert">
-                            {t(
-                              "Snapping preferences apply for this session only.",
-                            )}
+                            {t("Snapping preferences apply for this session only.")}
                           </p>
                         )}
                       </>
@@ -7811,8 +7876,7 @@ export default function App() {
                   {
                     id: "keyboard",
                     title: "Keyboard shortcuts",
-                    description:
-                      "Choose your keyboard layout and look up shortcuts.",
+                    description: "Choose your keyboard layout and look up shortcuts.",
                     keywords: "键盘 布局 快捷键 keyboard shortcuts layout",
                     content: (
                       <>
@@ -7825,10 +7889,7 @@ export default function App() {
                               const layout = e.target.value as KeyboardLayout;
                               setKeyboardLayout(layout);
                               try {
-                                localStorage.setItem(
-                                  "baizefig-keyboard-layout",
-                                  layout,
-                                );
+                                localStorage.setItem("baizefig-keyboard-layout", layout);
                                 setKeyboardError(false);
                               } catch {
                                 setKeyboardError(true);
@@ -7838,16 +7899,12 @@ export default function App() {
                             <option value="physical">
                               {t("Physical keys (QWERTY positions)")}
                             </option>
-                            <option value="character">
-                              {t("Typed characters")}
-                            </option>
+                            <option value="character">{t("Typed characters")}</option>
                           </select>
                         </label>
                         {keyboardError && (
                           <p role="alert">
-                            {t(
-                              "Keyboard preference applies for this session only.",
-                            )}
+                            {t("Keyboard preference applies for this session only.")}
                           </p>
                         )}
 
@@ -7859,9 +7916,7 @@ export default function App() {
                         <div className="shortcut-list">
                           {shortcutRegistry.map(({ name }) => (
                             <div key={name}>
-                              <span className="shortcut-group">
-                                {t("Shortcut")}
-                              </span>
+                              <span className="shortcut-group">{t("Shortcut")}</span>
                               <span>{t(name)}</span>
                               <kbd>{shortcutLabel(name, platform)}</kbd>
                             </div>
@@ -7873,16 +7928,14 @@ export default function App() {
                   {
                     id: "fonts",
                     title: "Fonts",
-                    description:
-                      "Check available fonts and replace missing fonts.",
+                    description: "Check available fonts and replace missing fonts.",
                     keywords: "字体 管理 缺失 替换 fonts missing replace",
                     content: (
                       <>
                         <FontManager
                           doc={doc}
                           onReplace={(next) => {
-                            if (JSON.stringify(next) !== JSON.stringify(doc))
-                              change(next);
+                            if (JSON.stringify(next) !== JSON.stringify(doc)) change(next);
                           }}
                         />
                       </>
@@ -8176,166 +8229,8 @@ export default function App() {
                 )}
               </>
             )}
-            {modal === "ai" && (
-              <>
-                <p className="muted">
-                  {t(
-                    "Bring your own model. Generate editable layers, then refine them by hand.",
-                  )}
-                </p>
-                <div className="ai-config">
-                  <label>
-                    {t("OpenAI-compatible API base URL")}
-                    <input
-                      aria-label={t("AI API URL")}
-                      value={ai.baseUrl}
-                      onChange={(e) =>
-                        setAI({ ...ai, baseUrl: e.target.value })
-                      }
-                      placeholder="http://localhost:11434/v1"
-                    />
-                  </label>
-                  <div className="two-col">
-                    <label>
-                      {t("Model")}
-                      <input
-                        aria-label={t("AI model")}
-                        value={ai.model}
-                        onChange={(e) =>
-                          setAI({ ...ai, model: e.target.value })
-                        }
-                        placeholder={t("Your model name")}
-                      />
-                    </label>
-                    <label>
-                      {t("API key · session only")}
-                      <input
-                        aria-label={t("AI API key")}
-                        type="password"
-                        autoComplete="off"
-                        value={ai.key}
-                        onChange={(e) => setAI({ ...ai, key: e.target.value })}
-                      />
-                    </label>
-                  </div>
-                  <label>
-                    {t("Design guidelines")}
-                    <textarea
-                      value={ai.system}
-                      onChange={(e) => setAI({ ...ai, system: e.target.value })}
-                      placeholder={t(
-                        "Your component, color and typography rules",
-                      )}
-                    />
-                  </label>
-                  <label>
-                    {t("What would you like to design?")}
-                    <textarea
-                      aria-label={t("Design prompt")}
-                      className="ai-prompt"
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      placeholder={t(
-                        "Create a minimal dashboard with navigation, search and a table…",
-                      )}
-                    />
-                  </label>
-                </div>
-                <p className="notice">
-                  {t(
-                    "Generating sends this document and selection to your configured endpoint. Browser access requires CORS support. Keys remain in memory and are never saved in the design file.",
-                  )}
-                </p>
-                {aiResult && (
-                  <div className="ai-result">
-                    <strong>
-                      {t("{count} proposed operations", {
-                        count: aiResult.commands.length,
-                      })}
-                    </strong>
-                    <pre>{JSON.stringify(aiResult.commands, null, 2)}</pre>
-                    <button className="primary" onClick={applyAI}>
-                      {t("Apply as one undoable change")}
-                    </button>
-                  </div>
-                )}
-                <div className="file-actions">
-                  <button
-                    className="primary"
-                    disabled={aiBusy}
-                    onClick={() => void askAI()}
-                  >
-                    <Sparkles size={15} />
-                    {t(aiBusy ? "Generating…" : "Generate proposal")}
-                  </button>
-                  {aiBusy && (
-                    <button onClick={() => abort.current?.abort()}>
-                      {t("Cancel")}
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-            {modal === "bridge" && (
-              <McpConnectionWizard
-                remote={bridgeRemote}
-                onRemote={setBridgeRemote}
-                address={bridgeAddress}
-                token={bridgeToken}
-                status={bridgeStatus}
-                write={bridgeWrite}
-                exporting={bridgeExport}
-                onAddress={setBridgeAddress}
-                onToken={setBridgeToken}
-                onConnect={connectBridge}
-                onDesktopConnect={
-                  window.baizefigDesktop
-                    ? async () => {
-                        try {
-                          const local = await window.baizefigDesktop!.status();
-                          if (!local.running) {
-                            await window.baizefigDesktop!.manage();
-                            notify(
-                              "Install and start local MCP in desktop settings first.",
-                            );
-                            return;
-                          }
-                          setBridgeRemote(false);
-                          setBridgeAddress(local.endpoint);
-                          setBridgeToken(local.pairingToken);
-                          connectBridge(false, undefined, {
-                            address: bridgeWebSocketUrl(local.endpoint),
-                            token: local.pairingToken,
-                            automatic: false,
-                          });
-                        } catch (e) {
-                          notify((e as Error).message);
-                        }
-                      }
-                    : undefined
-                }
-                onDisconnect={() => disconnectBridge()}
-                notify={notify}
-                onWrite={(value) => {
-                  current.current = { ...current.current, bridgeWrite: value };
-                  setBridgeWrite(value);
-                }}
-                onExport={(value) => {
-                  current.current = { ...current.current, bridgeExport: value };
-                  setBridgeExport(value);
-                }}
-                approvals={oauthApprovals}
-                onApproval={(id, approved) => {
-                  if (socket.current?.readyState === WebSocket.OPEN)
-                    socket.current.send(
-                      JSON.stringify({ type: "oauth_decision", id, approved }),
-                    );
-                  setOauthApprovals((list) =>
-                    list.filter((item) => item.id !== id),
-                  );
-                }}
-              />
-            )}
+
+
           </div>
         </div>
       )}
